@@ -1,0 +1,24 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: media
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: 192.168.1.16
+  share: /mnt/nfs/Media
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+mountOptions: ["hard", "noatime"]
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: downloads
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: 192.168.1.16
+  share: /mnt/nfs/Downloads
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+mountOptions: ["hard", "noatime"]

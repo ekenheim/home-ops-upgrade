@@ -13,7 +13,7 @@ spec:
   dependsOn:
     - name: radarr
     - name: sonarr
-  path: ./kubernetes/main/apps/downloads/recyclarr/app
+  path: ./kubernetes/apps/downloads/recyclarr/app
   prune: true
   sourceRef:
     kind: GitRepository

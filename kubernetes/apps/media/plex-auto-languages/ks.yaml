@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: plex
-  path: ./kubernetes/main/apps/media/plex-auto-languages/app
+  path: ./kubernetes/apps/media/plex-auto-languages/app
   prune: true
   sourceRef:
     kind: GitRepository

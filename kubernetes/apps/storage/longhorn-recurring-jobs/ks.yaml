@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: longhorn
-  path: ./kubernetes/main/apps/storage/longhorn-recurring-jobs/app
+  path: ./kubernetes/apps/storage/longhorn-recurring-jobs/app
   prune: true
   sourceRef:
     kind: GitRepository

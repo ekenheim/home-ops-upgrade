@@ -16,7 +16,7 @@ spec:
     - name: tautulli
     - name: radarr
     - name: sonarr
-  path: ./kubernetes/main/apps/media/plex-meta-manager/app
+  path: ./kubernetes/apps/media/plex-meta-manager/app
   prune: true
   sourceRef:
     kind: GitRepository

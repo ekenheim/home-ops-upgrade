@@ -14,7 +14,7 @@ spec:
     - name: authentik-redis
     - name: cloudnative-pg-cluster
     - name: external-secrets
-  path: ./kubernetes/main/apps/security/authentik/app
+  path: ./kubernetes/apps/security/authentik/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -38,7 +38,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/main/apps/security/authentik/redis
+  path: ./kubernetes/apps/security/authentik/redis
   prune: true
   sourceRef:
     kind: GitRepository

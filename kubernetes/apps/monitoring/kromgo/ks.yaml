@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: thanos
-  path: ./kubernetes/main/apps/monitoring/kromgo/app
+  path: ./kubernetes/apps/monitoring/kromgo/app
   prune: true
   sourceRef:
     kind: GitRepository

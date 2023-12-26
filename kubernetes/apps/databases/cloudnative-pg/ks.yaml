@@ -34,7 +34,7 @@ spec:
   dependsOn:
     - name: cloudnative-pg
     - name: external-secrets
-  path: ./kubernetes/main/apps/database/cloudnative-pg/cluster
+  path: ./kubernetes/apps/database/cloudnative-pg/cluster
   prune: true
   sourceRef:
     kind: GitRepository

@@ -14,5 +14,5 @@ resources:
   #- ./paperless/ks.yaml
   - ./syncthing/ks.yaml
   - ./thelounge/ks.yaml
-  - ./theme-park/ks.yaml
+  #- ./theme-park/ks.yaml
   #- ./zigbee2mqtt/ks.yaml

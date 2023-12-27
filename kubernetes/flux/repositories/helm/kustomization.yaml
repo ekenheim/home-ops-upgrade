@@ -33,3 +33,4 @@ resources:
   - ./longhorn.yaml
   - ./tf-controller.yaml
   - ./tyzbit.yaml
+  - ./xenitab.yaml

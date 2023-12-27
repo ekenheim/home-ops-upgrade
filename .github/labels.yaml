@@ -1,10 +1,8 @@
 ---
-# Area
-- name: area/addons
-  color: "0e8a16"
+# Areas
 - name: area/ansible
   color: "0e8a16"
-- name: area/bootstrap
+- name: area/docs
   color: "0e8a16"
 - name: area/github
   color: "0e8a16"
@@ -12,26 +10,39 @@
   color: "0e8a16"
 - name: area/taskfile
   color: "0e8a16"
-# Renovate
+- name: area/terraform
+  color: "0e8a16"
+# Clusters
+- name: cluster/main
+  color: "ffc300"
+- name: cluster/test
+  color: "ffc300"
+# Renovate Types
 - name: renovate/ansible
   color: "027fa0"
 - name: renovate/container
   color: "027fa0"
 - name: renovate/github-action
   color: "027fa0"
+- name: renovate/grafana-dashboard
+  color: "027fa0"
 - name: renovate/github-release
   color: "027fa0"
 - name: renovate/helm
   color: "027fa0"
-# Semantic Type
+- name: renovate/terraform
+  color: "027fa0"
+# Semantic Types
+- name: type/digest
+  color: "ffeC19"
 - name: type/patch
-  color: "ffec19"
+  color: "ffeC19"
 - name: type/minor
   color: "ff9800"
 - name: type/major
   color: "f6412d"
-- name: type/break
-  color: "f6412d"
 # Uncategorized
 - name: hold/upstream
   color: "ee0701"
+- name: lint/lychee
+  color: "201e39"

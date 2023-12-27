@@ -1,6 +1,5 @@
----
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: "Flux Diff"
+name: "Flux Image Test"
 
 on:
   pull_request:
@@ -25,7 +24,7 @@ jobs:
           app-id: "${{ secrets.BOT_APP_ID }}"
           private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
 
-      - name: Checkout Default Branch Default Branch
+      - name: Checkout Default Branch
         uses: actions/checkout@v4
         with:
           token: "${{ steps.app-token.outputs.token }}"
@@ -44,8 +43,8 @@ jobs:
       - name: List All Changed Files
         run: echo "${{ steps.changed-files.outputs.all_changed_and_modified_files }}"
 
-  flux-diff:
-    name: Flux Diff
+  extract-images:
+    name: Extract Images
     runs-on: ubuntu-latest
     needs: ["changed-files"]
     permissions:
@@ -53,9 +52,10 @@ jobs:
     strategy:
       matrix:
         paths: ${{ fromJSON(needs.changed-files.outputs.matrix) }}
-        resources: ["helmrelease", "kustomization"]
       max-parallel: 4
       fail-fast: false
+    outputs:
+      matrix: ${{ steps.extract-images.outputs.images }}
     steps:
       - name: Generate Token
         uses: actions/create-github-app-token@v1
@@ -66,61 +66,83 @@ jobs:
 
       - name: Setup System Tools
         shell: bash
-        run: sudo apt-get -qq update && sudo apt-get -qq install --no-install-recommends -y curl git
+        run: sudo apt-get -qq update && sudo apt-get -qq install --no-install-recommends -y curl git jo
 
-      - name: Checkout Default Branch Default Branch
+      - name: Setup Workflow Tools
+        uses: jdx/rtx-action@v1
+        with:
+          install: true
+          rtx_toml: |
+            [tools]
+            flux2 = "latest"
+            yq = "latest"
+      - name: Checkout Default Branch
         uses: actions/checkout@v4
         with:
           token: "${{ steps.app-token.outputs.token }}"
           ref: "${{ github.event.repository.default_branch }}"
           path: default
 
-      - name: Checkout Default Branch Pull Request Branch
+      - name: Checkout Pull Request Branch
         uses: actions/checkout@v4
         with:
           token: "${{ steps.app-token.outputs.token }}"
           path: pull
 
-      - name: Diff Resources
-        uses: docker://ghcr.io/allenporter/flux-local:main
+      - name: Gather Images in Default Branch
+        uses: docker://ghcr.io/allenporter/flux-local:pr-472
         with:
           args: >-
-            --log-level DEBUG
-            diff ${{ matrix.resources }}
-            --unified 6
-            --path-orig /github/workspace/default/${{ matrix.paths }}
-            --path /github/workspace/pull/${{ matrix.paths }}
-            --strip-attrs "helm.sh/chart,checksum/config,app.kubernetes.io/version,chart"
-            --limit-bytes 10000
-            --all-namespaces
-            --sources "home-kubernetes"
-            --output-file diff.patch
-
-      - name: Generate Diff
-        id: diff
-        run: |
-          cat diff.patch
-          echo "diff<<EOF" >> $GITHUB_OUTPUT
-          cat diff.patch >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - if: ${{ steps.diff.outputs.diff != '' }}
-        name: Add comment
-        uses: mshick/add-pr-comment@v2.8.1
+            get cluster
+            --path /github/workspace/default/${{ matrix.paths }}
+            --enable-images
+            --output yaml
+            --output-file default.yaml
+      - name: Gather Images in Pull Request Branch
+        uses: docker://ghcr.io/allenporter/flux-local:pr-472
         with:
-          repo-token: "${{ steps.app-token.outputs.token }}"
-          message-id: "${{ github.event.pull_request.number }}/${{ matrix.paths }}/${{ matrix.resources }}"
-          message-failure: Diff was not successful
-          message: |
-            ```diff
-            ${{ steps.diff.outputs.diff }}
-            ```
+          args: >-
+            get cluster
+            --path /github/workspace/pull/${{ matrix.paths }}
+            --enable-images
+            --output yaml
+            --output-file pull.yaml
+      - name: Filter Default Branch Results
+        shell: bash
+        run: |
+          yq -r '[.. | .images? | select(. != null)] | flatten | sort | unique | .[]' \
+              default.yaml > default.txt
+      - name: Filter Pull Request Branch Results
+        shell: bash
+        run: |
+          yq -r '[.. | .images? | select(. != null)] | flatten | sort | unique | .[]' \
+              pull.yaml > pull.txt
+      - name: Compare Default and Pull Request Images
+        id: extract-images
+        shell: bash
+        run: |
+          images=$(jo -a $(grep -vf default.txt pull.txt))
+          echo "images=${images}" >> $GITHUB_OUTPUT
+          echo "${images}"
+  test-images:
+    if: ${{ needs.extract-images.outputs.matrix != '[]' }}
+    name: Test images
+    runs-on: ubuntu-latest
+    needs: ["extract-images"]
+    strategy:
+      matrix:
+        images: ${{ fromJSON(needs.extract-images.outputs.matrix) }}
+      max-parallel: 4
+      fail-fast: false
+    steps:
+      - name: Test Images
+        run: docker pull ${{ matrix.images }}
 
   # Summarize matrix https://github.community/t/status-check-for-a-matrix-jobs/127354/7
-  flux-diff-success:
+  test-images-success:
     if: ${{ always() }}
-    needs: ["flux-diff"]
-    name: Flux Diff Successful
+    needs: ["test-images"]
+    name: Test Images Successful
     runs-on: ubuntu-latest
     steps:
       - if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}

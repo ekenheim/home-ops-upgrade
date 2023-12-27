@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: "Lychee"
 
 on:
@@ -17,20 +18,34 @@ jobs:
     name: Lychee
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Generate Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: "${{ secrets.BOT_APP_ID }}"
+          private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
 
-      - name: Scan for broken links
+      - name: Checkout Default Branch
+        uses: actions/checkout@v4
+        with:
+          token: "${{ steps.app-token.outputs.token }}"
+
+      - name: Scan For Broken Links
         uses: lycheeverse/lychee-action@v1
+        env:
+          GITHUB_TOKEN: "${{ steps.app-token.outputs.token }}"
         with:
           args: --verbose --no-progress --exclude-mail './**/*.md'
-          output: /tmp/results.md
+          output: /github/workspace/results.md
+
+      - name: Print Output
+        run: cat /github/workspace/results.md
 
       - name: Find Link Checker Issue
         id: find-issue
         shell: bash
         env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GH_TOKEN: "${{ steps.app-token.outputs.token }}"
         run: |
           issue_number=$( \
               gh issue list \
@@ -42,9 +57,10 @@ jobs:
           echo "issue-number=${issue_number}" >> $GITHUB_OUTPUT
           echo "${issue_number}"
 
-      - name: Update Issue
+      - name: Create or Update Issue
         uses: peter-evans/create-issue-from-file@v4
         with:
+          token: "${{ steps.app-token.outputs.token }}"
           title: "${{ env.WORKFLOW_ISSUE_TITLE }}"
           issue-number: "${{ steps.find-issue.outputs.issue-number || '' }}"
-          content-filepath: /tmp/results.md
+          content-filepath: /github/workspace/results.md

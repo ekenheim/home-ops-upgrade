@@ -46,7 +46,7 @@ data:
               href: 'https://kubesearch.dev/'
         - k3s-home-cluster:
             - icon: github.png
-              href: 'https://github.com/LilDrunkenSmurf/k3s-home-cluster'
+              href: 'https://github.com/ekenhome/home-ops-upgrade'
   docker.yaml: ""
   kubernetes.yaml: |
     mode: cluster

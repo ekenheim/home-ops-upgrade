@@ -13,7 +13,7 @@ resources:
   - ./kube-state-metrics/ks.yaml
   - ./loki/ks.yaml
   - ./node-exporter/ks.yaml
-  - ./speedtest/ks.yaml
+  - ./speedtest-exporter/ks.yaml
   - ./thanos/ks.yaml
   - ./unifi-poller/ks.yaml
   - ./vector/ks.yaml

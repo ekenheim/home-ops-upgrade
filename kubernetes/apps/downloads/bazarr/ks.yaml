@@ -13,6 +13,7 @@ spec:
   dependsOn:
     - name: cloudnative-pg-cluster
     - name: external-secrets-bitwarden
+    - name: longhorn
   path: ./kubernetes/apps/downloads/bazarr/app
   prune: true
   sourceRef:

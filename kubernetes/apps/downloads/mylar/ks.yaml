@@ -10,6 +10,9 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  dependsOn:
+    - name: longhorn
+    - name: external-secrets-bitwarden
   path: ./kubernetes/apps/downloads/mylar/app
   prune: true
   sourceRef:

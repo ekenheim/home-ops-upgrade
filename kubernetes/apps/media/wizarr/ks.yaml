@@ -13,6 +13,7 @@ spec:
   dependsOn:
     - name: plex
     - name: overseerr
+    - name: longhorn
   path: ./kubernetes/apps/media/wizarr/app
   prune: true
   sourceRef:

@@ -12,6 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: intel-device-plugins-gpu
+    - name: longhorn
   path: ./kubernetes/apps/media/plex/app
   prune: true
   sourceRef:

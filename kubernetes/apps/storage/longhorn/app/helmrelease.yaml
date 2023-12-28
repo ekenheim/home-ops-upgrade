@@ -32,12 +32,12 @@ spec:
       enabled: true
       createPrometheusRules: true
     defaultSettings:
-      backupTarget: "s3://k3s-longhorn@eu-west-1/"
+      backupTarget: "s3://myminio/k3s-longhorn@eu-west-1/"
       backupTargetCredentialSecret: longhorn-secret
       defaultReplicaCount: 3
       backupstorePollInterval: 0
       createDefaultDiskLabeledNodes: true
-      defaultDataPath: /mnt/external/longhorn
+      defaultDataPath: /home/
       restoreVolumeRecurringJobs: true
       storageOverProvisioningPercentage: 100
       storageMinimalAvailablePercentage: 1

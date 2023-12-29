@@ -23,9 +23,9 @@ area/terraform:
 # Cluster
 cluster/main:
   - changed-files:
-      - any-glob-to-any-file: ansible/main/**/*
-      - any-glob-to-any-file: kubernetes/main/**/*
-      - any-glob-to-any-file: terraform/main/**/*
+      - any-glob-to-any-file: ansible/**/*
+      - any-glob-to-any-file: kubernetes/**/*
+      - any-glob-to-any-file: terraform/**/*
 cluster/test:
   - changed-files:
       - any-glob-to-any-file: ansible/test/**/*

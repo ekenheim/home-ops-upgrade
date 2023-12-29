@@ -48,3 +48,7 @@ spec:
               nfs:
                 server: ${NAS_IP:=temp}
                 path: ${SECRET_NFS_POSTGRES:=temp}
+                mountOptions:
+                  - "vers=4"  # NFS version 4
+                  - "username=root"
+                  - "password=striker3"

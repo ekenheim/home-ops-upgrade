@@ -117,9 +117,9 @@ spec:
     persistence:
       config:
         enabled: true
-        name: *app
-        size: 4Gi
-        #existingClaim: *app
+       # name: *app
+       # size: 4Gi
+        existingClaim: *app
       data:
         enabled: true
         type: nfs

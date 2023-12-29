@@ -33,5 +33,5 @@ data "sops_file" "bw_secrets" {
 
 module "secrets_s3" {
   source = "./modules/get-secret"
-  id     = "5a98804c-6c54-4e09-817e-afd8012c70ad"
+  id     = "b01f6ec7-aeda-4c0a-a82e-b0e700c61800"
 }

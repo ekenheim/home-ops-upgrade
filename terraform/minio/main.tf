@@ -1,12 +1,14 @@
+locals {
+  buckets = [
+    "loki",
+    "longhorn",
+    "postgresql",
+    "thanos",
+    "volsync"
+  ]
+}
+
 terraform {
-  cloud {
-    organization = "arthurgeek"
-
-    workspaces {
-      name = "arpa-home-minio"
-    }
-  }
-
   required_providers {
     bitwarden = {
       source  = "maxlaverse/bitwarden"
@@ -18,16 +20,6 @@ terraform {
       version = "2.0.1"
     }
   }
-}
-
-locals {
-  buckets = [
-    "loki",
-    "longhorn",
-    "postgresql",
-    "thanos",
-    "volsync"
-  ]
 }
 
 module "secrets_s3" {

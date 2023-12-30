@@ -9,7 +9,7 @@ resource "minio_iam_user" "user" {
 }
 
 resource "minio_iam_policy" "policy" {
-  name   = "${var.bucket_name}-policy"
+  name = "${var.bucket_name}-policy"
   policy = <<EOF
 {
     "Version": "2012-10-17",

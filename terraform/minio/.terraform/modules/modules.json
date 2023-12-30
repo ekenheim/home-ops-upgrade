@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"buckets","Source":"./modules/minio","Dir":"modules/minio"},{"Key":"secrets","Source":"./modules/create-secret","Dir":"modules/create-secret"},{"Key":"secrets_s3","Source":"./modules/get-secret","Dir":"modules/get-secret"}]}

@@ -3,7 +3,6 @@ provider "bitwarden" {
   client_id = var.bw_client_id
   client_secret = var.bw_client_secret
   email = var.bw_email
-  server = var.bw_server
 }
 
 provider minio {

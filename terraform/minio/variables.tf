@@ -16,11 +16,11 @@ variable "bw_client_secret" {
   sensitive   = true
 }
 
-variable "bw_server" {
-  type        = string
-  description = "Bitwarden Host Server"
-  sensitive   = true
-}
+#variable "bw_server" {
+#  type        = string
+#  description = "Bitwarden Host Server"
+#  sensitive   = true
+#}
 
 variable "bw_email" {
   type        = string

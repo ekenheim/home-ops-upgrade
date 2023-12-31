@@ -1,14 +1,14 @@
 variable "name" {
-  type = string
+  type        = string
   description = "Secret name"
 }
 
 variable "username" {
-  type = string
+  type        = string
   description = "Secret username"
 }
 
 variable "password" {
-  type = string
+  type        = string
   description = "Secret password"
 }

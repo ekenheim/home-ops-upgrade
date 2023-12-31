@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -11,26 +12,24 @@ resources:
   - ./cilium.yaml
   - ./cloudnative-pg.yaml
   - ./coredns.yaml
-  - ./csi-driver-nfs.yaml
+  - ./democratic-csi.yaml
   - ./descheduler.yaml
   - ./external-dns.yaml
   - ./external-secrets.yaml
   - ./fairwinds.yaml
   - ./grafana.yaml
-  - ./hajimari.yaml
   - ./homepage.yaml
   - ./ingress-nginx.yaml
   - ./intel.yaml
   - ./jetstack.yaml
   - ./k8s-gateway.yaml
-  - ./kubernetes-dashboard.yaml
   - ./kubernetes-sigs-nfd.yaml
-  - ./longhorn.yaml
   - ./metrics-server.yaml
+  - ./minecraft.yaml
   - ./piraeus.yaml
   - ./prometheus-community.yaml
+  - ./rook-ceph.yaml
   - ./stakater.yaml
   - ./tf-controller.yaml
-  - ./tyzbit.yaml
   - ./weave-gitops.yaml
   - ./xenitab.yaml

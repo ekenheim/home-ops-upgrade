@@ -11,6 +11,7 @@
         "./ansible/**/*.yaml": "ansible",
         "./ansible/**/*.sops.yaml": "yaml",
         "./ansible/**/inventory/**/*.yaml": "yaml",
+        "*/terraform/**/*.tf": "terraform",
         "./kubernetes/**/*.sops.toml": "plaintext"
     },
     "sops.defaults.ageKeyFile": "age.key",

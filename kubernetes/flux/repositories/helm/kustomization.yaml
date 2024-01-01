@@ -25,6 +25,7 @@ resources:
   - ./longhorn.yaml
   - ./k8s-gateway.yaml
   - ./kubernetes-sigs-nfd.yaml
+  - ./kubernetes-dashboard.yaml
   - ./metrics-server.yaml
   #- ./minecraft.yaml
   - ./piraeus.yaml

@@ -22,13 +22,14 @@ resources:
   - ./ingress-nginx.yaml
   - ./intel.yaml
   - ./jetstack.yaml
+  - ./longhorn.yaml
   - ./k8s-gateway.yaml
   - ./kubernetes-sigs-nfd.yaml
   - ./metrics-server.yaml
   #- ./minecraft.yaml
   - ./piraeus.yaml
   - ./prometheus-community.yaml
-  - ./rook-ceph.yaml
+  #- ./rook-ceph.yaml
   - ./stakater.yaml
   - ./tf-controller.yaml
   - ./weave-gitops.yaml

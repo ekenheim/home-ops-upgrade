@@ -34,3 +34,4 @@ resources:
   - ./tf-controller.yaml
   - ./weave-gitops.yaml
   - ./xenitab.yaml
+  - ./tyzbit.yaml

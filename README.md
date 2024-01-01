@@ -32,7 +32,7 @@ This template implements Flux in a way that promotes legibility and ease of use 
 - [ ] run the cluster on bare metal machines or VMs within your home network &mdash; **this is NOT designed for cloud environments**.
 - [ ] have Debian 12 freshly installed on 1 or more AMD64/ARM64 bare metal machines or VMs. Each machine will be either a **control node** or a **worker node** in your cluster.
 - [ ] give your nodes unrestricted internet access &mdash; **air-gapped environments won't work**.
-- [ ] have a domain you can manage on Cloudflare.
+- [ ] have a domain you can manage on Cloudflare .
 - [ ] be willing to commit encrypted secrets to a public GitHub repository.
 - [ ] have a DNS server that supports split DNS (e.g. Pi-Hole) deployed somewhere outside your cluster **ON** your home network.
 

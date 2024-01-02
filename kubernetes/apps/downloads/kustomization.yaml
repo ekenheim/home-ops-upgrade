@@ -10,7 +10,7 @@ resources:
   #- ./flaresolverr/ks.yaml
   #- ./kapowarr/ks.yaml
   #- ./mylar/ks.yaml
-  #- ./prowlarr/ks.yaml
+  - ./prowlarr/ks.yaml
   #- ./qbittorrent/ks.yaml
   - ./radarr/ks.yaml
   #- ./readarr/ks.yaml

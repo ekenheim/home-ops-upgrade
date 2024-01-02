@@ -21,7 +21,7 @@ spec:
           kind: ClusterSecretStore
       remoteRef:
         key: 63d9bf1d-0130-453c-bf30-b0e700a64088
-        property: r2_restic_endpoint
+        property: restic_endpoint
     - secretKey: RESTIC_PASSWORD
       sourceRef:
         storeRef:
@@ -37,7 +37,7 @@ spec:
           kind: ClusterSecretStore
       remoteRef:
         key: 63d9bf1d-0130-453c-bf30-b0e700a64088
-        property: r2_access_key_id
+        property: access_key_id
     - secretKey: AWS_SECRET_ACCESS_KEY
       sourceRef:
         storeRef:
@@ -45,7 +45,7 @@ spec:
           kind: ClusterSecretStore
       remoteRef:
         key: 63d9bf1d-0130-453c-bf30-b0e700a64088
-        property: r2_secret_key
+        property: secret_key
 ---
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource

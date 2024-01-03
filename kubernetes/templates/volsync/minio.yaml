@@ -22,6 +22,7 @@ spec:
       remoteRef:
         key: b01f6ec7-aeda-4c0a-a82e-b0e700c61800
         property: restic_endpoint
+
     - secretKey: RESTIC_PASSWORD
       sourceRef:
         storeRef:

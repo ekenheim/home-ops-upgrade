@@ -21,7 +21,7 @@ spec:
           kind: ClusterSecretStore
       remoteRef:
         key: 63d9bf1d-0130-453c-bf30-b0e700a64088
-        property: restic_endpoint_
+        property: endpoint
     - secretKey: RESTIC_PASSWORD
       sourceRef:
         storeRef:

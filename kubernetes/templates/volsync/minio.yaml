@@ -20,7 +20,7 @@ spec:
           name: bitwarden-fields
           kind: ClusterSecretStore
       remoteRef:
-        key: b01f6ec7-aeda-4c0a-a82e-b0e700c61800
+        key: 63d9bf1d-0130-453c-bf30-b0e700a64088
         property: restic_endpoint
     - secretKey: RESTIC_PASSWORD
       sourceRef:

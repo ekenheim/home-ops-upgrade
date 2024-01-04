@@ -95,4 +95,5 @@ spec:
         server: ${NAS_IP:=temp}
         path: ${SECRET_NFS_SYNCTHING:=temp}
         globalMounts:
-          - path: /var/syncthing
+          - path: /data
+            subPath: syncthing

@@ -50,7 +50,6 @@ tasks:
     desc: Unlock a Restic repository for an application
     summary: |
       Args:
-        cluster: Cluster to run command against (required)
         ns: Namespace the PVC is in (default: default)
         app: Application to unlock (required)
     cmds:
@@ -149,7 +148,6 @@ tasks:
     desc: Unstick a hung backup job
     summary: |
       Args:
-        cluster: Cluster to run command against (required)
         ns: Namespace the PVC is in (default: default)
         app: Application to unstick (required)
     cmds:

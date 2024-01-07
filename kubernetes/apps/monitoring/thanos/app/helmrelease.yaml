@@ -58,8 +58,7 @@ spec:
       dnsDiscovery:
         sidecarsService: kube-prometheus-stack-thanos-discovery
         sidecarsNamespace: monitoring
-      stores:
-        - "thanos-svc.${SECRET_DOMAIN}:10901"
+      stores: []
     bucketweb:
       enabled: true
       replicaCount: 2

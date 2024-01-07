@@ -7,14 +7,14 @@ resources:
   - ./kubernetes-dashboard/ks.yaml
   - ./alertmanager/ks.yaml
   - ./goldilocks/ks.yaml
-  #- ./karma/ks.yaml
-  #- ./kromgo/ks.yaml
+  - ./karma/ks.yaml
+  - ./kromgo/ks.yaml
   - ./kube-prometheus-stack/ks.yaml
   - ./kube-state-metrics/ks.yaml
   - ./loki/ks.yaml
-  #- ./node-exporter/ks.yaml
-  #- ./speedtest-exporter/ks.yaml
-  #- ./thanos/ks.yaml
+  - ./node-exporter/ks.yaml
+  - ./speedtest-exporter/ks.yaml
+  - ./thanos/ks.yaml
   #- ./unifi-poller/ks.yaml
   - ./vector/ks.yaml
   - ./vpa/ks.yaml

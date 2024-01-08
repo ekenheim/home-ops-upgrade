@@ -40,6 +40,7 @@ spec:
               tag: 9.6.2@sha256:cf5eac533babba885390f1fd674d41299dc4e425b3ffde1a813a07af29234469
             env:
               TZ: ${TIMEZONE}
+              ZWAVE_SERIAL_PORT: /dev/serial/by-id/usb-0658_0200-if00
             probes:
               liveness: &probes
                 enabled: true

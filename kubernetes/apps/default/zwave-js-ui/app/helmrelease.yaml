@@ -79,7 +79,7 @@ spec:
                 service:
                   name: main
                   port: http
-          - host: &customHost hass.${SECRET_DOMAIN}
+          - host: &customHost zwave.${SECRET_DOMAIN}
             paths:
               - path: /
                 pathType: Prefix

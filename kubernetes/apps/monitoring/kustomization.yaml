@@ -15,6 +15,6 @@ resources:
   - ./node-exporter/ks.yaml
   - ./speedtest-exporter/ks.yaml
   #- ./thanos/ks.yaml
-  #- ./unifi-poller/ks.yaml
+  - ./unifi-poller/ks.yaml
   - ./vector/ks.yaml
   - ./vpa/ks.yaml

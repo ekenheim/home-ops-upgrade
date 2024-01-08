@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
-  name: &app zwave-js-ui
+  name: zwave-js-ui
 spec:
   interval: 30m
   chart:
@@ -14,7 +14,6 @@ spec:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
@@ -27,6 +26,8 @@ spec:
   dependsOn:
     - name: longhorn
       namespace: storage
+    - name: volsync
+      namespace: storage
   values:
     controllers:
       main:
@@ -36,36 +37,44 @@ spec:
           main:
             image:
               repository: ghcr.io/zwave-js/zwave-js-ui
-              tag: 9.6.2
+              tag: 9.6.2@sha256:cf5eac533babba885390f1fd674d41299dc4e425b3ffde1a813a07af29234469
             env:
               TZ: ${TIMEZONE}
             probes:
-              liveness:
-                enabled: false
-              readiness:
-                enabled: false
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: &port 8091
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
               startup:
                 enabled: false
+            securityContext:
+              privileged: true
             resources:
               requests:
-                cpu: 50m
-                memory: 400Mi
+                cpu: 10m
               limits:
-                memory: 700Mi
+                memory: 512Mi
         pod:
-          securityContext:
-            runAsUser: 568
-            runAsGroup: 568
-            fsGroup: 568
-            fsGroupChangePolicy: OnRootMismatch
+          nodeSelector:
+            aeotec.feature.node.kubernetes.io/zwave: "true"
     service:
       main:
         ports:
           http:
-            port: &port 8091
+            port: *port
           websocket:
-            enabled: true
             port: 3000
+    serviceMonitor:
+      main:
+        enabled: true # requires https://github.com/kvaster/zwavejs-prom
     ingress:
       main:
         enabled: true
@@ -84,10 +93,11 @@ spec:
       config:
         enabled: true
         existingClaim: *app
+        globalMounts:
+          - path: /usr/src/app/store
       usb:
-        enabled: true
         type: hostPath
-        hostPath: /dev/ttyACM0
+        hostPath: /dev/serial/by-id/usb-0658_0200-if00
         hostPathType: CharDevice
-    nodeSelector:
-      aeotec.feature.node.kubernetes.io/zwave: "true"
+        globalMounts:
+          - path: /dev/serial/by-id/usb-0658_0200-if00

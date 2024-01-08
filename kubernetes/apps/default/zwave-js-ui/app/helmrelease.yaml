@@ -69,7 +69,7 @@ spec:
       main:
         ports:
           http:
-            port: *port
+            port: 8091
           websocket:
             port: 3000
     serviceMonitor:

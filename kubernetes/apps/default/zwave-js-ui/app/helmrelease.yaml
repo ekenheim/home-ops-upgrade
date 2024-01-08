@@ -71,13 +71,6 @@ spec:
         enabled: true
         className: external
         annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Home
-          gethomepage.dev/name: Home-Assistant
-          gethomepage.dev/icon: home-assistant.png
-          gethomepage.dev/widget.type: homeassistant
-          gethomepage.dev/widget.url: http://home-assistant.default:8123
-          gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_HASS_TOKEN}}"
           external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
         hosts:
           - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
@@ -104,7 +97,7 @@ spec:
       usb:
         enabled: true
         type: hostPath
-        hostPath: /dev/serial/by-id/usb-0658_0200-if00
+        hostPath: /dev/ttyACM0
         hostPathType: CharDevice
     nodeSelector:
       aeotec.feature.node.kubernetes.io/zwave: "true"

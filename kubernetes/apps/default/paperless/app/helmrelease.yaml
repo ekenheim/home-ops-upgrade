@@ -103,4 +103,4 @@ spec:
         advancedMounts:
           main:
             main:
-              - path: /data/nas
+              - path: /data

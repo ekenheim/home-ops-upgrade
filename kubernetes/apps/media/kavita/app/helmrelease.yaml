@@ -90,7 +90,7 @@ spec:
           main:
             main:
               - path: /kavita/config
-      media:
+      data:
         enabled: true
         type: nfs
         server: ${NAS_IP:=temp}

@@ -337,7 +337,7 @@ sonarr:
             score: -10000  # Adjust scoring as desired
 
 radarr:
-  standard:
+  standard2:
     base_url: http://radarr.downloads.svc.cluster.local
     api_key: !env_var RADARR_API_KEY
 

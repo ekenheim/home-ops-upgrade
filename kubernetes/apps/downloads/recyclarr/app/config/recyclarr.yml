@@ -365,8 +365,6 @@ radarr:
               - WEBDL-1080p
               - WEBRip-1080p
       - name: HD - Anime
-        reset_unmatched_scores:
-          enabled: true
         upgrade:
           allowed: true
           until_quality: Remux-1080p

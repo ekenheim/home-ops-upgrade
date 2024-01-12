@@ -23,7 +23,7 @@ libraries:
       mass_episode_critic_rating_update: mdb_metacritic
       mass_episode_user_rating_update: imdb
     sonarr:
-      root_folder_path: /data/media/anime
+      root_folder_path: /data/media/cartoons
       quality_profile: HD - Anime
       series_type: anime
 
@@ -145,7 +145,7 @@ sonarr:
   token: {{ .SONARR_APIKEY }}
   add_missing: false
   add_existing: false
-  root_folder_path: /data/media/tv
+  root_folder_path: /data/media/series
   monitor: all
   quality_profile: HD
   language_profile: English

@@ -1,6 +1,6 @@
 ---
 libraries:
-  Anime:     # this library overrides sonarr root path and profile
+  Cartoons:     # this library overrides sonarr root path and profile
     metadata_path:
       - repo: Anime.yml
       - pmm: basic
@@ -32,7 +32,6 @@ libraries:
       - file: config/Pre-rolls.yml #Mounted by Kustomization
       - repo: Movies.yml
       - repo: Movies - Holidays by Drazzizzi.yml
-      - repo: Movies - Trakt (Unplayed) by Magic815.yml
       - pmm: basic
       - pmm: imdb
     overlay_path:
@@ -50,7 +49,7 @@ libraries:
       mass_critic_rating_update: mdb_metacritic
       mass_user_rating_update: imdb
 
-  TV Shows:
+  Series:
     metadata_path:
       - repo: TV Shows.yml
       - pmm: basic
@@ -164,18 +163,6 @@ tmdb:
   language: en
   cache_expiration: 60
   region:
-
-trakt:
-  client_id: {{ .TRAKT_CLIENT_ID }}
-  client_secret: {{ .TRAKT_CLIENT_SECRET }}
-  authorization:
-    access_token: {{ .TRAKT_ACCESS_TOKEN }}
-    token_type: Bearer
-    expires_in: {{ .TRAKT_EXPIRES_IN }}
-    refresh_token: {{ .TRAKT_REFRESH_TOKEN }}
-    scope: public
-    created_at: {{ .TRAKT_CREATED_AT }}
-  pin:
 
 mdblist:
   apikey: {{ .MDBLIST_APIKEY }}

@@ -101,4 +101,6 @@ spec:
           - path: /data
             subPath: Media
       transcode:
+        enabled: true
         type: emptyDir
+

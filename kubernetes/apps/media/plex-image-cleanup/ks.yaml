@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: plex
-  path: ./kubernetes/main/apps/media/plex-image-cleanup/app
+  path: ./kubernetes/apps/media/plex-image-cleanup/app
   prune: true
   sourceRef:
     kind: GitRepository

@@ -55,10 +55,10 @@ spec:
         enabled: true
         className: external
         annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Media
-          gethomepage.dev/name: Wizarr
-          gethomepage.dev/icon: wizarr.png
+          # gethomepage.dev/enabled: "true"
+          # gethomepage.dev/group: Media
+          # gethomepage.dev/name: Wizarr
+          #gethomepage.dev/icon: wizarr.png
           # gethomepage.dev/widget.type: wizarr
           # gethomepage.dev/widget.url: http://wizarr.media.svc.cluster.local:5690
           # gethomepage.dev/widget.key: ${WIZARR_TOKEN}

@@ -55,22 +55,17 @@ spec:
         enabled: true
         className: external
         annotations:
-          # gethomepage.dev/enabled: "true"
-          # gethomepage.dev/group: Media
-          # gethomepage.dev/name: Wizarr
-          #gethomepage.dev/icon: wizarr.png
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: Media
+          gethomepage.dev/name: Wizarr
+          gethomepage.dev/icon: wizarr.png
+          gethomepage.dev/description: Plex Invite Management
           # gethomepage.dev/widget.type: wizarr
           # gethomepage.dev/widget.url: http://wizarr.media.svc.cluster.local:5690
           # gethomepage.dev/widget.key: ${WIZARR_TOKEN}
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
         hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  name: main
-                  port: http
-          - host: &customHost join.${SECRET_DOMAIN}
+          - host: &host join.${SECRET_DOMAIN}
             paths:
               - path: /
                 pathType: Prefix
@@ -80,8 +75,11 @@ spec:
         tls:
           - hosts:
               - *host
-              - *customHost
     persistence:
       config:
         enabled: true
         existingClaim: *app
+        advancedMounts:
+          main:
+            main:
+              - path: /data/database

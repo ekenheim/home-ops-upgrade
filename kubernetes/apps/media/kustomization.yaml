@@ -13,4 +13,4 @@ resources:
   - ./plex-image-cleanup/ks.yaml
   - ./plex-meta-manager/ks.yaml
   - ./tautulli/ks.yaml
-  - ./wizarr/ks.yaml
+  #- ./wizarr/ks.yaml

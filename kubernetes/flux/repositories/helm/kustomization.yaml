@@ -37,3 +37,6 @@ resources:
   - ./xenitab.yaml
   - ./prefect.yaml
   - ./tyzbit.yaml
+  - ./movetokube.yaml
+  - ./windmill.yaml
+  - ./jupyterhub.yaml

@@ -18,3 +18,4 @@ resources:
   - ./unifi-poller/ks.yaml
   - ./vector/ks.yaml
   - ./vpa/ks.yaml
+  - ./gatus/ks.yaml

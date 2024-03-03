@@ -7,5 +7,5 @@ resources:
   #- ./mc-dns.yaml
   #- ./mesh-ingress.yaml
   #- ./portainer-ingress.yaml
-  #- ./tdarr-ingress.yaml
+  - ./tdarr-ingress.yaml
   #- ./vpn-endpoint.yaml

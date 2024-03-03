@@ -1,0 +1,38 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: prefect-ui
+  namespace: default
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: prefect/prefect-ui
+      version: 2.16.1
+      sourceRef:
+        kind: HelmRepository
+        name: prefect
+        namespace: flux-system
+  values:
+    # Common Values (if applicable)
+    commonAnnotations: {}
+    commonLabels: {}
+
+    # UI-Specific Values
+    ui:
+      prefectApiUrl: http://prefect-server.default.svc.cluster.local:4200/api
+      # ... other Prefect-UI settings ...
+
+    # Ingress (if exposing the UI externally)
+    ingress:
+      enabled: true
+      hosts:
+        - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              service:
+                name: prefect-ui
+                port: 8080  # Or your UI port
+      tls:
+      - hosts:
+          - *host

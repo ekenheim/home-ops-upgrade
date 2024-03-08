@@ -39,4 +39,5 @@ resources:
   - ./tyzbit.yaml
   - ./movetokube.yaml
   - ./windmill.yaml
+  - ./dragonfly.yaml
   #- ./jupyterhub.yaml

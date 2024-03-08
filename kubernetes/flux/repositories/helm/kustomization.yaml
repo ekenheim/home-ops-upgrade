@@ -39,4 +39,4 @@ resources:
   - ./tyzbit.yaml
   - ./movetokube.yaml
   - ./windmill.yaml
-  - ./jupyterhub.yaml
+  #- ./jupyterhub.yaml

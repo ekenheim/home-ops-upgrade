@@ -41,4 +41,5 @@ resources:
   - ./windmill.yaml
   - ./dragonfly.yaml
   - ./openebs.yaml
+  - ./crunchydata.yaml
   #- ./jupyterhub.yaml

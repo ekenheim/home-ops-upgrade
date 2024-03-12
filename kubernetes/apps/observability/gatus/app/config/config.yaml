@@ -1,0 +1,29 @@
+---
+web:
+  port: ${CUSTOM_WEB_PORT}
+storage:
+  type: postgres
+  path: ${POSTGRES_URI}?sslmode=require
+  caching: true
+metrics: true
+debug: false
+ui:
+  title: Health Status
+  header: Health Status
+  logo: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/lds-transparent.png
+alerting:
+  discord:
+    webhook-url: ${DISCORD_WEBHOOK_URL}
+    default-alert:
+      description: health-check failed
+      send-on-resolved: true
+      failure-threshold: 5
+      success-threshold: 2
+connectivity:
+  checker:
+    target: 1.1.1.1:53
+    interval: 1m
+remote:
+  instances:
+    - endpoint-prefix: "pi-"
+      url: "https://status.${PI_DOMAIN}/api/v1/endpoints/statuses"

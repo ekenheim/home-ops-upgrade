@@ -40,4 +40,5 @@ resources:
   - ./movetokube.yaml
   - ./windmill.yaml
   - ./dragonfly.yaml
+  - ./openebs.yaml
   #- ./jupyterhub.yaml

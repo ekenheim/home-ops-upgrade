@@ -3,8 +3,8 @@
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
 metadata:
-  name: external-secrets
+  name: openebs
   namespace: flux-system
 spec:
-  interval: 2h
-  url: https://charts.external-secrets.io
+  interval: 1h
+  url: https://openebs.github.io/charts

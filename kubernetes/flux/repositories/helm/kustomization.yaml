@@ -42,4 +42,5 @@ resources:
   - ./dragonfly.yaml
   - ./openebs.yaml
   - ./crunchydata.yaml
+  - ./rook-ceph.yaml
   #- ./jupyterhub.yaml

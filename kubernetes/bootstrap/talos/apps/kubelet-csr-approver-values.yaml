@@ -1,3 +1,0 @@
----
-providerRegex: ^(master1|master2|master3)$
-bypassDnsResolution: true

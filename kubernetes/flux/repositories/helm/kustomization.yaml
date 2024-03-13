@@ -43,4 +43,5 @@ resources:
   - ./openebs.yaml
   - ./crunchydata.yaml
   - ./rook-ceph.yaml
+  - ./postfinance.yaml
   #- ./jupyterhub.yaml

@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -32,7 +33,11 @@ spec:
       enabled: true
       className: internal
       annotations:
-        hajimari.io/icon: sawtooth-wave
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/group: Infrastructure
+        gethomepage.dev/name: Weave-gitops
+        gethomepage.dev/icon: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/weave.png
+        gethomepage.dev/description: Flux Dashboard
       hosts:
         - host: &host "gitops.${SECRET_DOMAIN}"
           paths:
@@ -47,6 +52,9 @@ spec:
       enabled: true
     rbac:
       create: true
-      impersonationResourceNames: ["admin"]
+      additionalRules:
+        - apiGroups: [ "infra.contrib.fluxcd.io" ]
+          resources: [ "terraforms" ]
+          verbs: [ "get", "list", "patch" ]
     podAnnotations:
-      secret.reloader.stakater.com/reload: cluster-user-auth
+      secret.reloader.stakater.com/reload: cluster-user-auth,oidc-auth

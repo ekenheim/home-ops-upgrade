@@ -35,9 +35,15 @@ spec:
       spec:
         containers:
           - name: runner
-            image: ghcr.io/onedr0p/github-actions-runner:rolling@sha256:97b74a2c9ae3f573e5168a247d3e0a14bd18aaf1e7b1003192090f4a089a8c07
+            image: ghcr.io/joryirving/actions-runner:2.314.1@sha256:781890c9d6db4be7219bb98a807441de0a04298fd08114dae1824d04ee779f85
+            command: ["/home/runner/run.sh"]
+    controllerServiceAccount:
+      name: actions-runner-controller-gha-rs-controller
+      namespace: actions-runner-system
   valuesFrom:
     - kind: Secret
       name: actions-runner-controller-secret
       valuesKey: github_token
       targetPath: githubConfigSecret.github_token
+
+

@@ -149,11 +149,11 @@ patches:
               - rw
 
   # Disable predictable NIC naming
-  - |-
-    machine:
-      install:
-        extraKernelArgs:
-          - net.ifnames=0
+  #- |-
+  #  machine:
+  #    install:
+  #      extraKernelArgs:
+  #        - net.ifnames=0
 
 
 controlPlane:
@@ -196,6 +196,6 @@ controlPlane:
             allowedRoles:
               - os:admin
             allowedKubernetesNamespaces:
-              - system-upgrade
+              - kube-tools
 
 

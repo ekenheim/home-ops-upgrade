@@ -9,3 +9,4 @@ resources:
   #- ./cloudnative-pg/ks.yaml
   - ./dragonfly-operator/ks.yaml
   - ./crunchy-postgres-operator/ks.yaml
+  - ./cloudnative-pg/ks.yaml

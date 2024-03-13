@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/common-3.0.1/charts/library/common/values.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -9,12 +9,11 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 3.0.3
+      version: 3.0.2
       sourceRef:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
@@ -22,23 +21,23 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
-  uninstall:
-    keepHistory: false
   dependsOn:
-    - name: longhorn
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: volsync
       namespace: storage
   values:
     controllers:
-      main:
+      actual:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
-          main:
+          app:
             image:
               repository: ghcr.io/actualbudget/actual-server
               tag: 24.3.0
             env:
-              GENERIC_TIMEZONE: ${TIMEZONE}
+              GENERIC_TIMEZONE: America/Edmonton
             resources:
               requests:
                 cpu: 15m
@@ -52,31 +51,31 @@ spec:
             fsGroup: 568
             fsGroupChangePolicy: OnRootMismatch
     service:
-      main:
+      app:
+        controller: *app
         ports:
           http:
             port: 5006
     ingress:
-      main:
-        enabled: true
+      app:
         className: internal
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Home
           gethomepage.dev/name: Actual
           gethomepage.dev/icon: actual.png
+          gethomepage.dev/description: Budget Management Software
         hosts:
           - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
             paths:
               - path: /
                 pathType: Prefix
                 service:
-                  name: main
+                  identifier: app
                   port: http
         tls:
           - hosts:
               - *host
     persistence:
       data:
-        enabled: true
         existingClaim: *app

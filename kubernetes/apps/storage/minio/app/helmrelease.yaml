@@ -43,14 +43,6 @@ spec:
               MINIO_PROMETHEUS_AUTH_TYPE: public
               MINIO_SERVER_URL: https://s3.${SECRET_DOMAIN}
               MINIO_UPDATE: "off"
-            envFrom:
-              - secretRef:
-                  name: *app
-            args:
-              - server
-              - /data
-              - --console-address
-              - :9001
             probes:
               liveness: &probes
                 enabled: true
@@ -69,16 +61,23 @@ spec:
             securityContext:
               privileged: true
               runAsUser: 99
+            resources:
+              requests:
+                memory: 100Mi
+                cpu: 100m
+              limits:
+                memory: 3Gi
     service:
-      main:
+      app:
+        controller: *app
         ports:
           http:
             port: 9001
           s3:
             port: 9000
     serviceMonitor:
-      main:
-        enabled: true
+      app:
+        serviceName: *app
         endpoints:
           - port: s3
             scheme: http
@@ -86,30 +85,36 @@ spec:
             interval: 1m
             scrapeTimeout: 10s
     ingress:
-      main:
-        enabled: true
+      app:
         className: internal
+        annotations:
+          nginx.ingress.kubernetes.io/configuration-snippet: |
+            more_set_headers "Host $host";
+            more_set_headers "X-Forwarded-For $remote_addr"
         hosts:
           - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
             paths:
               - path: /
                 service:
-                  name: main
+                  identifier: app
                   port: http
         tls:
           - hosts:
               - *host
       api:
-        annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
         enabled: true
         className: external
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          nginx.ingress.kubernetes.io/configuration-snippet: |
+            more_set_headers "Host $host";
+            more_set_headers "X-Forwarded-For $remote_addr"
         hosts:
           - host: &s3Host s3.${SECRET_DOMAIN}
             paths:
               - path: /
                 service:
-                  name: main
+                  identifier: app
                   port: s3
         tls:
           - hosts:

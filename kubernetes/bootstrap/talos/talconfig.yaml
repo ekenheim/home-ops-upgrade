@@ -118,6 +118,7 @@ patches:
       network:
         nameservers:
           - 192.168.1.254
+          - 1.1.1.1
 
   # Configure NTP
   - |-

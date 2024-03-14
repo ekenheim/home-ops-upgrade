@@ -6,7 +6,7 @@ metadata:
   name: &app node-feature-discovery
   namespace: flux-system
 spec:
-  targetNamespace: kube-system
+  targetNamespace: kube-tools
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
@@ -27,7 +27,7 @@ metadata:
   name: &app node-feature-discovery-rules
   namespace: flux-system
 spec:
-  targetNamespace: kube-system
+  targetNamespace: kube-tools
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app

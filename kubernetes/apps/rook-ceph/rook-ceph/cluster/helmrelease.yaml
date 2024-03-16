@@ -101,12 +101,15 @@ spec:
           - name: master3
             devices:
               - name: /dev/nvme0n1
+          - name: worker1
+            devices:
+              - name: /dev/nvme0n1
     cephBlockPools:
       - name: ceph-blockpool
         spec:
           failureDomain: host
           replicated:
-            size: 4
+            size: 3
         storageClass:
           enabled: true
           name: ceph-block

@@ -32,8 +32,6 @@ nodes:
         routes:
           - network: 0.0.0.0/0
             gateway: "192.168.50.1"
-        vip:
-          ip: "192.168.50.10"
   - hostname: "master3"
     ipAddress: "192.168.50.32"
     installDisk: "/dev/sda"
@@ -73,8 +71,6 @@ nodes:
       - deviceSelector:
           hardwareAddr: 94:c6:91:17:18:61
         dhcp: true
-        addresses:
-          - "192.168.50.30/24"
         mtu: 1500
         routes:
           - network: 0.0.0.0/0

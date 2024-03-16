@@ -86,11 +86,21 @@ spec:
         urlPrefix: /
         ssl: false
       storage:
-        useAllNodes: true
-        useAllDevices: true
-        deviceFilter: nvme0n1
+        useAllNodes: false
+        useAllDevices: false
+        #deviceFilter: nvme0n1
         config:
           osdsPerDevice: "1"
+        nodes:
+          - name: master1
+            devices:
+              - name: /dev/sda
+          - name: master2
+            devices:
+              - name: /dev/nvme0n1
+          - name: master3
+            devices:
+              - name: /dev/nvme0n1
     cephBlockPools:
       - name: ceph-blockpool
         spec:

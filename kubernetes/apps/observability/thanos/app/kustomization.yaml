@@ -4,4 +4,5 @@ kind: Kustomization
 resources:
 - ./objectbucketclaim.yaml
 - ./helmrelease.yaml
+- ./externalsecret.yaml
 # - ./pushsecret.yaml

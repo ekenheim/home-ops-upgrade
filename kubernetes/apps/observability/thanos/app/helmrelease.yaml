@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -31,26 +31,26 @@ spec:
     - name: rook-ceph-cluster
       namespace: rook-ceph
   valuesFrom:
-    - targetPath: objstoreConfig.config.bucket
-      kind: ConfigMap
-      name: thanos-bucket
-      valuesKey: BUCKET_NAME
-    - targetPath: objstoreConfig.config.endpoint
-      kind: ConfigMap
-      name: thanos-bucket
-      valuesKey: BUCKET_HOST
-    - targetPath: objstoreConfig.config.region
-      kind: ConfigMap
-      name: thanos-bucket
-      valuesKey: BUCKET_REGION
-    - targetPath: objstoreConfig.config.access_key
-      kind: Secret
-      name: thanos-bucket
-      valuesKey: AWS_ACCESS_KEY_ID
-    - targetPath: objstoreConfig.config.secret_key
-      kind: Secret
-      name: thanos-bucket
-      valuesKey: AWS_SECRET_ACCESS_KEY
+    - kind: Secret
+      name: thanos-secret
+      valuesKey: s3-bucket
+      targetPath: objstoreConfig.config.bucket
+    - kind: Secret
+      name: thanos-secret
+      valuesKey: s3-endpoint
+      targetPath: objstoreConfig.config.endpoint
+    - kind: Secret
+      name: thanos-secret
+      valuesKey: s3-region
+      targetPath: objstoreConfig.config.region
+    - kind: Secret
+      name: thanos-secret
+      valuesKey: access-key
+      targetPath: objstoreConfig.config.access_key
+    - kind: Secret
+      name: thanos-secret
+      valuesKey: secret-key
+      targetPath: objstoreConfig.config.secret_key
   values:
     image:
       registry: quay.io

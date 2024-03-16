@@ -4,44 +4,33 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./actions-runner-controller.yaml
-  - ./angelnu.yaml
   - ./authentik-charts.yaml
   - ./backube.yaml
   - ./bitnami.yaml
   - ./bjw-s.yaml
   - ./cilium.yaml
-  - ./cloudnative-pg.yaml
   - ./coredns.yaml
-  - ./democratic-csi.yaml
+  - ./crunchydata.yaml
   - ./descheduler.yaml
+  - ./dragonfly.yaml
   - ./external-dns.yaml
   - ./external-secrets.yaml
-  - ./fairwinds.yaml
   - ./grafana.yaml
   - ./homepage.yaml
   - ./ingress-nginx.yaml
   - ./intel.yaml
+  - ./itzg.yaml
   - ./jetstack.yaml
-  - ./longhorn.yaml
   - ./k8s-gateway.yaml
   - ./kubernetes-sigs-nfd.yaml
-  - ./kubernetes-dashboard.yaml
+  - ./kubetail.yaml
   - ./metrics-server.yaml
-  #- ./minecraft.yaml
+  - ./openebs.yaml
   - ./piraeus.yaml
+  - ./postfinance.yaml
   - ./prometheus-community.yaml
-  #- ./rook-ceph.yaml
+  - ./rook-ceph.yaml
   - ./stakater.yaml
   - ./tf-controller.yaml
   - ./weave-gitops.yaml
   - ./xenitab.yaml
-  - ./prefect.yaml
-  - ./tyzbit.yaml
-  - ./movetokube.yaml
-  - ./windmill.yaml
-  - ./dragonfly.yaml
-  - ./openebs.yaml
-  - ./crunchydata.yaml
-  - ./rook-ceph.yaml
-  - ./postfinance.yaml
-  #- ./jupyterhub.yaml

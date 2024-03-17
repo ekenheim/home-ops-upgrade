@@ -87,7 +87,7 @@ spec:
         ssl: false
       storage:
         useAllNodes: true
-        useAllDevices: false
+        useAllDevices: true
         nodes:
           - name: master1
             deviceFilter: "^/dev/sda$"

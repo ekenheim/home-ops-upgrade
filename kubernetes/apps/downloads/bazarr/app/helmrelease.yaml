@@ -1,5 +1,4 @@
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -9,12 +8,11 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 3.0.4
+      version: 3.0.3
       sourceRef:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
@@ -22,34 +20,28 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
-  uninstall:
-    keepHistory: false
   dependsOn:
-    - name: cloudnative-pg
-      namespace: database
-    - name: longhorn
-      namespace: storage
+  - name: rook-ceph-cluster
+    namespace: rook-ceph
+  - name: volsync
+    namespace: storage
   values:
     controllers:
-      main:
+      bazarr:
+        labels:
+          nfsMount: "true"
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          01-init-db:
-            image:
-              repository: ghcr.io/onedr0p/postgres-init
-              tag: 16
-            envFrom: &envFrom
-              - secretRef:
-                  name: bazarr-secret
         containers:
-          main:
+          app:
             image:
-              repository: ghcr.io/onedr0p/bazarr
-              tag: 1.4.2@sha256:113035f37f289f190781d9d728f2ebf56c895b972921820f5d30408427c837d9
+              repository: ghcr.io/joryirving/bazarr
+              tag: 1.4.2@sha256:365fdd69cdb6db148e5849eb74cf9050463d869f0c99767392d427d1213abbd7
             env:
               TZ: ${TIMEZONE}
-            envFrom: *envFrom
+            envFrom:
+            - secretRef:
+                name: bazarr-secret
             resources:
               requests:
                 cpu: 10m
@@ -61,10 +53,10 @@ spec:
               repository: registry.k8s.io/git-sync/git-sync
               tag: v4.2.1
             args:
-              - --repo=https://github.com/KBlixt/subcleaner
-              - --branch=master
-              - --wait=86400 # 1 day
-              - --root=/add-ons
+            - --repo=https://github.com/KBlixt/subcleaner
+            - --branch=master
+            - --wait=86400 # 1 day
+            - --root=/add-ons
             resources:
               requests:
                 cpu: 10m
@@ -78,19 +70,20 @@ spec:
             fsGroup: 568
             fsGroupChangePolicy: OnRootMismatch
     service:
-      main:
+      app:
+        controller: *app
         ports:
           http:
             port: 6767
     ingress:
-      main:
-        enabled: true
+      app:
         className: internal
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Downloads
           gethomepage.dev/name: Bazarr
           gethomepage.dev/icon: bazarr.png
+          gethomepage.dev/description: Subtitle Downloads
           gethomepage.dev/widget.type: bazarr
           gethomepage.dev/widget.url: http://bazarr.downloads:6767
           gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_BAZARR_TOKEN}}"
@@ -99,25 +92,23 @@ spec:
             sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.${SECRET_DOMAIN}/css/base/bazarr/nord.css"></head>';
             sub_filter_once on;
         hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  name: main
-                  port: http
+        - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
         tls:
-          - hosts:
-              - *host
+        - hosts:
+          - *host
     persistence:
       config:
-        enabled: true
         existingClaim: *app
       data:
-        enabled: true
         type: nfs
         server: ${NAS_IP:=temp}
         path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
-          - path: /data
+        - path: /data
       add-ons:
         type: emptyDir

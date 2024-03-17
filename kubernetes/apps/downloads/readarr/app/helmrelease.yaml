@@ -1,5 +1,4 @@
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -9,12 +8,11 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 3.0.4
+      version: 3.0.3
       sourceRef:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
@@ -22,38 +20,31 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
-  uninstall:
-    keepHistory: false
   dependsOn:
-    - name: cloudnative-pg
-      namespace: database
-    - name: longhorn
-      namespace: storage
+  - name: rook-ceph-cluster
+    namespace: rook-ceph
+  - name: volsync
+    namespace: storage
   values:
     controllers:
-      main:
+      readarr:
+        labels:
+          nfsMount: "true"
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/onedr0p/postgres-init
-              tag: 16
-              pullPolicy: IfNotPresent
-            envFrom: &envFrom
-              - secretRef:
-                  name: readarr-secret
         containers:
-          main:
+          app:
             image:
-              repository: ghcr.io/onedr0p/readarr-develop
-              tag: 0.3.19.2437@sha256:7db08fb29bb93dd468861633cd7cdfb2915eae4e26dec817a521bcb9a2cff85c
+              repository: ghcr.io/joryirving/readarr-develop
+              tag: 0.3.19.2437@sha256:17521a78ed182b319e00e0a7fe0bc5f5516557746da79686048dede7a5e4d5f2
             env:
               TZ: ${TIMEZONE}
               READARR__INSTANCE_NAME: Readarr
               READARR__PORT: &port 80
               READARR__LOG_LEVEL: info
-            envFrom: *envFrom
+            envFrom:
+            - secretRef:
+                name: readarr-secret
             resources:
               requests:
                 cpu: 15m
@@ -67,19 +58,20 @@ spec:
             fsGroup: 568
             fsGroupChangePolicy: OnRootMismatch
     service:
-      main:
+      app:
+        controller: *app
         ports:
           http:
             port: *port
     ingress:
-      main:
-        enabled: true
+      app:
         className: internal
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Downloads
           gethomepage.dev/name: Readarr
           gethomepage.dev/icon: readarr.png
+          gethomepage.dev/description: eBook Downloads
           gethomepage.dev/widget.type: readarr
           gethomepage.dev/widget.url: http://readarr.downloads
           gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_READARR_TOKEN}}"
@@ -88,23 +80,23 @@ spec:
             sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.${SECRET_DOMAIN}/css/base/readarr/nord.css"></head>';
             sub_filter_once on;
         hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  name: main
-                  port: http
+        - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
         tls:
-          - hosts:
-              - *host
+        - hosts:
+          - *host
     persistence:
       config:
-        enabled: true
         existingClaim: *app
+      tmp:
+        type: emptyDir
       data:
-        enabled: true
         type: nfs
         server: ${NAS_IP:=temp}
         path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
-          - path: /data
+        - path: /data

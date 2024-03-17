@@ -1,8 +1,9 @@
+---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
-  name: &app recyclarr
+  name: &app metube
 spec:
   interval: 30m
   chart:
@@ -27,42 +28,46 @@ spec:
     namespace: storage
   values:
     controllers:
-      recyclarr:
+      metube:
+        labels:
+          nfsMount: "true"
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
-              repository: ghcr.io/recyclarr/recyclarr
-              tag: 6.0.2
+              repository: ghcr.io/alexta69/metube
+              tag: "2024-01-26"
             env:
-              TZ: ${TIMEZONE}
-            envFrom:
-            - secretRef:
-                name: recyclarr
-            resources:
-              requests:
-                cpu: 10m
-                memory: 64M
-              limits:
-                memory: 128M
-        pod:
-          securityContext:
-            runAsUser: 568
-            runAsGroup: 568
-            fsGroup: 568
-            fsGroupChangePolicy: OnRootMismatch
+              DOWNLOAD_DIR: "/downloads"
+              STATE_DIR: "/config"
+              YTDL_OPTIONS: '{"http_headers":{"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0"}}'
     service:
       app:
         controller: *app
-        enabled: false
+        ports:
+          http:
+            port: 8081
+    ingress:
+      app:
+        className: internal
+        hosts:
+        - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
+        tls:
+        - hosts:
+          - *host
     persistence:
       config:
         existingClaim: *app
-      config-file:
-        type: configMap
-        name: recyclarr-configmap
+      downloads:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
-        - path: /config/recyclarr.yml
-          subPath: recyclarr.yml
-          readOnly: true
+        - path: /downloads
+          subPath: metube

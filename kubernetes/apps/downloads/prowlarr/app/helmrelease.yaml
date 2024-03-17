@@ -1,5 +1,4 @@
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -9,12 +8,11 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 3.0.4
+      version: 3.0.3
       sourceRef:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
@@ -22,39 +20,30 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
-  uninstall:
-    keepHistory: false
   dependsOn:
-    - name: cloudnative-pg
-      namespace: database
-    - name: longhorn
-      namespace: storage
+  - name: rook-ceph-cluster
+    namespace: rook-ceph
+  - name: volsync
+    namespace: storage
   values:
     controllers:
-      main:
+      prowlarr:
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/onedr0p/postgres-init
-              tag: 16
-              pullPolicy: IfNotPresent
-            envFrom: &envFrom
-              - secretRef:
-                  name: prowlarr-secret
         containers:
-          main:
+          app:
             image:
-              repository: ghcr.io/onedr0p/prowlarr-develop
-              tag: 1.14.1.4316@sha256:882daa1e28f989bc6d76ea7ab7e729da3d9a7a67714e6db606a8ef45a6e6c14b
+              repository: ghcr.io/joryirving/prowlarr-develop
+              tag: 1.14.1.4316@sha256:9c4ceb1bcbe28eed8317aa7537f93a8ee35aac6cf9fe5445df6d3c21372f13db
             env:
               TZ: ${TIMEZONE}
               PROWLARR__INSTANCE_NAME: Prowlarr
               PROWLARR__PORT: &port 80
               PROWLARR__LOG_LEVEL: info
               PROWLARR__AUTHENTICATION_METHOD: External
-            envFrom: *envFrom
+            envFrom:
+            - secretRef:
+                name: prowlarr-secret
             resources:
               requests:
                 cpu: 10m
@@ -66,19 +55,20 @@ spec:
             fsGroup: 568
             fsGroupChangePolicy: OnRootMismatch
     service:
-      main:
+      app:
+        controller: *app
         ports:
           http:
             port: *port
     ingress:
-      main:
-        enabled: true
+      app:
         className: internal
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Downloads
           gethomepage.dev/name: Prowlarr
           gethomepage.dev/icon: prowlarr.png
+          gethomepage.dev/description: Torrent/NZB Indexer Management
           gethomepage.dev/widget.type: prowlarr
           gethomepage.dev/widget.url: http://prowlarr.downloads
           gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_PROWLARR_TOKEN}}"
@@ -87,17 +77,18 @@ spec:
             sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.${SECRET_DOMAIN}/css/base/prowlarr/nord.css"></head>';
             sub_filter_once on;
         hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                pathType: Prefix
-                service:
-                  name: main
-                  port: http
+        - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          paths:
+          - path: /
+            pathType: Prefix
+            service:
+              identifier: app
+              port: http
         tls:
-          - hosts:
-              - *host
+        - hosts:
+          - *host
     persistence:
       config:
-        enabled: true
-        existingClaim: *app
+        type: emptyDir
+      tmp:
+        type: emptyDir

@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -9,12 +9,11 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 3.0.4
+      version: 3.0.3
       sourceRef:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
@@ -22,18 +21,17 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
-  uninstall:
-    keepHistory: false
   values:
     controllers:
-      main:
+      plex-image-cleanup:
         type: cronjob
         annotations:
           reloader.stakater.com/auto: "true"
         cronjob:
           schedule: "0 8 * * *"
+          successfulJobsHistory: 0
         containers:
-          main:
+          app:
             image:
               repository: docker.io/meisnate12/plex-image-cleanup
               tag: v1.0.2
@@ -44,7 +42,7 @@ spec:
               PHOTO_TRANSCODER: true
             envFrom:
               - secretRef:
-                  name: plex-image-cleanup-secret #PLEX_TOKEN
+                  name: plex-secret
             probes:
               liveness:
                 enabled: false
@@ -57,6 +55,12 @@ spec:
                 cpu: 25m
               limits:
                 memory: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
         pod:
           affinity:
             podAffinity:
@@ -73,29 +77,12 @@ spec:
             runAsUser: 568
             runAsGroup: 568
             runAsNonRoot: true
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities:
-                drop:
-                  - ALL
-    service:
-      main:
-        enabled: false
-    ingress:
-      main:
-        enabled: false
     persistence:
       config:
-        enabled: true
         type: emptyDir
-        advancedMounts:
-          main:
-            main:
-              - path: /config
+        globalMounts:
+          - path: /config
       plex-config:
         existingClaim: plex
-        advancedMounts:
-          main:
-            main:
-              - path: /data/plex_config
+        globalMounts:
+          - path: /data/plex_config

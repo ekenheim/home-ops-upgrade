@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -9,12 +9,11 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 3.0.4
+      version: 3.0.3
       sourceRef:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
@@ -22,28 +21,25 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
-  uninstall:
-    keepHistory: false
   values:
     controllers:
-      main:
+      plex-auto-languages:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
-          main:
+          app:
             image:
               repository: remirigal/plex-auto-languages
               tag: v1.2.3
             env:
               TZ: ${TIMEZONE}
               PLEX_URL: "http://plex.media.svc.cluster.local:32400"
-              PLEX_TOKEN: ${PLEX_TOKEN}
+            envFrom:
+              - secretRef:
+                  name: plex-secret
             resources:
               requests:
                 cpu: 150m
                 memory: 200M
               limits:
-                memory: 400M
-    service:
-      main:
-        enabled: false
+                memory: 500M

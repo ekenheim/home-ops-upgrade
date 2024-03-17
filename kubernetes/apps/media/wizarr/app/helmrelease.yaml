@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -14,7 +14,6 @@ spec:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
@@ -22,18 +21,18 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
-  uninstall:
-    keepHistory: false
   dependsOn:
-    - name: longhorn
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: volsync
       namespace: storage
   values:
     controllers:
-      main:
+      wizarr:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
-          main:
+          app:
             image:
               repository:  ghcr.io/wizarrrr/wizarr
               tag: 3.5.1
@@ -46,17 +45,17 @@ spec:
               limits:
                 memory: 300M
     service:
-      main:
+      app:
+        controller: *app
         ports:
           http:
             port: 5690
     ingress:
-      main:
-        enabled: true
+      app:
         className: external
         annotations:
           gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Media
+          gethomepage.dev/group: Video
           gethomepage.dev/name: Wizarr
           gethomepage.dev/icon: wizarr.png
           gethomepage.dev/description: Plex Invite Management
@@ -68,18 +67,14 @@ spec:
           - host: &host join.${SECRET_DOMAIN}
             paths:
               - path: /
-                pathType: Prefix
                 service:
-                  name: main
+                  identifier: app
                   port: http
         tls:
           - hosts:
               - *host
     persistence:
       config:
-        enabled: true
         existingClaim: *app
-        advancedMounts:
-          main:
-            main:
-              - path: /data/database
+        globalMounts:
+          - path: /data/database

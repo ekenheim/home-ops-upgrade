@@ -41,7 +41,7 @@ spec:
               TZ: ${TIMEZONE}
               RADARR__AUTHENTICATION_METHOD: External
               RADARR__AUTHENTICATION_REQUIRED: DisabledForLocalAddresses
-              RADARR__INSTANCE_NAME: Radarr4k
+              RADARR__INSTANCE_NAME: Radarr
               RADARR__PORT: &port 80
               RADARR__LOG_LEVEL: info
             envFrom:
@@ -90,7 +90,7 @@ spec:
           gethomepage.dev/icon: radarr.png
           gethomepage.dev/description: Movie Downloads
           gethomepage.dev/widget.type: radarr
-          gethomepage.dev/widget.url: http://radarr.downloads
+          gethomepage.dev/widget.url: http://radarr4k.downloads
           gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_RADARR_TOKEN}}"
           nginx.ingress.kubernetes.io/configuration-snippet: |
             proxy_set_header Accept-Encoding "";

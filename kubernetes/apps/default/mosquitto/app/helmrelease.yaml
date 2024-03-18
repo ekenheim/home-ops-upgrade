@@ -1,9 +1,9 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
-  name: mosquitto
+  name: &app mosquitto
 spec:
   interval: 30m
   chart:
@@ -14,7 +14,6 @@ spec:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
@@ -22,16 +21,12 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
-  uninstall:
-    keepHistory: false
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
-    - name: volsync
-      namespace: storage
   values:
     controllers:
-      main:
+      mosquitto:
         annotations:
           reloader.stakater.com/auto: "true"
         initContainers:
@@ -43,14 +38,13 @@ spec:
             command: ["/bin/sh", "-c"]
             args: ["cp /tmp/secret/* /mosquitto/external_config/ && mosquitto_passwd -U /mosquitto/external_config/mosquitto_pwd"]
         containers:
-          main:
+          app:
             image:
               repository: public.ecr.aws/docker/library/eclipse-mosquitto
               tag: 2.0.18
             resources:
               requests:
                 cpu: 5m
-                memory: 4Mi
               limits:
                 memory: 16Mi
         pod:
@@ -60,31 +54,31 @@ spec:
             fsGroup: 568
             fsGroupChangePolicy: OnRootMismatch
     service:
-      main:
+      app:
+        controller: *app
         type: LoadBalancer
         annotations:
           external-dns.alpha.kubernetes.io/hostname: mqtt.${SECRET_DOMAIN}
-          io.cilium/lb-ipam-ips: "${SVC_MQTT_ADDR}"
+          io.cilium/lb-ipam-ips: ${SVC_MQTT_ADDR}
         ports:
           http:
             port: 1883
     persistence:
       data:
-        enabled: true
         existingClaim: mosquitto
       config-file:
         type: configMap
         name: mosquitto-configmap # overriden by kustomizeconfig
         advancedMounts:
-          main:
-            main:
+          mosquitto:
+            app:
               - path: /mosquitto/config/mosquitto.conf
                 subPath: mosquitto.conf
       secret-file:
         type: secret
-        name: mosquitto-secret
+        name: mosquitto
         advancedMounts:
-          main:
+          mosquitto:
             init-config:
               - path: /tmp/secret
       external-config:

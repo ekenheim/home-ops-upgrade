@@ -1,5 +1,4 @@
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -14,7 +13,6 @@ spec:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
@@ -22,32 +20,23 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
-  uninstall:
-    keepHistory: false
   dependsOn:
-    - name: cloudnative-pg
-      namespace: database
-    - name: longhorn
-      namespace: storage
+  - name: rook-ceph-cluster
+    namespace: rook-ceph
+  - name: volsync
+    namespace: storage
   values:
     controllers:
-      main:
+      sonarr:
+        labels:
+          nfsMount: "true"
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/onedr0p/postgres-init
-              tag: 16
-              pullPolicy: IfNotPresent
-            envFrom: &envFrom
-              - secretRef:
-                  name: sonarr4k-secret
         containers:
-          main:
+          app:
             image:
-              repository: ghcr.io/onedr0p/sonarr-develop
-              tag: 4.0.2.1341@sha256:e7e1a75fa1586559f91d5e26caac72f96f1e18ae01ccb2d7c7ce589a3bedaca4
+              repository: ghcr.io/joryirving/sonarr
+              tag: 4.0.2.1183@sha256:fee81605e8afb40266acaf2a2026b0627e955a225dac431decc6c871d4aaf341
             env:
               TZ: ${TIMEZONE}
               SONARR__AUTHENTICATION_METHOD: External
@@ -55,7 +44,9 @@ spec:
               SONARR__INSTANCE_NAME: Sonarr4k
               SONARR__PORT: &port 80
               SONARR__LOG_LEVEL: info
-            envFrom: *envFrom
+            envFrom:
+            - secretRef:
+                name: sonarr4k-secret
             resources:
               requests:
                 cpu: 10m
@@ -69,7 +60,8 @@ spec:
             fsGroup: 568
             fsGroupChangePolicy: OnRootMismatch
     service:
-      main:
+      app:
+        controller: *app
         ports:
           http:
             port: *port
@@ -89,14 +81,14 @@ spec:
       startup:
         enabled: false
     ingress:
-      main:
-        enabled: true
+      app:
         className: internal
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Downloads
           gethomepage.dev/name: Sonarr4k
           gethomepage.dev/icon: sonarr.png
+          gethomepage.dev/description: TV Downloads
           gethomepage.dev/widget.type: sonarr
           gethomepage.dev/widget.url: http://sonarr4k.downloads
           gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_SONARR_TOKEN}}"
@@ -105,25 +97,23 @@ spec:
             sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.${SECRET_DOMAIN}/css/base/sonarr/nord.css"></head>';
             sub_filter_once on;
         hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  name: main
-                  port: http
+        - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
         tls:
-          - hosts:
-              - *host
+        - hosts:
+          - *host
     persistence:
       config:
-        enabled: true
-       # name: *app
-       # size: 4Gi
         existingClaim: *app
+      tmp:
+        type: emptyDir
       data:
-        enabled: true
         type: nfs
         server: ${NAS_IP:=temp}
         path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
-          - path: /data
+        - path: /data

@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: homepage
 data:
   bookmarks.yaml: |
-    - Communitcate:
+    - Communicate:
         - Discord:
             - icon: discord.png
               href: 'https://discord.com/app'
@@ -18,7 +18,7 @@ data:
             - icon: google-calendar.png
               href: 'https://calendar.google.com'
         - Outlook:
-            - icon: https://raw.githubusercontent.com/LilDrunkenSmurf/k3s-home-cluster/main/icons/outlook.png
+            - icon: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/outlook.png
               href: 'https://outlook.com'
     - Media:
         - YouTube:
@@ -28,14 +28,14 @@ data:
             - icon: spotify.png
               href: 'http://open.spotify.com'
         - Youtube Music:
-            - icon: https://raw.githubusercontent.com/LilDrunkenSmurf/k3s-home-cluster/main/icons/youtube-music.png
+            - icon: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/youtube-music.png
               href: 'https://music.youtube.com'
     - Reading:
         - Beyond:
-            - icon: https://raw.githubusercontent.com/LilDrunkenSmurf/k3s-home-cluster/main/icons/beyond.png
+            - icon: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/beyond.png
               href: 'https://forums.beyond.ca/search.php?do=getnew&contenttype=vBForum_Post'
         - Western Subaru Club:
-            - icon: https://raw.githubusercontent.com/LilDrunkenSmurf/k3s-home-cluster/main/icons/wsc.png
+            - icon: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/wsc.png
               href: 'http://westernsubaruclub.com/smf/index.php?action=unread'
         - Reddit:
             - icon: reddit.png
@@ -44,35 +44,56 @@ data:
         - kubesearch:
             - icon: kubernetes-dashboard.png
               href: 'https://kubesearch.dev/'
-        - k3s-home-cluster:
+        - home-ops:
             - icon: github.png
-              href: 'https://github.com/ekenhome/home-ops-upgrade'
+              href: 'https://github.com/joryirving/home-ops'
   docker.yaml: ""
   kubernetes.yaml: |
     mode: cluster
   services.yaml: |
-    - Calendar:
-        # - Calendar:
+    - Network:
+        - Cloudflared:
+            href: https://dash.cloudflare.com/
+            icon: cloudflare-zero-trust.png
+            description: Cloudflared Tunnel Status
+            widget:
+              type: cloudflared
+              accountid: {{HOMEPAGE_VAR_CLOUDFLARED_ACCOUNTID}}
+              tunnelid: {{HOMEPAGE_VAR_CLOUDFLARED_TUNNELID}}
+              key: {{HOMEPAGE_VAR_CLOUDFLARED_API_TOKEN}}
+              fields: ["status"]
+        - Healthchecks:
+            href: https://healthchecks.io/
+            icon: healthchecks.png
+            description: Healthchecks Internet Uptime
+            widget:
+              type: healthchecks
+              url: https://healthchecks.io/
+              key: {{HOMEPAGE_VAR_HEALTHCHECK_TOKEN}}
+              uuid: {{HOMEPAGE_VAR_HEALTHCHECK_UUID}}
+        - NextDNS:
+            href: https://my.nextdns.io
+            icon: nextdns.png
+            description: NextDNS
+            widget:
+              type: nextdns
+              profile: {{HOMEPAGE_VAR_NEXTDNS_ID}}
+              key: {{HOMEPAGE_VAR_NEXTDNS_API}}
+        # - Unifi:
+        #     href: https://unifi.ui.com
+        #     icon: unifi.png
+        #     description: Unifi Dashboard
         #     widget:
-        #       type: calendar
-        #       firstDayInWeek: sunday # optional - defaults to monday
-        #       view: monthly # optional - possible values monthly, agenda
-        #       maxEvents: 10 # optional - defaults to 10
-        #       integrations: # optional
-        #         - type: sonarr # active widget type that is currently enabled on homepage - possible values: radarr, sonarr, lidarr, readarr
-        #           service_group: Downloads # group name where widget exists
-        #           service_name: Sonarr # service name for that widget
-        #         - type: radarr # active widget type that is currently enabled on homepage - possible values: radarr, sonarr, lidarr, readarr
-        #           service_group: Downloads # group name where widget exists
-        #           service_name: Radarr # service name for that widget
-        #         - type: readarr # active widget type that is currently enabled on homepage - possible values: radarr, sonarr, lidarr, readarr
-        #           service_group: Downloads # group name where widget exists
-        #           service_name: Readarr # service name for that
+        #       type: unifi
+        #       url: https://192.168.1.1:443
+        #       username: {{HOMEPAGE_VAR_UNIFI_USERNAME}}
+        #       password: {{HOMEPAGE_VAR_UNIFI_PASSWORD}}
+    - Calendar:
         - Agenda:
             widget:
               type: calendar
               view: agenda # optional - possible values monthly, agenda
-              maxEvents: 20 # optional - defaults to 10
+              maxEvents: 15 # optional - defaults to 10
               integrations: # optional
                 - type: sonarr # active widget type that is currently enabled on homepage - possible values: radarr, sonarr>
                   service_group: Downloads # group name where widget exists
@@ -84,93 +105,76 @@ data:
                   service_group: Downloads # group name where widget exists
                   service_name: Readarr # service name for that widget
     - Infrastructure:
-        - Cloudflared:
-            href: https://dash.cloudflare.com/
-            icon: cloudflare-zero-trust.png
-            description: Cloudflared Tunnel
+        - MeshCentral:
+            href: https://mesh.${PI_DOMAIN}
+            icon: meshcentral.png
+            description: MeshCentral Dashboard
+        - Portainer:
+            href: &url https://portainer.${PI_DOMAIN}
+            icon: portainer.png
+            description: Docker Container Management
             widget:
-              type: cloudflared
-              accountid: {{HOMEPAGE_VAR_CLOUDFLARED_ACCOUNTID}}
-              tunnelid: {{HOMEPAGE_VAR_CLOUDFLARED_TUNNELID}}
-              key: {{HOMEPAGE_VAR_CLOUDFLARED_API_TOKEN}}
-        - Unifi:
-            href: https://unifi.ui.com
-            icon: unifi.png
-            description: Unifi Dashboard
-            widget:
-              type: unifi
-              url: https://192.168.1.1:443
-              username: {{HOMEPAGE_VAR_UNIFI_USERNAME}}
-              password: {{HOMEPAGE_VAR_UNIFI_PASSWORD}}
-        - NextDNS:
-            icon: nextdns.png
-            description: NextDNS
-            widget:
-              type: nextdns
-              profile: {{HOMEPAGE_VAR_NEXTDNS_ID}}
-              key: {{HOMEPAGE_VAR_NEXTDNS_API}}
-    - Minecraft:
-        - Vibecraft:
-            icon: minecraft.png
-            widget:
-              type: minecraft
-              url: udp://${NAS_IP}:25565
-        - Skyblock:
-            icon: minecraft.png
-            widget:
-              type: minecraft
-              url: udp://${NAS_IP}:25566
-        - Create:
-            icon: minecraft.png
-            widget:
-              type: minecraft
-              url: udp://${NAS_IP}:25567
+              type: portainer
+              url: http://${NAS_IP}:9000
+              env: 1
+              key: {{HOMEPAGE_VAR_PORTAINER_TOKEN}}
+        - Unraid:
+            href: https://nas.${PI_DOMAIN}
+            icon: unraid.png
+            description: Unraid NAS
   settings.yaml: |
     title: Dashboard
     favicon: https://github.com/walkxcode/dashboard-icons/blob/main/png/heimdall.png
+    useEqualHeights: true
     theme: dark
+    background:
+      image: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/assets/101518784_p0.jpg
+      opacity: 20
     color: slate
     headerStyle: clean
+    quicklaunch:
+      searchDescriptions: true
+      hideInternetSearch: true
+      showSearchSuggestions: true
+      hideVisitURL: true
     layout:
+      Network:
+        style: row
+        columns: 3
+        icon: mdi-network
+      Games:
+        style: row
+        columns: 2
+        icon: mdi-minecraft
       Calendar:
         style: column
         icon: mdi-calendar
-      Media:
+      Video:
         style: column
         icon: mdi-play-circle
-      Infrastructure:
-        style: row
-        columns: 3
-        icon: mdi-server
-      Storage:
+      Books:
         style: row
         columns: 2
-        icon: mdi-desktop-tower
-      Home:
-        style: column
-        icon: mdi-home-analytics
-      Monitoring:
-        style: column
-        icon: mdi-chart-line
-      Minecraft:
+        icon: mdi-book
+      Infrastructure:
         style: row
-        columns: 3
-        icon: mdi-minecraft
+        columns: 5
+        icon: mdi-server
+      Observability:
+        style: row
+        columns: 5
+        icon: mdi-chart-line
+      Home:
+        style: row
+        columns: 5
+        icon: mdi-home-analytics
       Downloads:
         style: row
         columns: 3
         icon: mdi-download-circle
-    providers:
-      longhorn:
-        url: http://longhorn-frontend.storage
   widgets.yaml: |
-    # - resources:
-    #     backend: kubernetes
-    #     cpu: true
-    #     expanded: true
-    #     memory: true
     - logo:
-        icon: https://raw.githubusercontent.com/LilDrunkenSmurf/k3s-home-cluster/main/icons/lds-transparent.png
+        icon: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/lds-transparent.png
     - search:
         provider: [duckduckgo, google]
         focus: false
@@ -181,7 +185,6 @@ data:
     - kubernetes:
         cluster:
           cpu: true
-          label: cluster
           memory: true
           show: true
           showLabel: true
@@ -196,14 +199,13 @@ data:
         longitude: ${LONGITUDE}
         units: metric
         cache: 5
-    - longhorn:
-        expanded: false
-        total: true
-        labels: true
-        nodes: false
     - datetime:
         text_size: l
         format:
-          dateStyle: long
           timeStyle: short
+          dateStyle: short
           hourCycle: h23
+    - unifi_console:
+        url: https://192.168.1.1:443
+        username: {{HOMEPAGE_VAR_UNIFI_USERNAME}}
+        password: {{HOMEPAGE_VAR_UNIFI_PASSWORD}}

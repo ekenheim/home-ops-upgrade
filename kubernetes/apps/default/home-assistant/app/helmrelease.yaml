@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -14,7 +14,6 @@ spec:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
@@ -22,8 +21,6 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
-  uninstall:
-    keepHistory: false
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
@@ -31,14 +28,14 @@ spec:
       namespace: storage
   values:
     controllers:
-      main:
+      home-assistant:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
-          main:
+          app:
             image:
-              repository: ghcr.io/onedr0p/home-assistant
-              tag: 2024.3.1@sha256:2a5531471db90664df50d4aec488f340a74a1f18de6dd2a4a7c53335ad9b6e0e
+              repository: ghcr.io/joryirving/home-assistant
+              tag: 2024.3.1@sha256:b3cc8dc574dacd656e4647f9dabcf02b64993f4a7d10498f04517030cf8a5792
             env:
               TZ: ${TIMEZONE}
             probes:
@@ -68,9 +65,6 @@ spec:
               - "/config/.vscode"
               - --extensions-dir
               - "/config/.vscode"
-            volumeMounts:
-            - name: config
-              mountPath: /config
         pod:
           securityContext:
             runAsUser: 568
@@ -78,61 +72,53 @@ spec:
             fsGroup: 568
             fsGroupChangePolicy: OnRootMismatch
     service:
-      main:
+      app:
+        controller: *app
+        nameOverride: *app
         type: LoadBalancer
         annotations:
-          io.cilium/lb-ipam-ips: "${SVC_HOME_ASSISTANT_ADDR}"
+          io.cilium/lb-ipam-ips: ${SVC_HOME_ASSISTANT_ADDR}
         ports:
           http:
             port: 8123
       codeserver:
+        controller: *app
         type: ClusterIP
-        controller: main
         ports:
           http:
             enabled: true
             port: 8080
     ingress:
-      main:
-        enabled: true
+      app:
         className: external
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Home
           gethomepage.dev/name: Home-Assistant
           gethomepage.dev/icon: home-assistant.png
+          gethomepage.dev/description: Home Automation Software
           gethomepage.dev/widget.type: homeassistant
           gethomepage.dev/widget.url: http://home-assistant.default:8123
           gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_HASS_TOKEN}}"
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
         hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          - host: &host hass.${SECRET_DOMAIN}
             paths:
               - path: /
                 service:
-                  name: main
-                  port: http
-          - host: &customHost hass.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                pathType: Prefix
-                service:
-                  name: main
+                  identifier: app
                   port: http
         tls:
           - hosts:
               - *host
-              - *customHost
       codeserver:
-        enabled: true
         className: internal
         hosts:
           - host: &host hass-code.${SECRET_DOMAIN}
             paths:
             - path: /
-              pathType: Prefix
               service:
-                name: codeserver
+                identifier: codeserver
                 port: http
         tls:
           - hosts:

@@ -11,7 +11,7 @@ resources:
   #- ./kapowarr/ks.yaml
   #- ./metube/ks.yaml
   #- ./mylar/ks.yaml
-  #- ./prowlarr/ks.yaml
+  - ./prowlarr/ks.yaml
   #- ./radarr/ks.yaml
   #- ./radarr4k/ks.yaml
   #- ./readarr/ks.yaml

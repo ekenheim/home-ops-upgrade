@@ -108,14 +108,14 @@ settings:
   playlist_exclude_user:
   playlist_report: false
   verify_ssl: true
-  custom_repo: https://github.com/ekenheim/home-ops-upgrade/tree/main/kubernetes/apps/media/plex-meta-manager/app/custom/
+  custom_repo: https://github.com/ekenheim/home-ops-upgrade/tree/main/kubernetes/apps/media/plex/plex-meta-manager/custom/
   check_nightly: false
   show_unconfigured: true
   playlist_exclude_users:
 
 plex:
   url: http://plex.media.svc.cluster.local:32400
-  token: {{ .PLEX_APIKEY }}
+  token: {{ .PLEX_TOKEN }}
   timeout: 60
   clean_bundles: true
   empty_trash: true
@@ -123,14 +123,14 @@ plex:
 
 tautulli:
   url: http://tautulli.media.svc.cluster.local:8181
-  apikey: {{ .TAUTULLI_APIKEY }}
+  apikey: {{ .TAUTULLI_API_KEY }}
 
 radarr:
   url: http://radarr.downloads.svc.cluster.local
-  token: {{ .RADARR_APIKEY }}
+  token: {{ .RADARR_API_KEY }}
   add_missing: false
   add_existing: false
-  root_folder_path: /data/Media/movies
+  root_folder_path: /data/media/Movies
   monitor: true
   availability: announced
   quality_profile: HD
@@ -142,10 +142,10 @@ radarr:
 
 sonarr:
   url: http://sonarr.downloads.svc.cluster.local
-  token: {{ .SONARR_APIKEY }}
+  token: {{ .SONARR_API_KEY }}
   add_missing: false
   add_existing: false
-  root_folder_path: /data/Media/series
+  root_folder_path: /data/media/Series
   monitor: all
   quality_profile: HD
   language_profile: English
@@ -159,25 +159,15 @@ sonarr:
   upgrade_existing: false
 
 tmdb:
-  apikey: {{ .TMDB_APIKEY }}
+  apikey: {{ .TMDB_API_KEY }}
   language: en
   cache_expiration: 60
   region:
 
 mdblist:
-  apikey: {{ .MDBLIST_APIKEY }}
+  apikey: {{ .MDBLIST_API_KEY }}
   cache_expiration: 60
 
 omdb:
-  apikey: {{ .OMDB_APIKEY }}
+  apikey: {{ .OMDB_API_KEY }}
   cache_expiration: 60
-
-mal:
-  client_id: {{ .MYANIMELIST_CLIENT_ID }}
-  client_secret: {{ .MYANIMELIST_CLIENT_SECRET }}
-  localhost_url: {{ .MYANIMELIST_LOCALHOST_URL }}
-  authorization:
-    access_token: {{ .MYANIMELIST_ACCESS_TOKEN }}
-    token_type: Bearer
-    expires_in: {{ .MYANIMELIST_EXPIRES_IN }}
-    refresh_token: {{ .MYANIMELIST_REFRESH_TOKEN }}

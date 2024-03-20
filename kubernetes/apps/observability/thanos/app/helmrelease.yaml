@@ -78,7 +78,7 @@ spec:
       dnsDiscovery:
         sidecarsService: kube-prometheus-stack-thanos-discovery
         sidecarsNamespace: observability
-      stores: ["thanos-svc.${PI_DOMAIN}:10901"] #["${SVC_PI_THANOS_ADDR}:10901"]
+      stores: ["thanos-svc.${SECRET_DOMAIN}:10901"] #["${SVC_PI_THANOS_ADDR}:10901"]
     bucketweb:
       enabled: true
       replicaCount: 2

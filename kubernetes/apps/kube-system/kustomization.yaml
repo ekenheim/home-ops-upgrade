@@ -10,4 +10,4 @@ resources:
   - ./coredns/ks.yaml
   - ./kubelet-csr-approver/ks.yaml
   - ./metrics-server/ks.yaml
-  #- ./intel-device-plugins/ks.yaml
+  - ./intel-device-plugins/ks.yaml

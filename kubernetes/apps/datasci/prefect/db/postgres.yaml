@@ -3,10 +3,7 @@ kind: PostgresUser
 metadata:
   name: &app prefect
   namespace: &namespace datasci
-  # Optionally, you can keep annotations if needed
 spec:
   databases:
-    - prefect # Update with the name of the database managed by Crunchy Postgres Operator
-  options: SUPERUSER # Adjust privileges as needed
-  # Adjust other specifications as required
----
+    - prefect
+  options: SUPERUSER

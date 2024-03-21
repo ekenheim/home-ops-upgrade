@@ -4,8 +4,6 @@ kind: Postgres
 metadata:
   name: &app postgres # Update with the name of the PostgreSQL cluster
   namespace: &namespace datasci
-  annotations:
-    postgres.db.movetokube.com/instance: *namespace
 spec:
   database: "prefect" # Update with the name of the database managed by Crunchy Postgres Operator
   extensions:

@@ -7,8 +7,8 @@ resources:
   - ./namespace.yaml
   # Flux-Kustomizations
   - ./alertmanager-silencer/ks.yaml
-  - ./gatus/ks.yaml
-  - ./grafana/ks.yaml
+  #- ./gatus/ks.yaml
+  #- ./grafana/ks.yaml
   - ./karma/ks.yaml
   - ./kromgo/ks.yaml
   #- ./kube-prometheus-stack/ks.yaml

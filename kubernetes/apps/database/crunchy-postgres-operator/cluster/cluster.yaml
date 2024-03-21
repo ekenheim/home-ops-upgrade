@@ -5,6 +5,12 @@ kind: PostgresCluster
 metadata:
   name: &name postgres
 spec:
+  metadata:
+    labels:
+      # This label is required for the userinit-controller to activate
+      crunchy-userinit.ramblurr.github.com/enabled: "true"
+      # This label is required to tell the userinit-controller which user is the the superuser
+      crunchy-userinit.ramblurr.github.com/superuser: "postgres"
   postgresVersion: 16
   patroni: # turn on sync writes to at least 1 other replica
     dynamicConfiguration:

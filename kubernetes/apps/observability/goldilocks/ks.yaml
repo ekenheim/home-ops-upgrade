@@ -6,13 +6,13 @@ metadata:
   name: &app goldilocks
   namespace: flux-system
 spec:
-  targetNamespace: monitoring
+  targetNamespace: observability
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: vpa
-  path: ./kubernetes/apps/monitoring/goldilocks/app
+  path: ./kubernetes/apps/observability/goldilocks/app
   prune: true
   sourceRef:
     kind: GitRepository

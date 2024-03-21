@@ -1,23 +1,12 @@
----
-apiVersion: db.movetokube.com/v1alpha1
-kind: Postgres
-metadata:
-  name: &app postgres # Update with the name of the PostgreSQL cluster
-  namespace: &namespace datasci
-spec:
-  database: "prefect" # Update with the name of the database managed by Crunchy Postgres Operator
-  extensions:
-    - pg_trgm # Keep this if you need it, or remove if unnecessary
----
-apiVersion: db.movetokube.com/v1alpha1
+apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresUser
 metadata:
   name: &app prefect
   namespace: &namespace datasci
-  annotations:
-    postgres.db.movetokube.com/instance: *namespace
+  # Optionally, you can keep annotations if needed
 spec:
-  role: *app
-  database: "prefect" # Update with the name of the database managed by Crunchy Postgres Operator
-  secretName: database
-  privileges: OWNER
+  databases:
+    - prefect # Update with the name of the database managed by Crunchy Postgres Operator
+  options: SUPERUSER # Adjust privileges as needed
+  # Adjust other specifications as required
+---

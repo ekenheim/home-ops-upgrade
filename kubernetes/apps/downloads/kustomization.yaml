@@ -6,16 +6,16 @@ resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
   # Flux-Kustomizations
-  #- ./bazarr/ks.yaml
-  #- ./flaresolverr/ks.yaml
+  - ./bazarr/ks.yaml
+  - ./flaresolverr/ks.yaml
   #- ./kapowarr/ks.yaml
   #- ./metube/ks.yaml
   #- ./mylar/ks.yaml
   - ./prowlarr/ks.yaml
-  #- ./radarr/ks.yaml
+  - ./radarr/ks.yaml
   #- ./radarr4k/ks.yaml
-  #- ./readarr/ks.yaml
-  #- ./recyclarr/ks.yaml
+  - ./readarr/ks.yaml
+  - ./recyclarr/ks.yaml
   #- ./sabnzbd/ks.yaml
   - ./sonarr/ks.yaml
   #- ./sonarr4k/ks.yaml

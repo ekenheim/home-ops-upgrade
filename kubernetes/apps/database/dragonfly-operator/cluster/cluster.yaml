@@ -6,7 +6,7 @@ metadata:
   name: dragonfly
 spec:
   image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.15.1
-  replicas: 6
+  replicas: 4
   resources:
     requests:
       cpu: 100m

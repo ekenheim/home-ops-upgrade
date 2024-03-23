@@ -10,6 +10,7 @@ resources:
   - ./misc-gatus/ks.yaml
   - ./misc-ingress/ks.yaml
   - ./mosquitto/ks.yaml
+  - ./lubelog/ks.yaml
   #- ./n8n/ks.yaml
   #- ./paperless/ks.yaml
   - ./syncthing/ks.yaml

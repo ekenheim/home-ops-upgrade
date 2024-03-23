@@ -14,7 +14,7 @@ spec:
     - name: radarr
     - name: sonarr
     - name: external-secrets-bitwarden-secrets-manager
-  path: ./kubernetes/main/apps/downloads/recyclarr/app
+  path: ./kubernetes/apps/downloads/recyclarr/app
   prune: true
   sourceRef:
     kind: GitRepository

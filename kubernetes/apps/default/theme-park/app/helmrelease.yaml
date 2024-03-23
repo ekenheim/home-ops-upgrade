@@ -1,9 +1,9 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
-  name: &app thelounge
+  name: &app theme-park
 spec:
   interval: 30m
   chart:
@@ -14,64 +14,53 @@ spec:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
-  uninstall:
-    keepHistory: false
-  dependsOn:
-    - name: longhorn
-      namespace: storage
   values:
     controllers:
-      main:
-        annotations:
-          reloader.stakater.com/auto: "true"
+      theme-park:
+        replicas: 2
+        strategy: RollingUpdate
         containers:
-          main:
+          app:
             image:
-              repository: ghcr.io/thelounge/thelounge
-              tag: 4.4.1
-            env:
-              THELOUNGE_HOME: /config
+              repository: ghcr.io/joryirving/theme-park
+              tag: 1.16.0@sha256:eb691f7465e22b68a6a3713c975633abd7f22bfe198f745d4f0e8fde89430ac8
             resources:
               requests:
-                cpu: 10m
-                memory: 250Mi
+                cpu: 15m
               limits:
-                memory: 500Mi
+                memory: 64M
     service:
-      main:
+      app:
+        controller: *app
         ports:
           http:
-            port: 9000
+            port: 8080
     ingress:
-      main:
-        enabled: true
+      app:
         className: external
         annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Home
-          gethomepage.dev/name: The Lounge
-          gethomepage.dev/icon: thelounge.png
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
         hosts:
-          - host: &host "tl.${SECRET_DOMAIN}"
+          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
             paths:
               - path: /
-                pathType: Prefix
                 service:
-                  name: main
+                  identifier: app
                   port: http
         tls:
-          - hosts:
-              - *host
-    persistence:
-      config:
-        enabled: true
-        existingClaim: *app
+          - hosts: [*host]
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: *app

@@ -4,18 +4,16 @@ kind: Kustomization
 resources:
   - ./namespace.yaml
   - ./actual/ks.yaml
-  #- ./discord-template-notifier/ks.yaml
   - ./home-assistant/ks.yaml
   - ./homepage/ks.yaml
   - ./misc-gatus/ks.yaml
   - ./misc-ingress/ks.yaml
   - ./mosquitto/ks.yaml
   - ./lubelog/ks.yaml
-  #- ./n8n/ks.yaml
   - ./paperless/ks.yaml
   - ./syncthing/ks.yaml
   - ./thelounge/ks.yaml
-  #- ./theme-park/ks.yaml
+  - ./theme-park/ks.yaml
   #- ./zigbee2mqtt/ks.yaml
   - ./zwave-js-ui/ks.yaml
-  #- ./prefect/ks.yaml
+

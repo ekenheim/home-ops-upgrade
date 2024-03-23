@@ -1,5 +1,4 @@
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -14,93 +13,103 @@ spec:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
-  uninstall:
-    keepHistory: false
   dependsOn:
-    - name: cloudnative-pg
-      namespace: database
-    - name: longhorn
-      namespace: storage
+  - name: rook-ceph-cluster
+    namespace: rook-ceph
+  - name: volsync
+    namespace: storage
   values:
     controllers:
-      main:
+      paperless:
+        labels:
+          nfsMount: "true"
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          01-init-db:
-            image:
-              repository: ghcr.io/onedr0p/postgres-init
-              tag: 16
-              pullPolicy: IfNotPresent
-            envFrom:
-              - secretRef:
-                  name: &secret paperless-secret
         containers:
-          main:
+          app:
             image:
               repository: ghcr.io/paperless-ngx/paperless-ngx
               tag: 2.6.3
+            env:
+              # Configure application
+              PAPERLESS_APPS: allauth.socialaccount.providers.openid_connect
+              PAPERLESS_REDIS_PREFIX: pngx
+              PAPERLESS_URL: https://paperless.${SECRET_DOMAIN}
+              PAPERLESS_PORT: "8000"
+              PAPERLESS_TIME_ZONE: America/Edmonton
+              PAPERLESS_WEBSERVER_WORKERS: "2"
+              PAPERLESS_TASK_WORKERS: "2"
+              # Configure Remote User auth
+              PAPERLESS_ACCOUNT_ALLOW_SIGNUPS: "false"
+              PAPERLESS_SOCIALACCOUNT_ALLOW_SIGNUPS: "false"
+              # Configure folders
+              PAPERLESS_CONSUMPTION_DIR: /data/nas/consume
+              PAPERLESS_DATA_DIR: /data/local/data
+              PAPERLESS_EXPORT_DIR: /data/nas/export
+              PAPERLESS_MEDIA_ROOT: /data/local/media
+              # Configure folder importer
+              PAPERLESS_CONSUMER_POLLING: "60"
+              PAPERLESS_CONSUMER_RECURSIVE: "true"
+              PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: "true"
+              # Configure OCR
+              PAPERLESS_OCR_LANGUAGES: nld
+              PAPERLESS_OCR_LANGUAGE: nld
+              # Configure redis integration
+              PAPERLESS_REDIS: redis://dragonfly.database.svc.cluster.local:6379
+              # Configure user permissions
+              USERMAP_GID: "65542"
             envFrom:
-              - secretRef:
-                  name: *secret
-              - configMapRef:
-                  name: paperless-configmap
+            - secretRef:
+                name: paperless-secret
             resources:
               requests:
                 cpu: 15m
-                memory: 1000M
               limits:
-                memory: 1800M
-          redis:
-            image:
-              repository: public.ecr.aws/docker/library/redis
-              tag: 7.2.4
+                memory: 2048Mi
     service:
-      main:
+      app:
+        controller: *app
         ports:
           http:
             port: 8000
     ingress:
-      main:
-        enabled: true
+      app:
         className: internal
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Home
           gethomepage.dev/name: Paperless
           gethomepage.dev/icon: paperless.png
+          gethomepage.dev/description: Document OCR Software
+          gethomepage.dev/widget.type: paperlessngx
+          gethomepage.dev/widget.url: http://paperless.default:8000
+          gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_PAPERLESS_TOKEN}}"
         hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  name: main
-                  port: http
+        - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
         tls:
-          - hosts:
-              - *host
+        - hosts:
+          - *host
     persistence:
       config:
-        enabled: true
         existingClaim: *app
-        advancedMounts:
-          main:
-            main:
-              - path: /data/local
+        globalMounts:
+          - path: /data/local
       nas:
-        enabled: true
         type: nfs
         server: ${NAS_IP:=temp}
         path: ${SECRET_NFS_PAPERLESS:=temp}
-        advancedMounts:
-          main:
-            main:
-              - path: /data
+        globalMounts:
+          - path: /data/nas

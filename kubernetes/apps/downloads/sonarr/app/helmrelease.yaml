@@ -117,3 +117,11 @@ spec:
         path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
         - path: /data
+          subPath: Downloads
+      media:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        globalMounts:
+        - path: /data
+          subPath: Media

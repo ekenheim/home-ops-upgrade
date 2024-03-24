@@ -124,3 +124,4 @@ spec:
         path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
         - path: /Media
+          subPath: Media

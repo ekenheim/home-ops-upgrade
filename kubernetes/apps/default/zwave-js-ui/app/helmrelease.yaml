@@ -30,7 +30,7 @@ spec:
       namespace: storage
   values:
     controllers:
-      main:
+      zwave-js-ui:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
@@ -67,7 +67,8 @@ spec:
           nodeSelector:
             aeotec.feature.node.kubernetes.io/zwave: "true"
     service:
-      main:
+      app:
+        controller: *app
         ports:
           http:
             port: 8091

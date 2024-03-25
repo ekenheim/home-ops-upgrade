@@ -1,6 +1,6 @@
 ---
 libraries:
-  Cartoons:     # this library overrides sonarr root path and profile
+  Anime:     # this library overrides sonarr root path and profile
     metadata_path:
       - repo: Anime.yml
       - pmm: basic
@@ -23,7 +23,7 @@ libraries:
       mass_episode_critic_rating_update: mdb_metacritic
       mass_episode_user_rating_update: imdb
     sonarr:
-      root_folder_path: /data/Media/cartoons
+      root_folder_path: /data/media/anime
       quality_profile: HD - Anime
       series_type: anime
 
@@ -32,6 +32,7 @@ libraries:
       - file: config/Pre-rolls.yml #Mounted by Kustomization
       - repo: Movies.yml
       - repo: Movies - Holidays by Drazzizzi.yml
+      - repo: Movies - Trakt (Unplayed) by Magic815.yml
       - pmm: basic
       - pmm: imdb
     overlay_path:
@@ -49,7 +50,7 @@ libraries:
       mass_critic_rating_update: mdb_metacritic
       mass_user_rating_update: imdb
 
-  Series:
+  TV Shows:
     metadata_path:
       - repo: TV Shows.yml
       - pmm: basic
@@ -108,7 +109,7 @@ settings:
   playlist_exclude_user:
   playlist_report: false
   verify_ssl: true
-  custom_repo: https://github.com/ekenheim/home-ops-upgrade/tree/main/kubernetes/apps/media/plex/plex-meta-manager/custom/
+  custom_repo: https://github.com/joryirving/home-ops/tree/main/kubernetes/main/apps/media/plex/plex-meta-manager/custom/
   check_nightly: false
   show_unconfigured: true
   playlist_exclude_users:
@@ -130,7 +131,7 @@ radarr:
   token: {{ .RADARR_API_KEY }}
   add_missing: false
   add_existing: false
-  root_folder_path: /data/media/Movies
+  root_folder_path: /data/media/movies
   monitor: true
   availability: announced
   quality_profile: HD
@@ -145,7 +146,7 @@ sonarr:
   token: {{ .SONARR_API_KEY }}
   add_missing: false
   add_existing: false
-  root_folder_path: /data/media/Series
+  root_folder_path: /data/media/tv
   monitor: all
   quality_profile: HD
   language_profile: English

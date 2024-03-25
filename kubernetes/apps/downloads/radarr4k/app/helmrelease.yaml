@@ -27,7 +27,7 @@ spec:
     namespace: storage
   values:
     controllers:
-      radarr:
+      radarr4k:
         labels:
           nfsMount: "true"
         annotations:

@@ -78,6 +78,8 @@ spec:
       main:
         enabled: true # requires https://github.com/kvaster/zwavejs-prom
         serviceName: "zwave-prom"
+        endpoints:
+        - port: http
     ingress:
       app:
         className: internal

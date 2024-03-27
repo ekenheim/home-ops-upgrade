@@ -46,7 +46,7 @@ data:
               href: 'https://kubesearch.dev/'
         - home-ops:
             - icon: github.png
-              href: 'https://github.com/joryirving/home-ops'
+              href: 'https://github.com/ekenheim/home-ops-upgrade/'
   docker.yaml: ""
   kubernetes.yaml: |
     mode: cluster

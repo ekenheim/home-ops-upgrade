@@ -1,6 +1,6 @@
 ---
 libraries:
-  Anime:     # this library overrides sonarr root path and profile
+  Cartoons:     # this library overrides sonarr root path and profile
     metadata_path:
       - repo: Anime.yml
       - pmm: basic
@@ -50,7 +50,7 @@ libraries:
       mass_critic_rating_update: mdb_metacritic
       mass_user_rating_update: imdb
 
-  TV Shows:
+  Series:
     metadata_path:
       - repo: TV Shows.yml
       - pmm: basic

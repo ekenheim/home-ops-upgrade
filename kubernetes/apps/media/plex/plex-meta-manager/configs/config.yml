@@ -32,17 +32,29 @@ libraries:
       - file: config/Pre-rolls.yml #Mounted by Kustomization
       - repo: Movies.yml
       - repo: Movies - Holidays by Drazzizzi.yml
-      - repo: Movies - Trakt (Unplayed) by Magic815.yml
+      #- repo: Movies - Trakt (Unplayed) by Magic815.yml
       - pmm: basic
       - pmm: imdb
-    overlay_path:
+    overlay_files:
       - remove_overlays: false
-      - repo: Movies - Overlays - Charts.yml
-      - repo: Movies - Overlays - Oscars.yml
-      - repo: Movies - Overlays - Ratings.yml
-      - repo: Movies - Overlays - Stand-up.yml
-      - repo: Movies - Overlays - Streaming Services.yml
-      - repo: Movies - Overlays - Studios.yml
+      - pmm: resolution
+      - pmm: audio_codec
+      - pmm: ribbon
+      - pmm: streaming
+      - pmm: ratings
+        template_variables:
+          rating1: critic
+          rating2: audience
+          rating3: user
+          rating1_image: imdb
+          rating2_image: rt_popcorn
+          rating3_image: tmdb
+      #- repo: Movies - Overlays - Charts.yml
+      #- repo: Movies - Overlays - Oscars.yml
+      #- repo: Movies - Overlays - Ratings.yml
+      #- repo: Movies - Overlays - Stand-up.yml
+      #- repo: Movies - Overlays - Streaming Services.yml
+      #- repo: Movies - Overlays - Studios.yml
     operations:
       mass_genre_update: imdb
       mass_content_rating_update: omdb

@@ -1,9 +1,0 @@
-apiVersion: postgres-operator.crunchydata.com/v1beta1
-kind: PostgresUser
-metadata:
-  name: &app prefect
-  namespace: &namespace datasci
-spec:
-  databases:
-    - prefect
-  options: SUPERUSER

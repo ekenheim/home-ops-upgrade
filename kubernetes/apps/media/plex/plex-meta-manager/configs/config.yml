@@ -44,11 +44,7 @@ libraries:
       - pmm: ratings
         template_variables:
           rating1: critic
-          rating2: audience
-          rating3: user
           rating1_image: imdb
-          rating2_image: rt_popcorn
-          rating3_image: tmdb
       #- repo: Movies - Overlays - Charts.yml
       #- repo: Movies - Overlays - Oscars.yml
       #- repo: Movies - Overlays - Ratings.yml

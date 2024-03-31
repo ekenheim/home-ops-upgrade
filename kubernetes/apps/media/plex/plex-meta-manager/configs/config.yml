@@ -71,11 +71,12 @@ libraries:
       - pmm: resolution
       - pmm: audio_codec
       - pmm: ribbon
-      - pmm: streaming
       - pmm: ratings
         template_variables:
           rating1: critic
-          rating1_image: imdb
+          rating1_image: rt_tomato
+          rating2: audience
+          rating2_image: rt_popcorn
       #- repo: Movies - Overlays - Charts.yml
       #- repo: Movies - Overlays - Oscars.yml
       #- repo: Movies - Overlays - Ratings.yml

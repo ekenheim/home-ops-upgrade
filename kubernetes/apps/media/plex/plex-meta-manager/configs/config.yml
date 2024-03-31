@@ -28,14 +28,14 @@ libraries:
       series_type: anime
 
   Movies:
-    metadata_path:
+    collection_files:
       - file: config/Pre-rolls.yml #Mounted by Kustomization
       - repo: Movies.yml
       - repo: Movies - Holidays by Drazzizzi.yml
       - repo: Movies - Trakt (Unplayed) by Magic815.yml
       - pmm: basic
       - pmm: imdb
-    overlay_path:
+    overlay_files:
       - remove_overlays: false
       - git: pete2583/resolution--superlite
     operations:

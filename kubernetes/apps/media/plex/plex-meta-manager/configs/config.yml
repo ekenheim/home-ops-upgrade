@@ -37,12 +37,7 @@ libraries:
       - pmm: imdb
     overlay_path:
       - remove_overlays: false
-      - repo: Movies - Overlays - Charts.yml
-      - repo: Movies - Overlays - Oscars.yml
-      - repo: Movies - Overlays - Ratings.yml
-      - repo: Movies - Overlays - Stand-up.yml
-      - repo: Movies - Overlays - Streaming Services.yml
-      - repo: Movies - Overlays - Studios.yml
+      - git: pete2583/resolution--superlite
     operations:
       mass_genre_update: imdb
       mass_content_rating_update: omdb

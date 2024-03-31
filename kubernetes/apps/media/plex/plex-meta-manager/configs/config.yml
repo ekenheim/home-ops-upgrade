@@ -1,11 +1,11 @@
 ---
 libraries:
   Cartoons:     # this library overrides sonarr root path and profile
-    metadata_path:
+    collection_files:
       - repo: Anime.yml
       - pmm: basic
       - pmm: anilist
-    overlay_path:
+    overlay_files:
       - remove_overlays: false
       - repo: Anime - Overlays - Charts.yml
       - repo: TV Shows - Overlays - Networks.yml

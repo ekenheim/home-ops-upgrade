@@ -7,12 +7,12 @@ libraries:
       - pmm: anilist
     overlay_files:
       - remove_overlays: false
-      - repo: Anime - Overlays - Charts.yml
-      - repo: TV Shows - Overlays - Networks.yml
-      - repo: TV Shows - Overlays - Ratings.yml
-      - repo: TV Shows - Overlays - Statuses.yml
-      - repo: TV Shows - Overlays - Streaming Services.yml
-      - repo: TV Shows - Overlays - Studios.yml
+      #- repo: Anime - Overlays - Charts.yml
+      #- repo: TV Shows - Overlays - Networks.yml
+      #- repo: TV Shows - Overlays - Ratings.yml
+      #- repo: TV Shows - Overlays - Statuses.yml
+      #- repo: TV Shows - Overlays - Streaming Services.yml
+      #- repo: TV Shows - Overlays - Studios.yml
     operations:
       mass_genre_update: tmdb
       mass_content_rating_update: omdb
@@ -36,8 +36,8 @@ libraries:
       - pmm: basic
       - pmm: imdb
     overlay_files:
-      - remove_overlays: false
-      - git: pete2583/resolution--superlite
+      - remove_overlays: true
+      #- git: pete2583/resolution--superlite
     operations:
       mass_genre_update: imdb
       mass_content_rating_update: omdb
@@ -64,12 +64,6 @@ libraries:
           rating1_image: rt_tomato
           rating2: audience
           rating2_image: rt_popcorn
-      #- repo: Movies - Overlays - Charts.yml
-      #- repo: Movies - Overlays - Oscars.yml
-      #- repo: Movies - Overlays - Ratings.yml
-      #- repo: Movies - Overlays - Stand-up.yml
-      #- repo: Movies - Overlays - Streaming Services.yml
-      #- repo: Movies - Overlays - Studios.yml
     operations:
       mass_genre_update: imdb
       mass_content_rating_update: omdb
@@ -83,7 +77,7 @@ libraries:
       - repo: TV Shows.yml
       - pmm: basic
       - pmm: imdb
-    overlay_path:
+    overlay_files:
       - remove_overlays: false
       - repo: TV Shows - Overlays - Charts.yml
       - repo: TV Shows - Overlays - Networks.yml

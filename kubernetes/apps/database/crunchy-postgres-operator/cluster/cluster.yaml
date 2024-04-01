@@ -11,7 +11,7 @@ spec:
       crunchy-userinit.ramblurr.github.com/enabled: "true"
       # This label is required to tell the userinit-controller which user is the the superuser
       crunchy-userinit.ramblurr.github.com/superuser: "postgres"
-  postgresVersion: 16-1
+  postgresVersion: 16
   patroni: # turn on sync writes to at least 1 other replica
     dynamicConfiguration:
       synchronous_mode: true

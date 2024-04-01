@@ -109,7 +109,7 @@ spec:
         repo2-retention-full: "2"
         repo2-retention-diff: "7"
       manual:
-        repoName: repo2
+        repoName: repo1
         options:
           - --type=full
       metadata:

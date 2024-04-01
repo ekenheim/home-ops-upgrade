@@ -1,18 +1,11 @@
 ---
 libraries:
   Cartoons:     # this library overrides sonarr root path and profile
+    remove_overlays: true
     collection_files:
       - repo: Anime.yml
       - pmm: basic
       - pmm: anilist
-    overlay_files:
-      - remove_overlays: false
-      #- repo: Anime - Overlays - Charts.yml
-      #- repo: TV Shows - Overlays - Networks.yml
-      #- repo: TV Shows - Overlays - Ratings.yml
-      #- repo: TV Shows - Overlays - Statuses.yml
-      #- repo: TV Shows - Overlays - Streaming Services.yml
-      #- repo: TV Shows - Overlays - Studios.yml
     operations:
       mass_genre_update: tmdb
       mass_content_rating_update: omdb
@@ -28,6 +21,7 @@ libraries:
       series_type: anime
 
   Movies:
+    remove_overlays: true
     collection_files:
       - file: config/Pre-rolls.yml #Mounted by Kustomization
       - repo: Movies.yml
@@ -35,9 +29,6 @@ libraries:
       - repo: Movies - Trakt (Unplayed) by Magic815.yml
       - pmm: basic
       - pmm: imdb
-    overlay_files:
-      - remove_overlays: true
-      #- git: pete2583/resolution--superlite
     operations:
       mass_genre_update: imdb
       mass_content_rating_update: omdb
@@ -46,6 +37,7 @@ libraries:
       mass_user_rating_update: imdb
 
   Movies 4K:
+    remove_overlays: true
     metadata_path:
       - file: config/Pre-rolls.yml #Mounted by Kustomization
       - repo: Movies.yml
@@ -54,7 +46,6 @@ libraries:
       - pmm: basic
       - pmm: imdb
     overlay_files:
-      - remove_overlays: false
       - pmm: resolution
       - pmm: audio_codec
       - pmm: ribbon
@@ -73,12 +64,12 @@ libraries:
 
 
   Series:
+    remove_overlays: true
     metadata_path:
       - repo: TV Shows.yml
       - pmm: basic
       - pmm: imdb
     overlay_files:
-      - remove_overlays: false
       - repo: TV Shows - Overlays - Charts.yml
       - repo: TV Shows - Overlays - Networks.yml
       - repo: TV Shows - Overlays - Ratings.yml

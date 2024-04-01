@@ -112,7 +112,6 @@ spec:
         repoName: repo2
         options:
           - --type=full
-          - --set="2024-03-31 02:00:00"  # Specify the desired restore point
       metadata:
         labels:
           app.kubernetes.io/name: crunchy-postgres-backup
@@ -140,8 +139,8 @@ spec:
       configuration: *backupConfig
       global: *backupFlag
       repo:
-        name: repo2
-        s3: *r2
+        name: repo1
+        s3: *minio
   proxy:
     pgBouncer:
       service:

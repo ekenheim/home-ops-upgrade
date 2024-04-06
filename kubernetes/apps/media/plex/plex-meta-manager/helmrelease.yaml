@@ -74,13 +74,6 @@ spec:
           - path: /config/config.yml
             subPath: config.yml
             readOnly: true
-      #config-prerolls:
-      #  type: configMap
-      #  name: pmm-prerolls
-      #  globalMounts:
-      #    - path: /config/Pre-rolls.yml
-      #      subPath: Pre-rolls.yml
-      #      readOnly: true
       scripts:
         type: configMap
         name: pmm-scripts

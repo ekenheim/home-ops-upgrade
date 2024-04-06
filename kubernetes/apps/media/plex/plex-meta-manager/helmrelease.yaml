@@ -60,6 +60,13 @@ spec:
     persistence:
       config:
         existingClaim: *app
+      media:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        globalMounts:
+        - path: /Media
+          subPath: Media
       config-file:
         type: secret
         name: plex-meta-manager-secret

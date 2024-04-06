@@ -1,131 +1,152 @@
 ---
 libraries:
-  Cartoons:     # this library overrides sonarr root path and profile
-    remove_overlays: true
-    collection_files:
-      - repo: Anime.yml
-      - pmm: basic
-      - pmm: anilist
-    operations:
-      mass_genre_update: tmdb
-      mass_content_rating_update: omdb
-      mass_audience_rating_update: mdb_tomatoesaudience
-      mass_critic_rating_update: mdb_metacritic
-      mass_user_rating_update: imdb
-      mass_episode_audience_rating_update: mdb_tomatoesaudience
-      mass_episode_critic_rating_update: mdb_metacritic
-      mass_episode_user_rating_update: imdb
-    sonarr:
-      root_folder_path: /Media/cartoons
-      quality_profile: HD - Anime
-      series_type: anime
+  #Cartoons:     # this library overrides sonarr root path and profile
+  #  remove_overlays: true
+  #  collection_files:
+  #    - repo: Anime.yml
+  #    - pmm: basic
+  #    - pmm: anilist
+  #  operations:
+  #    mass_genre_update: tmdb
+  #    mass_content_rating_update: omdb
+  #    mass_audience_rating_update: mdb_tomatoesaudience
+  #    mass_critic_rating_update: mdb_metacritic
+  #    mass_user_rating_update: imdb
+  #    mass_episode_audience_rating_update: mdb_tomatoesaudience
+  #    mass_episode_critic_rating_update: mdb_metacritic
+  #    mass_episode_user_rating_update: imdb
+  #  sonarr:
+  #    root_folder_path: /Media/cartoons
+  #    quality_profile: HD - Anime
+  #    series_type: anime
 
-  Movies:
-    remove_overlays: true
-    collection_files:
-      - file: config/Pre-rolls.yml #Mounted by Kustomization
-      - repo: Movies.yml
-      - repo: Movies - Holidays by Drazzizzi.yml
-      - repo: Movies - Trakt (Unplayed) by Magic815.yml
-      - pmm: basic
-      - pmm: imdb
-    operations:
-      mass_genre_update: imdb
-      mass_content_rating_update: omdb
-      mass_audience_rating_update: mdb_tomatoesaudience
-      mass_critic_rating_update: mdb_metacritic
-      mass_user_rating_update: imdb
+  #Movies:
+  #  remove_overlays: true
+  #  collection_files:
+  #    - file: config/Pre-rolls.yml #Mounted by Kustomization
+  #    - repo: Movies.yml
+  #    - repo: Movies - Holidays by Drazzizzi.yml
+  #    - repo: Movies - Trakt (Unplayed) by Magic815.yml
+  #    - pmm: basic
+  #    - pmm: imdb
+  #  operations:
+  #    mass_genre_update: imdb
+  #    mass_content_rating_update: omdb
+  #    mass_audience_rating_update: mdb_tomatoesaudience
+  #    mass_critic_rating_update: mdb_metacritic
+  #    mass_user_rating_update: imdb
 
   Movies 4K:
-    remove_overlays: true
-    metadata_path:
-      - file: config/Pre-rolls.yml #Mounted by Kustomization
-      - repo: Movies.yml
-      - repo: Movies - Holidays by Drazzizzi.yml
-      #- repo: Movies - Trakt (Unplayed) by Magic815.yml
-      - pmm: basic
-      - pmm: imdb
+    schedule: hourly(11),hourly(14),hourly(17),hourly(20)
+    schedule_overlays: hourly(11),hourly(14),hourly(17),hourly(20)
+    #schedule: hourly(9),hourly(19)
+    collection_files:
+    - file: config/Movies.yml
+    #- file: config/collections.yml
     overlay_files:
-      - pmm: resolution
-      - pmm: audio_codec
-      - pmm: ribbon
-      - pmm: ratings
-        template_variables:
-          rating1: critic
-          rating1_image: rt_tomato
-          rating2: audience
-          rating2_image: rt_popcorn
+    - pmm: commonsense
+      template_variables:
+        vertical_offset: 37
+        horizontal_offset: 255
+        back_width: 230
+    - pmm: languages
+      template_variables:
+        overlay_limit: 5
+        horizontal_position: left
+        vertical_position: bottom
+        style: square
+        back_color: '#00000099'
+        text: ""
+        final_name: <<key>>
+    - pmm: runtimes
+      template_variables:
+        vertical_offset: 37
+        horizontal_align: center
+        horizontal_offset: 140
+        text: ''
+        back_width: 205
+    - remove_overlays: false
+    - file: config/overlays_movies.yml
+      template_variables:
+      # Which overlay(s) should be used?
+      # Posters
+        4K_banner: true
+        4K: false
+    settings:
+      asset_directory: /Media/ppm/assets/Movies 4K
+      prioritize_assets: true
     operations:
-      mass_genre_update: imdb
-      mass_content_rating_update: omdb
-      mass_audience_rating_update: mdb_tomatoesaudience
-      mass_critic_rating_update: mdb_metacritic
-      mass_user_rating_update: imdb
+      mass_content_rating_update: mdb_commonsense
+      assets_for_all: true
 
 
-  Series:
-    remove_overlays: true
-    metadata_path:
-      - repo: TV Shows.yml
-      - pmm: basic
-      - pmm: imdb
-    overlay_files:
-      - repo: TV Shows - Overlays - Charts.yml
-      - repo: TV Shows - Overlays - Networks.yml
-      - repo: TV Shows - Overlays - Ratings.yml
-      - repo: TV Shows - Overlays - Statuses.yml
-      - repo: TV Shows - Overlays - Streaming Services.yml
-      - repo: TV Shows - Overlays - Studios.yml
-    operations:
-      mass_genre_update: tmdb
-      mass_content_rating_update: omdb
-      mass_audience_rating_update: mdb_tomatoesaudience
-      mass_critic_rating_update: mdb_metacritic
-      mass_user_rating_update: imdb
-      mass_episode_audience_rating_update: mdb_tomatoesaudience
-      mass_episode_critic_rating_update: mdb_metacritic
-      mass_episode_user_rating_update: imdb
+  #Series:
+  #  remove_overlays: true
+  #  metadata_path:
+  #    - repo: TV Shows.yml
+  #    - pmm: basic
+  #    - pmm: imdb
+  #  overlay_files:
+  #    - repo: TV Shows - Overlays - Charts.yml
+  #    - repo: TV Shows - Overlays - Networks.yml
+  #    - repo: TV Shows - Overlays - Ratings.yml
+  #    - repo: TV Shows - Overlays - Statuses.yml
+  #    - repo: TV Shows - Overlays - Streaming Services.yml
+  #    - repo: TV Shows - Overlays - Studios.yml
+  #  operations:
+  #    mass_genre_update: tmdb
+  #    mass_content_rating_update: omdb
+  #    mass_audience_rating_update: mdb_tomatoesaudience
+  #    mass_critic_rating_update: mdb_metacritic
+  #    mass_user_rating_update: imdb
+  #    mass_episode_audience_rating_update: mdb_tomatoesaudience
+  #    mass_episode_critic_rating_update: mdb_metacritic
+  #    mass_episode_user_rating_update: imdb
 
 settings:
   cache: true
   cache_expiration: 60
-  asset_directory: config/assets
-  asset_folders: false
-  asset_depth: 0
+  asset_directory: /assets
+  asset_folders: true
+  asset_depth: 1
   create_asset_folders: false
-  prioritize_assets: false
+  prioritize_assets: true
   dimensional_asset_rename: false
-  download_url_assets: true
-  show_missing_season_assets: false
+  download_url_assets: false
+  show_missing_season_assets: true
   show_missing_episode_assets: false
-  show_asset_not_needed: true
+  show_asset_not_needed: false
   sync_mode: sync
-  minimum_items: 1
   default_collection_order:
-  delete_below_minimum: true
+  minimum_items: 1
+  delete_below_minimum: false
   delete_not_scheduled: false
-  run_again_delay: 2
-  missing_only_released: false
-  missing_path: config/missing
-  only_filter_missing: false
+  run_again_delay: 0
+  missing_only_released: true
+  show_unconfigured: true
   show_unmanaged: false
   show_filtered: false
-  show_options: false
-  show_missing: false
-  show_missing_assets: false
+  show_options: true
+  show_missing: true
+  only_filter_missing: false
+  show_missing_assets: true
   save_report: false
-  tvdb_language: eng
+  tvdb_language:
   ignore_ids:
   ignore_imdb_ids:
   item_refresh_delay: 0
-  playlist_sync_to_user: all
-  playlist_exclude_user:
+  playlist_sync_to_users: all
   playlist_report: false
   verify_ssl: true
-  custom_repo: https://github.com/ekenheim/home-ops-upgrade/tree/main/kubernetes/apps/media/plex/plex-meta-manager/custom/
   check_nightly: false
-  show_unconfigured: true
+  custom_repo: https://github.com/ekenheim/home-ops-upgrade/tree/main/kubernetes/apps/media/plex/plex-meta-manager/custom/
   playlist_exclude_users:
+  run_order:
+  - operations
+  - metadata
+  - collections
+  - overlays
+
 
 plex:
   url: http://plex.media.svc.cluster.local:32400
@@ -134,6 +155,12 @@ plex:
   clean_bundles: true
   empty_trash: true
   optimize: true
+webhooks:
+  error:
+  version:
+  run_start:
+  run_end:
+  delete:
 
 tautulli:
   url: http://tautulli.media.svc.cluster.local:8181

@@ -1,5 +1,41 @@
 ---
 libraries:
+  #Cartoons:     # this library overrides sonarr root path and profile
+  #  remove_overlays: true
+  #  collection_files:
+  #    - repo: Anime.yml
+  #    - pmm: basic
+  #    - pmm: anilist
+  #  operations:
+  #    mass_genre_update: tmdb
+  #    mass_content_rating_update: omdb
+  #    mass_audience_rating_update: mdb_tomatoesaudience
+  #    mass_critic_rating_update: mdb_metacritic
+  #    mass_user_rating_update: imdb
+  #    mass_episode_audience_rating_update: mdb_tomatoesaudience
+  #    mass_episode_critic_rating_update: mdb_metacritic
+  #    mass_episode_user_rating_update: imdb
+  #  sonarr:
+  #    root_folder_path: /Media/cartoons
+  #    quality_profile: HD - Anime
+  #    series_type: anime
+
+  #Movies:
+  #  remove_overlays: true
+  #  collection_files:
+  #    - file: config/Pre-rolls.yml #Mounted by Kustomization
+  #    - repo: Movies.yml
+  #    - repo: Movies - Holidays by Drazzizzi.yml
+  #    - repo: Movies - Trakt (Unplayed) by Magic815.yml
+  #    - pmm: basic
+  #    - pmm: imdb
+  #  operations:
+  #    mass_genre_update: imdb
+  #    mass_content_rating_update: omdb
+  #    mass_audience_rating_update: mdb_tomatoesaudience
+  #    mass_critic_rating_update: mdb_metacritic
+  #    mass_user_rating_update: imdb
+
   Movies 4K:
     remove_overlays: true
     collection_files:
@@ -39,6 +75,30 @@ libraries:
     operations:
       mass_content_rating_update: mdb_commonsense
       assets_for_all: true
+
+
+  #Series:
+  #  remove_overlays: true
+  #  metadata_path:
+  #    - repo: TV Shows.yml
+  #    - pmm: basic
+  #    - pmm: imdb
+  #  overlay_files:
+  #    - repo: TV Shows - Overlays - Charts.yml
+  #    - repo: TV Shows - Overlays - Networks.yml
+  #    - repo: TV Shows - Overlays - Ratings.yml
+  #    - repo: TV Shows - Overlays - Statuses.yml
+  #    - repo: TV Shows - Overlays - Streaming Services.yml
+  #    - repo: TV Shows - Overlays - Studios.yml
+  #  operations:
+  #    mass_genre_update: tmdb
+  #    mass_content_rating_update: omdb
+  #    mass_audience_rating_update: mdb_tomatoesaudience
+  #    mass_critic_rating_update: mdb_metacritic
+  #    mass_user_rating_update: imdb
+  #    mass_episode_audience_rating_update: mdb_tomatoesaudience
+  #    mass_episode_critic_rating_update: mdb_metacritic
+  #    mass_episode_user_rating_update: imdb
 
 settings:
   cache: true

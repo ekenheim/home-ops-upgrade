@@ -50,7 +50,7 @@ spec:
                 cpu: 10m
                 memory: 4096M
               limits:
-                memory: 8198M
+                memory: 8192M
         pod:
           securityContext:
             runAsUser: 568

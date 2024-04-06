@@ -37,7 +37,6 @@ libraries:
   #    mass_user_rating_update: imdb
 
   Movies 4K:
-    remove_overlays: true
     collection_files:
     - file: config/Movies.yml
     overlay_files:

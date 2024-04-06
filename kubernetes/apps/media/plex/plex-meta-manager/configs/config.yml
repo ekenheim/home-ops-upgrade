@@ -37,13 +37,9 @@ libraries:
   #    mass_user_rating_update: imdb
 
   Movies 4K:
-    schedule: hourly(11),hourly(14),hourly(17),hourly(20)
-    schedule_overlays: hourly(11),hourly(14),hourly(17),hourly(20)
     remove_overlays: true
-    #schedule: hourly(9),hourly(19)
     collection_files:
     - file: config/Movies.yml
-    #- file: config/collections.yml
     overlay_files:
     - pmm: commonsense
       template_variables:
@@ -132,7 +128,7 @@ settings:
   only_filter_missing: false
   show_missing_assets: true
   save_report: false
-  tvdb_language:
+  tvdb_language: eng
   ignore_ids:
   ignore_imdb_ids:
   item_refresh_delay: 0

@@ -13,12 +13,6 @@ configMapGenerator:
   - name: pmm-prerolls
     files:
       - ./configs/Pre-rolls.yml
-  - name: pmm-movies
-    files:
-      - ./configs/Movies.yml
-  - name: pmm-movies-overlay
-    files:
-      - ./configs/overlays_movies.yml
   - name: pmm-scripts
     files:
       - ./scripts/run.sh

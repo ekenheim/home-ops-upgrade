@@ -61,7 +61,6 @@ libraries:
       assets_for_all: true
 
   Movies 4K:
-    remove_overlays: true
     collection_files:
     - file: config/Movies.yml
     overlay_files:

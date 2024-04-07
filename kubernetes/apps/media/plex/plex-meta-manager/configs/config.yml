@@ -4,7 +4,7 @@ libraries:
     schedule: hourly(11),hourly(14),hourly(17),hourly(20)
     schedule_overlays: hourly(11),hourly(14),hourly(17),hourly(20)
     collection_files:
-    - file: config/Movies.yml
+    - repo: Movies.yml
     overlay_files:
     - pmm: commonsense
       template_variables:
@@ -28,7 +28,7 @@ libraries:
         text: ''
         back_width: 205
     - remove_overlays: false
-    - file: config/overlays_movies.yml
+    - repo: overlays_movies.yml
       template_variables:
       # Which overlay(s) should be used?
       # Posters
@@ -43,7 +43,7 @@ libraries:
 
   Series:
     collection_files:
-    - file: config/TVShows.yml
+    - repo: TVShows.yml
     overlay_files:
     - pmm: network
       template_variables:
@@ -89,7 +89,7 @@ libraries:
         text: ''
         back_width: 205
     - remove_overlays: false
-    - file: config/overlays_tv.yml
+    - repo: overlays_tv.yml
       template_variables:
       # Which overlay(s) should be used?
       # Posters
@@ -127,7 +127,7 @@ libraries:
         text: ''
         back_width: 205
     - remove_overlays: false
-    - file: config/overlays_movies.yml
+    - repo: overlays_movies.yml
       template_variables:
       # Which overlay(s) should be used?
       # Posters
@@ -144,7 +144,7 @@ libraries:
     metadata_path:
       - repo: Movies.yml
     collection_files:
-    - file: config/Movies.yml
+    - repo: Movies.yml
     overlay_files:
     - pmm: commonsense
       template_variables:
@@ -168,7 +168,7 @@ libraries:
         text: ''
         back_width: 205
     - remove_overlays: false
-    - file: config/overlays_movies.yml
+    - repo: overlays_movies.yml
       template_variables:
       # Which overlay(s) should be used?
       # Posters

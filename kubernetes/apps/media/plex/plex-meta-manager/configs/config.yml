@@ -20,7 +20,45 @@ libraries:
       quality_profile: HD - Anime
       series_type: anime
 
-
+  Movies:
+    remove_overlays: true
+    collection_files:
+    - file: config/Movies.yml
+    overlay_files:
+    - pmm: commonsense
+      template_variables:
+        vertical_offset: 37
+        horizontal_offset: 255
+        back_width: 230
+    - pmm: languages
+      template_variables:
+        overlay_limit: 5
+        horizontal_position: left
+        vertical_position: bottom
+        style: square
+        back_color: '#00000099'
+        text: ""
+        final_name: <<key>>
+    - pmm: runtimes
+      template_variables:
+        vertical_offset: 37
+        horizontal_align: center
+        horizontal_offset: 140
+        text: ''
+        back_width: 205
+    - remove_overlays: false
+    - file: config/overlays_movies.yml
+      template_variables:
+      # Which overlay(s) should be used?
+      # Posters
+        4K_banner: false
+        4K: false
+    settings:
+      asset_directory: /Media/ppm/assets/Movies
+      prioritize_assets: true
+    operations:
+      mass_content_rating_update: mdb_commonsense
+      assets_for_all: true
 
   Movies 4K:
     remove_overlays: true

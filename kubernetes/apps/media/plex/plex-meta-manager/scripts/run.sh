@@ -10,6 +10,6 @@ pmm () {
 }
 
 pmm "Cartoons"
-#pmm "Movies"
+pmm "Movies"
 #pmm "Series"
 pmm "Movies 4K"

@@ -20,7 +20,6 @@ libraries:
       series_type: anime
 
   Movies:
-    remove_overlays: true
     collection_files:
     - file: config/Movies.yml
     overlay_files:

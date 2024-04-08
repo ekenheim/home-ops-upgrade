@@ -35,7 +35,7 @@ spec:
           app:
             image:
               repository: ghcr.io/joryirving/home-assistant
-              tag: 2024.4.1@sha256:4a981c80ba3e3af4b2fd33bf3a9f724e922e589000d560becb6905799e541fb2
+              tag: 2024.4.2@sha256:ee5934b80a07a0975d0f6d4f1fecab40dd576e8e9ae625b42c25fd700940dba2
             env:
               TZ: ${TIMEZONE}
             probes:

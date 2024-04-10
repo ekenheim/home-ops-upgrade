@@ -36,7 +36,7 @@ spec:
           app:
             image:
               repository: ghcr.io/joryirving/readarr-develop
-              tag: 0.3.21.2475@sha256:ede8a74681899f59d78439cadfe5e39f67cd1c8f161cc6e4a0afe70fa9cd5945
+              tag: 0.3.21.2475@sha256:09292a801b8f2de548f1335068bc2f0b1cf0521de54450a0beef1a34cc1e1368
             env:
               TZ: ${TIMEZONE}
               READARR__INSTANCE_NAME: Readarr

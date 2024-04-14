@@ -125,11 +125,11 @@ spec:
         tls:
           - hosts:
               - *s3Host
-    #persistence:
-    #  data:
-    #    enabled: true
-    #    type: nfs
-    #    server: ${NAS_IP:=temp}
-    #    path: ${SECRET_NFS_MINIO:=temp}
-    #    globalMounts:
-    #      - path: /data
+    persistence:
+      data:
+        enabled: true
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_MINIO:=temp}
+        globalMounts:
+          - path: /data

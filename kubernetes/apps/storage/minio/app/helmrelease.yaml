@@ -20,6 +20,7 @@ spec:
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
   values:
     controllers:
@@ -32,7 +33,7 @@ spec:
           app:
             image:
               repository: quay.io/minio/minio
-              tag: RELEASE.2024-03-30T09-41-56Z
+              tag: RELEASE.2024-04-06T05-26-02Z
             env:
               MINIO_API_CORS_ALLOW_ORIGIN: https://minio.${SECRET_DOMAIN},https://s3.${SECRET_DOMAIN}
               MINIO_BROWSER_REDIRECT_URL: https://minio.${SECRET_DOMAIN}
@@ -105,8 +106,7 @@ spec:
                   identifier: app
                   port: http
         tls:
-          - hosts:
-              - *host
+          - hosts: [*host]
       api:
         enabled: true
         className: external
@@ -123,8 +123,7 @@ spec:
                   identifier: app
                   port: s3
         tls:
-          - hosts:
-              - *s3Host
+          - hosts: [*s3Host]
     persistence:
       data:
         enabled: true

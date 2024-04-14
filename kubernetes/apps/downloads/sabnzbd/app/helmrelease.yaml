@@ -19,6 +19,7 @@ spec:
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
   dependsOn:
   - name: rook-ceph-cluster
@@ -111,8 +112,7 @@ spec:
               identifier: app
               port: http
         tls:
-        - hosts:
-          - *host
+          - hosts: [*host]
     persistence:
       config:
         existingClaim: *app

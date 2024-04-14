@@ -68,15 +68,6 @@ spec:
               limits:
                 memory: 12Gi
         pod:
-          affinity:
-            podAntiAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values: ["qbittorrent"]
-                topologyKey: kubernetes.io/hostname
           securityContext:
             runAsUser: 568
             runAsGroup: 568
@@ -124,12 +115,3 @@ spec:
         - path: /Downloads
       incomplete:
         type: emptyDir
-    affinity:
-      podAntiAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchExpressions:
-            - key: app.kubernetes.io/name
-              operator: In
-              values: ["qbittorrent"]
-          topologyKey: kubernetes.io/hostname

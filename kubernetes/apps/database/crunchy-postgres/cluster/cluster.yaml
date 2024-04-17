@@ -76,6 +76,10 @@ spec:
       databases: ["radarr_main", "radarr_log"]
       password:
         type: AlphaNumeric
+    - name: "radarr4k"
+      databases: ["radarr4k_main", "radarr4k_log"]
+      password:
+        type: AlphaNumeric
     - name: "readarr"
       databases: ["readarr_cache", "readarr_main", "readarr_log"]
       password:

@@ -24,7 +24,7 @@ spec:
       retries: 3
   dependsOn:
     - name: intel-device-plugins-gpu
-      namespace: kube-system
+      namespace: kube-tools
     - name: rook-ceph-cluster
       namespace: rook-ceph
     - name: volsync

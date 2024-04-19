@@ -6,7 +6,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: crunchy-postgres
+    - name: crunchy-postgres-operator-cluster
     - name: rook-ceph
   path: ./kubernetes/apps/datasci/mlflow/app
   prune: true

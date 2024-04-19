@@ -9,11 +9,9 @@ resources:
   - ./misc-gatus/ks.yaml
   - ./misc-ingress/ks.yaml
   - ./mosquitto/ks.yaml
-  #- ./lubelog/ks.yaml
   - ./it-tools/ks.yaml
   - ./paperless/ks.yaml
   - ./syncthing/ks.yaml
-  #- ./thelounge/ks.yaml
   - ./theme-park/ks.yaml
   #- ./zigbee2mqtt/ks.yaml
   - ./zwave-js-ui/ks.yaml

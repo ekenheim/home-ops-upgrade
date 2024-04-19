@@ -27,7 +27,7 @@ spec:
     keepHistory: false
   dependsOn:
     - name: rook-ceph-cluster
-      namespace: storage
+      namespace: rook-ceph
     - name: volsync
       namespace: storage
   values:

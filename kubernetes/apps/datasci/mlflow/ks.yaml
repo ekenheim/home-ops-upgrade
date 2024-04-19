@@ -2,12 +2,12 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: datasci-mlflow
+  name: mlflow
   namespace: flux-system
 spec:
   dependsOn:
     - name: crunchy-postgres-operator-cluster
-    - name: rook-ceph
+    - name: crunchy-postgres-operator-clustersecretstore
   path: ./kubernetes/apps/datasci/mlflow/app
   prune: true
   sourceRef:

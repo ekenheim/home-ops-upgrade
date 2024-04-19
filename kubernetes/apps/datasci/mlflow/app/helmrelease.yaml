@@ -16,65 +16,81 @@ spec:
         name: bjw-s
         namespace: flux-system
   install:
-    createNamespace: true
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
-  uninstall:
-    keepHistory: false
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
     - name: volsync
       namespace: storage
   values:
-    global:
-      nameOverride: *app
-      annotations:
-        reloader.stakater.com/search: "true"
-    image:
-      # renovate: datasource=docker image=ghcr.io/...
-      repository: ghcr.io/ninerealmlabs/mlflow-server
-      tag: "2.12.1"
-    # -- Override the command(s) for the default container
-    command: ["/bin/bash", "-c", "mlflow server"]
-    env:
-      TZ: "${TIMEZONE}"
-      MLFLOW_BACKEND_STORE_URI:
-        valueFrom:
-          secretKeyRef:
-            name: &db_secret database-mlflow
-            key: POSTGRES_URL
-      MLFLOW_DEFAULT_ARTIFACT_ROOT: "/data"
-      MLFLOW_SERVE_ARTIFACTS: true
-      MLFLOW_HOST: 0.0.0.0
-      MLFLOW_PORT: 5000
-      envFrom:
-      - secretRef:
-           name: mlflow-secret
+    controllers:
+      mlflow:
+        labels:
+          nfsMount: "true"
+        annotations:
+          reloader.stakater.com/search: "true"
+    containers:
+      app:
+        image:
+          repository: ghcr.io/ninerealmlabs/mlflow-server
+          tag: "2.12.1"
+          command: ["/bin/bash", "-c", "mlflow server"]
+        env:
+          TZ: "${TIMEZONE}"
+          MLFLOW_BACKEND_STORE_URI:
+          MLFLOW_DEFAULT_ARTIFACT_ROOT: "/data"
+          MLFLOW_SERVE_ARTIFACTS: true
+          MLFLOW_HOST: 0.0.0.0
+          MLFLOW_PORT: &port 5000
+        envFrom:
+        - secretRef:
+            name: mlflow-secret
+        probes:
+          liveness: &probes
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /ping
+                port: *port
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 1
+              failureThreshold: 3
+          readiness: *probes
+          startup:
+            enabled: false
+      pod:
+        securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+        fsGroupChangePolicy: OnRootMismatch
     service:
-      main:
+      app:
+        controller: *app
         ports:
           http:
-            port: 5000
+            port: *port
     ingress:
-      main:
-        enabled: true
+      app:
         ingressClassName: internal
         annotations:
-          nginx.ingress.kubernetes.io/whitelist-source-range: |
-            10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
         hosts:
-          - host: &host "mlflow.${SECRET_DOMAIN}"
+          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
             paths:
-              - path: /
-                pathType: Prefix
+            service:
+              identifier: app
+              port: http
         tls:
-          - hosts:
-              - *host
+        - hosts:
+          - *host
     persistence:
       data:
         enabled: true

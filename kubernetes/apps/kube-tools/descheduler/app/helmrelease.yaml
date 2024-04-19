@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -14,16 +14,14 @@ spec:
         kind: HelmRepository
         name: descheduler
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
-  uninstall:
-    keepHistory: false
   values:
     replicas: 2
     kind: Deployment
@@ -49,10 +47,24 @@ spec:
                 constraints:
                   - DoNotSchedule
                   - ScheduleAnyway
+            - name: LowNodeUtilization
+              namespaces:
+                exclude:
+                  - "remote"
+              args:
+                thresholds:
+                  cpu: 50
+                  memory: 50
+                  pods: 20
+                targetThresholds:
+                  cpu: 75
+                  memory: 75
+                  pods: 80
           plugins:
             balance:
               enabled:
                 - RemovePodsViolatingTopologySpreadConstraint
+                - LowNodeUtilization
             deschedule:
               enabled:
                 - RemovePodsViolatingInterPodAntiAffinity

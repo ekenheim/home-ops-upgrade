@@ -34,5 +34,6 @@ resources:
   - ./stakater.yaml
   - ./stevehipwell.yaml
   - ./tofu-controller.yaml
+  - ./node-feature-discovery.yaml
   - ./weave-gitops.yaml
   - ./windmill.yaml

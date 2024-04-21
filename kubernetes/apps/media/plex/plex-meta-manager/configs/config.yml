@@ -142,9 +142,9 @@ libraries:
 
   Movies 4K:
     metadata_path:
-      - repo: Movies.yml
+      - repo: Movies4k.yml
     collection_files:
-    - repo: Movies.yml
+    - repo: Movies4k.yml
     overlay_files:
     - pmm: commonsense
       template_variables:

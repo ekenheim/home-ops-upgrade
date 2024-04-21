@@ -1,0 +1,122 @@
+templates:
+  Chart Alpha:
+    sort_title: +<<num>>_<<collection_name>>
+    sync_mode: sync
+    collection_order: alpha
+    collection_minimum: 3
+    delete_below_minimum: true
+  Chart Release:
+    sort_title: +_<<collection_name>>
+    sync_mode: sync
+    collection_order: release
+    collection_minimum: 3
+    delete_below_minimum: true
+  Best of:
+    trakt_list: https://trakt.tv/users/lish408/lists/rotten-tomatoes-best-of-<<year>>
+    sort_title: +_Best of <<year>>
+    sync_mode: sync
+    summary: Rotten Tomatoes Best Movies of <<year>>, according to https://trakt.tv/users/lish408/lists/rotten-tomatoes-best-of-<<year>>.
+    collection_order: release
+    collection_minimum: 3
+    delete_below_minimum: true
+  Studio:
+    optional:
+      - company
+    tmdb_company: <<company>>
+    sort_title: +4_<<collection_name>>
+    sync_mode: sync
+    collection_order: alpha
+    collection_minimum: 3
+    delete_below_minimum: true
+  IMDb Genre:
+    default:
+      title: feature
+      limit: 100
+    imdb_list:
+    - url: https://www.imdb.com/search/title/?title_type=<<title>>&release_date=1990-01-01,&user_rating=5.0,10.0&num_votes=100000,&genres=<<genre>>
+      limit: <<limit>>
+    - url: https://www.imdb.com/search/title/?title_type=<<title>>&release_date=1990-01-01,&user_rating=5.0,10.0&num_votes=100000,&genres=<<genre>>&sort=user_rating,desc
+      limit: <<limit>>
+    sort_title: +++_<<collection_name>>
+    sync_mode: sync
+    collection_order: alpha
+    collection_minimum: 3
+    delete_below_minimum: true
+  Other Genre:
+    sort_title: +++_<<collection_name>>
+    sync_mode: sync
+    collection_order: alpha
+    collection_minimum: 3
+    delete_below_minimum: true
+  Actor:
+    actor: tmdb
+    tmdb_person: <<person>>
+    sort_title: ++++_<<collection_name>>
+    sync_mode: sync
+    collection_order: release
+    collection_minimum: 3
+    delete_below_minimum: true
+  Actor Director:
+    actor: tmdb
+    director: tmdb
+    tmdb_person: <<person>>
+    sort_title: ++++_<<collection_name>>
+    sync_mode: sync
+    collection_order: release
+    collection_minimum: 3
+    delete_below_minimum: true
+  Actor Director Writer:
+    actor: tmdb
+    director: tmdb
+    writer: tmdb
+    tmdb_person: <<person>>
+    sort_title: ++++_<<collection_name>>
+    sync_mode: sync
+    collection_order: release
+    collection_minimum: 3
+    delete_below_minimum: true
+  Actor Writer:
+    actor: tmdb
+    writer: tmdb
+    tmdb_person: <<person>>
+    sort_title: ++++_<<collection_name>>
+    sync_mode: sync
+    collection_order: release
+    collection_minimum: 3
+    delete_below_minimum: true
+  Director:
+    director: tmdb
+    tmdb_person: <<person>>
+    sort_title: ++++_<<collection_name>>
+    sync_mode: sync
+    collection_order: release
+    collection_minimum: 3
+    delete_below_minimum: true
+  Director Writer:
+    director: tmdb
+    writer: tmdb
+    tmdb_person: <<person>>
+    sort_title: ++++_<<collection_name>>
+    sync_mode: sync
+    collection_order: release
+    collection_minimum: 3
+    delete_below_minimum: true
+  Writer:
+    writer: tmdb
+    tmdb_person: <<person>>
+    sort_title: ++++_<<collection_name>>
+    sync_mode: sync
+    collection_order: release
+    collection_minimum: 3
+    delete_below_minimum: true
+  Collection:
+    optional:
+      - collection
+      - movie
+    tmdb_collection_details: <<collection>>
+    tmdb_movie: <<movie>>
+    sync_mode: sync
+    item_assets: true
+    collection_order: release
+    collection_minimum: 3
+    delete_below_minimum: true

@@ -28,7 +28,7 @@ spec:
         type: cronjob
         cronjob:
           schedule: "@weekly"
-          parallelism: 6 # Set to my total number of nodes
+          parallelism: 4 # Set to my total number of nodes
           successfulJobsHistory: 0
           failedJobsHistory: 0
         containers:

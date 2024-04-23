@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -14,16 +14,14 @@ spec:
         kind: HelmRepository
         name: grafana
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
-  uninstall:
-    keepHistory: false
   values:
     replicas: 2
     podAnnotations:
@@ -170,14 +168,14 @@ spec:
             uid: prometheus
             isDefault: true
             access: proxy
-            url: http://thanos-query-frontend.observability.svc.cluster.local:9090
+            url: http://thanos-query-frontend.observability.svc.cluster.local:10902
             jsonData:
               prometheusType: Thanos
               timeInterval: 1m
           - name: Alertmanager
             type: alertmanager
             access: proxy
-            url: http://alertmanager.observability.svc.cluster.local:9093
+            url: http://alertmanager-operated.observability.svc.cluster.local:9093
             jsonData:
               implementation: prometheus
     dashboards:
@@ -201,6 +199,9 @@ spec:
           url: https://raw.githubusercontent.com/ceph/ceph/main/monitoring/ceph-mixin/dashboards_out/hosts-overview.json
           datasource: Prometheus
       data:
+        dragonfly:
+          url: https://raw.githubusercontent.com/dragonflydb/dragonfly/main/tools/local/monitoring/grafana/provisioning/dashboards/dashboard.json
+          datasource: Prometheus
         external-secrets:
           url: https://raw.githubusercontent.com/external-secrets/external-secrets/main/docs/snippets/dashboard.json
           datasource: Prometheus
@@ -333,6 +334,12 @@ spec:
           gnetId: 1860
           revision: 36
           datasource: Prometheus
+        smart:
+          # renovate: depName="Dashboard for smartctl_exporter"
+          gnetId: 20204
+          revision: 1
+          datasource:
+            - { name: DS_PROMETHEUS, value: Prometheus }
         node-feature-discovery:
           url: https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/examples/grafana-dashboard.json
           datasource: Prometheus
@@ -394,6 +401,9 @@ spec:
       - vonage-status-panel
     serviceMonitor:
       enabled: true
+      metricRelabelings:
+        - action: labeldrop
+          regex: (pod)
     ingress:
       enabled: true
       ingressClassName: external

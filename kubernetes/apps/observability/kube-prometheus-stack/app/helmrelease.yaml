@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -23,9 +23,8 @@ spec:
     cleanupOnFail: true
     crds: CreateReplace
     remediation:
+      strategy: rollback
       retries: 3
-  uninstall:
-    keepHistory: false
   dependsOn:
     - name: openebs
       namespace: storage
@@ -39,8 +38,7 @@ spec:
         hosts:
           - &host alertmanager.${SECRET_DOMAIN}
         tls:
-          - hosts:
-              - *host
+          - hosts: [*host]
       alertmanagerSpec:
         replicas: 2
         image:
@@ -61,6 +59,8 @@ spec:
       forceDeployDashboards: true
       sidecar:
         dashboards:
+          annotations:
+            grafana_folder: Kubernetes
           multicluster:
             etcd:
               enabled: true
@@ -104,7 +104,6 @@ spec:
         - 192.168.50.30
         - 192.168.50.31
         - 192.168.50.32
-        - 192.168.50.33
       serviceMonitor:
         metricRelabelings:
           # Remove duplicate labels provided by k3s
@@ -144,8 +143,7 @@ spec:
             - action: replace
               regex: (.*)
               replacement: $1
-              sourceLabels:
-                - __meta_kubernetes_pod_node_name
+              sourceLabels: ["__meta_kubernetes_pod_node_name"]
               targetLabel: kubernetes_node
     prometheus:
       thanosService:
@@ -167,17 +165,28 @@ spec:
         hosts:
           - &host prometheus.${SECRET_DOMAIN}
         tls:
-          - hosts:
-              - *host
+          - hosts: [*host]
       prometheusSpec:
+        podMetadata:
+          annotations:
+            secret.reloader.stakater.com/reload: &secret thanos-objstore-config
         scrapeInterval: 1m # Must match interval in Grafana Helm chart
         enableAdminAPI: true
         enableFeatures:
-          - auto-gomaxprocs
+          - auto-gomemlimit
           - memory-snapshot-on-shutdown
           - new-service-discovery-manager
+        image:
+          registry: quay.io
+          repository: prometheus/prometheus
+          tag: v2.51.0-dedupelabels
         externalLabels:
           cluster: ${CLUSTER_NAME}
+        resources:
+          requests:
+            cpu: 100m
+          limits:
+            memory: 1500Mi
         replicaExternalLabelName: __replica__
         ruleSelectorNilUsesHelmValues: false
         serviceMonitorSelectorNilUsesHelmValues: false
@@ -195,32 +204,23 @@ spec:
                 requests:
                   storage: 20Gi
         additionalScrapeConfigs:
-          - job_name: node-exporter
+          - job_name: &jobName node-exporter
             scrape_interval: 1m
             scrape_timeout: 10s
             honor_timestamps: true
             static_configs:
               - targets:
                   - ${NAS_IP}:9100
+                  - ${NAS_IP}:9633
+            # relabelings:
+            #   - action: replace
+            #     targetLabel: job
+            #     replacement: *jobName
         thanos:
-          image: quay.io/thanos/thanos:v0.34.1
+          image: quay.io/thanos/thanos:${THANOS_VERSION}
+          version: "${THANOS_VERSION#v}"
           objectStorageConfig:
             existingSecret:
-              name: thanos-objstore-secret
-              key: objstore.yml
+              name: *secret
+              key: config
     cleanPrometheusOperatorObjectNames: true
-  postRenderers:
-    - kustomize:
-        patches:
-          - target:
-              version: v1
-              kind: ConfigMap
-              labelSelector: grafana_dashboard in (1)
-            patch: |-
-              apiVersion: v1
-              kind: ConfigMap
-              metadata:
-                name: not-used
-                namespace: not-used
-                annotations:
-                  grafana_folder: Kubernetes

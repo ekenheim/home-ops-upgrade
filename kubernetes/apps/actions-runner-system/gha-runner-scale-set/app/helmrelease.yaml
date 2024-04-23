@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
-  name: arc-home-ops
+  name: gha-runner-scale-set
 spec:
   interval: 30m
   chart:
@@ -14,18 +14,25 @@ spec:
         kind: HelmRepository
         name: actions-runner-controller
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
-  uninstall:
-    keepHistory: false
+  dependsOn:
+    - name: gha-runner-scale-set-controller
+      namespace: actions-runner-system
+  valuesFrom:
+    - kind: Secret
+      name: actions-runner-controller-auth-secret
+      valuesKey: github_token
+      targetPath: githubConfigSecret.github_token
   values:
-    runnerScaleSetName: arc-runner-set-home-ops
+    nameOverride: gha-runner-scale-set
+    runnerScaleSetName: gha-runner-scale-set
     githubConfigUrl: https://github.com/ekenheim/home-ops-upgrade
     minRunners: 1
     maxRunners: 10
@@ -38,12 +45,5 @@ spec:
             image: ghcr.io/joryirving/actions-runner:2.315.0@sha256:bdf2dbda1747c39d3468d3680ef3626f2f509db75891eabef03e4a24b534d669
             command: ["/home/runner/run.sh"]
     controllerServiceAccount:
-      name: actions-runner-controller-gha-rs-controller
+      name: gha-runner-scale-set-controller
       namespace: actions-runner-system
-  valuesFrom:
-    - kind: Secret
-      name: actions-runner-controller-secret
-      valuesKey: github_token
-      targetPath: githubConfigSecret.github_token
-
-

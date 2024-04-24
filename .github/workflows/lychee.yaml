@@ -8,9 +8,10 @@ on:
     branches: ["main"]
     paths: [".github/workflows/lychee.yaml"]
   schedule:
-    - cron: "0 0 * * *" # Daily at Midnight
+    - cron: "0 0 * * *"
 
 env:
+  LYCHEE_OUTPUT: lychee/out.md
   WORKFLOW_ISSUE_TITLE: "Link Checker Dashboard 🔗"
 
 jobs:
@@ -18,39 +19,34 @@ jobs:
     name: Lychee
     runs-on: ubuntu-latest
     steps:
+      - name: Get Secrets
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            e062dcb9-8cd7-471e-b9be-b10100497102 > BOT_APP_ID
+            5856238d-3fae-4a0f-9847-b1010049f697 > BOT_APP_PRIVATE_KEY
+
       - name: Generate Token
         uses: actions/create-github-app-token@v1
         id: app-token
         with:
-          app-id: "${{ secrets.BOT_APP_ID }}"
-          private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
+          app-id: "${{ env.BOT_APP_ID }}"
+          private-key: "${{ env.BOT_APP_PRIVATE_KEY }}"
 
       - name: Checkout
         uses: actions/checkout@v4
         with:
           token: "${{ steps.app-token.outputs.token }}"
 
-      - name: Setup Homebrew
-        uses: Homebrew/actions/setup-homebrew@master
-
-      - name: Setup Workflow Tools
-        shell: bash
-        run: brew install lychee
-
-      - name: Scan For Broken Links
-        shell: bash
-        env:
-          GITHUB_TOKEN: "${{ steps.app-token.outputs.token }}"
-        run: |
-          lychee --verbose --no-progress \
-              --format markdown \
-              --output results.md \
-              --exclude-all-private \
-              --exclude-mail \
-              ./**/*.md || true
-
-      - name: Print Output
-        run: cat results.md
+      - name: Scan for broken links
+        uses: lycheeverse/lychee-action@v1
+        id: lychee
+        with:
+          token: "${{ steps.app-token.outputs.token }}"
+          args: --verbose --no-progress --exclude-mail './**/*.md'
+          output: "${{ env.LYCHEE_OUTPUT }}"
+          debug: true
 
       - name: Find Link Checker Issue
         id: find-issue
@@ -74,4 +70,4 @@ jobs:
           token: "${{ steps.app-token.outputs.token }}"
           title: "${{ env.WORKFLOW_ISSUE_TITLE }}"
           issue-number: "${{ steps.find-issue.outputs.issue-number || '' }}"
-          content-filepath: results.md
+          content-filepath: "${{ env.LYCHEE_OUTPUT }}"

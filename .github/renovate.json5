@@ -1,33 +1,16 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    "docker:enableMajor",
-    "replacements:k8s-registry-move",
-    ":automergeBranch",
-    ":disableRateLimiting",
-    ":dependencyDashboard",
-    ":semanticCommits",
     ":skipStatusChecks",
-    ":timezone(Europe/Stockholm)",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/allowedVersions.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/autoMerge.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/clusters.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/commitMessage.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/customManagers.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/grafanaDashboards.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/groups.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/labels.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/packageRules.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/semanticCommits.json5"
+    "github>ekenheim/home-ops-upgrade/renovate-config",
+    "github>ekenheim/home-ops-upgrade/renovate-config:autoMerge",
+    "github>ekenheim/home-ops-upgrade/home-ops//.github/renovate/allowedVersions.json5",
+    "github>ekenheim/home-ops-upgrade/home-ops//.github/renovate/autoMerge.json5",
+    "github>ekenheim/home-ops-upgrade/home-ops//.github/renovate/customManagers.json5",
+    "github>ekenheim/home-ops-upgrade/home-ops//.github/renovate/grafanaDashboards.json5",
+    "github>ekenheim/home-ops-upgrade/home-ops//.github/renovate/groups.json5",
+    "github>ekenheim/home-ops-upgrade/home-ops//.github/renovate/packageRules.json5"
   ],
-  "onboarding": false,
-  "requireConfig": "optional",
-  "dependencyDashboardTitle": "Renovate Dashboard 🤖",
-  "suppressNotifications": ["prEditedNotification", "prIgnoreNotification"],
-  "rebaseWhen": "conflicted",
-  "assigneesFromCodeOwners": true,
-  "reviewersFromCodeOwners": true,
   "ignorePaths": [
     "**/*.sops.*",
     "**/.archive/**",
@@ -35,19 +18,19 @@
   ],
   "flux": {
     "fileMatch": [
-      "(^|/)kubernetes/.+\\.ya?ml(\\.j2)?$"
+      "(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"
     ]
   },
   "helm-values": {
     "fileMatch": [
-      "(^|/)kubernetes/.+\\.ya?ml(\\.j2)?$"
+      "(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"
     ]
   },
   "kubernetes": {
     "fileMatch": [
-      "(^|/)\\.taskfiles/.+\\.ya?ml(\\.j2)?$",
-      "(^|/)ansible/.+\\.ya?ml(\\.j2)?$",
-      "(^|/)kubernetes/.+\\.ya?ml(\\.j2)?$"
+      "(^|/)\\.taskfiles/.+\\.ya?ml(?:\\.j2)?$",
+      "(^|/)ansible/.+\\.ya?ml(?:\\.j2)?$",
+      "(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"
     ]
   }
 }

@@ -50,7 +50,7 @@ collections:
   Popular:
     template: {name: Chart Alpha, num: 4}
     tmdb_popular: 40
-    imdb_list:
+    imdb_search:
       url: https://www.imdb.com/search/title/?title_type=feature,tv_movie,documentary,short
       limit: 40
     summary: Popular Movies across the internet, according to https://www.imdb.com/search/title/?title_type=feature,tv_movie,documentary,short.
@@ -64,6 +64,6 @@ collections:
     schedule: daily
   Emmy Winners:
     template: { name: Chart, num: 5 }
-    imdb_list: https://www.imdb.com/search/title/?title_type=tv_series,tv_miniseries&groups=emmy_winner
+    imdb_search: https://www.imdb.com/search/title/?title_type=tv_series,tv_miniseries&groups=emmy_winner
     summary: Emmy Winning Shows
     schedule: weekly (sunday)

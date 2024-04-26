@@ -1,5 +1,6 @@
-home-kubernetes-master3.yaml
-talosconfig
 home-kubernetes-master2.yaml
+home-kubernetes-worker2.yaml
 home-kubernetes-master1.yaml
 home-kubernetes-worker1.yaml
+home-kubernetes-master3.yaml
+talosconfig

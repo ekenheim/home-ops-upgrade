@@ -19,11 +19,11 @@ cniConfig:
   name: none
 
 nodes:
-  - hostname: "worker1"
+  - hostname: "master2"
     ipAddress: "192.168.50.33"
     installDisk: "/dev/sda"
     talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
-    controlPlane: false
+    controlPlane: true
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: 48:21:0b:50:ee:bc
@@ -32,11 +32,13 @@ nodes:
         routes:
           - network: 0.0.0.0/0
             gateway: "192.168.50.1"
-  - hostname: "master3"
+        vip:
+          ip: "192.168.50.10"
+  - hostname: "worker2"
     ipAddress: "192.168.50.32"
     installDisk: "/dev/sda"
     talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
-    controlPlane: true
+    controlPlane: false
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: 04:0e:3c:21:b2:3f
@@ -45,9 +47,7 @@ nodes:
         routes:
           - network: 0.0.0.0/0
             gateway: "192.168.50.1"
-        vip:
-          ip: "192.168.50.10"
-  - hostname: "master2"
+  - hostname: "master1"
     ipAddress: "192.168.50.31"
     installDisk: "/dev/sda"
     talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
@@ -62,11 +62,11 @@ nodes:
             gateway: "192.168.50.1"
         vip:
           ip: "192.168.50.10"
-  - hostname: "master1"
+  - hostname: "worker1"
     ipAddress: "192.168.50.30"
     installDisk: "/dev/sdb"
     talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
-    controlPlane: true
+    controlPlane: false
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: 94:c6:91:17:18:61
@@ -75,9 +75,21 @@ nodes:
         routes:
           - network: 0.0.0.0/0
             gateway: "192.168.50.1"
+  - hostname: "master3"
+    ipAddress: "192.168.50.34"
+    installDisk: "/dev/sdb"
+    talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
+    controlPlane: true
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: 58:47:ca:75:60:0f
+        dhcp: true
+        mtu: 1500
+        routes:
+          - network: 0.0.0.0/0
+            gateway: "192.168.50.1"
         vip:
           ip: "192.168.50.10"
-
 
 patches:
   # Configure containerd
@@ -128,7 +140,7 @@ patches:
     machine:
       network:
         nameservers:
-          - 192.168.1.254
+          - 192.168.1.1
           - 1.1.1.1
 
   # Configure NTP

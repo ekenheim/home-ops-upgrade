@@ -91,7 +91,7 @@ spec:
         useAllDevices: true
         nodes:
           - name: master1
-            deviceFilter: "^/dev/sda$"
+            deviceFilter: "^nvme0n1$"
             config:
               osdsPerDevice: "1"
           - name: master2
@@ -103,10 +103,13 @@ spec:
             config:
               osdsPerDevice: "1"
           - name: worker1
+            deviceFilter: "^/dev/sda$"
+            config:
+              osdsPerDevice: "1"
+          - name: worker2
             deviceFilter: "^nvme0n1$"
             config:
               osdsPerDevice: "1"
-
     cephBlockPools:
       - name: ceph-blockpool
         spec:

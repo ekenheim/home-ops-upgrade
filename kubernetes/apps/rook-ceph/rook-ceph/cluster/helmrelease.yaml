@@ -143,11 +143,11 @@ spec:
         spec:
           metadataPool:
             replicated:
-              size: 3
+              size: 4
           dataPools:
             - failureDomain: host
               replicated:
-                size: 3
+                size: 4
               name: data0
           metadataServer:
             activeCount: 1
@@ -195,12 +195,12 @@ spec:
           metadataPool:
             failureDomain: host
             replicated:
-              size: 3
+              size: 4
           dataPool:
             failureDomain: host
             erasureCoded:
               dataChunks: 2
-              codingChunks: 1
+              codingChunks: 2
           preservePoolsOnDelete: true
           gateway:
             port: 80

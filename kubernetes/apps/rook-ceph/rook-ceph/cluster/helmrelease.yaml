@@ -89,27 +89,9 @@ spec:
       storage:
         useAllNodes: true
         useAllDevices: true
-        nodes:
-          - name: master1
-            deviceFilter: "^nvme0n1$"
-            config:
-              osdsPerDevice: "1"
-          - name: master2
-            deviceFilter: "^nvme0n1$"
-            config:
-              osdsPerDevice: "1"
-          - name: master3
-            deviceFilter: "^nvme0n1$"
-            config:
-              osdsPerDevice: "1"
-          - name: worker1
-            deviceFilter: "^/dev/sda$"
-            config:
-              osdsPerDevice: "1"
-          - name: worker2
-            deviceFilter: "^nvme0n1$"
-            config:
-              osdsPerDevice: "1"
+        deviceFilter: nvme0n1
+        config:
+          osdsPerDevice: "1"
     cephBlockPools:
       - name: ceph-blockpool
         spec:

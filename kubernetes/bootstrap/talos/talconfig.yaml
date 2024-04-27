@@ -49,7 +49,7 @@ nodes:
           ip: "192.168.50.10"
   - hostname: "master2"
     ipAddress: "192.168.50.33"
-    installDisk: "/dev/sdb"
+    installDisk: "/dev/sda"
     talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
     controlPlane: true
     networkInterfaces:

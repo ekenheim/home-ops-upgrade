@@ -6,7 +6,7 @@ metadata:
   name: dragonfly
 spec:
   image: ghcr.io/dragonflydb/dragonfly:v1.17.1
-  replicas: 5
+  replicas: 4
   env:
     - name: MAX_MEMORY
       valueFrom:

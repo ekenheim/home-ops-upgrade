@@ -2,8 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     ":skipStatusChecks",
-    "github>ekenheim/home-ops-upgrade/renovate-config",
-    "github>ekenheim/home-ops-upgrade/renovate-config:autoMerge",
+    "github>ekenheim/renovate-config",
+    "github>ekenheim/renovate-config:autoMerge",
     "github>ekenheim/home-ops-upgrade/home-ops//.github/renovate/allowedVersions.json5",
     "github>ekenheim/home-ops-upgrade/home-ops//.github/renovate/autoMerge.json5",
     "github>ekenheim/home-ops-upgrade/home-ops//.github/renovate/customManagers.json5",

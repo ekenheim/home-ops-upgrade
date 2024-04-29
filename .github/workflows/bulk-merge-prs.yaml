@@ -26,7 +26,7 @@
             secrets: |
               d3349f37-6ff4-406b-861a-b16101048306 > BOT_APP_ID
               12826224-0a9e-45f2-b8bb-b1610104f8c4 > BOT_APP_PRIVATE_KEY
-              33fe0505-5ef3-4d91-8053-b101004a4947 > BOT_USERNAME
+              5f4256ee-23b0-4be5-b896-b16101078178 > BOT_USERNAME
 
         - name: Generate Token
           uses: actions/create-github-app-token@v1

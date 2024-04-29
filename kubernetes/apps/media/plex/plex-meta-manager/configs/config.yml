@@ -202,7 +202,12 @@ libraries:
 
 
 
-
+playlist_files:
+- repo: playlist.yml
+  template_variables:
+    use_walking: true
+    radarr_add_missing_walking: false
+    sonarr_add_missing_walking: false
 settings:
   cache: false
   cache_expiration: 60

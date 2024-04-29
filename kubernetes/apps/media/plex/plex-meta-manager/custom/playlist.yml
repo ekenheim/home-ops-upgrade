@@ -53,7 +53,7 @@
 templates:
   playlist:
     default:
-      libraries: Movies, TV Shows, Anime, Kids Movies, Anime Shows
+      libraries: Movies, Series, Cartoons
       radarr_add_missing_<<key>>: <<radarr_add_missing>>
       sonarr_add_missing_<<key>>: <<sonarr_add_missing>>
       radarr_tag_<<key>>: <<radarr_tag>>

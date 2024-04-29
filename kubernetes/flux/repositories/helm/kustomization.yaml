@@ -37,3 +37,4 @@ resources:
   - ./node-feature-discovery.yaml
   - ./weave-gitops.yaml
   - ./windmill.yaml
+  - ./userinit-controller.yaml

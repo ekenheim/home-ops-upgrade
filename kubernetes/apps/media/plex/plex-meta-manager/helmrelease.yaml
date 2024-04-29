@@ -38,7 +38,7 @@ spec:
           app:
             image:
               repository: meisnate12/plex-meta-manager
-              tag: v2.0.0
+              tag: v1.21.1
             command:
               - /scripts/run.sh
             env:

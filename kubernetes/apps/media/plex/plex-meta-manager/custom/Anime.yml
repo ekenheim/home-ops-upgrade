@@ -5,128 +5,29 @@ templates:
     collection_order: alpha
     collection_minimum: 3
     delete_below_minimum: true
-  Chart Release:
-    sort_title: +_<<collection_name>>
+  Chart:
+    sort_title: +<<num>>_<<collection_name>>
     sync_mode: sync
-    collection_order: release
-    collection_minimum: 3
-    delete_below_minimum: true
-  Best of:
-    trakt_list: https://trakt.tv/users/lish408/lists/rotten-tomatoes-best-of-<<year>>
-    sort_title: +_Best of <<year>>
-    sync_mode: sync
-    summary: Rotten Tomatoes Best Movies of <<year>>, according to https://trakt.tv/users/lish408/lists/rotten-tomatoes-best-of-<<year>>.
-    collection_order: release
-    collection_minimum: 3
-    delete_below_minimum: true
-  Studio:
+  network:
     optional:
-      - company
-    tmdb_company: <<company>>
-    sort_title: +4_<<collection_name>>
+      - network
+    tmdb_network: <<network>>
+    sort_title: +2_<<collection_name>>
     sync_mode: sync
-    collection_order: alpha
-    collection_minimum: 3
-    delete_below_minimum: true
-  IMDb Genre:
-    default:
-      title: feature
-      limit: 100
-    imdb_search:
-    - url: https://www.imdb.com/search/title/?title_type=<<title>>&release_date=1990-01-01,&user_rating=5.0,10.0&num_votes=100000,&genres=<<genre>>
-      limit: <<limit>>
-    - url: https://www.imdb.com/search/title/?title_type=<<title>>&release_date=1990-01-01,&user_rating=5.0,10.0&num_votes=100000,&genres=<<genre>>&sort=user_rating,desc
-      limit: <<limit>>
-    sort_title: +++_<<collection_name>>
-    sync_mode: sync
-    collection_order: alpha
-    collection_minimum: 3
-    delete_below_minimum: true
-  Other Genre:
-    sort_title: +++_<<collection_name>>
-    sync_mode: sync
-    collection_order: alpha
-    collection_minimum: 3
-    delete_below_minimum: true
-  Actor:
-    actor: tmdb
-    tmdb_person: <<person>>
-    sort_title: ++++_<<collection_name>>
-    sync_mode: sync
-    collection_order: release
-    collection_minimum: 3
-    delete_below_minimum: true
-  Actor Director:
-    actor: tmdb
-    director: tmdb
-    tmdb_person: <<person>>
-    sort_title: ++++_<<collection_name>>
-    sync_mode: sync
-    collection_order: release
-    collection_minimum: 3
-    delete_below_minimum: true
-  Actor Director Writer:
-    actor: tmdb
-    director: tmdb
-    writer: tmdb
-    tmdb_person: <<person>>
-    sort_title: ++++_<<collection_name>>
-    sync_mode: sync
-    collection_order: release
-    collection_minimum: 3
-    delete_below_minimum: true
-  Actor Writer:
-    actor: tmdb
-    writer: tmdb
-    tmdb_person: <<person>>
-    sort_title: ++++_<<collection_name>>
-    sync_mode: sync
-    collection_order: release
-    collection_minimum: 3
-    delete_below_minimum: true
-  Director:
-    director: tmdb
-    tmdb_person: <<person>>
-    sort_title: ++++_<<collection_name>>
-    sync_mode: sync
-    collection_order: release
-    collection_minimum: 3
-    delete_below_minimum: true
-  Director Writer:
-    director: tmdb
-    writer: tmdb
-    tmdb_person: <<person>>
-    sort_title: ++++_<<collection_name>>
-    sync_mode: sync
-    collection_order: release
-    collection_minimum: 3
-    delete_below_minimum: true
-  Writer:
-    writer: tmdb
-    tmdb_person: <<person>>
-    sort_title: ++++_<<collection_name>>
-    sync_mode: sync
-    collection_order: release
-    collection_minimum: 3
-    delete_below_minimum: true
-  Collection:
-    optional:
-      - collection
-      - movie
-    tmdb_collection_details: <<collection>>
-    tmdb_movie: <<movie>>
-    sync_mode: sync
-    item_assets: true
-    collection_order: release
-    collection_minimum: 3
-    delete_below_minimum: true
 
 collections:
+#  4K Overlay:
+#    plex_search:
+#      all:
+#        resolution: 4K
+#    item_overlay: 4K-Mini
+#    item_assets: true
+#    build_collection: false
 ######################################################
-#                Chart Collections                   #
+#                       Charts                       #
 ######################################################
-  Popular Movies on Plex:
-    template: {name: Chart Alpha, num: 2}
+  Plex Popular:
+    template: { name: Chart, num: 2 }
     tautulli_popular:
       list_days: 30
       list_size: 20
@@ -135,8 +36,8 @@ collections:
       list_days: 30
       list_size: 20
       list_buffer: 20
-    summary: This collection is based on the most popular movies on my server in the last 30 days. It is updated every day at 3AM.
-    url_poster: https://i.imgur.com/aWlUc1Z.jpg
+    summary: Popular Shows on Plex
+    url_poster: https://i.imgur.com/0xmqc5a.png
     schedule: daily
   Trending:
     template: {name: Chart Alpha, num: 4}
@@ -149,7 +50,7 @@ collections:
   Popular:
     template: {name: Chart Alpha, num: 4}
     tmdb_popular: 40
-    imdb_search:
+    imdb_list:
       url: https://www.imdb.com/search/title/?title_type=feature,tv_movie,documentary,short
       limit: 40
     summary: Popular Movies across the internet, according to https://www.imdb.com/search/title/?title_type=feature,tv_movie,documentary,short.
@@ -161,21 +62,8 @@ collections:
     summary: Top Rated Movies across the internet
     url_poster: https://i.imgur.com/VvfdUHn.jpg
     schedule: daily
-  In Cinema:
-    template: {name: Chart Alpha, num: 2}
-    trakt_list: https://trakt.tv/users/fs-corrupt/lists/in-cinemas?sort=rank,asc
-    summary: Currently in Austria/Germany Cinema´s, according to https://trakt.tv/users/fs-corrupt/lists/in-cinemas?sort=rank,asc.
-    url_poster: https://i.imgur.com/f1jz2HR.jpg
-    schedule: daily
-  Studio Ghibli:
-    template: {name: Chart Alpha, num: 3}
-    trakt_list: https://trakt.tv/users/quno65/lists/studio-ghibli?sort=released,desc
-    summary: Animated feature films by Studio Ghibli, according to https://trakt.tv/users/quno65/lists/studio-ghibli?sort=released,desc.
-    url_poster: https://i.imgur.com/RASKgkv.jpg
-    schedule: daily
-  One Piece:
-    template: {name: Chart Alpha, num: 3}
-    trakt_list: https://trakt.tv/users/sonply/lists/one-piece-specials-movies-and-ovas?sort=rank,asc
-    summary: List of specials, OVAs and movies in the order I'll watch, according to https://trakt.tv/users/sonply/lists/one-piece-specials-movies-and-ovas?sort=rank,asc.
-    url_poster: https://i.imgur.com/cJesoBi.jpg
-    schedule: daily
+  Emmy Winners:
+    template: { name: Chart, num: 5 }
+    imdb_list: https://www.imdb.com/search/title/?title_type=tv_series,tv_miniseries&groups=emmy_winner
+    summary: Emmy Winning Shows
+    schedule: weekly (sunday)

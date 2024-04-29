@@ -1,34 +1,54 @@
 ---
 libraries:
   Cartoons:
-    schedule: hourly(11),hourly(14),hourly(17),hourly(20)
-    schedule_overlays: hourly(11),hourly(14),hourly(17),hourly(20)
     collection_files:
-    - repo: Movies.yml
+    - repo: Anime.yml
     overlay_files:
-    - pmm: commonsense
+    - default: network
       template_variables:
-        vertical_offset: 37
-        horizontal_offset: 255
-        back_width: 230
-    - pmm: languages
+        builder_level: season
+        vertical_position: bottom
+        horizontal_position: center
+        horizontal_offset: 30
+        vertical_offset: 50
+    - default: languages
       template_variables:
+        builder_level: episode
         overlay_limit: 5
-        horizontal_position: left
+        horizontal_position: right
         vertical_position: bottom
         style: square
         back_color: '#00000099'
+        back_width: 102
         text: ""
         final_name: <<key>>
-    - pmm: runtimes
+    - default: status
       template_variables:
-        vertical_offset: 37
         horizontal_align: center
-        horizontal_offset: 140
+        vertical_align: top
+        vertical_offset: 0
+        horizontal_offset: 0
+        back_height: 80
+        back_width: 1100
+        font: config/fonts/Avenir_95_Black.ttf
+        font_size: 60
+        font_color_airing: '#27C24C'
+        font_color_returning: '#FFA500'
+        font_color_canceled: '#ED1F1F'
+        font_color_ended: '#FF0000'
+        back_color: '#FFFFFF'
+    - default: runtimes
+      template_variables:
+        builder_level: episode
+        horizontal_align: left
+        back_color: '#00000099'
+        back_height: 80
+        vertical_offset: 20
+        horizontal_offset: 18
         text: ''
         back_width: 205
     - remove_overlays: false
-    - repo: overlays_movies.yml
+    - repo: overlays_tv.yml
       template_variables:
       # Which overlay(s) should be used?
       # Posters
@@ -45,14 +65,15 @@ libraries:
     collection_files:
     - repo: TVShows.yml
     overlay_files:
-    - pmm: network
+    #- reapply_overlays: true
+    - default: network
       template_variables:
         builder_level: season
         vertical_position: bottom
         horizontal_position: center
         horizontal_offset: 30
         vertical_offset: 50
-    - pmm: languages
+    - default: languages
       template_variables:
         builder_level: episode
         overlay_limit: 5
@@ -63,7 +84,7 @@ libraries:
         back_width: 102
         text: ""
         final_name: <<key>>
-    - pmm: status
+    - default: status
       template_variables:
         horizontal_align: center
         vertical_align: top
@@ -78,7 +99,7 @@ libraries:
         font_color_canceled: '#ED1F1F'
         font_color_ended: '#FF0000'
         back_color: '#FFFFFF'
-    - pmm: runtimes
+    - default: runtimes
       template_variables:
         builder_level: episode
         horizontal_align: left
@@ -102,15 +123,15 @@ libraries:
       assets_for_all: true
 
   Movies:
-    metadata_path:
-      - repo: Movies.yml
+    collection_files:
+    - repo: Movies.yml
     overlay_files:
-    - pmm: commonsense
+    - default: commonsense
       template_variables:
         vertical_offset: 37
         horizontal_offset: 255
         back_width: 230
-    - pmm: languages
+    - default: languages
       template_variables:
         overlay_limit: 5
         horizontal_position: left
@@ -119,7 +140,7 @@ libraries:
         back_color: '#00000099'
         text: ""
         final_name: <<key>>
-    - pmm: runtimes
+    - default: runtimes
       template_variables:
         vertical_offset: 37
         horizontal_align: center
@@ -141,17 +162,15 @@ libraries:
       assets_for_all: true
 
   Movies 4K:
-    metadata_path:
-      - repo: Movies4k.yml
     collection_files:
     - repo: Movies4k.yml
     overlay_files:
-    - pmm: commonsense
+    - default: commonsense
       template_variables:
         vertical_offset: 37
         horizontal_offset: 255
         back_width: 230
-    - pmm: languages
+    - default: languages
       template_variables:
         overlay_limit: 5
         horizontal_position: left
@@ -160,7 +179,7 @@ libraries:
         back_color: '#00000099'
         text: ""
         final_name: <<key>>
-    - pmm: runtimes
+    - default: runtimes
       template_variables:
         vertical_offset: 37
         horizontal_align: center
@@ -180,6 +199,9 @@ libraries:
     operations:
       mass_content_rating_update: mdb_commonsense
       assets_for_all: true
+
+
+
 
 settings:
   cache: false
@@ -230,9 +252,10 @@ plex:
   url: http://plex.media.svc.cluster.local:32400
   token: {{ .PLEX_TOKEN }}
   timeout: 60
-  clean_bundles: true
-  empty_trash: true
-  optimize: true
+  clean_bundles: false
+  empty_trash: false
+  optimize: false
+  db_cache:
 webhooks:
   error:
   version:

@@ -7,7 +7,7 @@ metadata:
 spec:
   dependsOn:
     - name: crunchy-postgres-operator-cluster
-    - name: crunchy-postgres-operator-clustersecretstore
+    - name: crunchy-postgres-stores
   path: ./kubernetes/apps/datasci/mlflow/app
   prune: true
   sourceRef:

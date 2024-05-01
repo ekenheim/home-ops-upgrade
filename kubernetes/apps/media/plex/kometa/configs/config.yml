@@ -226,7 +226,7 @@ settings:
   minimum_items: 1
   delete_below_minimum: false
   delete_not_scheduled: false
-  run_again_delay: 0
+  run_again_delay: 2
   missing_only_released: true
   show_unconfigured: true
   show_unmanaged: false
@@ -244,7 +244,7 @@ settings:
   playlist_report: false
   verify_ssl: true
   check_nightly: false
-  custom_repo: https://github.com/ekenheim/home-ops-upgrade/tree/main/kubernetes/apps/media/plex/plex-meta-manager/custom/
+  custom_repo: https://github.com/ekenheim/home-ops-upgrade/tree/main/kubernetes/apps/media/plex/kometa/custom/
   playlist_exclude_users:
   run_order:
   - operations
@@ -254,8 +254,8 @@ settings:
 
 
 plex:
-  url: http://plex.media.svc.cluster.local:32400
-  token: {{ .PLEX_TOKEN }}
+  url: http://plex.media:32400
+  token: <<PLEX_API_KEY>>
   timeout: 60
   clean_bundles: false
   empty_trash: false
@@ -269,12 +269,12 @@ webhooks:
   delete:
 
 tautulli:
-  url: http://tautulli.media.svc.cluster.local:8181
-  apikey: {{ .TAUTULLI_API_KEY }}
+  url: http://tautulli.media
+  apikey: <<TAUTULLI_API_KEY>>
 
 radarr:
-  url: http://radarr.downloads.svc.cluster.local
-  token: {{ .RADARR_API_KEY }}
+  url: http://radarr.downloads
+  token: <<RADARR_API_KEY>>
   add_missing: false
   add_existing: false
   root_folder_path: /Media/movies
@@ -288,8 +288,8 @@ radarr:
   upgrade_existing: false
 
 sonarr:
-  url: http://sonarr.downloads.svc.cluster.local
-  token: {{ .SONARR_API_KEY }}
+  url: http://sonarr.downloads
+  token: <<SONARR_API_KEY>>
   add_missing: false
   add_existing: false
   root_folder_path: /Media/series
@@ -305,30 +305,30 @@ sonarr:
   plex_path:
   upgrade_existing: false
 
-tmdb:
-  apikey: {{ .TMDB_API_KEY }}
+tmtmdb:
+  apikey: <<TMDB_API_KEY>>
   language: en
   cache_expiration: 60
   region:
 
 trakt:
-  client_id: {{ .TRAKT_CLIENT_ID }}
-  client_secret: {{ .TRAKT_CLIENT_SECRET }}
+  client_id: <<TRAKT_CLIENT_ID>>
+  client_secret: <<TRAKT_CLIENT_SECRET>>
   authorization:
-    access_token: {{ .TRAKT_ACCESS_TOKEN }}
+    access_token: <<TRAKT_ACCESS_TOKEN>>
     token_type: Bearer
-    expires_in: {{ .TRAKT_EXPIRES_IN }}
-    refresh_token: {{ .TRAKT_REFRESH_TOKEN }}
+    expires_in: <<TRAKT_EXPIRES_IN>>
+    refresh_token: <<TRAKT_REFRESH_TOKEN>>
     scope: public
-    created_at: {{ .TRAKT_CREATED_AT }}
+    created_at: <<TRAKT_CREATED_AT>>
   pin:
 
 mdblist:
-  apikey: {{ .MDBLIST_API_KEY }}
+  apikey: <<MDBLIST_API_KEY>>
   cache_expiration: 60
 
 omdb:
-  apikey: {{ .OMDB_API_KEY }}
+  apikey: <<OMDB_API_KEY>>
   cache_expiration: 60
 
 #mal:

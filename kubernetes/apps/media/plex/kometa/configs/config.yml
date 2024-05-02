@@ -269,11 +269,11 @@ webhooks:
   delete:
 
 tautulli:
-  url: http://tautulli.media
+  url: http://tautulli.media.svc.cluster.local:8181
   apikey: <<TAUTULLI_API_KEY>>
 
 radarr:
-  url: http://radarr.downloads
+  url: http://radarr.downloads.svc.cluster.local
   token: <<RADARR_API_KEY>>
   add_missing: false
   add_existing: false
@@ -288,7 +288,7 @@ radarr:
   upgrade_existing: false
 
 sonarr:
-  url: http://sonarr.downloads
+  url: http://sonarr.downloads.svc.cluster.local
   token: <<SONARR_API_KEY>>
   add_missing: false
   add_existing: false

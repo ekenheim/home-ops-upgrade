@@ -305,7 +305,7 @@ sonarr:
   plex_path:
   upgrade_existing: false
 
-tmtmdb:
+tmdb:
   apikey: <<TMDB_API_KEY>>
   language: en
   cache_expiration: 60

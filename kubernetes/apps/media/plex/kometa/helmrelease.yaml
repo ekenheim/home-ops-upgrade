@@ -89,3 +89,10 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /config/logs
+      media:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        globalMounts:
+        - path: /Media
+          subPath: Media

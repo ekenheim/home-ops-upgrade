@@ -95,7 +95,7 @@ spec:
           app:
             image:
               repository: ghcr.io/zoriya/kyoo_scanner
-              tag: master@sha256:6ea496c8104321fc86106a2b4b6a4e54a0ef68e584783a23000402c00cc397ca
+              tag: master@sha256:7f0eff2832be527d194714493adc2c7ef9393795fca7dfc1f8630996c5208d3d
             args: ["scanner"]
             envFrom: *envFrom
             resources:
@@ -115,7 +115,7 @@ spec:
           app:
             image:
               repository: ghcr.io/zoriya/kyoo_scanner
-              tag: master@sha256:6ea496c8104321fc86106a2b4b6a4e54a0ef68e584783a23000402c00cc397ca
+              tag: master@sha256:7f0eff2832be527d194714493adc2c7ef9393795fca7dfc1f8630996c5208d3d
             args: ["matcher"]
             envFrom: *envFrom
             resources:

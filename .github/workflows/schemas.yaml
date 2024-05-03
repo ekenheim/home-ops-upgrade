@@ -23,8 +23,8 @@ jobs:
         with:
           access_token: ${{ secrets.BW_ACCESS_TOKEN }}
           secrets: |
-            d12da64e-d865-4f4b-8ae0-b133013c4251 > CLOUDFLARE_API_KEY
-            e42be752-82d4-4340-84d2-b133013dc94a > CLOUDFLARE_ACCOUNT_ID
+            e2c5d873-fea3-43c6-a5e8-b1650077db0d > CLOUDFLARE_API_KEY
+            163f1577-1009-4bbd-84cc-b165007809c3 > CLOUDFLARE_ACCOUNT_ID
             d7abec51-f77a-49fd-be89-b13400f196e8 > KUBECONFIG
             d3349f37-6ff4-406b-861a-b16101048306 > BOT_APP_ID
             12826224-0a9e-45f2-b8bb-b1610104f8c4 > BOT_APP_PRIVATE_KEY

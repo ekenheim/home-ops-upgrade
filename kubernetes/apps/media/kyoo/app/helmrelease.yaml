@@ -209,7 +209,7 @@ spec:
           app:
             image:
               repository: ghcr.io/zoriya/kyoo_transcoder
-              tag: master@sha256:a8437eafa3606d77a225734a833b7e93580c3a7c3c2d8f6d7f7cb99aa75300dd
+              tag: master@sha256:ab9d38413350eefa488c8dd0ed89f56dcbd20f92b32b50387414243be0143e44
             envFrom: *envFrom
             resources:
               requests:

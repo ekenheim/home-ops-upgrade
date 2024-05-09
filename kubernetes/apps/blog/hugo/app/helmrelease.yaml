@@ -48,7 +48,7 @@ spec:
           app:
             image:
               repository: ghcr.io/ekenheim/bloghugo
-              tag: latest
+              tag: sha256:93fe1d2fcaacbb177269d7fce257912fa3a6c4220f839632318b585b1c01777a
               pullPolicy: Always
             probes:
               liveness:

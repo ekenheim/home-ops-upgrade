@@ -42,11 +42,9 @@ spec:
             env:
               TZ: ${TIMEZONE}
               DATABASE_TYPE: postgresql
-              DATABASE_URL:
-                valueFrom:
-                  secretKeyRef:
-                    name: &db_secret database-umami
-                    key: POSTGRES_URL
+            envFrom:
+            - secretRef:
+                name: umami-secret
               DISABLE_TELEMETRY: "true"
             # envFrom:
             #   - secretRef:

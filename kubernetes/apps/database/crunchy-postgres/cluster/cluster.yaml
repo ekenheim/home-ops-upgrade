@@ -96,6 +96,10 @@ spec:
       databases: ["mlflow"]
       password:
         type: AlphaNumeric
+    - name: "umami"
+      databases: ["umami"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

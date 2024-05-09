@@ -48,7 +48,7 @@ spec:
           app:
             image:
               repository: ghcr.io/ekenheim/bloghugo
-              tag: 2024.05.091254@sha256:28e92e44a2ed0d541828cc7693aaf2772f1d6a0a5c8916855bd335caa80ad193
+              tag: latest
               pullPolicy: Always
             probes:
               liveness:

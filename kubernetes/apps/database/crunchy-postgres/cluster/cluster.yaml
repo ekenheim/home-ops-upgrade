@@ -97,7 +97,7 @@ spec:
       password:
         type: AlphaNumeric
     - name: "umami"
-      databases: ["mydb"]
+      databases: ["mydb", "umami"]
       password:
         type: AlphaNumeric
   backups:

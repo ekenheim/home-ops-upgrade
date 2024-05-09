@@ -45,7 +45,6 @@ spec:
             envFrom:
             - secretRef:
                 name: umami-secret
-              #DISABLE_TELEMETRY: "true"
             # envFrom:
             #   - secretRef:
             #       name: *app

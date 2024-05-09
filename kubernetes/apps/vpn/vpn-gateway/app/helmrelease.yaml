@@ -1,0 +1,158 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: vpn-gateway
+  namespace: &ns vpn-gateway
+spec:
+  interval: 5m
+  chart:
+    spec:
+      reconcileStrategy: Revision
+      # renovate: registryUrl=https://angelnu.github.io/helm-charts/
+      chart: pod-gateway
+      version: 6.5.1
+      interval: 15m
+      sourceRef:
+        kind: HelmRepository
+        name: angelnu-charts
+        namespace: flux-system
+
+  install:
+    remediation:
+      retries: 5
+  upgrade:
+    remediation:
+      retries: 5
+
+  values:
+    image:
+      repository: ghcr.io/angelnu/pod-gateway
+      tag: v1.10.0@sha256:d728eac85f750b37c96a0dafd038561ea4b8035857802be1128ea9b19c61e181
+
+    env:
+      TZ: "${TZ}"
+
+    routed_namespaces:
+      - downloads
+
+    publicPorts:
+      - hostname: qbittorrent # hostname assigned to the pod
+        IP: 10 # must be an integer between 2 and VXLAN_GATEWAY_FIRST_DYNAMIC_IP (20 by default)
+        ports:
+          - type: udp
+            port: ${VPN_FORWARDED_PORT_1}
+          - type: tcp
+            port: ${VPN_FORWARDED_PORT_1}
+          - type: udp
+            port: ${VPN_FORWARDED_PORT_2}
+          - type: tcp
+            port: ${VPN_FORWARDED_PORT_2}
+
+    # Default VPN_VXLAN DNS
+    DNS: 172.16.0.1
+
+    settings:
+      IPTABLES_NFT: "yes"
+      NOT_ROUTED_TO_GATEWAY_CIDRS: "${NETWORK_K8S_CLUSTER_CIDR} ${NETWORK_K8S_SERVICE_CIDR} ${NETWORK_MANAGEMENT_CIDR}"
+      # tun0 for openvpn, wg0 for wireguard
+      VPN_INTERFACE: wg0
+      VXLAN_IP_NETWORK: "172.16.0"
+      # Prevent non VPN traffic to leave the gateway
+      VPN_BLOCK_OTHER_TRAFFIC: false
+      # If VPN_BLOCK_OTHER_TRAFFIC is true, allow VPN traffic over this port
+      VPN_TRAFFIC_PORT: ${VPN_GATEWAY_VPN_PORT}
+      # Traffic to these IPs will be send through the K8S gateway
+      # change if your K8S cluster or home network uses a different CIDR
+      VPN_LOCAL_CIDRS: "${NETWORK_K8S_CLUSTER_CIDR} ${NETWORK_K8S_SERVICE_CIDR} ${NETWORK_MANAGEMENT_CIDR} ${LOCAL_CIDR_1} ${LOCAL_CIDR_2}"
+      DNS_LOCAL_CIDRS: "local ${DOMAIN_BIG_BLOOP} ${DOMAIN_BIG_BLOOP} ${DOMAIN_CORE_BLOOP}"
+
+    webhook:
+      image:
+        repository: ghcr.io/angelnu/gateway-admision-controller
+        tag: v3.10.0@sha256:a8ed630613de277244dfe203cd11d05905d7eeba8d8c41e399b02ee9a847b2f5
+
+      gatewayDefault: true
+      gatewayLabel: setGateway
+      gatewayAnnotation: setGateway
+      namespaceSelector:
+        label: "routed-gateway"
+
+    livenessProbe:
+      exec:
+        command:
+          - sh
+          - -c
+          - if [ $(curl -s https://am.i.mullvad.net/country) = '${VPN_COUNTRY}' ]; then exit 0; else exit $?; fi
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      failureThreshold: 1
+
+    addons:
+      netshoot:
+        enabled: true
+
+      vpn:
+        enabled: true
+        type: gluetun
+        gluetun:
+          image:
+            repository: docker.io/qmcgaw/gluetun
+            tag: latest@sha256:5e5b1ce0828519a17cb747831a63f20febcc050b44998dc9584d08b85030d40b
+
+        securityContext:
+          capabilities:
+            add: ["NET_ADMIN"]
+
+        env:
+          - name: VPN_SERVICE_PROVIDER
+            value: mullvad
+          - name: VPN_TYPE
+            value: wireguard
+          - name: VPN_INTERFACE
+            value: wg0
+          - name: FIREWALL
+            value: "off"
+          - name: DOT
+            value: "off"
+          - name: SERVER_CITIES
+            value: "Chicago IL"
+          - name: FIREWALL_VPN_INPUT_PORTS
+            value: "${VPN_FORWARDED_PORT_1},${VPN_FORWARDED_PORT_2}"
+          - name: VPN_ENDPOINT_PORT
+            value: ${VPN_GATEWAY_VPN_PORT}
+          - name: DNS_ADDRESS
+            value: ${SVC_KUBE_DNS_V4}
+
+        envFrom:
+          - secretRef:
+              name: mullvad
+
+        resources:
+          requests:
+            cpu: "0.001"
+            memory: 128Mi
+          limits:
+            memory: 2Gi
+
+        networkPolicy:
+          enabled: true
+
+          egress:
+            - to:
+                - ipBlock:
+                    cidr: 0.0.0.0/0
+              ports:
+                - port: ${VPN_GATEWAY_VPN_PORT}
+                  protocol: UDP
+                - port: ${VPN_GATEWAY_VPN_PORT}
+                  protocol: TCP
+                - port: 53
+                  protocol: UDP
+            - to:
+                # Allow traffic within K8S - change if your K8S cluster uses a different CIDR
+                - ipBlock:
+                    cidr: ${NETWORK_K8S_CLUSTER_CIDR}
+                - ipBlock:
+                    cidr: ${NETWORK_K8S_SERVICE_CIDR}
+                - namespaceSelector: {}

@@ -10,8 +10,6 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-    - name: umami-db
   path: ./kubernetes/apps/blog/umami/app
   prune: true
   sourceRef:

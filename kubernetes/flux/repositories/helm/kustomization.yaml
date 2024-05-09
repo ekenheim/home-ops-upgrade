@@ -38,3 +38,4 @@ resources:
   - ./weave-gitops.yaml
   - ./windmill.yaml
   - ./userinit-controller.yaml
+  - ./movetokube.yaml

@@ -251,7 +251,8 @@ settings:
   - metadata
   - collections
   - overlays
-
+  overlay_artwork_filetype: jpg
+  overlay_artwork_quality: 75
 
 plex:
   url: http://plex.media.svc.cluster.local:32400

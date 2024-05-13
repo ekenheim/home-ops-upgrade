@@ -39,7 +39,7 @@ spec:
           type: RuntimeDefault
 
     controllers:
-      hugo:
+      agency:
         annotations:
           reloader.stakater.com/search: "true"
         replicas: 2
@@ -47,7 +47,7 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/ekenheim/bloghugo
+              repository: ghcr.io/ekenheim/agency
               tag: latest
               pullPolicy: Always
             probes:

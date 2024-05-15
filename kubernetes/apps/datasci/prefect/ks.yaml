@@ -6,6 +6,7 @@ metadata:
   name: datasci-prefect-server
   namespace: flux-system
 spec:
+  targetNamespace: datasci
   dependsOn:
     - name: crunchy-postgres-operator-cluster
     - name: crunchy-postgres-stores
@@ -27,6 +28,7 @@ metadata:
   name: datasci-prefect-agent
   namespace: flux-system
 spec:
+  targetNamespace: datasci
   dependsOn:
     - name: datasci-prefect-server
     - name: datasci-prefect-db

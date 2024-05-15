@@ -31,7 +31,6 @@ spec:
   targetNamespace: datasci
   dependsOn:
     - name: datasci-prefect-server
-    - name: datasci-prefect-db
   path: ./kubernetes/apps/datasci/prefect/agent
   prune: true
   sourceRef:

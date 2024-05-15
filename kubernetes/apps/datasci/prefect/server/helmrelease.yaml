@@ -74,8 +74,10 @@ spec:
             name: prefect-db-secret
             key: postgresql.auth.password
         - name: PREFECT_API_DATABASE_CONNECTION_URL
-          value: "postgresql+asyncpg://{{ .Values.server.env.PGUSER }}:{{ .Values.server.env.PGPASSWORD }}@{{ .Values.server.env.PGHOST }}/prefect"
-
+          valueFrom:
+          secretKeyRef:
+            name: prefect-secret
+            key: PREFECT_API_DATABASE_CONNECTION_URL
 
 
 

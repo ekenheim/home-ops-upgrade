@@ -47,26 +47,6 @@ spec:
           value: "https://prefect.${SECRET_DOMAIN}/api"
         - name: PREFECT_PROFILE
           value: "default"
-        - name: PGDATABASE
-          valueFrom:
-            secretKeyRef:
-              name: prefect-db-secret
-              key: postgresql.auth.database
-        - name: PGHOST
-          valueFrom:
-            secretKeyRef:
-              name: prefect-db-secret
-              key: postgresql.externalHostname
-        - name: PGUSER
-          valueFrom:
-            secretKeyRef:
-              name: prefect-db-secret
-              key: postgresql.auth.username
-        - name: PGPASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: prefect-db-secret
-              key: postgresql.auth.password
         - name: PREFECT_API_DATABASE_CONNECTION_URL
           valueFrom:
             secretKeyRef:

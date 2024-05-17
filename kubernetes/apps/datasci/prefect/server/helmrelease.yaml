@@ -105,8 +105,8 @@ spec:
     # https://discourse.prefect.io/t/how-to-use-external-postgres-when-deploy-by-helm-chart/2501/4
     postgresql:
     #enabled: false
-    useSubChart: false
-    env:
+      useSubChart: false
+      env:
       - name: externalHostname
         valueFrom:
           secretKeyRef:

@@ -1,9 +1,8 @@
----
-# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrelease-helm-v2beta2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app prefect-server
+  name: prefect-server
+  namespace: datasci
 spec:
   chart:
     spec:
@@ -32,27 +31,10 @@ spec:
   values:
     server:
       image:
-        repository: prefecthq/prefect
-        # prefectTag: 2-latest
-        prefectTag: 2-python3.11-kubernetes
+        repository: your-docker-repo/prefect
+        prefectTag: custom-python3.11
         pullPolicy: IfNotPresent
-      initContainers:
-      - name: install-psycopg2
-        image: python:3.11
-        command: ["pip", "install", "psycopg2"]
-        volumeMounts:
-          - mountPath: /usr/local/lib/python3.11/site-packages
-            name: site-packages
-      volumeMounts:
-        - mountPath: /usr/local/lib/python3.11/site-packages
-          name: site-packages
-      volumes:
-        - name: site-packages
-          emptyDir: {}
-
       prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
-
-      # https://docs.prefect.io/latest/concepts/settings/
       env:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
@@ -65,65 +47,35 @@ spec:
             secretKeyRef:
               name: prefect-secret
               key: PREFECT_API_DATABASE_CONNECTION_URL
-
-
-
-      # # Autoscaling configuration
-      # # requests MUST be specified if using an HPA, otherwise the HPA will not know when to trigger a scale event
-      # autoscaling:
-      #   enabled: false
-      #   minReplicas: 1
-      #   maxReplicas: 100
-      #   targetCPU: 80
-      #   targetMemory: 80
-
-      # # requests MUST be specified if using an HPA, otherwise the HPA will not know when to trigger a scale event
-      # resources:
-      #   requests:
-      #     # cpu: 25m
-      #     # memory: 105M
-      #   limits:
-      #     # memory: 105M
-
-      ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
       podSecurityContext:
         runAsUser: 1000
         runAsNonRoot: true
         fsGroup: 1002
-      ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
       containerSecurityContext:
         runAsUser: 1000
         runAsNonRoot: true
         readOnlyRootFilesystem: true
         allowPrivilegeEscalation: false
-
-    ## Service configuration
     service:
       type: ClusterIP
       port: 4200
-
-    # Ingress configuration
     ingress:
       enabled: true
       className: internal
       host:
-        hostname: &host prefect.${SECRET_DOMAIN}
+        hostname: prefect.${SECRET_DOMAIN}
         path: /
         pathType: Prefix
       annotations:
         nginx.ingress.kubernetes.io/whitelist-source-range: |
           10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
       tls: true
-
-    # https://discourse.prefect.io/t/how-to-use-external-postgres-when-deploy-by-helm-chart/2501/4
     postgresql:
-    #enabled: false
-    useSubChart: false
-    env:
-      - name: externalHostname
-        valueFrom:
-          secretKeyRef:
-            name: prefect-secret
-            key: PREFECT_API_DATABASE_CONNECTION_URL
-    extraPackages:
-      - psycopg2
+      enabled: false
+      useSubChart: false
+      env:
+        - name: externalHostname
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: PREFECT_API_DATABASE_CONNECTION_URL

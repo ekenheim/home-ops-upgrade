@@ -36,6 +36,19 @@ spec:
         # prefectTag: 2-latest
         prefectTag: 2-python3.11-kubernetes
         pullPolicy: IfNotPresent
+      initContainers:
+      - name: install-psycopg2
+        image: python:3.11
+        command: ["pip", "install", "psycopg2"]
+        volumeMounts:
+          - mountPath: /usr/local/lib/python3.11/site-packages
+            name: site-packages
+      volumeMounts:
+        - mountPath: /usr/local/lib/python3.11/site-packages
+          name: site-packages
+      volumes:
+        - name: site-packages
+          emptyDir: {}
 
       prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 

@@ -35,7 +35,9 @@ spec:
         repository: prefecthq/prefect
         # prefectTag: 2-latest
         prefectTag: 2-python3.11-kubernetes
-        debug: true
+        pullPolicy: IfNotPresent
+      extraPackages:
+        - psycopg2
 
       prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 

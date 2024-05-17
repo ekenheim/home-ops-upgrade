@@ -104,16 +104,15 @@ spec:
 
     # https://discourse.prefect.io/t/how-to-use-external-postgres-when-deploy-by-helm-chart/2501/4
     postgresql:
-    #enabled: false
       useSubChart: false
-      env:
-      - name: postgresql.auth.username
-        valueFrom:
-          secretKeyRef:
-            name: prefect-secret
-            key: postgresql.auth.username
-      - name: postgresql.auth.password
-        valueFrom:
-          secretKeyRef:
-            name: prefect-secret
-            key: postgresql.auth.password
+      auth:
+        username:
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: postgresql.auth.username
+        password:
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: postgresql.auth.password

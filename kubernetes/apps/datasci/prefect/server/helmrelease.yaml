@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: prefect-server
-      version: 2024.5.16203708
+      version: 2024.5.13203346
       sourceRef:
         kind: HelmRepository
         name: prefect
@@ -104,23 +104,11 @@ spec:
 
     # https://discourse.prefect.io/t/how-to-use-external-postgres-when-deploy-by-helm-chart/2501/4
     postgresql:
-      #enabled: false
-      useSubChart: false
-      auth:
-        username:
-          valueFrom:
-            secretKeyRef:
-              name: prefect-secret
-              key: postgresql.auth.username
-        password:
-          valueFrom:
-            secretKeyRef:
-              name: prefect-secret
-              key: postgresql.auth.password
-      env:
+    #enabled: false
+    useSubChart: false
+    env:
       - name: externalHostname
         valueFrom:
           secretKeyRef:
             name: prefect-secret
             key: PREFECT_API_DATABASE_CONNECTION_URL
-

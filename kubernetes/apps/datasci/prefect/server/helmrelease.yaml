@@ -47,6 +47,10 @@ spec:
           value: "https://prefect.${SECRET_DOMAIN}/api"
         - name: PREFECT_PROFILE
           value: "default"
+        - name: postgresql.auth.database
+          value: "prefect"
+        - name: postgresql.externalHostname
+          value: "postgres-pgbouncer.database.svc"
         #- name: PREFECT_API_DATABASE_CONNECTION_URL
         #  valueFrom:
         #    secretKeyRef:
@@ -104,12 +108,6 @@ spec:
 
     # https://discourse.prefect.io/t/how-to-use-external-postgres-when-deploy-by-helm-chart/2501/4
     postgresql:
+      enabled: true
       useSubChart: false
-      auth:
-        username: "prefect"
-        password: "cVuRjysq1fuThSRWGPhESt1q"
-      env:
-        - name: postgresql.auth.database
-          value: "prefect"
-        - name: postgresql.externalHostname
-          value: "postgres-pgbouncer.database.svc"
+

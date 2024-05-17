@@ -36,8 +36,6 @@ spec:
         # prefectTag: 2-latest
         prefectTag: 2-python3.11-kubernetes
         pullPolicy: IfNotPresent
-      extraPackages:
-        - psycopg2
 
       prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 
@@ -114,3 +112,5 @@ spec:
           secretKeyRef:
             name: prefect-secret
             key: PREFECT_API_DATABASE_CONNECTION_URL
+    extraPackages:
+      - psycopg2

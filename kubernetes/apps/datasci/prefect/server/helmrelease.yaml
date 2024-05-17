@@ -47,11 +47,11 @@ spec:
           value: "https://prefect.${SECRET_DOMAIN}/api"
         - name: PREFECT_PROFILE
           value: "default"
-        - name: PREFECT_API_DATABASE_CONNECTION_URL
-          valueFrom:
-            secretKeyRef:
-              name: prefect-secret
-              key: PREFECT_API_DATABASE_CONNECTION_URL
+        #- name: PREFECT_API_DATABASE_CONNECTION_URL
+        #  valueFrom:
+        #    secretKeyRef:
+        #      name: prefect-secret
+        #      key: PREFECT_API_DATABASE_CONNECTION_URL
 
 
 

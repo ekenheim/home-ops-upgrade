@@ -106,13 +106,10 @@ spec:
     postgresql:
       useSubChart: false
       auth:
-        username:
-          valueFrom:
-            secretKeyRef:
-              name: prefect-secret
-              key: postgresql.auth.username
-        password:
-          valueFrom:
-            secretKeyRef:
-              name: prefect-secret
-              key: postgresql.auth.password
+        username: "prefect"
+        password: "cVuRjysq1fuThSRWGPhESt1q"
+      env:
+        - name: postgresql.auth.database
+          value: "prefect"
+        - name: postgresql.externalHostname
+          value: "postgres-pgbouncer.database.svc"

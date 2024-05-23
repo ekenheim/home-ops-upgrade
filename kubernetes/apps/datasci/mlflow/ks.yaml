@@ -5,6 +5,7 @@ metadata:
   name: mlflow
   namespace: flux-system
 spec:
+  targetNamespace: datasci
   dependsOn:
     - name: crunchy-postgres-operator-cluster
     - name: crunchy-postgres-stores

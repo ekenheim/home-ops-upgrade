@@ -18,7 +18,7 @@ spec:
     - name: rook-ceph-cluster
       namespace: rook-ceph
     - name: volsync
-      namespace: storage
+      namespace: volsync-system
   install:
     remediation:
       retries: 3
@@ -55,9 +55,8 @@ spec:
               repository: ghcr.io/ninerealmlabs/mlflow-server
               tag: 2.13.0@sha256:2de5040b9fd333fda187162805da3fe54ae42884f85463d28adbff8c3b7cf30f
             envFrom:
-            - secretRef:
-                name: mlflow-secret
-            # double "$$" escape flux substitutions
+              - secretRef:
+                  name: mlflow-secret
             command: [/bin/bash, -c, mlflow db upgrade "$$MLFLOW_BACKEND_STORE_URI"]
 
         containers:
@@ -66,16 +65,7 @@ spec:
               # renovate: datasource=docker image=ghcr.io/...
               repository: ghcr.io/ninerealmlabs/mlflow-server
               tag: 2.13.0@sha256:2de5040b9fd333fda187162805da3fe54ae42884f85463d28adbff8c3b7cf30f
-            # -- Override the command(s) for the default container
             command: [/bin/bash, -c, mlflow server]
-            # -- Override the args for the default container
-            # args:
-            #   - "--backend-store-uri"
-            #   - "$(POSTGRES_URL)"
-            #   - "--default-artifact-root"
-            #   - "/data"
-            #   - "--host"
-            #   - "0.0.0.0"
             env:
               TZ: ${TIMEZONE}
               MLFLOW_DEFAULT_ARTIFACT_ROOT: /data
@@ -84,7 +74,7 @@ spec:
               MLFLOW_PORT: &port 5000
             envFrom:
               - secretRef:
-                name: mlflow-secret
+                  name: mlflow-secret
             probes:
               liveness: &probes
                 enabled: true
@@ -113,8 +103,6 @@ spec:
               requests:
                 cpu: 25m
                 memory: 105M
-              # limits:
-              #   memory: 105M
     service:
       app:
         controller: *app

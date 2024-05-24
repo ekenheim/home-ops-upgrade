@@ -6,3 +6,4 @@ resources:
   # - ./backup/  # nothing to back up currently
   - ./helmrelease.yaml
   - ./externalsecret.yaml
+  - ../../../../templates/volsync

@@ -92,12 +92,6 @@ spec:
         - module: icmp
           name: unraid-nas
           url: ${NAS_IP}
-        - module: icmp
-          name: service-box
-          url: ${PI_IP}
-        - module: icmp
-          name: service-box-backup
-          url: ${PI2_IP}
     prometheusRule:
       enabled: true
       additionalLabels:

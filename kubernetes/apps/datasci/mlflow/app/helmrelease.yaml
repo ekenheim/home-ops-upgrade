@@ -128,7 +128,4 @@ spec:
               - *host
     persistence:
       data:
-        enabled: true
         existingClaim: *app
-        globalMounts:
-          - path: /data # defaults to persistence.key

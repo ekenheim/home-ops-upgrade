@@ -16,4 +16,4 @@ resources:
   - ./unifi-poller/ks.yaml
   #- ./goldilocks/ks.yaml
   # Exporters
-  #- ./exporters
+  - ./exporters

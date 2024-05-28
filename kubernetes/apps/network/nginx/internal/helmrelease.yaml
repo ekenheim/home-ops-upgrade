@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -26,7 +26,7 @@ spec:
   values:
     fullnameOverride: nginx-internal
     controller:
-      replicaCount: 2
+      replicaCount: 3
       service:
         annotations:
           external-dns.alpha.kubernetes.io/hostname: "internal.${SECRET_DOMAIN}"
@@ -42,6 +42,8 @@ spec:
             - key: ingress-class
               operator: In
               values: ["internal"]
+      allowSnippetAnnotations: true
+      enableAnnotationValidations: true
       config:
         client-body-buffer-size: 100M
         client-body-timeout: 120

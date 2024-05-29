@@ -56,10 +56,10 @@ spec:
               cpu: "200m"
     ingress:
       enabled: true
-      className: nginx
+      className: internal
       annotations:
-        external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
-        external-dns.alpha.kubernetes.io/target: "ingress.${SECRET_DOMAIN}"
+          nginx.ingress.kubernetes.io/whitelist-source-range: |
+            10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
       tls:
         - hosts:
             - *host

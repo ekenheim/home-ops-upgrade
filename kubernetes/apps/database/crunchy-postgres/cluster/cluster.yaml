@@ -100,6 +100,10 @@ spec:
       databases: ["mydb", "umami"]
       password:
         type: AlphaNumeric
+    - name: "windmill"
+      databases: ["windmill"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

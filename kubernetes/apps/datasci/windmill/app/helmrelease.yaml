@@ -69,11 +69,7 @@ spec:
       enabled: false
     enterprise:
       enabled: false
-  valuesFrom:
-    - kind: Secret
-      name: *secret
-      valuesKey: WINDMILL_POSTGRES_URL
-      targetPath: windmill.databaseUrl
+
   #postRenderers:
   #  - kustomize:
   #      patchesStrategicMerge:

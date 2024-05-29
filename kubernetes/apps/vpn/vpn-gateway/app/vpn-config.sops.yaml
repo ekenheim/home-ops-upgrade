@@ -5,4 +5,24 @@ metadata:
     name: vpn-gateway-vpnconfig
     namespace: vpn-gateway
 stringData:
-    vpnConfigfile:
+    vpnConfigfile: null
+sops:
+    kms: []
+    gcp_kms: []
+    azure_kv: []
+    hc_vault: []
+    age:
+        - recipient: age15wktkwh8dgasswz9u04axxaa4edc88nld3ajldnr3mtgjfmfyqtqc0cu0k
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBKdTdDN3dRWVhaT0RaNkFG
+            QjY5SjJDSVo0TC9BT3FzZTJFVnhaYWdzSmxrCnRaY0FaWFphQ3VKWkExM3prT1FI
+            YjljUGlhSDNoalp5bHpxM3NkazFTZ0kKLS0tIG5oL3h6cnZHOFhrMHYwTC9vK3dY
+            akI3anh5ZjVPVyszVFVQdXRQUjdPbEUKvQIfgImkOoFlXUGl45cNcneIudLbWV0z
+            3Lzq04wjMq3gZeosvjWK04OTRnIR4JPGf1UJ9YH1uNZ2M2Q5rMMa1w==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2024-05-29T20:17:29Z"
+    mac: ENC[AES256_GCM,data:KjtkeEGPB2eV8hIVj+OkWACWqpa0nZDksPRHrmOmQu+mmrkDX0PTICcITEzRF+XKxJRmhlfHK9rDMg7b9AlpBlXwOhsnkryB22J2fxH2msZuHP7vyJOy2zLULBK48hMCdFSFJ37LdSZpyp1dPN/jmprA7R12wybwZF5ffAP+yaA=,iv:rM5ay1CMy2U3HOH/mE5QSohLzX15UWQTg9ELyZeEESk=,tag:HMdny1icjboKNhfkHTa52w==,type:str]
+    pgp: []
+    encrypted_regex: ^(data|stringData)$
+    version: 3.8.1

@@ -65,6 +65,10 @@ spec:
             - *host
     postgresql:
       enabled: false
+    minio:
+      enabled: false
+    enterprise:
+      enabled: false
   valuesFrom:
     - kind: Secret
       name: *secret

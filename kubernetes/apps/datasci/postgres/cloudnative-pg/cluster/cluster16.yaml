@@ -24,7 +24,7 @@ spec:
 
   storage:
     size: 20Gi
-    storageClass: local-path
+    storageClass: local-hostpath
 
   # ## for initial setup
   # bootstrap:

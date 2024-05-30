@@ -12,7 +12,8 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     #- name: cnpg-operator
-    - name: local-path-provisioner
+    - name: openebs
+      namespace: storage
     - name: kube-prometheus-stack
   path: ./kubernetes/apps/datasci/postgres/cloudnative-pg/cluster
   prune: true

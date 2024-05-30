@@ -23,7 +23,7 @@ spec:
     name: postgres-superuser
 
   storage:
-    size: 15Gi
+    size: 20Gi
     storageClass: local-path
 
   # ## for initial setup
@@ -68,8 +68,8 @@ spec:
   externalClusters:
     - name: *prior_db
       barmanObjectStore:
-        endpointURL: https://${SECRET_S3_ENDPOINT}
-        destinationPath: s3://postgres/
+        endpointURL: &endpointURL https://s3.${SECRET_DOMAIN}
+        destinationPath:  &destinationPath s3://postgresql/
         s3Credentials:
           accessKeyId:
             name: postgres-s3
@@ -88,8 +88,8 @@ spec:
     retentionPolicy: 30d
     barmanObjectStore:                        # name of s3 folder to save to
       serverName: &current_db datasci16-v1    # next time it will be datasci16-v2
-      endpointURL: https://${SECRET_S3_ENDPOINT}
-      destinationPath: s3://postgres/
+      endpointURL: *endpointURL
+      destinationPath: *destinationPath
       s3Credentials:
         accessKeyId:
           name: postgres-s3

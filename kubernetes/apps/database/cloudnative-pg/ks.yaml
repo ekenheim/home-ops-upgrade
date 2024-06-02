@@ -3,14 +3,14 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app cloudnative-pg
+  name: &app cnpg-operator
   namespace: flux-system
 spec:
   targetNamespace: database
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/database/cloudnative-pg/app
+  path: ./kubernetes/apps/database/cloudnative-pg/operator
   prune: true
   sourceRef:
     kind: GitRepository
@@ -24,7 +24,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app cloudnative-pg-cluster
+  name: &app cnpg-cluster-default
   namespace: flux-system
 spec:
   targetNamespace: database
@@ -32,8 +32,9 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: cloudnative-pg
-    - name: external-secrets
+    - name: cnpg-operator
+    - name: local-path-provisioner
+    - name: kube-prometheus-stack
   path: ./kubernetes/apps/database/cloudnative-pg/cluster
   prune: true
   sourceRef:
@@ -48,7 +49,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app cloudnative-pg-backup
+  name: &app cnpg-addons
   namespace: flux-system
 spec:
   targetNamespace: database
@@ -56,14 +57,15 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: cloudnative-pg-cluster
-    - name: external-secrets
-  path: ./kubernetes/apps/database/cloudnative-pg/backup
+    - name: cnpg-operator
+    - name: kube-prometheus-stack
+    # - name: grafana
+  path: ./kubernetes/apps/database/cloudnative-pg/addons
   prune: true
   sourceRef:
     kind: GitRepository
     name: home-kubernetes
-  wait: true
+  wait: false
   interval: 30m
   retryInterval: 1m
   timeout: 5m

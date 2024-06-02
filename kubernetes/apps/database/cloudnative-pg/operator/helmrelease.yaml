@@ -15,8 +15,8 @@ spec:
         namespace: flux-system
   interval: 15m
   dependsOn:
-    - name: local-path-provisioner
-      namespace: kube-system
+    - name: openebs
+      namespace: storage
   install:
     remediation:
       retries: 3

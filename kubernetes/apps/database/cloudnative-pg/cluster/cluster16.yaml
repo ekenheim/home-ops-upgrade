@@ -2,7 +2,7 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: &app postgres16
+  name: postgres16
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2-13
   instances: 3
@@ -26,14 +26,14 @@ spec:
     size: 15Gi
     storageClass: local-hostpath
 
-  # ## for initial setup
-   bootstrap:
-     initdb:
-       # set up 'default' db/owner
-       database: postgres16-init
-       owner: default
-       secret:
-         name: postgres-user
+  ## for initial setup
+  bootstrap:
+    initdb:
+      # set up 'default' db/owner
+      database: postgres16-init
+      owner: default
+      secret:
+        name: postgres-user
 
   # ## For major postgres version upgrade
   # bootstrap:
@@ -63,23 +63,23 @@ spec:
   # prettier-ignore
   #bootstrap:
   #  recovery:                           # s3 blob folder to recover from
-  #    source: &prior_db postgres16-init # next time it will be postgres16-v1
+  #    source: postgres16-init # next time it will be postgres16-v1
   # externalClusters is needed when recovering from an existing cnpg cluster
-  externalClusters:
-    - name: *prior_db
-      barmanObjectStore:
-        endpointURL: https://s3.${SECRET_DOMAIN}
-        destinationPath: s3://datasci-postgres/
-        s3Credentials:
-          accessKeyId:
-            name: postgres-s3
-            key: S3_ACCESS_KEY
-          secretAccessKey:
-            name: postgres-s3
-            key: S3_SECRET_KEY
-        wal:
-          compression: bzip2
-          maxParallel: 8
+  # externalClusters:
+  #   - name: postgres16-init
+  #     barmanObjectStore:
+  #       endpointURL: https://s3.${SECRET_DOMAIN}
+  #       destinationPath: s3://datasci-postgres/
+  #       s3Credentials:
+  #         accessKeyId:
+  #           name: postgres-s3
+  #           key: S3_ACCESS_KEY
+  #         secretAccessKey:
+  #           name: postgres-s3
+  #           key: S3_SECRET_KEY
+  #       wal:
+  #         compression: bzip2
+  #         maxParallel: 8
   # yamllint enable
 
   # yamllint disable rule:comments
@@ -87,7 +87,7 @@ spec:
   backup:
     retentionPolicy: 30d
     barmanObjectStore:                        # name of s3 folder to save to
-      serverName: &current_db postgres16-v1   # next time it will be postgres16-v2
+      serverName: postgres16-v1   # next time it will be postgres16-v2
       endpointURL: https://s3.${SECRET_DOMAIN}
       destinationPath: s3://datasci-postgres/
       s3Credentials:
@@ -123,7 +123,6 @@ spec:
             matchExpressions:
               - key: postgresql
                 operator: Exists
-                values: []
           topologyKey: "kubernetes.io/hostname"
 
   monitoring:

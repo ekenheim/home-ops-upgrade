@@ -30,7 +30,7 @@ spec:
    bootstrap:
      initdb:
        # set up 'default' db/owner
-       database: default
+       database: postgres16-init
        owner: default
        secret:
          name: postgres-user
@@ -61,9 +61,9 @@ spec:
   ## Restore from a backup
   # yamllint disable rule:comments
   # prettier-ignore
-  bootstrap:
-    recovery:                           # s3 blob folder to recover from
-      source: &prior_db postgres16-init # next time it will be postgres16-v1
+  #bootstrap:
+  #  recovery:                           # s3 blob folder to recover from
+  #    source: &prior_db postgres16-init # next time it will be postgres16-v1
   # externalClusters is needed when recovering from an existing cnpg cluster
   externalClusters:
     - name: *prior_db

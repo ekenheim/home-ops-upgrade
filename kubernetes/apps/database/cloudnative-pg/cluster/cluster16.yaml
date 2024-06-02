@@ -27,13 +27,13 @@ spec:
     storageClass: local-hostpath
 
   # ## for initial setup
-  # bootstrap:
-  #   initdb:
-  #     # set up 'default' db/owner
-  #     database: default
-  #     owner: default
-  #     secret:
-  #       name: <app>-user
+   bootstrap:
+     initdb:
+       # set up 'default' db/owner
+       database: default
+       owner: default
+       secret:
+         name: postgres-user
 
   # ## For major postgres version upgrade
   # bootstrap:

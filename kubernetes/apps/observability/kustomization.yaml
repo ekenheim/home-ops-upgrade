@@ -12,7 +12,6 @@ resources:
   - ./karma/ks.yaml
   - ./kromgo/ks.yaml
   - ./kube-prometheus-stack/ks.yaml
-  - ./prometheus-operator-crds/ks.yaml
   - ./thanos/ks.yaml
   - ./unifi-poller/ks.yaml
   #- ./goldilocks/ks.yaml

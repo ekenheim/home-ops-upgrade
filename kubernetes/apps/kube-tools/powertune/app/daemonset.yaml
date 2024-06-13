@@ -16,7 +16,7 @@ spec:
         app.kubernetes.io/name: powertune
     spec:
       containers:
-      - image: ghcr.io/runningman84/powertune:main@sha256:abad70249a62f615e5c9cd39cb3bf8c769453cd70f337a6175328e88a3fbe568
+      - image: ghcr.io/runningman84/powertune:main@sha256:b2ac754eb2371a485b988ed4e3b27f369c05d9c08e3357c85caeadb12d19a2c6
         imagePullPolicy: IfNotPresent
         name: powertune
         command: ["/bin/sh", "-c", "sleep 86400"]

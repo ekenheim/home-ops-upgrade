@@ -15,23 +15,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - name: Get Secrets
-        uses: bitwarden/sm-action@v2
-        with:
-          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
-          secrets: |
-            d3349f37-6ff4-406b-861a-b16101048306 > BOT_APP_ID
-            12826224-0a9e-45f2-b8bb-b1610104f8c4 > BOT_APP_PRIVATE_KEY
-
-      - name: Generate Token
-        uses: actions/create-github-app-token@v1
-        id: app-token
-        with:
-          app-id: "${{ env.BOT_APP_ID }}"
-          private-key: "${{ env.BOT_APP_PRIVATE_KEY }}"
-
       - name: Labeler
         uses: actions/labeler@v5
         with:
-          repo-token: "${{ steps.app-token.outputs.token }}"
           configuration-path: .github/labeler.yaml

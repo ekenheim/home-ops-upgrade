@@ -15,7 +15,7 @@
 # Clusters
 - name: cluster/main
   color: "ffc300"
-- name: cluster/pi
+- name: cluster/utility
   color: "ffc300"
 # Renovate Types
 - name: renovate/ansible

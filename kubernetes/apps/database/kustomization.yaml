@@ -9,3 +9,5 @@ resources:
   - ./crunchy-postgres/ks.yaml
   - ./dragonfly/ks.yaml
   - ./cloudnative-pg/ks.yaml
+  - ./ext-postgres-operator/ks.yaml
+  - ./pgadmin/ks.yaml

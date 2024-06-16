@@ -40,3 +40,4 @@ resources:
   - ./userinit-controller.yaml
   - ./movetokube.yaml
   - ./cloudnative-pg.yaml
+  - ./runix.yaml

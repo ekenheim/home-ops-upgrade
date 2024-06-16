@@ -1,10 +1,10 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: windmill
-  namespace: datasci
+  name: &app windmill
 spec:
-  interval: 30m
   chart:
     spec:
       chart: windmill
@@ -13,76 +13,133 @@ spec:
         kind: HelmRepository
         name: windmill
         namespace: flux-system
-  maxHistory: 2
+  interval: 15m
   install:
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
-  uninstall:
-    keepHistory: false
+  driftDetection:
+    mode: enabled
+    ignore:
+      - paths:
+          - /spec/containers/resources/limits
+        target:
+          kind: Pod
+  valuesFrom:
+    - kind: Secret
+      name: database-windmill
+      valuesKey: POSTGRES_URL
+      targetPath: windmill.databaseUrl
   values:
-    app:
-      annotations:
-        secret.reloader.stakater.com/reload: &secret windmill-secret
+    postgresql:
+      enabled: false # do not configure bitnami postgres
+    minio:
+      enabled: false # do not configure minio operator
+
     windmill:
-      # renovate: datasource=docker depName=ghcr.io/windmill-labs/windmill
-      tag: "1.345.2"
-      baseDomain: &host wind.${SECRET_DOMAIN}
+      # # -- name of the secret storing the database URI, take precedence over databaseUrl. The key of the url is 'url'
+      # databaseUrlSecretName: ""
+      # # -- Postgres URI, pods will crashloop if database is unreachable, sets DATABASE_URL environment variable in app and worker container
+      # databaseUrl: # postgres://postgres:windmill@windmill-postgresql/windmill?sslmode=disable
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: &db_secret database-windmill
+      #       key: POSTGRES_URL
+      baseDomain: windmill.${SECRET_DOMAIN}
       baseProtocol: https
-      appReplicas: 1
-      lspReplicas: 1
-      multiplayerReplicas: 1
+      # -- mount the docker socket inside the container to be able to run docker command as docker client to the host docker daemon
+      exposeHostDocker: false
+
+      # extra worker groups
       workerGroups:
-        - name: "default"
-          replicas: 2
-          resources:
-            requests:
-              memory: "1028Mi"
-              cpu: "500m"
-            limits:
-              memory: "2048Mi"
-              cpu: "1000m"
-        - name: "native"
+        # workers configuration
+        # The default worker group
+        - name: default
           replicas: 1
           resources:
             requests:
-              memory: "128Mi"
-              cpu: "100m"
+              memory: 1028Mi
+              cpu: 500m
             limits:
-              memory: "256Mi"
-              cpu: "200m"
+              memory: 2048Mi
+              cpu: 1000m
+
+        - name: gpu
+          replicas: 0
+          nodeSelector: {}
+          tolerations: []
+          affinity: {}
+          resources: {}
+
+        - name: native
+          replicas: 1
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 100m
+            limits:
+              memory: 256Mi
+              cpu: 200m
+
+      # app configuration
+      appReplicas: 1
+      app:
+        resources: {}
+        # app autoscaling configuration
+        autoscaling:
+          # -- enable or disable autoscaling
+          enabled: false
+          # -- maximum autoscaler replicas
+          maxReplicas: 10
+          # -- target CPU utilization
+          targetCPUUtilizationPercentage: 80
+
+      # lsp (worker) configuration
+      lspReplicas: 1
+      lsp:
+        tag: latest
+        resources: {}
+        # lsp autoscaling configuration
+        autoscaling:
+          # -- enable or disable autoscaling
+          enabled: false
+          # -- maximum autoscaler replicas
+          maxReplicas: 10
+          # -- target CPU utilization
+          targetCPUUtilizationPercentage: 80
+
+      # multiplayer configuration
+      multiplayerReplicas: 1
+      multiplayer:
+        tag: latest
+        resources: {}
+        # lsp autoscaling configuration
+        autoscaling:
+          # -- enable or disable autoscaling
+          enabled: false
+          # -- maximum autoscaler replicas
+          maxReplicas: 10
+          # -- target CPU utilization
+          targetCPUUtilizationPercentage: 80
+
     ingress:
+      # -- enable/disable included ingress resource
       enabled: true
       className: internal
       annotations:
-          nginx.ingress.kubernetes.io/whitelist-source-range: |
-            10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+        nginx.ingress.kubernetes.io/whitelist-source-range: |
+          10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
       tls:
         - hosts:
-            - *host
-    postgresql:
-      enabled: false
-    minio:
-      enabled: false
+            - windmill.${SECRET_DOMAIN}
+          secretName: ${SECRET_DOMAIN/./-}-production-tls
+
     enterprise:
       enabled: false
 
-  #postRenderers:
-  #  - kustomize:
-  #      patchesStrategicMerge:
-  #        - kind: Deployment
-  #          apiVersion: apps/v1
-  #          metadata:
-  #            name: windmill-app
-  #          spec:
-  #            template:
-  #              spec:
-  #                initContainers:
-  #                  - name: 01-init-db
-  #                    image: ghcr.io/onedr0p/postgres-init:14.10
-  #                    envFrom:
-  #                      - secretRef:
-  #                          name: *secret
+    serviceAccount:
+      create: true

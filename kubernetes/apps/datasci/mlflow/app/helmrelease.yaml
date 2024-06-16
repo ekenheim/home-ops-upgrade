@@ -54,9 +54,13 @@ spec:
             image:
               repository: ghcr.io/ninerealmlabs/mlflow-server
               tag: 2.13.2@sha256:f08b069f217987deb042dcca1799c4abbf600c7bd659b0883e3ff82fcc5142ad
-            envFrom:
-              - secretRef:
-                  name: mlflow-secret
+            env:
+              MLFLOW_BACKEND_STORE_URI:
+                valueFrom:
+                  secretKeyRef:
+                    name: &db_secret database-mlflow
+                    key: POSTGRES_URL
+            # double "$$" escape flux substitutions
             command: [/bin/bash, -c, mlflow db upgrade "$$MLFLOW_BACKEND_STORE_URI"]
 
         containers:
@@ -77,13 +81,18 @@ spec:
             #   - "0.0.0.0"
             env:
               TZ: ${TIMEZONE}
+              MLFLOW_BACKEND_STORE_URI:
+                valueFrom:
+                  secretKeyRef:
+                    name: *db_secret
+                    key: POSTGRES_URL
               MLFLOW_DEFAULT_ARTIFACT_ROOT: /data
               MLFLOW_SERVE_ARTIFACTS: true
               MLFLOW_HOST: 0.0.0.0
               MLFLOW_PORT: &port 5000
-            envFrom:
-              - secretRef:
-                  name: mlflow-secret
+            # envFrom:
+            #   - secretRef:
+            #       name: database-mlflow
             probes:
               liveness: &probes
                 enabled: true

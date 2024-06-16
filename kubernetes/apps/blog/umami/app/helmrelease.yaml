@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -42,9 +43,12 @@ spec:
             env:
               TZ: ${TIMEZONE}
               DATABASE_TYPE: postgresql
-            envFrom:
-            - secretRef:
-                name: umami-secret
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: &db_secret database-umami
+                    key: POSTGRES_URL
+              DISABLE_TELEMETRY: "true"
             # envFrom:
             #   - secretRef:
             #       name: *app

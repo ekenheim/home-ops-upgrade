@@ -11,8 +11,9 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    #- name: cnpg-operator
-    - name: kube-prometheus-stack
+    - name: cnpg-operator
+    #- name: local-path-provisioner
+    #- name: kube-prometheus-stack
   path: ./kubernetes/apps/datasci/postgres/cloudnative-pg/cluster
   prune: true
   sourceRef:

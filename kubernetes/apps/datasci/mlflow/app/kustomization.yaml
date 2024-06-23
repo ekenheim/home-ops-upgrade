@@ -5,5 +5,5 @@ kind: Kustomization
 resources:
   # - ./backup/  # nothing to back up currently
   - ./helmrelease.yaml
-  #- ./externalsecret.yaml
+  - ./externalsecret.yaml
   - ../../../../templates/volsync

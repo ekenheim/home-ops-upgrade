@@ -58,10 +58,10 @@ spec:
               MLFLOW_BACKEND_STORE_URI:
                 valueFrom:
                   secretKeyRef:
-                    name: &db_secret database-mlflow
-                    key: POSTGRES_URL
-            # double "$$" escape flux substitutions
+                    name: mlflow-db-secret
+                    key: MLFLOW_BACKEND_STORE_URI
             command: [/bin/bash, -c, mlflow db upgrade "$$MLFLOW_BACKEND_STORE_URI"]
+
 
         containers:
           app:
@@ -84,8 +84,8 @@ spec:
               MLFLOW_BACKEND_STORE_URI:
                 valueFrom:
                   secretKeyRef:
-                    name: *db_secret
-                    key: POSTGRES_URL
+                    name: mlflow-db-secret
+                    key: MLFLOW_BACKEND_STORE_URI
               MLFLOW_DEFAULT_ARTIFACT_ROOT: /data
               MLFLOW_SERVE_ARTIFACTS: true
               MLFLOW_HOST: 0.0.0.0

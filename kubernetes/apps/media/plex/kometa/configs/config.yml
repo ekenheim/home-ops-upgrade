@@ -192,7 +192,7 @@ libraries:
       # Which overlay(s) should be used?
       # Posters
         4K_banner: true
-        4K: true
+        4K: false
     settings:
       asset_directory: /Media/ppm/assets/Movies 4K
       prioritize_assets: true

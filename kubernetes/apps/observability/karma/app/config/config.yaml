@@ -4,6 +4,7 @@ alertmanager:
   servers:
     - name: home
       uri: http://alertmanager-operated.observability.svc.cluster.local:9093
+      # uri: http://vmalertmanager-victoria-metrics.observability.svc.cluster.local:9093
       timeout: 10s
       healthcheck:
         visible: false
@@ -11,3 +12,6 @@ alertmanager:
           alertmanager:
             - alertname=Watchdog
             - prometheus=observability/kube-prometheus-stack
+filters:
+  default:
+    - "@state!=suppressed"

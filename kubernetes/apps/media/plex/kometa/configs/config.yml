@@ -162,6 +162,15 @@ libraries:
       assets_for_all: true
 
   Movies 4K:
+    overlays:
+      4K:
+        plex_search:
+          all:
+            resolution: 4K
+      HDR:
+        plex_search:
+          all:
+            hdr: true
     collection_files:
     - repo: Movies4k.yml
     overlay_files:

@@ -15,6 +15,6 @@ resources:
   - ./prometheus-operator-crds/ks.yaml
   - ./thanos/ks.yaml
   - ./unpoller/ks.yaml
-  - ./goldilocks/ks.yaml
+  #- ./goldilocks/ks.yaml
   # Exporters
   #- ./exporters

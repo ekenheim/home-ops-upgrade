@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -44,7 +44,7 @@ spec:
         dashboards:
           enabled: true
           annotations:
-            grafana_folder: Cilium
+            grafana_folder: Network
       relay:
         enabled: true
         rollOutPods: true
@@ -63,12 +63,10 @@ spec:
             gethomepage.dev/name: Hubble
             gethomepage.dev/group: Observability
             gethomepage.dev/description: Network Monitoring Dashboard
-          hosts:
-            - &host hubble.${SECRET_DOMAIN}
-          tls:
-            - hosts:
-                - *host
+            external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          hosts: ["hubble.${SECRET_DOMAIN}"]
     operator:
+      replicas: 3
       prometheus:
         enabled: true
         serviceMonitor:
@@ -76,7 +74,7 @@ spec:
       dashboards:
         enabled: true
         annotations:
-          grafana_folder: Cilium
+          grafana_folder: Network
     prometheus:
       enabled: true
       serviceMonitor:
@@ -85,4 +83,4 @@ spec:
     dashboards:
       enabled: true
       annotations:
-        grafana_folder: Cilium
+        grafana_folder: Network

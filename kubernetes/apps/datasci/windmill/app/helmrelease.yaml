@@ -49,7 +49,7 @@ spec:
       #     secretKeyRef:
       #       name: &db_secret database-windmill
       #       key: POSTGRES_URL
-      baseDomain: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+      baseDomain: &host windmill.${SECRET_DOMAIN}
       baseProtocol: https
       # -- mount the docker socket inside the container to be able to run docker command as docker client to the host docker daemon
       exposeHostDocker: false

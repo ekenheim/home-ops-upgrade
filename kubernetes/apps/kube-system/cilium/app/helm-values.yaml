@@ -13,7 +13,7 @@ cgroup:
 cluster:
   name: main
   id: 1
-devices: enp+
+#devices: enp+
 enableRuntimeDeviceDetection: true
 endpointRoutes:
   enabled: true

@@ -14,7 +14,7 @@ resources:
   - ./kube-prometheus-stack/ks.yaml
   - ./prometheus-operator-crds/ks.yaml
   - ./thanos/ks.yaml
-  - ./unifi-poller/ks.yaml
+  - ./unpoller/ks.yaml
   #- ./goldilocks/ks.yaml
   # Exporters
   - ./exporters

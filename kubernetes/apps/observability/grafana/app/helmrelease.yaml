@@ -45,7 +45,7 @@ spec:
         oauth_auto_login: false
         oauth_allow_insecure_email_lookup: true
       auth.anonymous:
-        enabled: false
+        enabled: true
         org_name: Main Org.
         org_role: Viewer
         hide_version: true
@@ -98,6 +98,14 @@ spec:
             editable: true
             options:
               path: /var/lib/grafana/dashboards/flux
+          - name: games
+            orgId: 1
+            folder: Games
+            type: file
+            disableDeletion: false
+            editable: true
+            options:
+              path: /var/lib/grafana/dashboards/games
           - name: kubernetes
             orgId: 1
             folder: Kubernetes

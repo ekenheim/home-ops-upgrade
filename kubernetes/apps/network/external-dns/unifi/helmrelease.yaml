@@ -72,7 +72,7 @@ spec:
     txtPrefix: k8s.main.
     domainFilters:
       - "${SECRET_DOMAIN}"
-      #- "${SECRET_SECONDARY_DOMAIN}"
+      - "${SECRET_SECONDARY_DOMAIN}"
     serviceMonitor:
       enabled: true
     podAnnotations:

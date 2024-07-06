@@ -81,6 +81,7 @@ nodes:
     talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
     controlPlane: true
     networkInterfaces:
+      # 2.5G Internal Port
       - deviceSelector:
           hardwareAddr: 58:47:ca:75:60:0f
         dhcp: true
@@ -88,8 +89,20 @@ nodes:
         routes:
           - network: 0.0.0.0/0
             gateway: "192.168.50.1"
+        dhcpOptions:
+            routeMetric: 1024
         vip:
-          ip: "192.168.50.10"
+          ip: "192.168.50.36"
+      # 2.5G Internal Port
+      - deviceSelector:
+          hardwareAddr: 58:47:ca:75:60:10
+        dhcp: true
+        mtu: 1500
+        routes:
+          - network: 0.0.0.0/0
+            gateway: "192.168.50.1"
+        dhcpOptions:
+            routeMetric: 2048
 
 patches:
   # Configure containerd

@@ -1,8 +1,8 @@
+---
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: whisper
-  namespace: datasci
 spec:
   chart:
     spec:
@@ -36,28 +36,15 @@ spec:
                 # medium (3.1 GB)
               - small
               - --language
-              - en
+              - it
         strategy: Recreate
     service:
-      app:
+      main:
         controller: main
         ports:
           tcp:
             port: 10300
             protocol: TCP
-    ingress:
-      app:
-        className: internal
-        hosts:
-          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - "{{ .Release.Name }}.${SECRET_DOMAIN}"
     persistence:
       config:
         type: emptyDir

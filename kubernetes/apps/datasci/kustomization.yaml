@@ -12,3 +12,4 @@ resources:
   - ./mlflow/ks.yaml
   - ./prefect/ks.yaml
   - ./windmill/ks.yaml
+  - ./whisper/ks.yaml

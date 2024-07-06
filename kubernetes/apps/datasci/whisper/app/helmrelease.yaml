@@ -39,8 +39,8 @@ spec:
               - en
         strategy: Recreate
     service:
-      main:
-        controller: main
+      app:
+        controller: *app
         ports:
           tcp:
             port: 10300

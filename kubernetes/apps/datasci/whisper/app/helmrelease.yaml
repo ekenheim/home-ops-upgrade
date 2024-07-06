@@ -1,3 +1,4 @@
+---
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
@@ -38,8 +39,8 @@ spec:
               - en
         strategy: Recreate
     service:
-      app:
-        controller: *app
+      main:
+        controller: main
         ports:
           tcp:
             port: 10300
@@ -47,16 +48,16 @@ spec:
     ingress:
       app:
         className: internal
-        hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-      tls:
-      - hosts:
-        - *host
+    hosts:
+        - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
+    tls:
+    - hosts:
+      - *host
     persistence:
       config:
         type: emptyDir

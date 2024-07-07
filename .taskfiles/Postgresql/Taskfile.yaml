@@ -71,19 +71,3 @@ tasks:
     cmds:
       - kubectl exec -it --container database -n {{.NS}} {{.CRUNCHY_PRIMARY}} -- /bin/bash -c 'rm -rf {{.CP_DIR}}/dump.psql && pg_dump --dbname {{.DBNAME}} {{.ARGS}} --file {{.CP_DIR}}/dump.psql'
       - kubectl cp --container database {{.NS}}/{{.CRUNCHY_PRIMARY}}:{{.CP_DIR}}/dump.psql {{.DUMP}}
-
-  cnpg-dump:
-    desc: Run pg_dump on the master instance of a CNPG Postgres cluster.
-    dir: "{{.USER_WORKING_DIR}}"
-    vars:
-      APP: "{{.APP}}"
-      NS: "{{.NS}}"
-      CNPG: "{{.CNPG}}"
-      DUMP: *dump
-      CP_DIR: "/var/lib/postgresql/data/pgdata"
-      ARGS:
-        sh: |-
-          [[ -n "{{.ARGS}}" ]] && echo "{{.ARGS}}" || echo "--verbose --format=c --clean --if-exists --no-owner"
-    cmds:
-      - kubectl exec -it --container postgres -n {{.NS}} {{.CNPG}} -- /bin/bash -c 'rm -rf {{.CP_DIR}}/dump.psql && pg_dump --dbname {{.APP}} {{.ARGS}} --file {{.CP_DIR}}/dump.psql'
-      - kubectl cp --container postgres {{.NS}}/{{.CNPG}}:{{.CP_DIR}}/dump.psql {{.DUMP}}

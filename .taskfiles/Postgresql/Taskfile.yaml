@@ -1,9 +1,8 @@
----
 version: "3"
 
 vars:
-  PG: '{{.PG | default "postgres"}}' #postgres cluster name
-  NS: '{{.NS | default "database"}}' #database namespace
+  PG: '{{.PG | default "postgres"}}' # postgres cluster name
+  NS: '{{.NS | default "database"}}' # database namespace
 
 tasks:
   crunchy-owner:
@@ -19,7 +18,7 @@ tasks:
           [[ -n "{{.NS}}" ]] && echo -n "{{.NS}}" || ( [[ -n "{{.APP}}" ]] && echo -n "{{.APP}}" || echo -n "database" )
       CRUNCHY_PRIMARY: &crunchy-primary
         sh: |-
-          kubectl get pods -n {{.NS}} -l postgres-operator.crunchydata.com/role=master,postgres-operator.crunchydata.com/cluster={{.PG}} -o jsonpath='{.items[0].metadata.name}'
+          kubectl get pods -n {{.NS}} -l cnpg.io/cluster={{.PG}},cnpg.io/instanceRole=primary -o jsonpath='{.items[0].metadata.name}' || ( echo "No primary pod found" && exit 1 )
       DBNAME: &dbname
         sh: |-
           [[ -n "{{.DBNAME}}" ]] && echo -n "{{.DBNAME}}" || ( [[ -n "{{.APP}}" ]] && echo -n "{{.APP}}" ) || ( echo "Missing `DB` environment variable for specifying database name!" && exit 1 )
@@ -55,7 +54,7 @@ tasks:
       - defer: kubectl exec -it -n {{.NS}} {{.CRUNCHY_PRIMARY}} -- /bin/bash -c 'rm -rf {{.CP_DIR}}/restore-dump.psql'
 
   crunchy-dump:
-    desc: Run pg_dump on the master instance of a CrunchyData Postgres cluster.
+    desc: Run pg_dump on the primary instance of a CrunchyData Postgres cluster.
     dir: "{{.USER_WORKING_DIR}}"
     vars:
       APP: "{{.APP}}"

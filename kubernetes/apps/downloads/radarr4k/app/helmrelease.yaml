@@ -95,12 +95,12 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Downloads
-          gethomepage.dev/name: Radarr4K
+          gethomepage.dev/name: Radarr4k
           gethomepage.dev/icon: radarr.png
-          gethomepage.dev/description: Movie4K Downloads
-          gethomepage.dev/widget.type: radarr
-          gethomepage.dev/widget.url: http://radarr4K.downloads
-          gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_RADARR4K_TOKEN}}` }}"
+          gethomepage.dev/description: Movie Downloads
+          gethomepage.dev/widget.type: radarr4k
+          gethomepage.dev/widget.url: http://radarr4k.downloads
+          gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_RADARR4k_TOKEN}}` }}"
           external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
         hosts:
         - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
@@ -109,9 +109,6 @@ spec:
             service:
               identifier: app
               port: http
-        tls:
-        - hosts:
-          - *host
     persistence:
       config:
         existingClaim: *app

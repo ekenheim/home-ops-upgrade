@@ -116,7 +116,14 @@ spec:
         type: emptyDir
       data:
         type: nfs
-        server: voyager.internal
+        server: ${NAS_IP:=temp}
         path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
-        - path: /data
+        - path: /Downloads
+      media:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        globalMounts:
+        - path: /Media
+          subPath: Media

@@ -19,6 +19,7 @@ spec:
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
   dependsOn:
   - name: rook-ceph-cluster
@@ -27,7 +28,7 @@ spec:
     namespace: storage
   values:
     controllers:
-      radarr4k:
+      radarr:
         labels:
           nfsMount: "true"
         annotations:
@@ -39,13 +40,15 @@ spec:
               tag: 5.8.0.8897@sha256:f13d7a00f03df3b979342cce4d628e8b0d94f9de1b1816c8a0e2f6de1e67783f
             env:
               TZ: ${TIMEZONE}
-              RADARR__AUTHENTICATION_METHOD: External
+              RADARR__APP__INSTANCENAME: Radarr4k
+              RADARR__APP__THEME: dark
+              RADARR__AUTH__METHOD: External
               RADARR__AUTHENTICATION_REQUIRED: DisabledForLocalAddresses
-              RADARR__INSTANCE_NAME: Radarr4K
-              RADARR__PORT: &port 80
-              RADARR__LOG_LEVEL: info
-              PUID: 99
-              PGID: 100
+              RADARR__AUTH__REQUIRED: Radarr4k
+              RADARR__LOG__DBENABLED: "False"
+              RADARR__LOG__LEVEL: info
+              RADARR__SERVER__PORT: &port 80
+              RADARR__UPDATE__BRANCH: develop
             envFrom:
             - secretRef:
                 name: radarr4k-secret
@@ -62,20 +65,24 @@ spec:
                   timeoutSeconds: 1
                   failureThreshold: 3
               readiness: *probes
-              startup:
-                enabled: false
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 10m
-                memory: 256M
               limits:
-                memory: 4Gi
-        pod:
-          securityContext:
-            runAsUser: 0
-            runAsGroup: 0
-            fsGroup: 0
-            fsGroupChangePolicy: OnRootMismatch
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [10000]
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
         controller: *app
@@ -94,12 +101,9 @@ spec:
           gethomepage.dev/widget.type: radarr
           gethomepage.dev/widget.url: http://radarr4K.downloads
           gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_RADARR4K_TOKEN}}` }}"
-          nginx.ingress.kubernetes.io/configuration-snippet: |
-            proxy_set_header Accept-Encoding "";
-            sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.${SECRET_DOMAIN}/css/base/radarr/hotpink.css"></head>';
-            sub_filter_once on;
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
         hosts:
-        - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+        - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
           paths:
           - path: /
             service:

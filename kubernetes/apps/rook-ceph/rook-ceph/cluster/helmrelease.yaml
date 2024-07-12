@@ -86,25 +86,25 @@ spec:
             cpu: 100m
             memory: 512Mi
           limits:
-            memory: 2Gi
+            memory: 4Gi
         mon:
           requests:
             cpu: 50m
             memory: 512Mi
           limits:
-            memory: 1Gi
+            memory: 2Gi
         osd:
           requests:
             cpu: 500m
             memory: 2Gi
           limits:
-            memory: 6Gi
+            memory: 12Gi
         mgr-sidecar:
           requests:
             cpu: 50m
             memory: 128Mi
           limits:
-            memory: 256Mi
+            memory: 512Mi
     cephBlockPools:
       - name: ceph-blockpool
         spec:
@@ -162,7 +162,7 @@ spec:
                 cpu: 100m
                 memory: 1Gi
               limits:
-                memory: 4Gi
+                memory: 8Gi
         storageClass:
           enabled: true
           isDefault: false
@@ -204,7 +204,7 @@ spec:
                 cpu: 100m
                 memory: 1Gi
               limits:
-                memory: 2Gi
+                memory: 4Gi
             instances: 2
             priorityClassName: system-cluster-critical
           healthCheck:

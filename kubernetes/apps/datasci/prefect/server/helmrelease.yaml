@@ -68,11 +68,6 @@ spec:
             secretKeyRef:
               name: prefect-secret
               key: PREFECT_API_DATABASE_CONNECTION_URL
-        - name: PREFECT_API_DATABASE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: prefect-secret
-              key: PREFECT_API_DATABASE_PASSWORD
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
 

@@ -1,5 +1,4 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -64,6 +63,16 @@ spec:
       prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 
       env:
+        - name: PREFECT_API_DATABASE_CONNECTION_URL
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: PREFECT_API_DATABASE_CONNECTION_URL
+        - name: PREFECT_API_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: PREFECT_API_DATABASE_PASSWORD
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
 

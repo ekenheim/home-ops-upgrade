@@ -1,26 +1,26 @@
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: &app mlflow-db
-  namespace: flux-system
-spec:
-  targetNamespace: datasci
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: *app
-  dependsOn:
-    - name: cnpg-cluster-datasci
-    - name: ext-postgres-operator-datasci
-  path: ./kubernetes/apps/datasci/mlflow/db
-  prune: true
-  sourceRef:
-    kind: GitRepository
-    name: home-kubernetes
-  interval: 30m
-  retryInterval: 1m
-  timeout: 5m
+#---
+## yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+#apiVersion: kustomize.toolkit.fluxcd.io/v1
+#kind: Kustomization
+#metadata:
+#  name: &app mlflow-db
+#  namespace: flux-system
+#spec:
+#  targetNamespace: datasci
+#  commonMetadata:
+#    labels:
+#      app.kubernetes.io/name: *app
+#  dependsOn:
+#    - name: cnpg-cluster-datasci
+#    - name: ext-postgres-operator-datasci
+#  path: ./kubernetes/apps/datasci/mlflow/db
+#  prune: true
+#  sourceRef:
+#    kind: GitRepository
+#    name: home-kubernetes
+#  interval: 30m
+#  retryInterval: 1m
+#  timeout: 5m
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -34,7 +34,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: mlflow-db
+#    - name: mlflow-db
     - name: rook-ceph-cluster
   path: ./kubernetes/apps/datasci/mlflow/app
   prune: true

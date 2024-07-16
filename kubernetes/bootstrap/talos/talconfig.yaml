@@ -19,19 +19,19 @@ cniConfig:
   name: none
 
 nodes:
-  #- hostname: "worker2"
-  #  ipAddress: "192.168.50.32"
-  #  installDisk: "/dev/sda"
-  #  talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
-  #  controlPlane: false
-  #  networkInterfaces:
-  #    - deviceSelector:
-  #        hardwareAddr: 04:0e:3c:21:b2:3f
-  #      dhcp: true
-  #      mtu: 1500
-  #      routes:
-  #        - network: 0.0.0.0/0
-  #          gateway: "192.168.50.1"
+  - hostname: "worker2"
+    ipAddress: "192.168.50.32"
+    installDisk: "/dev/sda"
+    talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
+    controlPlane: false
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: 04:0e:3c:21:b2:3f
+        dhcp: true
+        mtu: 1500
+        routes:
+          - network: 0.0.0.0/0
+            gateway: "192.168.50.1"
   - hostname: "master1"
     ipAddress: "192.168.50.31"
     installDisk: "/dev/sda"

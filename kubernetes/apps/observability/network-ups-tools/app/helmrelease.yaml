@@ -43,6 +43,8 @@ spec:
         pod:
           annotations:
             configmap.reloader.stakater.com/reload: &config network-ups-tools-config
+          nodeSelector:
+            ups.feature.node.kubernetes.io/riello: "true"
     service:
       app:
         controller: *app

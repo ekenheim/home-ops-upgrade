@@ -42,10 +42,10 @@
 #
 # Example:
 #
-       [admin]
-               password = admin
-               actions = SET
-               instcmds = ALL
+#       [admin]
+#               password = admin
+#               actions = SET
+#               instcmds = ALL
 #
 
 #

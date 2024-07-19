@@ -9,7 +9,7 @@ spec:
     - # riello
       name: riello.ups
       labels:
-        ups.feature.node.kubernetes.io/tripplite: "true"
+        ups.feature.node.kubernetes.io/riello: "true"
       matchFeatures:
         - feature: usb.device
           matchExpressions:

@@ -18,4 +18,4 @@ resources:
   - ./unpoller/ks.yaml
   #- ./goldilocks/ks.yaml
   # Exporters
-  #- ./exporters
+  - ./exporters

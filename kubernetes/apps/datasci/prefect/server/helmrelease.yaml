@@ -69,3 +69,30 @@ spec:
         path: /
         pathType: Prefix
       tls: true
+
+    postgresql:
+      enabled: false
+
+    secret:
+      create: false
+      name: prefect-secret
+
+    extraInitContainers:
+      - name: install-psycopg2
+        image: prefecthq/prefect:2-python3.11-kubernetes
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            pip install --user psycopg2-binary && \
+            cp -r /home/prefect/.local/lib/python3.11/site-packages/* /usr/local/lib/python3.11/site-packages/
+        volumeMounts:
+          - name: python-packages
+            mountPath: /usr/local/lib/python3.11/site-packages
+
+    extraVolumes:
+      - name: python-packages
+        emptyDir: {}
+
+    extraVolumeMounts:
+      - name: python-packages
+        mountPath: /usr/local/lib/python3.11/site-packages

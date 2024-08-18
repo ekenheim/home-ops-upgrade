@@ -70,12 +70,8 @@ spec:
         pathType: Prefix
       tls: true
 
-    postgresql:
-      enabled: false
-
-    secret:
-      create: false
-      name: prefect-secret
+    # Remove duplicate postgresql and secret sections
+      existingSecret: prefect-secret
 
     extraInitContainers:
       - name: install-psycopg2
@@ -96,3 +92,15 @@ spec:
     extraVolumeMounts:
       - name: python-packages
         mountPath: /usr/local/lib/python3.11/site-packages
+
+    rbac:
+      create: true
+      rules:
+        - apiGroups: ["batch"]
+          resources: ["jobs"]
+          verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+          namespaces: ["datasci"]
+
+    serviceAccount:
+      create: true
+      name: prefect-worker

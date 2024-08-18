@@ -33,26 +33,17 @@ spec:
       env:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
-        - name: PREFECT_EXTRA_PIP_PACKAGES
-          value: "psycopg2-binary"
-        - name: PREFECT_API_DATABASE_CONNECTION_URL
-          valueFrom:
-            secretKeyRef:
-              name: prefect-secret
-              key: connection-string
 
-    postgresql:
-      enabled: false
+      podSecurityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+        fsGroup: 1002
 
-    secret:
-      create: false
-      existingSecret: prefect-secret
-      usernameKey: postgresql.auth.username
-      passwordKey: postgresql.auth.password
-      hostKey: postgresql.externalHostname
-      portKey: port
-      databaseKey: postgresql.auth.database
-      connectionStringKey: connection-string
+      containerSecurityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
 
     service:
       type: ClusterIP
@@ -69,3 +60,30 @@ spec:
         path: /
         pathType: Prefix
       tls: true
+
+    postgresql:
+      enabled: false
+
+    secret:
+      create: false
+      name: prefect-secret
+
+    extraInitContainers:
+      - name: install-psycopg2
+        image: prefecthq/prefect:2-python3.11-kubernetes
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            pip install --user psycopg2-binary && \
+            cp -r /home/prefect/.local/lib/python3.11/site-packages/* /usr/local/lib/python3.11/site-packages/
+        volumeMounts:
+          - name: python-packages
+            mountPath: /usr/local/lib/python3.11/site-packages
+
+    extraVolumes:
+      - name: python-packages
+        emptyDir: {}
+
+    extraVolumeMounts:
+      - name: python-packages
+        mountPath: /usr/local/lib/python3.11/site-packages

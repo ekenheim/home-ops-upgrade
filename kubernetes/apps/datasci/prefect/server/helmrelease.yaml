@@ -14,46 +14,6 @@ spec:
         kind: HelmRepository
         name: prefect
         namespace: flux-system
-  install:
-    remediation:
-      retries: 3
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      strategy: rollback
-      retries: 3
-  driftDetection:
-    mode: enabled
-    ignore:
-      - paths:
-          - /spec/containers/resources/limits
-        target:
-          kind: Pod
-  valuesFrom:
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.auth.database
-      targetPath: postgresql.auth.database
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.auth.username
-      targetPath: postgresql.auth.username
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.auth.password
-      targetPath: postgresql.auth.password
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.externalHostname
-      targetPath: postgresql.externalHostname
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: PREFECT_API_DATABASE_CONNECTION_URL
-      targetPath: PREFECT_API_DATABASE_CONNECTION_URL
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: PREFECT_API_DATABASE_PASSWORD
-      targetPath: PREFECT_API_DATABASE_PASSWORD
   values:
     server:
       image:
@@ -81,38 +41,41 @@ spec:
                 echo "export PATH=$PATH:$HOME/.local/bin" >> ~/.bashrc
                 source ~/.bashrc
 
-      podSecurityContext:
-        runAsUser: 1000
-        runAsNonRoot: true
-        fsGroup: 1002
-
-      containerSecurityContext:
-        runAsUser: 1000
-        runAsNonRoot: true
-        readOnlyRootFilesystem: true
-        allowPrivilegeEscalation: false
-
-    service:
-      type: ClusterIP
-      port: 4200
+    postgresql:
+      enabled: false
+      externalDatabase:
+        host:
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: postgresql.externalHostname
+        port: "5432"
+        user:
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: postgresql.auth.username
+        password:
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: postgresql.auth.password
+        database:
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: postgresql.auth.database
 
     ingress:
       enabled: true
       className: internal
+      annotations:
+        nginx.ingress.kubernetes.io/whitelist-source-range: |
+          10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
       host:
         hostname: &host prefect.${SECRET_DOMAIN}
         path: /
         pathType: Prefix
-      annotations:
-        nginx.ingress.kubernetes.io/whitelist-source-range: |
-          10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
-      tls: true
-
-    postgresql:
-      enabled: false
-      externalDatabase:
-        host: ${postgresql.externalHostname}
-        port: "5432"
-        user: ${postgresql.auth.username}
-        password: ${postgresql.auth.password}
-        database: ${postgresql.auth.database}
+      tls:
+        - hosts:
+            - prefect.${SECRET_DOMAIN}

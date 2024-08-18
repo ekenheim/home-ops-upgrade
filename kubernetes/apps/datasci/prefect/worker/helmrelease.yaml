@@ -18,12 +18,15 @@ spec:
     worker:
       image:
         repository: prefecthq/prefect
-        tag: 2-python3.11-kubernetes
+        prefectTag: 2-python3.11-kubernetes
       config:
         workPool: default
         type: kubernetes
-        prefectApiUrl: "http://prefect-server.datasci.svc.cluster.local:4200/api"
-        kubernetesNamespace: "datasci"
+        apiConfig:
+          apiUrl: "http://prefect-server.datasci.svc.cluster.local:4200/api"
+        kubernetes:
+          namespace: "datasci"
+          jobNamespace: "datasci"
 
     rbac:
       create: true

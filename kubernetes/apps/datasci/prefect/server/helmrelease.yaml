@@ -100,7 +100,7 @@ spec:
       useSubChart: false
       externalDatabase:
         host: $${postgresql.externalHostname}
-        port: 5432
+        port: $${port}
         user: $${postgresql.auth.username}
         password: $${postgresql.auth.password}
         database: $${postgresql.auth.database}

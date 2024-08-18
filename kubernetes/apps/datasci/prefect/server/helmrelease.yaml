@@ -47,6 +47,10 @@ spec:
       targetPath: postgresql.externalHostname
     - kind: Secret
       name: prefect-secret
+      valuesKey: port
+      targetPath: postgresql.port
+    - kind: Secret
+      name: prefect-secret
       valuesKey: PREFECT_API_DATABASE_CONNECTION_URL
       targetPath: PREFECT_API_DATABASE_CONNECTION_URL
     - kind: Secret
@@ -100,7 +104,7 @@ spec:
       useSubChart: false
       externalDatabase:
         host: $${postgresql.externalHostname}
-        port: $${port}
+        port: $${postgresql.port}
         user: $${postgresql.auth.username}
         password: $${postgresql.auth.password}
         database: $${postgresql.auth.database}

@@ -93,11 +93,6 @@ spec:
 
     ## Role configuration
     role:
-      ## List of extra role permissions
-      extraPermissions:
-        - apiGroups: ["batch"]
-          resources: ["jobs"]
-          verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
       create: true
       rules:
         - apiGroups: [""]
@@ -106,6 +101,11 @@ spec:
         - apiGroups: ["batch"]
           resources: ["jobs"]
           verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+        - apiGroups: [""]
+          resources: ["namespaces"]
+          verbs: ["get", "list", "watch"]
+      # Ensure the role is scoped to the datasci namespace
+      namespace: datasci
 
     serviceAccount:
       create: true

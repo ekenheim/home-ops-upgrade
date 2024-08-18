@@ -1,9 +1,11 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: &app prefect-server
+  namespace: datasci
 spec:
+  interval: 15m
   chart:
     spec:
       chart: prefect-server
@@ -12,43 +14,6 @@ spec:
         kind: HelmRepository
         name: prefect
         namespace: flux-system
-  interval: 15m
-  install:
-    remediation:
-      retries: 3
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      strategy: rollback
-      retries: 3
-  driftDetection:
-    mode: enabled
-    ignore:
-      - paths:
-          - /spec/containers/resources/limits
-        target:
-          kind: Pod
-  valuesFrom:
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.auth.database
-      targetPath: postgresql.externalDatabase.database
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.auth.username
-      targetPath: postgresql.externalDatabase.user
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.auth.password
-      targetPath: postgresql.externalDatabase.password
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.externalHostname
-      targetPath: postgresql.externalDatabase.host
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: port
-      targetPath: postgresql.externalDatabase.port
   values:
     server:
       image:
@@ -65,54 +30,26 @@ spec:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
 
-      podSecurityContext:
-        runAsUser: 1000
-        runAsNonRoot: true
-        fsGroup: 1002
-
-      containerSecurityContext:
-        runAsUser: 1000
-        runAsNonRoot: true
-        readOnlyRootFilesystem: true
-        allowPrivilegeEscalation: false
-
-    extraInitContainers:
-      - name: install-psycopg2
-        image: python:3.11-slim
-        command: ["pip", "install", "--target", "/mnt/python-packages", "psycopg2-binary"]
-        volumeMounts:
-          - name: python-packages
-            mountPath: /mnt/python-packages
-
-    extraVolumeMounts:
-      - name: python-packages
-        mountPath: /usr/local/lib/python3.11/site-packages
-
-    extraVolumes:
-      - name: python-packages
-        emptyDir: {}
-
-    service:
-      type: ClusterIP
-      port: 4200
+    postgresql:
+      enabled: false
+      externalDatabase:
+        host: ${postgresql.externalHostname}
+        port: ${port}
+        user: ${postgresql.auth.username}
+        password: ${postgresql.auth.password}
+        database: ${postgresql.auth.database}
 
     ingress:
       enabled: true
       className: internal
-      host:
-        hostname: &host prefect.${SECRET_DOMAIN}
-        path: /
-        pathType: Prefix
       annotations:
         nginx.ingress.kubernetes.io/whitelist-source-range: |
           10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
-      tls: true
-
-    postgresql:
-      enabled: false
-      externalDatabase:
-        host: ${postgresql.externalDatabase.host}
-        port: ${postgresql.externalDatabase.port}
-        user: ${postgresql.externalDatabase.user}
-        password: ${postgresql.externalDatabase.password}
-        database: ${postgresql.externalDatabase.database}
+      hosts:
+        - host: prefect.${SECRET_DOMAIN}
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - prefect.${SECRET_DOMAIN}

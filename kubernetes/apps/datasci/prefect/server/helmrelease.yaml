@@ -42,6 +42,16 @@ spec:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
 
+      lifecycle:
+        postStart:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - |
+                pip install --user psycopg2-binary && \
+                cp -r /home/prefect/.local/lib/python3.11/site-packages/* /usr/local/lib/python3.11/site-packages/
+
       podSecurityContext:
         runAsUser: 1000
         runAsNonRoot: true
@@ -75,23 +85,3 @@ spec:
     secret:
       create: false
       name: prefect-secret
-
-    extraInitContainers:
-      - name: install-psycopg2
-        image: prefecthq/prefect:2-python3.11-kubernetes
-        command: ["/bin/sh", "-c"]
-        args:
-          - |
-            pip install --user psycopg2-binary && \
-            cp -r /home/prefect/.local/lib/python3.11/site-packages/* /usr/local/lib/python3.11/site-packages/
-        volumeMounts:
-          - name: python-packages
-            mountPath: /usr/local/lib/python3.11/site-packages
-
-    extraVolumes:
-      - name: python-packages
-        emptyDir: {}
-
-    extraVolumeMounts:
-      - name: python-packages
-        mountPath: /usr/local/lib/python3.11/site-packages

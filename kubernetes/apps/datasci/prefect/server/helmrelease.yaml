@@ -118,3 +118,9 @@ spec:
           secretKeyRef:
             name: prefect-secret
             key: postgresql.externalHostname
+      port: "5432"
+      database:
+        valueFrom:
+          secretKeyRef:
+            name: prefect-secret
+            key: postgresql.auth.database

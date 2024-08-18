@@ -29,31 +29,6 @@ spec:
           - /spec/containers/resources/limits
         target:
           kind: Pod
-  valuesFrom:
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.auth.database
-      targetPath: postgresql.auth.database
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.auth.username
-      targetPath: postgresql.auth.username
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.auth.password
-      targetPath: postgresql.auth.password
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.externalHostname
-      targetPath: postgresql.externalHostname
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: PREFECT_API_DATABASE_CONNECTION_URL
-      targetPath: PREFECT_API_DATABASE_CONNECTION_URL
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: PREFECT_API_DATABASE_PASSWORD
-      targetPath: PREFECT_API_DATABASE_PASSWORD
   values:
     server:
       image:
@@ -96,7 +71,7 @@ spec:
         nginx.ingress.kubernetes.io/whitelist-source-range: |
           10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
       hosts:
-        - host: prefect.${SECRET_DOMAIN}
+        - host: "prefect.${SECRET_DOMAIN}"
           paths:
             - path: /
               pathType: Prefix
@@ -106,8 +81,24 @@ spec:
       enabled: false
       useSubChart: false
       externalDatabase:
-        host: ${postgresql.externalHostname}
+        host:
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: postgresql.externalHostname
         port: "5432"
-        user: ${postgresql.auth.username}
-        password: ${postgresql.auth.password}
-        database: ${postgresql.auth.database}
+        user:
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: postgresql.auth.username
+        password:
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: postgresql.auth.password
+        database:
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: postgresql.auth.database

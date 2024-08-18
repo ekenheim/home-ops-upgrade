@@ -57,15 +57,28 @@ spec:
     server:
       image:
         repository: prefecthq/prefect
-        prefectTag: 2-python3.11-kubernetes
-        debug: true
-
-      prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
+        tag: "2-python3.11-kubernetes"
+        pullPolicy: IfNotPresent
 
       env:
-
+        - name: PREFECT_API_DATABASE_CONNECTION_URL
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: PREFECT_API_DATABASE_CONNECTION_URL
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
+
+      lifecycle:
+        postStart:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - |
+                pip install --user psycopg2-binary
+                echo "export PATH=$PATH:$HOME/.local/bin" >> ~/.bashrc
+                source ~/.bashrc
 
       podSecurityContext:
         runAsUser: 1000
@@ -95,5 +108,10 @@ spec:
       tls: true
 
     postgresql:
-      enabled: true
-      useSubChart: false
+      enabled: false
+      externalDatabase:
+        host: ${postgresql.externalHostname}
+        port: ${port}
+        user: ${postgresql.auth.username}
+        password: ${postgresql.auth.password}
+        database: ${postgresql.auth.database}

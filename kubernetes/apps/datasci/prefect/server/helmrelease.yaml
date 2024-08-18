@@ -53,6 +53,14 @@ spec:
         readOnlyRootFilesystem: true
         allowPrivilegeEscalation: false
 
+      command:
+        - /bin/sh
+        - -c
+      args:
+        - |
+          pip install psycopg2-binary
+          /usr/bin/tini -g -- /opt/prefect/entrypoint.sh prefect server start --port 4200
+
     service:
       type: ClusterIP
       port: 4200
@@ -75,25 +83,3 @@ spec:
     secret:
       create: false
       name: prefect-secret
-
-    # Add this section to create an init container
-    extraInitContainers:
-      - name: install-psycopg2
-        image: prefecthq/prefect:2-python3.11-kubernetes
-        command: ["/bin/sh", "-c"]
-        args:
-          - |
-            pip install psycopg2-binary
-        volumeMounts:
-          - name: prefect-home
-            mountPath: /home/prefect
-
-    # Add this section to create a shared volume
-    extraVolumes:
-      - name: prefect-home
-        emptyDir: {}
-
-    # Add this section to mount the shared volume in the main container
-    extraVolumeMounts:
-      - name: prefect-home
-        mountPath: /home/prefect

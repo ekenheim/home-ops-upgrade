@@ -6,6 +6,7 @@ metadata:
   namespace: datasci
 spec:
   interval: 15m
+  timeout: 10m
   chart:
     spec:
       chart: prefect-server
@@ -27,9 +28,7 @@ spec:
         repository: prefecthq/prefect
         prefectTag: 2-python3.11-kubernetes
         debug: true
-
-      prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
-
+      prefectApiUrl: "http://prefect-server.datasci.svc.cluster.local:4200/api"
       env:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
@@ -40,26 +39,48 @@ spec:
       enabled: false
 
     secret:
-      create: true
-      name: prefect-server-secret
-      username: ${PREFECT_DB_USERNAME}
-      password: ${PREFECT_DB_PASSWORD}
-      host: ${PREFECT_DB_HOST}
-      port: ${PREFECT_DB_PORT}
-      database: ${PREFECT_DB_NAME}
-
-    service:
-      type: ClusterIP
-      port: 4200
+      create: false
+      existingSecret: prefect-secret
+      connectionStringKey: connection-string
+      databaseKey: postgresql.auth.database
+      hostKey: postgresql.externalHostname
+      passwordKey: postgresql.auth.password
+      portKey: port
+      usernameKey: postgresql.auth.username
 
     ingress:
       enabled: true
       className: internal
       annotations:
-        nginx.ingress.kubernetes.io/whitelist-source-range: |
-          10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+        kubernetes.io/ingress.class: internal
+        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
       host:
+        name: prefect.ekenhome.se
         hostname: "prefect.${SECRET_DOMAIN}"
         path: /
         pathType: Prefix
       tls: true
+
+    service:
+      type: ClusterIP
+      port: 4200
+
+    rbac:
+      create: true
+      rules:
+        - apiGroups: ["batch"]
+          resources: ["jobs"]
+          verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+          namespaces: ["datasci"]
+
+    serviceAccount:
+      create: true
+      name: prefect-worker
+
+    extraInitContainers:
+      - name: install-psycopg2
+        image: prefecthq/prefect:2-python3.11-kubernetes
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            pip install --user psycopg2-binary

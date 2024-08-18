@@ -6,7 +6,6 @@ metadata:
   namespace: datasci
 spec:
   interval: 15m
-  timeout: 10m
   chart:
     spec:
       chart: prefect-server
@@ -28,54 +27,46 @@ spec:
         repository: prefecthq/prefect
         prefectTag: 2-python3.11-kubernetes
         debug: true
-      prefectApiUrl: "http://prefect-server.datasci.svc.cluster.local:4200/api"
+
+      prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
+
       env:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
-        - name: PREFECT_EXTRA_PIP_PACKAGES
-          value: "psycopg2-binary"
+
+      podSecurityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+        fsGroup: 1002
+
+      containerSecurityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+
+    service:
+      type: ClusterIP
+      port: 4200
+
+    ingress:
+      enabled: true
+      className: internal
+      annotations:
+        nginx.ingress.kubernetes.io/whitelist-source-range: |
+          10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+      host:
+        hostname: "prefect.${SECRET_DOMAIN}"
+        path: /
+        pathType: Prefix
+      tls: true
 
     postgresql:
       enabled: false
 
     secret:
       create: false
-      existingSecret: prefect-secret
-      connectionStringKey: connection-string
-      databaseKey: postgresql.auth.database
-      hostKey: postgresql.externalHostname
-      passwordKey: postgresql.auth.password
-      portKey: port
-      usernameKey: postgresql.auth.username
-
-    ingress:
-      enabled: true
-      className: internal
-      annotations:
-        kubernetes.io/ingress.class: internal
-        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-      hosts:
-        - host: "prefect.${SECRET_DOMAIN}"
-          paths:
-            - path: /
-              pathType: Prefix
-      tls: true
-
-    service:
-      type: ClusterIP
-      port: 4200
-
-    rbac:
-      create: true
-      rules:
-        - apiGroups: ["batch"]
-          resources: ["jobs"]
-          verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
-          namespaces: ["datasci"]
-
-    serviceAccount:
-      create: true
-      name: prefect-worker
+      name: prefect-secret
 
     extraInitContainers:
       - name: install-psycopg2
@@ -83,4 +74,16 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
           - |
-            pip install --user psycopg2-binary
+            pip install --user psycopg2-binary && \
+            cp -r /home/prefect/.local/lib/python3.11/site-packages/* /usr/local/lib/python3.11/site-packages/
+        volumeMounts:
+          - name: python-packages
+            mountPath: /usr/local/lib/python3.11/site-packages
+
+    extraVolumes:
+      - name: python-packages
+        emptyDir: {}
+
+    extraVolumeMounts:
+      - name: python-packages
+        mountPath: /usr/local/lib/python3.11/site-packages

@@ -87,3 +87,20 @@ spec:
     extraVolumeMounts:
       - name: python-packages
         mountPath: /usr/local/lib/python3.11/site-packages
+
+    rbac:
+      create: true
+      rules:
+        - apiGroups: [""]
+          resources: ["pods", "pods/log", "services"]
+          verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+        - apiGroups: ["batch"]
+          resources: ["jobs"]
+          verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+        - apiGroups: [""]
+          resources: ["namespaces"]
+          verbs: ["get", "list", "watch"]
+      clusterRoleRules:
+        - apiGroups: ["batch"]
+          resources: ["jobs"]
+          verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]

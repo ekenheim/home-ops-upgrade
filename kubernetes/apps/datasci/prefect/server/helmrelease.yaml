@@ -23,25 +23,10 @@ spec:
       retries: 3
       remediateLastFailure: true
   values:
-    server:
-      image:
-        repository: prefecthq/prefect
-        tag: 2-python3.11-kubernetes
-        debug: true
-      env:
-        - name: PREFECT_API_URL
-          value: "http://prefect-server.datasci.svc.cluster.local:4200/api"
-        - name: PREFECT_API_DATABASE_CONNECTION_URL
-          valueFrom:
-            secretKeyRef:
-              name: prefect-secret
-              key: connection-string
-        - name: PREFECT_API_DATABASE_MIGRATE_ON_START
-          value: "True"
-        - name: PREFECT_KUBERNETES_NAMESPACE
-          value: "datasci"
-        - name: PREFECT_KUBERNETES_JOB_NAMESPACE
-          value: "datasci"
+    image:
+      repository: prefecthq/prefect
+      tag: 2-python3.11-kubernetes
+      debug: true
 
     postgresql:
       enabled: false
@@ -49,6 +34,21 @@ spec:
     secret:
       create: false
       existingSecret: prefect-secret
+
+    env:
+      - name: PREFECT_API_URL
+        value: "http://prefect-server.datasci.svc.cluster.local:4200/api"
+      - name: PREFECT_API_DATABASE_CONNECTION_URL
+        valueFrom:
+          secretKeyRef:
+            name: prefect-secret
+            key: connection-string
+      - name: PREFECT_API_DATABASE_MIGRATE_ON_START
+        value: "True"
+      - name: PREFECT_KUBERNETES_NAMESPACE
+        value: "datasci"
+      - name: PREFECT_KUBERNETES_JOB_NAMESPACE
+        value: "datasci"
 
     ingress:
       enabled: true

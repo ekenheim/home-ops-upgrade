@@ -76,23 +76,18 @@ spec:
 
     secret:
       create: false
-      name: prefect-server-connection-secret
+      name: prefect-secret
 
   postRenderers:
     - kustomize:
         patches:
           - patch: |
-              apiVersion: v1
-              kind: Secret
-              metadata:
-                name: prefect-server-connection-secret
-                namespace: datasci
-              type: Opaque
-              data:
-                connection-string: ${PREFECT_API_DATABASE_CONNECTION_URL_B64}
+              - op: add
+                path: /data/connection-string
+                value: ${PREFECT_API_DATABASE_CONNECTION_URL_B64}
             target:
               kind: Secret
-              name: prefect-server-connection-secret
+              name: prefect-secret
 
   valuesFrom:
     - kind: Secret

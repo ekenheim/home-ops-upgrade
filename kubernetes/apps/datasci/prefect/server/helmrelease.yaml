@@ -13,9 +13,7 @@ spec:
         name: prefect
         namespace: flux-system
   interval: 15m
-  #dependsOn:
-  #  - name: wait-for-prefect-secret
-  #    namespace: datasci
+
   install:
     remediation:
       retries: 3
@@ -111,8 +109,8 @@ spec:
       enabled: false
       useSubChart: false
       externalDatabase:
-        host: ${postgresql.externalHostname}
-        port: ${postgresql.port}
-        user: ${postgresql.auth.username}
-        password: ${postgresql.auth.password}
-        database: ${postgresql.auth.database}
+        host: $${postgresql.externalHostname}
+        port: $${postgresql.port}
+        user: $${postgresql.auth.username}
+        password: $${postgresql.auth.password}
+        database: $${postgresql.auth.database}

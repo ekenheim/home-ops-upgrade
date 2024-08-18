@@ -13,14 +13,19 @@ spec:
         name: prefect
         namespace: flux-system
   interval: 15m
+  dependsOn:
+    - name: prefect-secret
+      namespace: datasci
   install:
     remediation:
       retries: 3
+    timeout: 10m
   upgrade:
     cleanupOnFail: true
     remediation:
       strategy: rollback
       retries: 3
+    timeout: 10m
   driftDetection:
     mode: enabled
     ignore:

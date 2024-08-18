@@ -63,6 +63,11 @@ spec:
         prefectTag: 2-python3.11-kubernetes
         debug: true
 
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          pip install psycopg2-binary && prefect server start
+
       prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 
       env:

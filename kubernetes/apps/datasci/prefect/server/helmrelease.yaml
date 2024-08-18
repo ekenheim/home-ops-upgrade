@@ -38,7 +38,7 @@ spec:
 
       prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 
-      env:
+      extraEnv:
         - name: PREFECT_API_DATABASE_CONNECTION_URL
           value: "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):5432/$(DB_NAME)"
         - name: DB_USER

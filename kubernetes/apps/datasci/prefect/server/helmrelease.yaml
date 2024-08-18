@@ -42,11 +42,11 @@ spec:
     secret:
       create: true
       name: prefect-server-secret
-      username: ${PREFECT_DB_USERNAME}
-      password: ${PREFECT_DB_PASSWORD}
-      host: ${PREFECT_DB_HOST}
-      port: ${PREFECT_DB_PORT}
-      database: ${PREFECT_DB_NAME}
+      username: "${PREFECT_DB_USERNAME}"
+      password: "${PREFECT_DB_PASSWORD}"
+      host: "${PREFECT_DB_HOST}"
+      port: "${PREFECT_DB_PORT}"
+      database: "${PREFECT_DB_NAME}"
 
     service:
       type: ClusterIP

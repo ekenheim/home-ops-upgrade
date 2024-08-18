@@ -18,18 +18,12 @@ spec:
     worker:
       image:
         repository: prefecthq/prefect
-        prefectTag: 2-python3.11-kubernetes
-      env:
-        - name: PREFECT_API_URL
-          value: "http://prefect-server.datasci.svc.cluster.local:4200/api"
-        - name: PREFECT_KUBERNETES_NAMESPACE
-          value: "datasci"
-        - name: PREFECT_KUBERNETES_JOB_NAMESPACE
-          value: "datasci"
+        tag: 2-python3.11-kubernetes
       config:
         workPool: default
-        namespace: datasci
-        jobNamespace: datasci
+        type: kubernetes
+        prefectApiUrl: "http://prefect-server.datasci.svc.cluster.local:4200/api"
+        kubernetesNamespace: "datasci"
 
     rbac:
       create: true
@@ -37,7 +31,6 @@ spec:
         - apiGroups: ["batch"]
           resources: ["jobs"]
           verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
-          namespaces: ["datasci"]
         - apiGroups: [""]
           resources: ["pods", "pods/log", "services"]
           verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]

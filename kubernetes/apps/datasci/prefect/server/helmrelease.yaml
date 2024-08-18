@@ -32,41 +32,29 @@ spec:
     - kind: Secret
       name: prefect-secret
       valuesKey: postgresql.auth.database
-      targetPath: postgresql.auth.database
+      targetPath: postgresql.externalDatabase.database
     - kind: Secret
       name: prefect-secret
       valuesKey: postgresql.auth.username
-      targetPath: postgresql.auth.username
+      targetPath: postgresql.externalDatabase.user
     - kind: Secret
       name: prefect-secret
       valuesKey: postgresql.auth.password
-      targetPath: postgresql.auth.password
+      targetPath: postgresql.externalDatabase.password
     - kind: Secret
       name: prefect-secret
       valuesKey: postgresql.externalHostname
-      targetPath: postgresql.externalHostname
+      targetPath: postgresql.externalDatabase.host
     - kind: Secret
       name: prefect-secret
       valuesKey: port
-      targetPath: postgresql.port
+      targetPath: postgresql.externalDatabase.port
   values:
-    secret:
-      username: $${postgresql.auth.username}
-      password: $${postgresql.auth.password}
-      database: $${postgresql.auth.database}
-      host: $${postgresql.externalHostname}
-      port: $${port}
-
     server:
       image:
         repository: prefecthq/prefect
         tag: "2-python3.11-kubernetes"
         pullPolicy: IfNotPresent
-
-      command: ["/bin/bash", "-c"]
-      args:
-        - |
-          pip install psycopg2-binary && prefect server start
 
       env:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
@@ -107,8 +95,8 @@ spec:
     postgresql:
       enabled: false
       externalDatabase:
-        host: $${postgresql.externalHostname}
-        port: $${port}
-        user: $${postgresql.auth.username}
-        password: $${postgresql.auth.password}
-        database: $${postgresql.auth.database}
+        host: ${postgresql.externalDatabase.host}
+        port: ${postgresql.externalDatabase.port}
+        user: ${postgresql.externalDatabase.user}
+        password: ${postgresql.externalDatabase.password}
+        database: ${postgresql.externalDatabase.database}

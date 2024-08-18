@@ -48,7 +48,7 @@ spec:
     - kind: Secret
       name: prefect-secret
       valuesKey: port
-      targetPath: port
+      targetPath: postgresql.port
     - kind: Secret
       name: prefect-secret
       valuesKey: PREFECT_API_DATABASE_CONNECTION_URL
@@ -58,6 +58,11 @@ spec:
       valuesKey: PREFECT_API_DATABASE_PASSWORD
       targetPath: PREFECT_API_DATABASE_PASSWORD
   values:
+    secret:
+      username: $${postgresql.auth.username}
+      password: $${postgresql.auth.password}
+      database: $${postgresql.auth.database}
+
     server:
       image:
         repository: prefecthq/prefect

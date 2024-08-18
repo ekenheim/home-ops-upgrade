@@ -75,22 +75,5 @@ spec:
       enabled: false
 
     secret:
-      create: true
-      name: prefect-server-secret
-      connection-string:
-        valueFrom:
-          secretKeyRef:
-            name: prefect-secret
-            key: PREFECT_API_DATABASE_CONNECTION_URL
-
-  postRenderers:
-    - kustomize:
-        patches:
-          - patch: |
-              - op: add
-                path: /stringData
-                value:
-                  connection-string: ${PREFECT_API_DATABASE_CONNECTION_URL}
-            target:
-              kind: Secret
-              name: prefect-server-secret
+      create: false
+      name: prefect-secret

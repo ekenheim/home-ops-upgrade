@@ -96,3 +96,26 @@ spec:
     postgresql:
       enabled: false
       useSubChart: false
+
+    secret:
+      username:
+        valueFrom:
+          secretKeyRef:
+            name: prefect-secret
+            key: postgresql.auth.username
+      password:
+        valueFrom:
+          secretKeyRef:
+            name: prefect-secret
+            key: postgresql.auth.password
+      host:
+        valueFrom:
+          secretKeyRef:
+            name: prefect-secret
+            key: postgresql.externalHostname
+      port: "5432"
+      database:
+        valueFrom:
+          secretKeyRef:
+            name: prefect-secret
+            key: postgresql.auth.database

@@ -29,17 +29,8 @@ spec:
               key: PREFECT_API_DATABASE_CONNECTION_URL
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
-
-      lifecycle:
-        postStart:
-          exec:
-            command:
-              - /bin/sh
-              - -c
-              - |
-                pip install --user psycopg2-binary
-                echo "export PATH=$PATH:$HOME/.local/bin" >> ~/.bashrc
-                source ~/.bashrc
+        - name: PREFECT_EXTRA_PIP_PACKAGES
+          value: "psycopg2-binary"
 
     postgresql:
       enabled: false

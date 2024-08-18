@@ -1,9 +1,8 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: &app prefect-server
-  namespace: datasci
 spec:
   chart:
     spec:
@@ -66,21 +65,10 @@ spec:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
 
-      extraInitContainers:
-        - name: install-psycopg2
-          image: python:3.11-slim
-          command: ["pip", "install", "psycopg2-binary"]
-          volumeMounts:
-            - name: python-packages
-              mountPath: /usr/local/lib/python3.11/site-packages
-
-      extraVolumeMounts:
-        - name: python-packages
-          mountPath: /usr/local/lib/python3.11/site-packages
-
-      extraVolumes:
-        - name: python-packages
-          emptyDir: {}
+      lifecycle:
+        postStart:
+          exec:
+            command: ["/bin/sh", "-c", "pip install psycopg2-binary"]
 
       podSecurityContext:
         runAsUser: 1000
@@ -90,7 +78,7 @@ spec:
       containerSecurityContext:
         runAsUser: 1000
         runAsNonRoot: true
-        readOnlyRootFilesystem: true
+        readOnlyRootFilesystem: false
         allowPrivilegeEscalation: false
 
     service:

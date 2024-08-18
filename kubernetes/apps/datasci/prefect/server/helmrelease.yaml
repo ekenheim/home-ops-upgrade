@@ -1,9 +1,11 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: &app prefect-server
+  namespace: datasci
 spec:
+  interval: 15m
   chart:
     spec:
       chart: prefect-server
@@ -12,7 +14,6 @@ spec:
         kind: HelmRepository
         name: prefect
         namespace: flux-system
-  interval: 15m
   install:
     remediation:
       retries: 3
@@ -111,7 +112,7 @@ spec:
       enabled: false
       externalDatabase:
         host: ${postgresql.externalHostname}
-        port: ${port}
+        port: "5432"
         user: ${postgresql.auth.username}
         password: ${postgresql.auth.password}
         database: ${postgresql.auth.database}

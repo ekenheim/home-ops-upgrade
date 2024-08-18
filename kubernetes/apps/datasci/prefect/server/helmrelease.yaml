@@ -6,6 +6,7 @@ metadata:
   namespace: datasci
 spec:
   interval: 15m
+  timeout: 10m
   chart:
     spec:
       chart: prefect-server
@@ -27,9 +28,7 @@ spec:
         repository: prefecthq/prefect
         prefectTag: 2-python3.11-kubernetes
         debug: true
-
-      prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
-
+      prefectApiUrl: "http://prefect-server.datasci.svc.cluster.local:4200/api"
       env:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
@@ -47,16 +46,12 @@ spec:
     secret:
       create: false
       existingSecret: prefect-secret
-      usernameKey: postgresql.auth.username
-      passwordKey: postgresql.auth.password
-      hostKey: postgresql.externalHostname
-      portKey: port
-      databaseKey: postgresql.auth.database
       connectionStringKey: connection-string
-
-    service:
-      type: ClusterIP
-      port: 4200
+      databaseKey: postgresql.auth.database
+      hostKey: postgresql.externalHostname
+      passwordKey: postgresql.auth.password
+      portKey: port
+      usernameKey: postgresql.auth.username
 
     ingress:
       enabled: true
@@ -64,14 +59,28 @@ spec:
       annotations:
         nginx.ingress.kubernetes.io/whitelist-source-range: |
           10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
-      host:
-        hostname: "prefect.${SECRET_DOMAIN}"
-        path: /
-        pathType: Prefix
+      hosts:
+        - host: prefect.ekenhome.se
+          paths:
+            - path: /
+              pathType: Prefix
       tls: true
 
-    # Remove duplicate postgresql and secret sections
-      existingSecret: prefect-secret
+    service:
+      type: ClusterIP
+      port: 4200
+
+    rbac:
+      create: true
+      rules:
+        - apiGroups: ["batch"]
+          resources: ["jobs"]
+          verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+          namespaces: ["datasci"]
+
+    serviceAccount:
+      create: true
+      name: prefect-worker
 
     extraInitContainers:
       - name: install-psycopg2
@@ -85,22 +94,10 @@ spec:
           - name: python-packages
             mountPath: /usr/local/lib/python3.11/site-packages
 
-    extraVolumes:
-      - name: python-packages
-        emptyDir: {}
-
     extraVolumeMounts:
       - name: python-packages
         mountPath: /usr/local/lib/python3.11/site-packages
 
-    rbac:
-      create: true
-      rules:
-        - apiGroups: ["batch"]
-          resources: ["jobs"]
-          verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
-          namespaces: ["datasci"]
-
-    serviceAccount:
-      create: true
-      name: prefect-worker
+    extraVolumes:
+      - name: python-packages
+        emptyDir: {}

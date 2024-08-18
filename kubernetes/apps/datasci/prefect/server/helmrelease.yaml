@@ -60,15 +60,13 @@ spec:
     server:
       image:
         repository: prefecthq/prefect
-        prefectTag: 2-python3.11-kubernetes
-        debug: true
+        tag: "2-python3.11-kubernetes"
+        pullPolicy: IfNotPresent
 
       command: ["/bin/bash", "-c"]
       args:
         - |
           pip install psycopg2-binary && prefect server start
-
-      prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 
       env:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
@@ -108,7 +106,6 @@ spec:
 
     postgresql:
       enabled: false
-      useSubChart: false
       externalDatabase:
         host: $${postgresql.externalHostname}
         port: $${port}

@@ -100,7 +100,3 @@ spec:
         - apiGroups: [""]
           resources: ["namespaces"]
           verbs: ["get", "list", "watch"]
-      clusterRoleRules:
-        - apiGroups: ["batch"]
-          resources: ["jobs"]
-          verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]

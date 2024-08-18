@@ -40,6 +40,10 @@ spec:
             secretKeyRef:
               name: prefect-secret
               key: connection-string
+        - name: PREFECT_KUBERNETES_NAMESPACE
+          value: "datasci"
+        - name: PREFECT_KUBERNETES_JOB_NAMESPACE
+          value: "datasci"
 
     postgresql:
       enabled: false

@@ -66,25 +66,9 @@ spec:
       ## connection settings
       # -- one of 'cloud' or 'server'
       apiConfig: server
-      # selfHostedCloudApiConfig:
-      #   accountId: ""
-      #   workspaceId: ""
-      #   apiKeySecret:
-      #     name: prefect-api-key
-      #     key: key
-      #   cloudUrl: https://api.prefect.cloud/api
-      # selfHostedCloudApiConfig:
-      #   apiUrl: "" # (PREFECT_API_URL)
-      #   accountId: ""
-      #   workspaceId: ""
-      #   apiKeySecret:
-      #     # -- prefect API secret name
-      #     key: key
-      #   uiUrl: ""
       serverApiConfig:
         # -- prefect API url (PREFECT_API_URL); should be in-cluster URL if the worker is deployed in the same cluster as the API
         apiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
-        # uiUrl: http://localhost:4200
 
       replicaCount: 1
 
@@ -110,9 +94,19 @@ spec:
     ## Role configuration
     role:
       ## List of extra role permissions
-      ## e.g:
-      ## extraPermissions:
-      ##  - apiGroups: [""]
-      ##    resources: ["pods", "services"]
-      ##    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-      extraPermissions: []
+      extraPermissions:
+        - apiGroups: ["batch"]
+          resources: ["jobs"]
+          verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+      create: true
+      rules:
+        - apiGroups: [""]
+          resources: ["pods", "pods/log", "services"]
+          verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+        - apiGroups: ["batch"]
+          resources: ["jobs"]
+          verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+    serviceAccount:
+      create: true
+      name: prefect-worker

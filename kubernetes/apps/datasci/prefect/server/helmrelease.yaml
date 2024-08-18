@@ -33,17 +33,26 @@ spec:
       env:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
+        - name: PREFECT_EXTRA_PIP_PACKAGES
+          value: "psycopg2-binary"
+        - name: PREFECT_API_DATABASE_CONNECTION_URL
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: connection-string
 
-      podSecurityContext:
-        runAsUser: 1000
-        runAsNonRoot: true
-        fsGroup: 1002
+    postgresql:
+      enabled: false
 
-      containerSecurityContext:
-        runAsUser: 1000
-        runAsNonRoot: true
-        readOnlyRootFilesystem: true
-        allowPrivilegeEscalation: false
+    secret:
+      create: false
+      existingSecret: prefect-secret
+      usernameKey: postgresql.auth.username
+      passwordKey: postgresql.auth.password
+      hostKey: postgresql.externalHostname
+      portKey: port
+      databaseKey: postgresql.auth.database
+      connectionStringKey: connection-string
 
     service:
       type: ClusterIP
@@ -61,12 +70,8 @@ spec:
         pathType: Prefix
       tls: true
 
-    postgresql:
-      enabled: false
-
-    secret:
-      create: false
-      name: prefect-secret
+    # Remove duplicate postgresql and secret sections
+      existingSecret: prefect-secret
 
     extraInitContainers:
       - name: install-psycopg2
@@ -91,16 +96,11 @@ spec:
     rbac:
       create: true
       rules:
-        - apiGroups: [""]
-          resources: ["pods", "pods/log", "services"]
-          verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
         - apiGroups: ["batch"]
           resources: ["jobs"]
-          verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-        - apiGroups: [""]
-          resources: ["namespaces"]
-          verbs: ["get", "list", "watch"]
-      clusterRoleRules:
-        - apiGroups: ["batch"]
-          resources: ["jobs"]
-          verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+          verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+          namespaces: ["datasci"]
+
+    serviceAccount:
+      create: true
+      name: prefect-worker

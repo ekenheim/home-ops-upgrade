@@ -39,11 +39,6 @@ spec:
       prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 
       env:
-        - name: PREFECT_API_DATABASE_CONNECTION_URL
-          valueFrom:
-            secretKeyRef:
-              name: prefect-secret
-              key: PREFECT_API_DATABASE_CONNECTION_URL
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
         - name: PREFECT_EXTRA_PIP_PACKAGES
@@ -81,11 +76,26 @@ spec:
 
     secret:
       create: false
-      name: prefect-secret
+      name: prefect-server-connection-secret
 
-    extraEnv:
-      - name: PREFECT_API_DATABASE_CONNECTION_URL
-        valueFrom:
-          secretKeyRef:
-            name: prefect-secret
-            key: PREFECT_API_DATABASE_CONNECTION_URL
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: prefect-server-connection-secret
+                namespace: datasci
+              type: Opaque
+              data:
+                connection-string: ${PREFECT_API_DATABASE_CONNECTION_URL_B64}
+            target:
+              kind: Secret
+              name: prefect-server-connection-secret
+
+  valuesFrom:
+    - kind: Secret
+      name: prefect-secret
+      valuesKey: PREFECT_API_DATABASE_CONNECTION_URL
+      targetPath: extraEnv.PREFECT_API_DATABASE_CONNECTION_URL

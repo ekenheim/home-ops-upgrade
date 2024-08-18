@@ -110,3 +110,19 @@ spec:
     serviceAccount:
       create: true
       name: prefect-worker
+
+    env:
+      - name: PREFECT_API_URL
+        value: "http://prefect-server.datasci.svc.cluster.local:4200/api"
+      - name: PREFECT_KUBERNETES_NAMESPACE
+        value: "datasci"
+      - name: PREFECT_KUBERNETES_JOB_NAMESPACE
+        value: "datasci"
+
+    rbac:
+      create: true
+      rules:
+        - apiGroups: ["batch"]
+          resources: ["jobs"]
+          verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+          namespaces: ["datasci"]

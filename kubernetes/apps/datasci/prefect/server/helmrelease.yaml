@@ -31,6 +31,11 @@ spec:
       prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 
       env:
+        - name: PREFECT_API_DATABASE_CONNECTION_URL
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: connection-string
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
 
@@ -55,10 +60,11 @@ spec:
       annotations:
         nginx.ingress.kubernetes.io/whitelist-source-range: |
           10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
-      host:
-        hostname: "prefect.${SECRET_DOMAIN}"
-        path: /
-        pathType: Prefix
+      hosts:
+        - host: "prefect.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              pathType: Prefix
       tls: true
 
     postgresql:

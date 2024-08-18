@@ -76,27 +76,22 @@ spec:
       create: false
       name: prefect-secret
 
-    extraContainers:
-      - name: prefect-server
+    extraInitContainers:
+      - name: install-psycopg2
         image: prefecthq/prefect:2-python3.11-kubernetes
-        command:
-          - /bin/sh
-          - -c
+        command: ["/bin/sh", "-c"]
         args:
           - |
-            pip install psycopg2-binary
-            /usr/bin/tini -g -- /opt/prefect/entrypoint.sh prefect server start --port 4200
-        env:
-          - name: PREFECT_API_DATABASE_MIGRATE_ON_START
-            value: "True"
-          - name: PREFECT_API_URL
-            value: http://prefect-server.datasci.svc.cluster.local:4200/api
-        ports:
-          - containerPort: 4200
+            pip install --user psycopg2-binary && \
+            cp -r /home/prefect/.local/lib/python3.11/site-packages/* /usr/local/lib/python3.11/site-packages/
         volumeMounts:
-          - name: scratch
-            mountPath: /home/prefect
-          - name: scratch
-            mountPath: /tmp
-          - name: scratch
-            mountPath: /ui_build
+          - name: python-packages
+            mountPath: /usr/local/lib/python3.11/site-packages
+
+    extraVolumes:
+      - name: python-packages
+        emptyDir: {}
+
+    extraVolumeMounts:
+      - name: python-packages
+        mountPath: /usr/local/lib/python3.11/site-packages

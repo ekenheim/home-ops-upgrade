@@ -13,17 +13,14 @@ spec:
         name: prefect
         namespace: flux-system
   interval: 15m
-
   install:
     remediation:
       retries: 3
-    timeout: 10m
   upgrade:
     cleanupOnFail: true
     remediation:
       strategy: rollback
       retries: 3
-    timeout: 10m
   driftDetection:
     mode: enabled
     ignore:
@@ -50,10 +47,6 @@ spec:
       targetPath: postgresql.externalHostname
     - kind: Secret
       name: prefect-secret
-      valuesKey: port
-      targetPath: postgresql.port
-    - kind: Secret
-      name: prefect-secret
       valuesKey: PREFECT_API_DATABASE_CONNECTION_URL
       targetPath: PREFECT_API_DATABASE_CONNECTION_URL
     - kind: Secret
@@ -70,13 +63,9 @@ spec:
       prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 
       env:
+
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
-        - name: PREFECT_API_DATABASE_CONNECTION_URL
-          valueFrom:
-            secretKeyRef:
-              name: prefect-secret
-              key: PREFECT_API_DATABASE_CONNECTION_URL
 
       podSecurityContext:
         runAsUser: 1000
@@ -106,11 +95,5 @@ spec:
       tls: true
 
     postgresql:
-      enabled: false
+      enabled: true
       useSubChart: false
-      externalDatabase:
-        host: $${postgresql.externalHostname}
-        port: $${postgresql.port}
-        user: $${postgresql.auth.username}
-        password: $${postgresql.auth.password}
-        database: $${postgresql.auth.database}

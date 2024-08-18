@@ -1,8 +1,7 @@
----
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: &app prefect-server
+  name: prefect-server
   namespace: datasci
 spec:
   interval: 15m
@@ -55,12 +54,10 @@ spec:
 
     ingress:
       enabled: true
-      ingressClassName: internal
       annotations:
+        kubernetes.io/ingress.class: internal
         nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-      host: prefect.${SECRET_DOMAIN}
-      path: /
-      pathType: Prefix
+      host: prefect.ekenhome.se
       tls: true
 
     service:

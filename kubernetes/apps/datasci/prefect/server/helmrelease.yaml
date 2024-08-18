@@ -52,6 +52,7 @@ spec:
       hostKey: postgresql.externalHostname
       portKey: port
       databaseKey: postgresql.auth.database
+      connectionStringKey: connection-string
 
     service:
       type: ClusterIP

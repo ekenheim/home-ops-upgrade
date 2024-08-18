@@ -40,13 +40,13 @@ spec:
       enabled: false
 
     secret:
-      create: true
-      name: prefect-server-secret
-      username: "${PREFECT_DB_USERNAME}"
-      password: "${PREFECT_DB_PASSWORD}"
-      host: "${PREFECT_DB_HOST}"
-      port: "${PREFECT_DB_PORT}"
-      database: "${PREFECT_DB_NAME}"
+      create: false
+      existingSecret: prefect-secret
+      usernameKey: postgresql.auth.username
+      passwordKey: postgresql.auth.password
+      hostKey: postgresql.externalHostname
+      portKey: port
+      databaseKey: postgresql.auth.database
 
     service:
       type: ClusterIP

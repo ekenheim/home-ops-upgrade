@@ -90,9 +90,6 @@ spec:
     extraVolumes:
       - name: python-packages
         emptyDir: {}
-      - name: startup-script
-        configMap:
-          name: prefect-server-startup-script
 
     extraVolumeMounts:
       - name: python-packages

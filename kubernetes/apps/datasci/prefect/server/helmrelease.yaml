@@ -30,9 +30,26 @@ spec:
 
       prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 
+      env:
+        - name: PREFECT_API_DATABASE_CONNECTION_URL
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: connection-string
+        - name: PREFECT_API_DATABASE_MIGRATE_ON_START
+          value: "True"
+        - name: ASYNCPG_NO_JIT
+          value: "1"
+
       envFrom:
         - secretRef:
             name: prefect-secret
+      command: ["python"]
+      args: ["/app/startup.py"]
+      volumeMounts:
+        - name: startup-script
+          mountPath: /app/startup.py
+          subPath: startup.py
 
       podSecurityContext:
         runAsUser: 1000
@@ -83,6 +100,9 @@ spec:
     extraVolumes:
       - name: python-packages
         emptyDir: {}
+      - name: startup-script
+        configMap:
+          name: prefect-server-startup-script
 
     extraVolumeMounts:
       - name: python-packages

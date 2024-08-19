@@ -1,9 +1,10 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: &app prefect-server
 spec:
+  interval: 15m
   chart:
     spec:
       chart: prefect-server
@@ -12,71 +13,35 @@ spec:
         kind: HelmRepository
         name: prefect
         namespace: flux-system
-  interval: 15m
   install:
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
-      strategy: rollback
       retries: 3
-  driftDetection:
-    mode: enabled
-    ignore:
-      - paths:
-          - /spec/containers/resources/limits
-        target:
-          kind: Pod
-  valuesFrom:
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.auth.database
-      targetPath: postgresql.auth.database
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.auth.username
-      targetPath: postgresql.auth.username
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.auth.password
-      targetPath: postgresql.auth.password
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: postgresql.externalHostname
-      targetPath: postgresql.externalHostname
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: PREFECT_API_DATABASE_CONNECTION_URL
-      targetPath: PREFECT_API_DATABASE_CONNECTION_URL
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: PREFECT_API_DATABASE_PASSWORD
-      targetPath: PREFECT_API_DATABASE_PASSWORD
   values:
+    fullnameOverride: prefect-server
+
     server:
       image:
         repository: prefecthq/prefect
-        prefectTag: 2-python3.11-kubernetes
-        debug: true
+        prefectTag: 2-latest
 
-      prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
+      prefectApiUrl: "http://prefect-server.datasci.svc.cluster.local:4200/api"
 
       env:
-
+        - name: PREFECT_API_DATABASE_CONNECTION_URL
+          valueFrom:
+            secretKeyRef:
+              name: prefect-secret
+              key: PREFECT_API_DATABASE_CONNECTION_URL
+        - name: PREFECT_SERVER_API_HOST
+          value: "0.0.0.0"
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
-
-      podSecurityContext:
-        runAsUser: 1000
-        runAsNonRoot: true
-        fsGroup: 1002
-
-      containerSecurityContext:
-        runAsUser: 1000
-        runAsNonRoot: true
-        readOnlyRootFilesystem: true
-        allowPrivilegeEscalation: false
+        - name: ASYNCPG_NO_JIT
+          value: "1"
 
     service:
       type: ClusterIP
@@ -85,15 +50,38 @@ spec:
     ingress:
       enabled: true
       className: internal
-      host:
-        hostname: &host prefect.${SECRET_DOMAIN}
-        path: /
-        pathType: Prefix
       annotations:
-        nginx.ingress.kubernetes.io/whitelist-source-range: |
-          10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
-      tls: true
+        nginx.ingress.kubernetes.io/whitelist-source-range: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+      hosts:
+        - host: "prefect.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - "prefect.${SECRET_DOMAIN}"
 
     postgresql:
-      enabled: true
-      useSubChart: false
+      enabled: false
+
+    secret:
+      create: false
+      name: prefect-secret
+
+    valuesFrom:
+      - kind: Secret
+        name: prefect-secret
+        valuesKey: postgresql.auth.database
+        targetPath: postgresql.auth.database
+      - kind: Secret
+        name: prefect-secret
+        valuesKey: postgresql.auth.username
+        targetPath: postgresql.auth.username
+      - kind: Secret
+        name: prefect-secret
+        valuesKey: postgresql.auth.password
+        targetPath: postgresql.auth.password
+      - kind: Secret
+        name: prefect-secret
+        valuesKey: postgresql.externalHostname
+        targetPath: postgresql.externalHostname

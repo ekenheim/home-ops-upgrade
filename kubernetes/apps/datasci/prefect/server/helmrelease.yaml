@@ -94,3 +94,32 @@ spec:
     extraVolumeMounts:
       - name: python-packages
         mountPath: /usr/local/lib/python3.11/site-packages
+
+    extraArgs:
+      - "--no-migrate"
+
+    livenessProbe:
+      enabled: true
+      config:
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 6
+        successThreshold: 1
+
+    readinessProbe:
+      enabled: true
+      config:
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 6
+        successThreshold: 1
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi

@@ -2,7 +2,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: &app prefect-server
+  name: prefect-server
   namespace: datasci
 spec:
   interval: 15m
@@ -22,35 +22,27 @@ spec:
     remediation:
       retries: 3
   values:
+    fullnameOverride: prefect-server
+
     server:
       image:
         repository: prefecthq/prefect
-        prefectTag: 2-python3.11-kubernetes
-        debug: true
+        prefectTag: 2-latest
 
-      prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
+      prefectApiUrl: "http://prefect-server.datasci.svc.cluster.local:4200/api"
 
       env:
         - name: PREFECT_API_DATABASE_CONNECTION_URL
           valueFrom:
             secretKeyRef:
               name: prefect-secret
-              key: connection-string
+              key: PREFECT_API_DATABASE_CONNECTION_URL
+        - name: PREFECT_SERVER_API_HOST
+          value: "0.0.0.0"
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
         - name: ASYNCPG_NO_JIT
           value: "1"
-
-      podSecurityContext:
-        runAsUser: 1000
-        runAsNonRoot: true
-        fsGroup: 1002
-
-      containerSecurityContext:
-        runAsUser: 1000
-        runAsNonRoot: true
-        readOnlyRootFilesystem: true
-        allowPrivilegeEscalation: false
 
     service:
       type: ClusterIP
@@ -59,14 +51,16 @@ spec:
     ingress:
       enabled: true
       className: internal
-      host:
-        hostname: &host prefect.${SECRET_DOMAIN}
-        path: /
-        pathType: Prefix
       annotations:
-        nginx.ingress.kubernetes.io/whitelist-source-range: |
-          10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
-      tls: true
+        nginx.ingress.kubernetes.io/whitelist-source-range: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+      hosts:
+        - host: "prefect.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - "prefect.${SECRET_DOMAIN}"
 
     postgresql:
       enabled: false
@@ -74,52 +68,3 @@ spec:
     secret:
       create: false
       name: prefect-secret
-
-    extraInitContainers:
-      - name: install-psycopg2
-        image: prefecthq/prefect:2-python3.11-kubernetes
-        command: ["/bin/sh", "-c"]
-        args:
-          - |
-            pip install --user psycopg2-binary && \
-            cp -r /home/prefect/.local/lib/python3.11/site-packages/* /usr/local/lib/python3.11/site-packages/
-        volumeMounts:
-          - name: python-packages
-            mountPath: /usr/local/lib/python3.11/site-packages
-
-    extraVolumes:
-      - name: python-packages
-        emptyDir: {}
-
-    extraVolumeMounts:
-      - name: python-packages
-        mountPath: /usr/local/lib/python3.11/site-packages
-
-    extraArgs:
-      - "--no-migrate"
-
-    livenessProbe:
-      enabled: true
-      config:
-        initialDelaySeconds: 30
-        periodSeconds: 10
-        timeoutSeconds: 5
-        failureThreshold: 6
-        successThreshold: 1
-
-    readinessProbe:
-      enabled: true
-      config:
-        initialDelaySeconds: 30
-        periodSeconds: 10
-        timeoutSeconds: 5
-        failureThreshold: 6
-        successThreshold: 1
-
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi

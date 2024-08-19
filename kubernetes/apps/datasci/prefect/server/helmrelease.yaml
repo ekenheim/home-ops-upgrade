@@ -41,16 +41,6 @@ spec:
         - name: ASYNCPG_NO_JIT
           value: "1"
 
-      envFrom:
-        - secretRef:
-            name: prefect-secret
-      command: ["python"]
-      args: ["/app/startup.py"]
-      volumeMounts:
-        - name: startup-script
-          mountPath: /app/startup.py
-          subPath: startup.py
-
       podSecurityContext:
         runAsUser: 1000
         runAsNonRoot: true

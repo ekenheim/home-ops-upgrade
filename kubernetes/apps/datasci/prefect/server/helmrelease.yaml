@@ -38,6 +38,8 @@ spec:
               key: connection-string
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
+        - name: ASYNCPG_NO_JIT
+          value: "1"
 
       podSecurityContext:
         runAsUser: 1000

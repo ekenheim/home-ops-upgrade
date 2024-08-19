@@ -95,5 +95,4 @@ spec:
       tls: true
 
     postgresql:
-      enabled: true
       useSubChart: false

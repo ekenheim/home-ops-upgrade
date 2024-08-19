@@ -1,11 +1,9 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: prefect-server
-  namespace: datasci
+  name: &app prefect-server
 spec:
-  interval: 15m
   chart:
     spec:
       chart: prefect-server
@@ -14,6 +12,7 @@ spec:
         kind: HelmRepository
         name: prefect
         namespace: flux-system
+  interval: 15m
   install:
     remediation:
       retries: 3
@@ -47,11 +46,10 @@ spec:
       className: internal
       annotations:
         nginx.ingress.kubernetes.io/whitelist-source-range: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
-      hosts:
-        - host: "prefect.${SECRET_DOMAIN}"
-          paths:
-            - path: /
-              pathType: Prefix
+      host:
+        hostname: "prefect.${SECRET_DOMAIN}"
+      path: /
+      pathType: Prefix
       tls: true
 
     secret:

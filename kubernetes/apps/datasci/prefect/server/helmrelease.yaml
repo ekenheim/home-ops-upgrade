@@ -96,3 +96,5 @@ spec:
 
     postgresql:
       useSubChart: false
+      auth:
+        existingSecret: prefect-secret

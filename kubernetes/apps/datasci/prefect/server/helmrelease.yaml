@@ -20,16 +20,15 @@ spec:
   upgrade:
     cleanupOnFail: true
     remediation:
-      strategy: rollback
       retries: 3
   values:
     fullnameOverride: prefect-server
 
     server:
-      publicApiUrl: "https://prefect.${SECRET_DOMAIN}/api"
+      prefectApiUrl: "https://prefect.${SECRET_DOMAIN}/api"
 
     postgresql:
-      useSubChart: false
+      enabled: false
       auth:
         existingSecret: prefect-secret
 
@@ -40,7 +39,10 @@ spec:
         nginx.ingress.kubernetes.io/whitelist-source-range: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
       host:
         hostname: "prefect.${SECRET_DOMAIN}"
-        paths:
-          - path: /
-            pathType: Prefix
+      path: /
+      pathType: Prefix
       tls: true
+
+    secret:
+      create: false
+      name: prefect-secret

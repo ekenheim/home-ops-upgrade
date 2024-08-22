@@ -61,6 +61,14 @@ spec:
       name: prefect-secret
       valuesKey: password
       targetPath: secret.password
+    - kind: Secret
+      name: prefect-secret
+      valuesKey: postgresql.externalHostname
+      targetPath: secret.host
+    - kind: Secret
+      name: prefect-secret
+      valuesKey: port
+      targetPath: secret.port
   values:
     server:
       image:

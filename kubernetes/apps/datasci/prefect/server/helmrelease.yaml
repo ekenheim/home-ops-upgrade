@@ -95,6 +95,7 @@ spec:
       tls: true
 
     postgresql:
+      enabled: false
       useSubChart: false
       auth:
         existingSecret: prefect-secret

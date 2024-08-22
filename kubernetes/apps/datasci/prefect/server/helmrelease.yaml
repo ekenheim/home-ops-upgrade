@@ -121,7 +121,7 @@ spec:
       tls: true
 
     postgresql:
-      enabled: false
+      enabled: true #https://github.com/PrefectHQ/prefect/issues/14602 until this is fixed
       useSubChart: false
       auth:
         existingSecret: prefect-secret

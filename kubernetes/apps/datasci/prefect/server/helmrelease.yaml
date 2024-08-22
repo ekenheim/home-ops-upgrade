@@ -53,6 +53,18 @@ spec:
       name: prefect-secret
       valuesKey: PREFECT_API_DATABASE_PASSWORD
       targetPath: PREFECT_API_DATABASE_PASSWORD
+    - kind: Secret
+      name: prefect-secret
+      valuesKey: username
+      targetPath: secret.username
+    - kind: Secret
+      name: prefect-secret
+      valuesKey: password
+      targetPath: secret.password
+    - kind: Secret
+      name: prefect-secret
+      valuesKey: PREFECT_SECRET_KEY
+      targetPath: secret.secretKey
   values:
     server:
       image:

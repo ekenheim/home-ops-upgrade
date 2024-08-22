@@ -61,10 +61,6 @@ spec:
       name: prefect-secret
       valuesKey: password
       targetPath: secret.password
-    - kind: Secret
-      name: prefect-secret
-      valuesKey: PREFECT_SECRET_KEY
-      targetPath: secret.secretKey
   values:
     server:
       image:

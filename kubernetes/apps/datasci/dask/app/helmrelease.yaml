@@ -26,7 +26,7 @@ spec:
       name: scheduler
       image:
         repository: ghcr.io/dask/dask
-        tag: 2023.12.0  # Make sure this matches the chart version
+        tag: 2024.8.1  # Make sure this matches the chart version
       resources:
         requests:
           cpu: 100m
@@ -40,7 +40,7 @@ spec:
       name: worker
       image:
         repository: ghcr.io/dask/dask
-        tag: 2023.12.0  # Make sure this matches the chart version
+        tag: 2024.8.1  # Make sure this matches the chart version
       replicas: 3
       resources:
         requests:

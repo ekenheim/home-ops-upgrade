@@ -13,4 +13,5 @@ resources:
   - ./prefect/ks.yaml
   #- ./windmill/ks.yaml
   - ./whisper/ks.yaml
+  - ./dask/ks.yaml
   #- ./ollama/ks.yaml

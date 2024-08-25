@@ -1,0 +1,90 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app dask
+spec:
+  chart:
+    spec:
+      chart: dask
+      version: 2023.12.0  # You may want to check for the latest version
+      sourceRef:
+        kind: HelmRepository
+        name: dask  # Make sure to add the Dask Helm repository to your cluster
+        namespace: flux-system
+  interval: 15m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    scheduler:
+      name: scheduler
+      image:
+        repository: ghcr.io/dask/dask
+        tag: 2023.12.0  # Make sure this matches the chart version
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 1Gi
+      serviceType: ClusterIP
+      servicePort: 8786
+
+    worker:
+      name: worker
+      image:
+        repository: ghcr.io/dask/dask
+        tag: 2023.12.0  # Make sure this matches the chart version
+      replicas: 3
+      resources:
+        requests:
+          cpu: 200m
+          memory: 1Gi
+        limits:
+          memory: 2Gi
+
+    jupyter:
+      enabled: true
+      image:
+        repository: ghcr.io/dask/dask-notebook
+        tag: 2023.12.0  # Make sure this matches the chart version
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 1Gi
+
+    ingress:
+      enabled: true
+      ingressClassName: internal
+      annotations:
+        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+      hosts:
+        - host: &host dask.${SECRET_DOMAIN}
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - *host
+
+    securityContext:
+      runAsUser: 65534
+      runAsGroup: 65534
+      fsGroup: 65534
+
+    serviceAccount:
+      create: true
+
+    persistence:
+      enabled: true
+      storageClass: "default"  # Adjust as needed
+      accessMode: ReadWriteOnce
+      size: 10Gi

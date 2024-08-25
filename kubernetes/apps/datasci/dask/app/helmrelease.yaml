@@ -93,7 +93,7 @@ spec:
       rbac: true
       image:
         repository: ghcr.io/dask/dask-notebook
-        tag: 2024.1.0
+        tag: 2024.8.1
         pullPolicy: IfNotPresent
       resources:
         requests:

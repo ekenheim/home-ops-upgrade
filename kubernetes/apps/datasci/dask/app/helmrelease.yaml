@@ -53,7 +53,7 @@ spec:
       enabled: true
       image:
         repository: ghcr.io/dask/dask-notebook
-        tag: 2023.12.0  # Make sure this matches the chart version
+        tag: 2023.12.1  # Make sure this matches the chart version
       resources:
         requests:
           cpu: 100m

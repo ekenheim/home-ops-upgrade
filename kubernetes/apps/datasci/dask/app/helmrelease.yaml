@@ -7,10 +7,10 @@ spec:
   chart:
     spec:
       chart: dask
-      version: 2023.12.0  # You may want to check for the latest version
+      version: 2024.1.0  # Updated to the latest version from the provided info
       sourceRef:
         kind: HelmRepository
-        name: dask  # Make sure to add the Dask Helm repository to your cluster
+        name: dask
         namespace: flux-system
   interval: 15m
   install:
@@ -26,7 +26,8 @@ spec:
       name: scheduler
       image:
         repository: ghcr.io/dask/dask
-        tag: 2024.8.1  # Make sure this matches the chart version
+        tag: 2024.1.0
+        pullPolicy: IfNotPresent
       resources:
         requests:
           cpu: 100m
@@ -35,45 +36,90 @@ spec:
           memory: 1Gi
       serviceType: ClusterIP
       servicePort: 8786
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+          interval: 30s
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: 8786
+        initialDelaySeconds: 10
+        periodSeconds: 30
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: 8786
+        initialDelaySeconds: 5
+        periodSeconds: 10
+
+    webUI:
+      name: webui
+      servicePort: 80
+      ingress:
+        enabled: true
+        pathType: Prefix
+        hostname: "dask-ui.${SECRET_DOMAIN}"
+        annotations:
+          nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
 
     worker:
       name: worker
       image:
         repository: ghcr.io/dask/dask
-        tag: 2024.8.1  # Make sure this matches the chart version
+        tag: 2024.1.0
+        pullPolicy: IfNotPresent
       replicas: 3
+      strategy:
+        type: RollingUpdate
       resources:
         requests:
           cpu: 200m
           memory: 1Gi
         limits:
           memory: 2Gi
+      metrics:
+        enabled: true
+        podMonitor:
+          enabled: true
+          interval: 30s
+      portDashboard: 8790
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: 8790
+        initialDelaySeconds: 10
+        periodSeconds: 30
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: 8790
+        initialDelaySeconds: 5
+        periodSeconds: 10
 
     jupyter:
       enabled: true
+      rbac: true
       image:
         repository: ghcr.io/dask/dask-notebook
-        tag: 2024.8.1  # Make sure this matches the chart version
+        tag: 2024.1.0
+        pullPolicy: IfNotPresent
       resources:
         requests:
           cpu: 100m
           memory: 512Mi
         limits:
           memory: 1Gi
-
-    ingress:
-      enabled: true
-      ingressClassName: internal
-      annotations:
-        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-      hosts:
-        - host: &host dask.${SECRET_DOMAIN}
-          paths:
-            - path: /
-              pathType: Prefix
-      tls:
-        - hosts:
-            - *host
+      serviceType: ClusterIP
+      servicePort: 80
+      password: "sha1:aae8550c0a44:9507d45e087d5ee481a5ce9f4f16f37a0867318c"  # Default password: dask
+      ingress:
+        enabled: true
+        pathType: Prefix
+        hostname: "jupyter.${SECRET_DOMAIN}"
+        annotations:
+          nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
 
     securityContext:
       runAsUser: 65534
@@ -85,6 +131,6 @@ spec:
 
     persistence:
       enabled: true
-      storageClass: "default"  # Adjust as needed
+      storageClass: "default"
       accessMode: ReadWriteOnce
       size: 10Gi

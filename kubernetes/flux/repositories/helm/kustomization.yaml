@@ -11,6 +11,7 @@ resources:
   - ./coredns.yaml
   - ./crunchydata.yaml
   - ./descheduler.yaml
+  - ./dask.yaml
   - ./dragonfly.yaml
   - ./external-dns.yaml
   - ./external-secrets.yaml

@@ -41,18 +41,8 @@ spec:
         serviceMonitor:
           enabled: true
           interval: 30s
-      livenessProbe:
-        httpGet:
-          path: /health
-          port: 8786
-        initialDelaySeconds: 15
-        periodSeconds: 30
-      readinessProbe:
-        httpGet:
-          path: /health
-          port: 8786
-        initialDelaySeconds: 5
-        periodSeconds: 10
+      livenessProbe: null
+      readinessProbe: null
 
     webUI:
       name: webui

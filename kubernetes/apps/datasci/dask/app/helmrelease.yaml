@@ -87,6 +87,23 @@ spec:
           port: 8790
         initialDelaySeconds: 5
         periodSeconds: 10
+      extraContainers:
+        - name: install-packages
+          image: ghcr.io/dask/dask:2024.1.0
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              pip install yfinance
+              # Add any other required packages here
+          volumeMounts:
+            - name: dask-packages
+              mountPath: /opt/conda/lib/python3.9/site-packages
+      extraVolumes:
+        - name: dask-packages
+          emptyDir: {}
+      extraVolumeMounts:
+        - name: dask-packages
+          mountPath: /opt/conda/lib/python3.9/site-packages
 
     jupyter:
       enabled: true

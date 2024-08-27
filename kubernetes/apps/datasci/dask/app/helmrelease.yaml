@@ -7,7 +7,7 @@ spec:
   chart:
     spec:
       chart: dask
-      version: 2024.1.0  # Updated to the latest version from the provided info
+      version: 2024.1.1  # Updated to the latest version from the provided info
       sourceRef:
         kind: HelmRepository
         name: dask

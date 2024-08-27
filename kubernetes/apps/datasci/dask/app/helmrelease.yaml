@@ -26,7 +26,7 @@ spec:
       name: scheduler
       image:
         repository: ghcr.io/dask/dask
-        tag: 2024.1.0
+        tag: 2024.8.1
         pullPolicy: IfNotPresent
       resources:
         requests:
@@ -58,7 +58,7 @@ spec:
       name: worker
       image:
         repository: ghcr.io/dask/dask
-        tag: 2024.1.0
+        tag: 2024.8.1
         pullPolicy: IfNotPresent
       replicas: 3
       strategy:
@@ -89,7 +89,7 @@ spec:
         periodSeconds: 10
       extraContainers:
         - name: install-packages
-          image: ghcr.io/dask/dask:2024.1.0
+          image: ghcr.io/dask/dask:2024.8.1
           command: ["/bin/bash", "-c"]
           args:
             - |

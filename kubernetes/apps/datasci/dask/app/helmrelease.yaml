@@ -2,12 +2,12 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app dask
+  name: &app dask-gateway
 spec:
   chart:
     spec:
-      chart: dask
-      version: 2024.1.1  # Updated to the latest version from the provided info
+      chart: dask-gateway
+      version: 2024.1.0  # Use the latest version compatible with Dask Gateway
       sourceRef:
         kind: HelmRepository
         name: dask
@@ -22,119 +22,75 @@ spec:
       strategy: rollback
       retries: 3
   values:
-    scheduler:
-      name: scheduler
+    gateway:
+      enabled: true
+      prefix: /gateway
       image:
-        repository: ghcr.io/dask/dask
-        tag: 2024.8.1
-        pullPolicy: IfNotPresent
-      resources:
-        requests:
-          cpu: 100m
-          memory: 512Mi
-        limits:
-          memory: 1Gi
-      serviceType: ClusterIP
-      servicePort: 8786
-      metrics:
-        enabled: true
-        serviceMonitor:
-          enabled: true
-          interval: 30s
-      livenessProbe: null
-      readinessProbe: null
+        repository: ghcr.io/dask/dask-gateway-server
+        tag: 2024.1.0
+      loglevel: INFO
+      backend:
+        worker:
+          image:
+            repository: ghcr.io/dask/dask-gateway-worker
+            tag: 2024.1.0
+        scheduler:
+          image:
+            repository: ghcr.io/dask/dask-gateway-scheduler
+            tag: 2024.1.0
+      auth:
+        type: jupyterhub
+      # Add any additional gateway configurations here
 
-    webUI:
-      name: webui
-      servicePort: 80
-      ingress:
-        enabled: true
-        pathType: Prefix
-        hostname: "dask-ui.${SECRET_DOMAIN}"
-        annotations:
-          nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+    traefik:
+      enabled: true
 
-    worker:
-      name: worker
-      image:
-        repository: ghcr.io/dask/dask
-        tag: 2024.8.1
-        pullPolicy: IfNotPresent
-      replicas: 3
-      strategy:
-        type: RollingUpdate
-      resources:
-        requests:
-          cpu: 200m
-          memory: 1Gi
-        limits:
-          memory: 2Gi
-      metrics:
-        enabled: true
-        podMonitor:
-          enabled: true
-          interval: 30s
-      portDashboard: 8790
-      livenessProbe:
-        httpGet:
-          path: /health
-          port: 8790
-        initialDelaySeconds: 10
-        periodSeconds: 30
-      readinessProbe:
-        httpGet:
-          path: /health
-          port: 8790
-        initialDelaySeconds: 5
-        periodSeconds: 10
-      extraContainers:
-        - name: install-packages
-          image: ghcr.io/dask/dask:2024.8.1
-          command: ["/bin/bash", "-c"]
-          args:
-            - |
-              pip install yfinance
-              # Add any other required packages here
-          volumeMounts:
-            - name: dask-packages
-              mountPath: /opt/conda/lib/python3.9/site-packages
-      extraVolumes:
-        - name: dask-packages
-          emptyDir: {}
-      extraVolumeMounts:
-        - name: dask-packages
-          mountPath: /opt/conda/lib/python3.9/site-packages
+    controller:
+      enabled: true
+
+    rbac:
+      create: true
+
+    serviceAccount:
+      create: true
+
+    ingress:
+      enabled: true
+      annotations:
+        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+      hosts:
+        - host: "dask-gateway.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              pathType: Prefix
 
     jupyter:
       enabled: true
-      rbac: true
       image:
         repository: ghcr.io/dask/dask-notebook
-        tag: 2024.8.1
-        pullPolicy: IfNotPresent
+        tag: 2024.1.0
       resources:
         requests:
           cpu: 100m
           memory: 512Mi
         limits:
           memory: 1Gi
-      serviceType: ClusterIP
-      servicePort: 80
-      password: "dask"  # Default password: dask
       ingress:
         enabled: true
-        pathType: Prefix
-        hostname: "jupyter.${SECRET_DOMAIN}"
         annotations:
           nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+        hosts:
+          - "jupyter.${SECRET_DOMAIN}"
+
+    # Remove or comment out the following sections:
+    # scheduler:
+    # webUI:
+    # worker:
 
     securityContext:
       runAsUser: 65534
       runAsGroup: 65534
       fsGroup: 65534
-
-    serviceAccount:
-      create: true
 
     persistence:
       enabled: true

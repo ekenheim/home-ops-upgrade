@@ -24,34 +24,47 @@ spec:
     gateway:
       replicas: 1
       prefix: /
+      loglevel: INFO
+      image:
+        name: ghcr.io/dask/dask-gateway-server
+        tag: "2024.1.0"
       auth:
         type: simple
         simple:
           password: "dask"  # Consider using a more secure method in production
-      image:
-        name: ghcr.io/dask/dask-gateway-server
-        tag: 2024.1.0
       service:
         annotations: {}
+      backend:
+        image:
+          name: ghcr.io/dask/dask-gateway
+          tag: "2024.1.0"
+        scheduler:
+          cores:
+            request: 100m
+            limit: 1
+          memory:
+            request: 512Mi
+            limit: 1Gi
+        worker:
+          cores:
+            request: 200m
+            limit: 1
+          memory:
+            request: 1Gi
+            limit: 2Gi
 
     controller:
       enabled: true
+      loglevel: INFO
 
     traefik:
-      enabled: false  # Assuming you're using your own ingress controller
+      enabled: true  # Enable Traefik as it's required for Dask Gateway
+      replicas: 1
+      service:
+        type: ClusterIP  # Change this if you need a different service type
+      loglevel: WARN
 
     rbac:
       enabled: true
 
-    # Remove the 'backend' section as it's not allowed in the root level
-
-    # If you need to configure backend-related settings, you might need to use extraConfig
-    extraConfig:
-      backend: |
-        c.Backend.scheduler_cores = {"request": "100m", "limit": "1"}
-        c.Backend.scheduler_memory = {"request": "512Mi", "limit": "1Gi"}
-        c.Backend.worker_cores = {"request": "200m", "limit": "1"}
-        c.Backend.worker_memory = {"request": "1Gi", "limit": "2Gi"}
-        c.Backend.image = "ghcr.io/dask/dask-gateway:2024.1.0"
-
-    # If you need to expose the gateway, you might want to configure an Ingress resource separately
+    # If you need to expose the gateway externally, consider setting up an Ingress resource separately

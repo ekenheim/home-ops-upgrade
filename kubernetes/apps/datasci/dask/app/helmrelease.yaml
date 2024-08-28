@@ -7,7 +7,7 @@ spec:
   chart:
     spec:
       chart: dask-gateway
-      version: 2024.1.0  # Use the latest version compatible with Dask Gateway
+      version: 2024.1.0
       sourceRef:
         kind: HelmRepository
         name: dask
@@ -40,7 +40,6 @@ spec:
             tag: 2024.1.0
       auth:
         type: jupyterhub
-      # Add any additional gateway configurations here
 
     traefik:
       enabled: true
@@ -81,11 +80,6 @@ spec:
           nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
         hosts:
           - "jupyter.${SECRET_DOMAIN}"
-
-    # Remove or comment out the following sections:
-    # scheduler:
-    # webUI:
-    # worker:
 
     securityContext:
       runAsUser: 65534

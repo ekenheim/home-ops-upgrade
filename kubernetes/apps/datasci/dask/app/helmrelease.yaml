@@ -7,7 +7,7 @@ spec:
   chart:
     spec:
       chart: dask-gateway
-      version: 2024.1.0
+      version: 2024.1.1
       sourceRef:
         kind: HelmRepository
         name: dask
@@ -28,7 +28,7 @@ spec:
       loglevel: INFO
       image:
         name: ghcr.io/dask/dask-gateway-server
-        tag: 2024.1.0
+        tag: 2024.8.1
         pullPolicy: IfNotPresent
       resources:
         requests:
@@ -40,18 +40,21 @@ spec:
         type: simple
         simple:
           password: "dask"  # Consider using a more secure method in production
+      service:
+        type: ClusterIP
+        port: 8786
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+          interval: 30s
 
     controller:
       enabled: true
       loglevel: INFO
 
     traefik:
-      enabled: true
-      replicas: 1
-      service:
-        type: ClusterIP
-      dashboard: false
-      loglevel: WARN
+      enabled: false
 
     rbac:
       create: true
@@ -59,7 +62,7 @@ spec:
     backend:
       image:
         name: ghcr.io/dask/dask-gateway
-        tag: 2024.1.0
+        tag: 2024.8.1
         pullPolicy: IfNotPresent
       scheduler:
         cores:
@@ -69,18 +72,36 @@ spec:
           request: 512Mi
           limit: 1Gi
       worker:
+        replicas: 3
         cores:
           request: 200m
           limit: 1
         memory:
           request: 1Gi
           limit: 2Gi
+        extraContainers:
+          - name: install-packages
+            image: ghcr.io/dask/dask:2024.8.1
+            command: ["/bin/bash", "-c"]
+            args:
+              - |
+                pip install yfinance
+                # Add any other required packages here
+            volumeMounts:
+              - name: dask-packages
+                mountPath: /opt/conda/lib/python3.9/site-packages
+        extraVolumes:
+          - name: dask-packages
+            emptyDir: {}
+        extraVolumeMounts:
+          - name: dask-packages
+            mountPath: /opt/conda/lib/python3.9/site-packages
 
     jupyter:
       enabled: true
       image:
         repository: ghcr.io/dask/dask-notebook
-        tag: 2024.1.0
+        tag: 2024.8.1
         pullPolicy: IfNotPresent
       resources:
         requests:
@@ -88,12 +109,15 @@ spec:
           memory: 512Mi
         limits:
           memory: 1Gi
+      serviceType: ClusterIP
+      servicePort: 80
+      password: "dask"  # Default password: dask
       ingress:
         enabled: true
+        pathType: Prefix
+        hostname: "jupyter.${SECRET_DOMAIN}"
         annotations:
           nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-        hosts:
-          - "jupyter.${SECRET_DOMAIN}"
 
     ingress:
       enabled: true
@@ -109,6 +133,9 @@ spec:
       runAsUser: 65534
       runAsGroup: 65534
       fsGroup: 65534
+
+    serviceAccount:
+      create: true
 
     persistence:
       enabled: true

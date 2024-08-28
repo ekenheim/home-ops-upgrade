@@ -34,25 +34,6 @@ spec:
       service:
         annotations: {}
 
-    backend:
-      image:
-        name: ghcr.io/dask/dask-gateway
-        tag: 2024.1.0
-      scheduler:
-        cores:
-          request: 100m
-          limit: 1
-        memory:
-          request: 512Mi
-          limit: 1Gi
-      worker:
-        cores:
-          request: 200m
-          limit: 1
-        memory:
-          request: 1Gi
-          limit: 2Gi
-
     controller:
       enabled: true
 
@@ -61,5 +42,16 @@ spec:
 
     rbac:
       enabled: true
+
+    # Remove the 'backend' section as it's not allowed in the root level
+
+    # If you need to configure backend-related settings, you might need to use extraConfig
+    extraConfig:
+      backend: |
+        c.Backend.scheduler_cores = {"request": "100m", "limit": "1"}
+        c.Backend.scheduler_memory = {"request": "512Mi", "limit": "1Gi"}
+        c.Backend.worker_cores = {"request": "200m", "limit": "1"}
+        c.Backend.worker_memory = {"request": "1Gi", "limit": "2Gi"}
+        c.Backend.image = "ghcr.io/dask/dask-gateway:2024.1.0"
 
     # If you need to expose the gateway, you might want to configure an Ingress resource separately

@@ -7,7 +7,7 @@ spec:
   chart:
     spec:
       chart: dask-gateway
-      version: 2024.1.1
+      version: 2024.1.0  # Use the latest version of dask-gateway chart
       sourceRef:
         kind: HelmRepository
         name: dask
@@ -23,85 +23,48 @@ spec:
       retries: 3
   values:
     gateway:
-      replicas: 1
-      prefix: /gateway
-      loglevel: INFO
       image:
-        name: ghcr.io/dask/dask-gateway-server
-        tag: 2024.8.1
-        pullPolicy: IfNotPresent
-      resources:
-        requests:
-          cpu: 100m
-          memory: 512Mi
-        limits:
-          memory: 1Gi
-      auth:
-        type: simple
-        simple:
-          password: "dask"  # Consider using a more secure method in production
-      service:
-        type: ClusterIP
-        port: 8786
-      metrics:
-        enabled: true
-        serviceMonitor:
-          enabled: true
-          interval: 30s
+        repository: ghcr.io/dask/dask-gateway-server
+        tag: 2024.1.0
+      extraConfig:
+        # Add any extra configuration for the gateway here
+        optionHandler: |
+          from dask_gateway_server.options import Options, Integer, Float, String
+          def option_handler(options):
+              return {
+                  "worker_cores": options.worker_cores,
+                  "worker_memory": "%fG" % options.worker_memory,
+              }
+          c.Backend.cluster_options = Options(
+              Integer("worker_cores", 1, min=1, max=4, label="Worker Cores"),
+              Float("worker_memory", 4, min=1, max=8, label="Worker Memory (GiB)"),
+          )
+          c.KubeClusterConfig.option_handler = option_handler
+
+    traefik:
+      enabled: false  # Disable traefik if you're using your own ingress
 
     controller:
       enabled: true
-      loglevel: INFO
 
-    traefik:
-      enabled: false
+    # Remove scheduler and worker sections as they're managed by the gateway
 
-    rbac:
-      create: true
-
-    backend:
-      image:
-        name: ghcr.io/dask/dask-gateway
-        tag: 2024.1.0
-        pullPolicy: IfNotPresent
-      scheduler:
-        cores:
-          request: 100m
-          limit: 1
-        memory:
-          request: 512Mi
-          limit: 1Gi
-      worker:
-        replicas: 3
-        cores:
-          request: 200m
-          limit: 1
-        memory:
-          request: 1Gi
-          limit: 2Gi
-        extraContainers:
-          - name: install-packages
-            image: ghcr.io/dask/dask:2024.8.1
-            command: ["/bin/bash", "-c"]
-            args:
-              - |
-                pip install yfinance
-                # Add any other required packages here
-            volumeMounts:
-              - name: dask-packages
-                mountPath: /opt/conda/lib/python3.9/site-packages
-        extraVolumes:
-          - name: dask-packages
-            emptyDir: {}
-        extraVolumeMounts:
-          - name: dask-packages
-            mountPath: /opt/conda/lib/python3.9/site-packages
+    webUI:
+      name: webui
+      servicePort: 80
+      ingress:
+        enabled: true
+        pathType: Prefix
+        hostname: "dask-gateway.${SECRET_DOMAIN}"
+        annotations:
+          nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
 
     jupyter:
       enabled: true
+      rbac: true
       image:
         repository: ghcr.io/dask/dask-notebook
-        tag: 2024.8.1
+        tag: 2024.1.0
         pullPolicy: IfNotPresent
       resources:
         requests:
@@ -118,16 +81,11 @@ spec:
         hostname: "jupyter.${SECRET_DOMAIN}"
         annotations:
           nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-
-    ingress:
-      enabled: true
-      annotations:
-        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-      hosts:
-        - host: "dask-gateway.${SECRET_DOMAIN}"
-          paths:
-            - path: /
-              pathType: Prefix
+      env:
+        - name: DASK_GATEWAY__ADDRESS
+          value: "http://dask-gateway-gateway-service:8000"
+        - name: DASK_GATEWAY__PROXY_ADDRESS
+          value: "gateway://dask-gateway-gateway-service:8000/services/dask-gateway/"
 
     securityContext:
       runAsUser: 65534

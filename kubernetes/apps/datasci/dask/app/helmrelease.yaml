@@ -4,6 +4,7 @@ kind: HelmRelease
 metadata:
   name: &app dask-gateway
 spec:
+  interval: 15m
   chart:
     spec:
       chart: dask-gateway
@@ -12,80 +13,53 @@ spec:
         kind: HelmRepository
         name: dask
         namespace: flux-system
-  interval: 15m
   install:
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
-      strategy: rollback
       retries: 3
   values:
     gateway:
       replicas: 1
-      image:
-        name: ghcr.io/dask/dask-gateway-server
-        tag: 2024.1.0
-        pullPolicy: IfNotPresent
-      resources:
-        requests:
-          cpu: 100m
-          memory: 512Mi
-        limits:
-          memory: 1Gi
-      service:
-        annotations: {}
+      prefix: /
       auth:
         type: simple
         simple:
           password: "dask"  # Consider using a more secure method in production
-      extraConfig:
-        optionHandler: |
-          from dask_gateway_server.options import Options, Integer, Float
-          def option_handler(options):
-              return {
-                  "worker_cores": options.worker_cores,
-                  "worker_memory": "%fG" % options.worker_memory,
-              }
-          c.Backend.cluster_options = Options(
-              Integer("worker_cores", 1, min=1, max=4, label="Worker Cores"),
-              Float("worker_memory", 4, min=1, max=8, label="Worker Memory (GiB)"),
-          )
-          c.KubeClusterConfig.option_handler = option_handler
+      image:
+        name: ghcr.io/dask/dask-gateway-server
+        tag: 2024.1.0
+      service:
+        annotations: {}
+
+    backend:
+      image:
+        name: ghcr.io/dask/dask-gateway
+        tag: 2024.1.0
+      scheduler:
+        cores:
+          request: 100m
+          limit: 1
+        memory:
+          request: 512Mi
+          limit: 1Gi
+      worker:
+        cores:
+          request: 200m
+          limit: 1
+        memory:
+          request: 1Gi
+          limit: 2Gi
 
     controller:
       enabled: true
 
     traefik:
-      enabled: false
+      enabled: false  # Assuming you're using your own ingress controller
 
     rbac:
       enabled: true
 
-    ingress:
-      enabled: true
-      annotations:
-        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-      hosts:
-        - host: "dask-gateway.${SECRET_DOMAIN}"
-          paths:
-            - path: /
-              pathType: Prefix
-
-    # If you want to keep JupyterHub integration
-    jupyterhub:
-      enabled: true
-      hub:
-        config:
-          DaskGateway:
-            address: http://dask-gateway-gateway-service:8000
-            proxy_address: gateway://dask-gateway-gateway-service:8000/services/dask-gateway/
-      singleuser:
-        image:
-          name: ghcr.io/dask/dask-notebook
-          tag: 2024.1.0
-        defaultUrl: "/lab"
-        extraEnv:
-          DASK_GATEWAY__ADDRESS: http://dask-gateway-gateway-service:8000
-          DASK_GATEWAY__PROXY_ADDRESS: gateway://dask-gateway-gateway-service:8000/services/dask-gateway/
+    # If you need to expose the gateway, you might want to configure an Ingress resource separately

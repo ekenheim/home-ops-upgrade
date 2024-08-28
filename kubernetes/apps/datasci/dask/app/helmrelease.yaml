@@ -60,7 +60,9 @@ spec:
     traefik:
       replicas: 1
       service:
-        type: ClusterIP  # Change this if you need a different service type
+        type: LoadBalancer
+        annotations:
+          io.cilium/lb-ipam-ips: "${SVC_SYNCTHING_ADDR}"  # Use your reserved IP here
       loglevel: WARN
 
     rbac:

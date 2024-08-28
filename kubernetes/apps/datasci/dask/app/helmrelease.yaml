@@ -58,7 +58,6 @@ spec:
       loglevel: INFO
 
     traefik:
-      enabled: true  # Enable Traefik as it's required for Dask Gateway
       replicas: 1
       service:
         type: ClusterIP  # Change this if you need a different service type

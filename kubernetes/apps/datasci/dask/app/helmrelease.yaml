@@ -24,11 +24,10 @@ spec:
   values:
     gateway:
       replicas: 1
-      prefix: /gateway
-      loglevel: INFO
       image:
         name: ghcr.io/dask/dask-gateway-server
         tag: 2024.1.0
+        pullPolicy: IfNotPresent
       resources:
         requests:
           cpu: 100m
@@ -36,8 +35,7 @@ spec:
         limits:
           memory: 1Gi
       service:
-        type: ClusterIP
-        port: 8786
+        annotations: {}
       auth:
         type: simple
         simple:
@@ -58,7 +56,6 @@ spec:
 
     controller:
       enabled: true
-      loglevel: INFO
 
     traefik:
       enabled: false
@@ -66,38 +63,17 @@ spec:
     rbac:
       enabled: true
 
-    backend:
-      image:
-        name: ghcr.io/dask/dask-gateway
-        tag: 2024.1.0
-      scheduler:
-        cores:
-          request: 100m
-          limit: 1
-        memory:
-          request: 512Mi
-          limit: 1Gi
-      worker:
-        cores:
-          request: 200m
-          limit: 1
-        memory:
-          request: 1Gi
-          limit: 2Gi
-
-    # Ingress configuration for the gateway
     ingress:
-      gateway:
-        enabled: true
-        annotations:
-          nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-        hosts:
-          - host: "dask-gateway.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                pathType: Prefix
+      enabled: true
+      annotations:
+        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+      hosts:
+        - host: "dask-gateway.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              pathType: Prefix
 
-    # Jupyter configuration
+    # If you want to keep JupyterHub integration
     jupyterhub:
       enabled: true
       hub:
@@ -113,22 +89,3 @@ spec:
         extraEnv:
           DASK_GATEWAY__ADDRESS: http://dask-gateway-gateway-service:8000
           DASK_GATEWAY__PROXY_ADDRESS: gateway://dask-gateway-gateway-service:8000/services/dask-gateway/
-      ingress:
-        enabled: true
-        annotations:
-          nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-        hosts:
-          - "jupyter.${SECRET_DOMAIN}"
-
-    # Global security context
-    securityContext:
-      runAsUser: 65534
-      runAsGroup: 65534
-      fsGroup: 65534
-
-    # Persistence configuration
-    persistence:
-      enabled: true
-      storageClass: "default"
-      accessMode: ReadWriteOnce
-      size: 10Gi

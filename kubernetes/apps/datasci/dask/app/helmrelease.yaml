@@ -53,14 +53,11 @@ spec:
       loglevel: INFO
       prefix: /
       replicas: 1
+      service:
+        type: ClusterIP
     rbac:
       enabled: true
     traefik:
-      loglevel: WARN
-      replicas: 1
-      service:
-        annotations:
-          io.cilium/lb-ipam-ips: 192.168.50.182
-        type: LoadBalancer
+      enabled: false
 
     # If you need to expose the gateway externally, consider setting up an Ingress resource separately

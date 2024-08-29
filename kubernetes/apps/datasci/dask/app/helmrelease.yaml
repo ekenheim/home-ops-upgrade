@@ -32,9 +32,9 @@ spec:
       k8sApiRateLimitBurst: 100
     gateway:
       auth:
-        type: simple
         simple:
           password: "dask"
+        type: simple
       backend:
         image:
           name: ghcr.io/dask/dask-gateway

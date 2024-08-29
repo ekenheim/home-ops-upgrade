@@ -83,3 +83,13 @@ spec:
                 name: api-dask-gateway
                 port:
                   number: 8000
+    - host: dask-dashboard.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dask-dashboard
+                port:
+                  number: 8787

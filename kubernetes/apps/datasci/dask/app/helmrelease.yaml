@@ -28,7 +28,7 @@ spec:
       auth:
         type: simple
         simple:
-          password: ${DASK_GATEWAY_PASSWORD}
+          password:
       backend:
         image:
           name: ghcr.io/dask/dask-gateway

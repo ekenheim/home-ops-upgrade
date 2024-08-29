@@ -32,7 +32,7 @@ spec:
       auth:
         type: simple
         simple:
-          password: "dask"  # Consider using a more secure method in production
+          password:
       backend:
         image:
           name: ghcr.io/dask/dask-gateway

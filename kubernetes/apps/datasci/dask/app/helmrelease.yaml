@@ -34,6 +34,7 @@ spec:
         simple:
           password: "dask"  # Consider using a more secure method in production
       service:
+        type: ClusterIP
         annotations: {}
       backend:
         image:
@@ -58,6 +59,8 @@ spec:
       loglevel: INFO
     rbac:
       enabled: true
+    traefik:
+      enabled: false  # Disable Traefik as we're using Nginx ingress
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -72,16 +75,18 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/websocket-services: "api-dask-gateway"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
 spec:
   ingressClassName: internal
   rules:
-    - host: dask-gateway.${SECRET_DOMAIN} # Replace with your actual domain
+    - host: dask-gateway.${SECRET_DOMAIN}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: dask-gateway
+                name: api-dask-gateway
                 port:
-                  number: 8000  # Default port for Dask Gateway
+                  number: 8000

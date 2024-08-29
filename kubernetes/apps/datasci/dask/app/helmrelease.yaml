@@ -21,52 +21,46 @@ spec:
     remediation:
       retries: 3
   values:
-    gateway:
-      replicas: 1
-      prefix: /
-      loglevel: INFO
-      image:
-        name: ghcr.io/dask/dask-gateway-server
-        tag: "2024.1.0"
-      auth:
-        type: simple
-        simple:
-          password: "dask"  # Consider using a more secure method in production
-      service:
-        type: ClusterIP  # Change this from LoadBalancer if it was set
-        annotations: {}
-      backend:
-        image:
-          name: ghcr.io/dask/dask-gateway
-          tag: "2024.1.0"
-        scheduler:
-          cores:
-            request: 100m
-            limit: 1
-          memory:
-            request: 512Mi
-            limit: 1Gi
-        worker:
-          cores:
-            request: 200m
-            limit: 1
-          memory:
-            request: 1Gi
-            limit: 2Gi
-
     controller:
       enabled: true
       loglevel: INFO
-
-    traefik:
+    gateway:
+      auth:
+        type: simple
+        simple:
+          password: dask
+      backend:
+        image:
+          name: ghcr.io/dask/dask-gateway
+          tag: 2024.1.0
+        scheduler:
+          cores:
+            limit: 1
+            request: 100m
+          memory:
+            limit: 1Gi
+            request: 512Mi
+        worker:
+          cores:
+            limit: 1
+            request: 200m
+          memory:
+            limit: 2Gi
+            request: 1Gi
+      image:
+        name: ghcr.io/dask/dask-gateway-server
+        tag: 2024.1.0
+      loglevel: INFO
+      prefix: /
       replicas: 1
-      service:
-        type: LoadBalancer
-        annotations:
-          io.cilium/lb-ipam-ips: "${SVC_SYNCTHING_ADDR}"  # Use your reserved IP here
-      loglevel: WARN
-
     rbac:
       enabled: true
+    traefik:
+      loglevel: WARN
+      replicas: 1
+      service:
+        annotations:
+          io.cilium/lb-ipam-ips: 192.168.50.182
+        type: LoadBalancer
 
     # If you need to expose the gateway externally, consider setting up an Ingress resource separately

@@ -36,14 +36,14 @@ spec:
         scheduler:
           cores:
             limit: 1
-            request: 100m
+            request: 0.1
           memory:
             limit: 1Gi
             request: 512Mi
         worker:
           cores:
             limit: 1
-            request: 200m
+            request: 0.2
           memory:
             limit: 2Gi
             request: 1Gi

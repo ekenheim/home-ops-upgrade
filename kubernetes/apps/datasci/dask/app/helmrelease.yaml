@@ -65,6 +65,11 @@ spec:
       replicas: 1
     rbac:
       enabled: true
+    traefik:
+      enabled: true
+      dashboard:
+        enabled: true
+        domain: dask-ui.${SECRET_DOMAIN}
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -93,13 +98,13 @@ spec:
                 name: api-dask-gateway
                 port:
                   number: 8000
-    - host: dask-dashboard.${SECRET_DOMAIN}
+    - host: dask-ui.${SECRET_DOMAIN}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: dask-dashboard
+                name: traefik-dask-gateway
                 port:
-                  number: 8787
+                  number: 80

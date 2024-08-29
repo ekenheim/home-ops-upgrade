@@ -5,6 +5,5 @@ kind: Kustomization
 resources:
   # - ./backup/  # nothing to back up currently
   - ./helmrelease.yaml
-  - ./ingress.yaml
   - ../../../../templates/volsync
   - ../../../../templates/gatus/guarded

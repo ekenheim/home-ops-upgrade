@@ -1,63 +1,129 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: &app dask-gateway
+  namespace: dask-gateway
 spec:
-  interval: 15m
+  releaseName: *app
   chart:
     spec:
       chart: dask-gateway
-      version: 2024.1.0
+      version: "2024.1.0"  # Use the latest version available
       sourceRef:
         kind: HelmRepository
         name: dask
         namespace: flux-system
+  interval: 15m
   install:
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
   values:
-    controller:
-      enabled: true
-      loglevel: INFO
     gateway:
-      auth:
-        type: simple
-        simple:
-          password: dask
-      backend:
-        image:
-          name: ghcr.io/dask/dask-gateway
-          tag: 2024.1.0
-        scheduler:
-          cores:
-            limit: 1
-            request: 100m
-          memory:
-            limit: 1Gi
-            request: 512Mi
-        worker:
-          cores:
-            limit: 1
-            request: 200m
-          memory:
-            limit: 2Gi
-            request: 1Gi
-      image:
-        name: ghcr.io/dask/dask-gateway-server
-        tag: 2024.1.0
-      loglevel: INFO
-      prefix: /
-      replicas: 1
-      service:
-        type: ClusterIP
-    rbac:
-      enabled: true
+      prefix: /gateway
+      annotations:
+        kubernetes.io/ingress.class: nginx
     traefik:
       enabled: false
+    controller:
+      enabled: true
+    scheduler:
+      enabled: true
+    apiToken:
+      generate: true
 
-    # If you need to expose the gateway externally, consider setting up an Ingress resource separately
+    defaultPodOptions:
+      securityContext:
+        runAsGroup: 65534
+        runAsUser: 65534
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+
+    controllers:
+      gateway:
+        annotations:
+          reloader.stakater.com/search: "true"
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/dask/dask-gateway-server
+              tag: "2024.1.0"
+            env:
+              TZ: ${TIMEZONE}
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+                  httpGet:
+                    path: /healthz
+                    port: &port 8000
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  initialDelaySeconds: 0
+                  timeoutSeconds: 1
+                  periodSeconds: 5
+                  failureThreshold: 30
+                  httpGet:
+                    path: /healthz
+                    port: *port
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+
+    service:
+      main:
+        ports:
+          http:
+            port: *port
+
+    ingress:
+      main:
+        enabled: true
+        className: internal
+        annotations:
+          nginx.ingress.kubernetes.io/ssl-redirect: "false"
+          nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+          nginx.ingress.kubernetes.io/whitelist-source-range: |
+            10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+        hosts:
+          - host: &host dask-gateway.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
+                service:
+                  name: main
+                  port: http
+        tls:
+          - hosts:
+              - *host
+
+    rbac:
+      create: true
+    serviceAccount:
+      create: true
+
+    persistence:
+      data:
+        enabled: true
+        existingClaim: *app
+        globalMounts:
+          - path: /data

@@ -24,17 +24,11 @@ spec:
     controller:
       enabled: true
       loglevel: INFO
-      completedClusterMaxAge: 86400
-      completedClusterCleanupPeriod: 600
-      backoffBaseDelay: 0.1
-      backoffMaxDelay: 300
-      k8sApiRateLimit: 50
-      k8sApiRateLimitBurst: 100
     gateway:
       auth:
+        type: simple
         simple:
           password: "dask"
-        type: simple
       backend:
         image:
           name: ghcr.io/dask/dask-gateway
@@ -48,15 +42,11 @@ spec:
             request: 512M
         worker:
           cores:
-            request: 0.5
             limit: 2
+            request: 0.2
           memory:
-            request: 2G
             limit: 4G
-          extraPodConfig: {}
-          extraContainerConfig: {}
-          threads:
-        environment: {}
+            request: 1G
       image:
         name: ghcr.io/dask/dask-gateway-server
         tag: 2024.1.0

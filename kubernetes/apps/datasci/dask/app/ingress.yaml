@@ -4,6 +4,8 @@ kind: Ingress
 metadata:
   name: dask-gateway
   namespace: datasci
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
 spec:
   ingressClassName: internal
   rules:
@@ -17,3 +19,6 @@ spec:
                 name: dask-gateway-traefik
                 port:
                   number: 80
+  tls:
+    - hosts:
+        - dask.${SECRET_DOMAIN}

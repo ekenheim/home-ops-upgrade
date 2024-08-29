@@ -68,4 +68,13 @@ spec:
     rbac:
       enabled: true
 
+    ingress:
+      enabled: true
+      className: internal
+      hosts:
+        - host: &host dask.${SECRET_DOMAIN}
+          paths:
+            - path: /
+              pathType: Prefix
+
     # If you need to expose the gateway externally, consider setting up an Ingress resource separately

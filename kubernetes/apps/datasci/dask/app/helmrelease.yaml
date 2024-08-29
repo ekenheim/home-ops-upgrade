@@ -1,9 +1,8 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: &app dask-gateway
-  namespace: datasci
 spec:
   interval: 15m
   chart:
@@ -22,38 +21,38 @@ spec:
     remediation:
       retries: 3
   values:
-    gateway:
-      replicas: 1
-      prefix: /
-      loglevel: INFO
-      image:
-        name: ghcr.io/dask/dask-gateway-server
-        tag: "2024.1.0"
-      auth:
-        type: simple
-        simple:
-          password:
-      backend:
-        image:
-          name: ghcr.io/dask/dask-gateway
-          tag: "2024.1.0"
-        scheduler:
-          cores:
-            request: 100m
-            limit: 1
-          memory:
-            request: 512Mi
-            limit: 1Gi
-        worker:
-          cores:
-            request: 200m
-            limit: 1
-          memory:
-            request: 1Gi
-            limit: 2Gi
     controller:
       enabled: true
       loglevel: INFO
+    gateway:
+      auth:
+        type: simple
+        simple:
+          password: ${DASK_GATEWAY_PASSWORD}
+      backend:
+        image:
+          name: ghcr.io/dask/dask-gateway
+          tag: 2024.1.0
+        scheduler:
+          cores:
+            limit: 1
+            request: 100m
+          memory:
+            limit: 1Gi
+            request: 512Mi
+        worker:
+          cores:
+            limit: 1
+            request: 200m
+          memory:
+            limit: 2Gi
+            request: 1Gi
+      image:
+        name: ghcr.io/dask/dask-gateway-server
+        tag: 2024.1.0
+      loglevel: INFO
+      prefix: /
+      replicas: 1
     rbac:
       enabled: true
 

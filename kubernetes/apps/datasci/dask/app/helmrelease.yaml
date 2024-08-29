@@ -38,15 +38,15 @@ spec:
             limit: 1
             request: 0.1
           memory:
-            limit: 1Gi
-            request: 512Mi
+            limit: 1G
+            request: 512M
         worker:
           cores:
             limit: 1
             request: 0.2
           memory:
-            limit: 2Gi
-            request: 1Gi
+            limit: 2G
+            request: 1G
       image:
         name: ghcr.io/dask/dask-gateway-server
         tag: 2024.1.0

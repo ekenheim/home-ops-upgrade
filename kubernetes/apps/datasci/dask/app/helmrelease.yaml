@@ -34,7 +34,6 @@ spec:
         simple:
           password: "dask"  # Consider using a more secure method in production
       service:
-        type: ClusterIP
         annotations: {}
       backend:
         image:
@@ -57,8 +56,6 @@ spec:
     controller:
       enabled: true
       loglevel: INFO
-    traefik:
-      enabled: false  # Disable Traefik as we're using Nginx
     rbac:
       enabled: true
 
@@ -77,7 +74,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
 spec:
   rules:
-    - host: dask-gateway.${SECRET_DOMAIN}  # Replace with your actual domain
+    - host: dask-gateway.${SECRET_DOMAIN} # Replace with your actual domain
       http:
         paths:
           - path: /

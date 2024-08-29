@@ -33,6 +33,7 @@ spec:
         simple:
           password: "dask"  # Consider using a more secure method in production
       service:
+        type: ClusterIP  # Change this from LoadBalancer if it was set
         annotations: {}
       backend:
         image:
@@ -67,14 +68,5 @@ spec:
 
     rbac:
       enabled: true
-
-    ingress:
-      enabled: true
-      className: internal
-      hosts:
-        - host: &host dask.${SECRET_DOMAIN}
-          paths:
-            - path: /
-              pathType: Prefix
 
     # If you need to expose the gateway externally, consider setting up an Ingress resource separately

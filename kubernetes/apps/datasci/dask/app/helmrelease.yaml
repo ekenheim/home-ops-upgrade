@@ -33,9 +33,6 @@ spec:
         type: simple
         simple:
           password: "dask"  # Consider using a more secure method in production
-      service:
-        type: ClusterIP
-        annotations: {}
       backend:
         image:
           name: ghcr.io/dask/dask-gateway
@@ -59,8 +56,6 @@ spec:
       loglevel: INFO
     rbac:
       enabled: true
-    traefik:
-      enabled: false  # Disable Traefik as we're using Nginx ingress
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -75,7 +70,6 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-    nginx.ingress.kubernetes.io/websocket-services: "api-dask-gateway"
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
 spec:
   ingressClassName: internal

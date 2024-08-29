@@ -46,16 +46,11 @@ spec:
             limit: 1Gi
         worker:
           cores:
-            request: 2
-            limit: 2
+            request: 200m
+            limit: 1
           memory:
-            request: 4Gi
-            limit: 4Gi
-        cluster:
-          worker:
-            replicas:
-              min: 1
-              max: 10
+            request: 1Gi
+            limit: 2Gi
     controller:
       enabled: true
       loglevel: INFO

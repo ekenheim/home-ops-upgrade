@@ -52,16 +52,24 @@ spec:
 
     service:
       type: ClusterIP
+      ports:
+        - name: dashboard
+          port: 8265
+          targetPort: 8265
 
     ingress:
       enabled: true
       ingressClassName: internal
       annotations:
         nginx.ingress.kubernetes.io/ssl-redirect: "false"
-      host: ray-dashboard.${SECRET_DOMAIN}
-      paths:
-        - path: /
-          pathType: Prefix
+      hosts:
+        - host: ray-dashboard.${SECRET_DOMAIN}
+          paths:
+            - path: /
+              pathType: Prefix
+              service:
+                name: ray-kuberay-head
+                port: 8265
 
   dependsOn:
     - name: kuberay-operator

@@ -37,7 +37,6 @@ spec:
         requests:
           cpu: "1"
           memory: "2G"
-      serviceType: LoadBalancer  # Change this to LoadBalancer
 
     worker:
       groupName: workergroup
@@ -52,27 +51,6 @@ spec:
           cpu: "1"
           memory: "1G"
 
-    service:
-      type: LoadBalancer
-      annotations:
-        io.cilium/lb-ipam-ips: "${SVC_SYNCTHING_ADDR}"  # Use the Syncthing IP for Ray
-      ports:
-        - name: client
-          port: 10001
-          targetPort: 10001
-        - name: dashboard
-          port: 8265
-          targetPort: 8265
-        - name: serve
-          port: 8000
-          targetPort: 8000
-        - name: runtime-env-agent
-          port: 8080
-          targetPort: 8080
-        - name: gcs-server
-          port: 6379
-          targetPort: 6379
-
     ingress:
       enabled: true
       ingressClassName: internal
@@ -81,7 +59,6 @@ spec:
         nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
         nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
         nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-        # Add this annotation for WebSocket support
         nginx.ingress.kubernetes.io/proxy-buffering: "off"
       hosts:
         - host: "ray.${SECRET_DOMAIN}"
@@ -96,3 +73,33 @@ spec:
 
   dependsOn:
     - name: kuberay-operator
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ray-external
+  namespace: datasci
+  annotations:
+    io.cilium/lb-ipam-ips: "${SVC_SYNCTHING_ADDR}"
+spec:
+  type: LoadBalancer
+  ports:
+    - name: client
+      port: 10001
+      targetPort: 10001
+    - name: dashboard
+      port: 8265
+      targetPort: 8265
+    - name: serve
+      port: 8000
+      targetPort: 8000
+    - name: runtime-env-agent
+      port: 8080
+      targetPort: 8080
+    - name: gcs-server
+      port: 6379
+      targetPort: 6379
+  selector:
+    ray.io/node-type: head
+    ray.io/cluster: ray-kuberay

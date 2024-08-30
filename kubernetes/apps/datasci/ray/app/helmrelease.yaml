@@ -3,16 +3,15 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: &app ray
-  namespace: datasci
 spec:
   interval: 15m
   chart:
     spec:
-      chart: deploy/charts/ray-cluster
-      version: 2.35.0  # This matches the Git tag we're using
+      chart: ray-cluster
+      version: 1.2.0
       sourceRef:
-        kind: GitRepository
-        name: ray-git  # Updated to match the GitRepository name
+        kind: HelmRepository
+        name: kuberay
         namespace: flux-system
   install:
     remediation:
@@ -24,10 +23,9 @@ spec:
   values:
     image:
       repository: rayproject/ray
-      tag: 2.35.0  # Update this to match your local Ray version
+      tag: 2.35.0
       pullPolicy: IfNotPresent
 
-    # Ray Head: This is the main controller node
     head:
       rayStartParams:
         dashboard-host: '0.0.0.0'
@@ -40,7 +38,6 @@ spec:
           cpu: "1"
           memory: "2G"
 
-    # Ray Workers: These are the nodes that perform the actual computations
     worker:
       groupName: workergroup
       replicas: 2
@@ -54,13 +51,11 @@ spec:
           cpu: "1"
           memory: "2G"
 
-    # Ray Dashboard: A web UI for monitoring and debugging
-    dashboard:
+    rayDashboard:
       enabled: true
       port: 8265
 
-    # Ray Client Server: Allows external clients to connect to the Ray cluster
-    rayClient:
+    rayClientServer:
       enabled: true
       port: 10001
 
@@ -75,15 +70,6 @@ spec:
         nginx.ingress.kubernetes.io/proxy-buffering: "off"
       hosts:
         - host: "ray.${SECRET_DOMAIN}"
-          paths:
-            - path: "/"
-              pathType: Prefix
-              backend:
-                service:
-                  name: ray-kuberay-head-svc
-                  port:
-                    number: 10001
-        - host: "ray-dashboard.${SECRET_DOMAIN}"
           paths:
             - path: "/"
               pathType: Prefix

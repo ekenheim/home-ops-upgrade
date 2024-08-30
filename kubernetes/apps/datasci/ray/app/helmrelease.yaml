@@ -77,27 +77,3 @@ spec:
             - path: /
               pathType: Prefix
       tls: []
-
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: ray-dashboard
-  namespace: datasci
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    # Add any other necessary annotations
-spec:
-  ingressClassName: internal
-  rules:
-    - host: ray-dashboard.${SECRET_DOMAIN}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: kuberay-head-svc
-                port:
-                  number: 8265
-

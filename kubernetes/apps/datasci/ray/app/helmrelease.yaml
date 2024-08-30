@@ -73,24 +73,12 @@ metadata:
   name: ray-dashboard
   namespace: datasci
   annotations:
-    kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
-spec:
+    # Add any other necessary annotations
   ingressClassName: internal
-  rules:
-    - host: ray.${SECRET_DOMAIN}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: ray-head
-                port:
-                  number: 8265
+  hosts:
+    - host: ray-dashboard.${SECRET_DOMAIN}
+      paths:
+        - path: /
+          pathType: Prefix
 

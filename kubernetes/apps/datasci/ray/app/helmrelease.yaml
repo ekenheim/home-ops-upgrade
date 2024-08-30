@@ -7,11 +7,11 @@ spec:
   interval: 15m
   chart:
     spec:
-      chart: ray-cluster
-      version: 1.2.0
+      chart: deploy/charts/ray
+      version: 2.35.0  # This should match the Git tag we're using
       sourceRef:
-        kind: HelmRepository
-        name: kuberay
+        kind: GitRepository
+        name: ray
         namespace: flux-system
   install:
     remediation:

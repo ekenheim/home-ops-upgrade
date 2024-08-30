@@ -66,6 +66,18 @@ spec:
     service:
       type: ClusterIP
 
+    ingress:
+      enabled: true
+      className: internal
+      annotations:
+        nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      hosts:
+        - host: ray-dashboard.${SECRET_DOMAIN}
+          paths:
+            - path: /
+              pathType: Prefix
+      tls: []
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -75,10 +87,17 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     # Add any other necessary annotations
+spec:
   ingressClassName: internal
-  hosts:
+  rules:
     - host: ray-dashboard.${SECRET_DOMAIN}
-      paths:
-        - path: /
-          pathType: Prefix
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kuberay-head-svc
+                port:
+                  number: 8265
 

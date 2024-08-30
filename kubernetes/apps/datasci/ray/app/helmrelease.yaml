@@ -26,30 +26,42 @@ spec:
       tag: 2.35.0  # Update this to match your local Ray version
       pullPolicy: IfNotPresent
 
+    # Ray Head: This is the main controller node
     head:
       rayStartParams:
         dashboard-host: '0.0.0.0'
         ray-client-server-port: '10001'
       resources:
         limits:
-          cpu: "1"
-          memory: "2G"
+          cpu: "2"
+          memory: "4G"
         requests:
           cpu: "1"
           memory: "2G"
 
+    # Ray Workers: These are the nodes that perform the actual computations
     worker:
       groupName: workergroup
-      replicas: 1
+      replicas: 2
       minReplicas: 1
-      maxReplicas: 3
+      maxReplicas: 5
       resources:
         limits:
-          cpu: "1"
-          memory: "1G"
+          cpu: "2"
+          memory: "4G"
         requests:
           cpu: "1"
-          memory: "1G"
+          memory: "2G"
+
+    # Ray Dashboard: A web UI for monitoring and debugging
+    dashboard:
+      enabled: true
+      port: 8265
+
+    # Ray Client Server: Allows external clients to connect to the Ray cluster
+    rayClient:
+      enabled: true
+      port: 10001
 
     ingress:
       enabled: true
@@ -70,6 +82,15 @@ spec:
                   name: ray-kuberay-head-svc
                   port:
                     number: 10001
+        - host: "ray-dashboard.${SECRET_DOMAIN}"
+          paths:
+            - path: "/"
+              pathType: Prefix
+              backend:
+                service:
+                  name: ray-kuberay-head-svc
+                  port:
+                    number: 8265
 
   dependsOn:
     - name: kuberay-operator

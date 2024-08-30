@@ -9,10 +9,10 @@ spec:
   chart:
     spec:
       chart: deploy/charts/ray-cluster
-      version: 2.35.0  # This should match the Git tag we're using
+      version: 2.35.0  # This matches the Git tag we're using
       sourceRef:
         kind: GitRepository
-        name: ray
+        name: ray-git  # Updated to match the GitRepository name
         namespace: flux-system
   install:
     remediation:

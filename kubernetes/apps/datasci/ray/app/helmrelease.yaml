@@ -7,8 +7,8 @@ spec:
   interval: 15m
   chart:
     spec:
-      chart: ray
-      version: 0.7.0
+      chart: ray-cluster
+      version: 1.1.1
       sourceRef:
         kind: HelmRepository
         name: kuberay
@@ -21,10 +21,9 @@ spec:
     remediation:
       retries: 3
   values:
-    nameOverride: "kuberay"
     image:
       repository: rayproject/ray
-      tag: 2.34.0
+      tag: 2.9.0
       pullPolicy: IfNotPresent
 
     head:
@@ -37,12 +36,6 @@ spec:
         requests:
           cpu: "1"
           memory: "2G"
-      volumes:
-        - name: log-volume
-          emptyDir: {}
-      volumeMounts:
-        - mountPath: /tmp/ray
-          name: log-volume
 
     worker:
       groupName: workergroup
@@ -56,12 +49,6 @@ spec:
         requests:
           cpu: "1"
           memory: "1G"
-      volumes:
-        - name: log-volume
-          emptyDir: {}
-      volumeMounts:
-        - mountPath: /tmp/ray
-          name: log-volume
 
     service:
       type: ClusterIP

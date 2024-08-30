@@ -207,3 +207,15 @@ spec:
               name: *secret
               key: config
     cleanPrometheusOperatorObjectNames: true
+    additionalServiceMonitors:
+      - name: ray
+        namespaceSelector:
+          matchNames:
+            - datasci
+        selector:
+          matchLabels:
+            app.kubernetes.io/name: ray
+        endpoints:
+          - port: dashboard
+            interval: 30s
+            path: /metrics

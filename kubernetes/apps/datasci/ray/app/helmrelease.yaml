@@ -71,6 +71,10 @@ spec:
         - hosts:
             - "ray.ekenhome.se"
 
+    service:
+      type: ClusterIP
+      port: 8265
+
   dependsOn:
     - name: kuberay-operator
 

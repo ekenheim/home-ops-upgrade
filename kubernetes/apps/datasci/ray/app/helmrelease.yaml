@@ -64,3 +64,6 @@ spec:
             - path: /
               pathType: Prefix
       tls: []
+
+  dependsOn:
+    - name: kuberay-operator

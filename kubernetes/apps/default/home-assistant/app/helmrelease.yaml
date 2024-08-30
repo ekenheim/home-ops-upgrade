@@ -17,10 +17,12 @@ spec:
   install:
     remediation:
       retries: 3
+    timeout: 10m  # Increase timeout to 10 minutes
   upgrade:
     cleanupOnFail: true
     remediation:
       retries: 3
+    timeout: 10m  # Increase timeout to 10 minutes
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
@@ -35,16 +37,24 @@ spec:
           app:
             image:
               repository: ghcr.io/joryirving/home-assistant
-              tag: 2024.8.3@sha256:0abc61548b511267589032c00e50f00ca8b7537e156c4774016356f4930dce96
+              tag: 2024.8.2@sha256:24c0fe904f6bb3760ae977d5f5275b45107b984df3e13208db90dd59f342426f
             env:
               TZ: ${TIMEZONE}
             probes:
               liveness:
-                enabled: false
+                enabled: true
+                initialDelaySeconds: 60
+                failureThreshold: 5
+                timeoutSeconds: 10
               readiness:
-                enabled: false
+                enabled: true
+                initialDelaySeconds: 60
+                failureThreshold: 5
+                timeoutSeconds: 10
               startup:
-                enabled: false
+                enabled: true
+                failureThreshold: 30
+                periodSeconds: 10
             resources:
               requests:
                 cpu: 50m
@@ -71,6 +81,8 @@ spec:
             runAsGroup: 568
             fsGroup: 568
             fsGroupChangePolicy: OnRootMismatch
+        deployment:
+          progressDeadlineSeconds: 600  # Give 10 minutes for the deployment to make progress
     service:
       app:
         controller: *app

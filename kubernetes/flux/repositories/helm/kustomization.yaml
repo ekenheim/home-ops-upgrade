@@ -33,6 +33,7 @@ resources:
   - ./postfinance.yaml
   - ./prefect.yaml
   - ./prometheus-community.yaml
+  - ./ray.yaml
   - ./rook-ceph.yaml
   - ./runix.yaml
   - ./spegel.yaml

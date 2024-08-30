@@ -3,11 +3,12 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: &app ray
+  namespace: datasci
 spec:
   interval: 15m
   chart:
     spec:
-      chart: deploy/charts/ray
+      chart: deploy/charts/ray-cluster
       version: 2.35.0  # This should match the Git tag we're using
       sourceRef:
         kind: GitRepository

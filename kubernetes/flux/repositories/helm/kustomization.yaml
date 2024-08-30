@@ -8,10 +8,11 @@ resources:
   - ./backube.yaml
   - ./bjw-s.yaml
   - ./cilium.yaml
+  - ./cloudnative-pg.yaml
   - ./coredns.yaml
   - ./crunchydata.yaml
-  - ./descheduler.yaml
   - ./dask.yaml
+  - ./descheduler.yaml
   - ./dragonfly.yaml
   - ./external-dns.yaml
   - ./external-secrets.yaml
@@ -25,20 +26,20 @@ resources:
   - ./kubernetes-sigs-nfd.yaml
   - ./kubetail.yaml
   - ./metrics-server.yaml
+  - ./movetokube.yaml
+  - ./node-feature-discovery.yaml
   - ./openebs.yaml
   - ./piraeus.yaml
   - ./postfinance.yaml
-  - ./prometheus-community.yaml
   - ./prefect.yaml
+  - ./prometheus-community.yaml
+  - ./ray.yaml
   - ./rook-ceph.yaml
+  - ./runix.yaml
   - ./spegel.yaml
   - ./stakater.yaml
   - ./stevehipwell.yaml
   - ./tofu-controller.yaml
-  - ./node-feature-discovery.yaml
+  - ./userinit-controller.yaml
   - ./weave-gitops.yaml
   - ./windmill.yaml
-  - ./userinit-controller.yaml
-  - ./movetokube.yaml
-  - ./cloudnative-pg.yaml
-  - ./runix.yaml

@@ -23,7 +23,7 @@ spec:
   values:
     image:
       repository: rayproject/ray
-      tag: 2.35.0
+      tag: 2.35.0  # Update this to match your local Ray version
       pullPolicy: IfNotPresent
 
     head:

@@ -1,0 +1,96 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: &app ray
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: ray
+      version: 0.7.0
+      sourceRef:
+        kind: HelmRepository
+        name: kuberay
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    nameOverride: "kuberay"
+    image:
+      repository: rayproject/ray
+      tag: 2.34.0
+      pullPolicy: IfNotPresent
+
+    head:
+      rayStartParams:
+        dashboard-host: '0.0.0.0'
+      resources:
+        limits:
+          cpu: "1"
+          memory: "2G"
+        requests:
+          cpu: "1"
+          memory: "2G"
+      volumes:
+        - name: log-volume
+          emptyDir: {}
+      volumeMounts:
+        - mountPath: /tmp/ray
+          name: log-volume
+
+    worker:
+      groupName: workergroup
+      replicas: 1
+      minReplicas: 1
+      maxReplicas: 3
+      resources:
+        limits:
+          cpu: "1"
+          memory: "1G"
+        requests:
+          cpu: "1"
+          memory: "1G"
+      volumes:
+        - name: log-volume
+          emptyDir: {}
+      volumeMounts:
+        - mountPath: /tmp/ray
+          name: log-volume
+
+    service:
+      type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ray-dashboard
+  namespace: datasci
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+spec:
+  ingressClassName: internal
+  rules:
+    - host: ray.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ray-head
+                port:
+                  number: 8265
+

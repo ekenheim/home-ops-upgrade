@@ -55,7 +55,7 @@ spec:
     service:
       type: LoadBalancer
       annotations:
-        io.cilium/lb-ipam-ips: "${SVC_SYNCTHING_ADDR}"  # Use a reserved IP for Ray
+        io.cilium/lb-ipam-ips: "${SVC_SYNCTHING_ADDR}"  # Use the Syncthing IP for Ray
       ports:
         - name: client
           port: 10001
@@ -63,6 +63,15 @@ spec:
         - name: dashboard
           port: 8265
           targetPort: 8265
+        - name: serve
+          port: 8000
+          targetPort: 8000
+        - name: runtime-env-agent
+          port: 8080
+          targetPort: 8080
+        - name: gcs-server
+          port: 6379
+          targetPort: 6379
 
     ingress:
       enabled: true

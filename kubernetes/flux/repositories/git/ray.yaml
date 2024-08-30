@@ -1,0 +1,18 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: ray
+  namespace: flux-system
+spec:
+  interval: 30m
+  url: https://github.com/ray-project/ray
+  ref:
+    tag: ray-2.35.0  # Using the latest release tag as of the search results
+  ignore: |
+    # exclude all
+    /*
+    # include kubernetes directory if it exists
+    !/kubernetes
+    # or include any other relevant directories for Kubernetes manifests
+    !/deploy

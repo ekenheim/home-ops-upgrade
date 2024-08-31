@@ -17,12 +17,10 @@ spec:
   install:
     remediation:
       retries: 3
-    timeout: 10m  # Increase timeout to 10 minutes
   upgrade:
     cleanupOnFail: true
     remediation:
       retries: 3
-    timeout: 10m  # Increase timeout to 10 minutes
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
@@ -42,19 +40,11 @@ spec:
               TZ: ${TIMEZONE}
             probes:
               liveness:
-                enabled: true
-                initialDelaySeconds: 60
-                failureThreshold: 5
-                timeoutSeconds: 10
+                enabled: false
               readiness:
-                enabled: true
-                initialDelaySeconds: 60
-                failureThreshold: 5
-                timeoutSeconds: 10
+                enabled: false
               startup:
-                enabled: true
-                failureThreshold: 30
-                periodSeconds: 10
+                enabled: false
             resources:
               requests:
                 cpu: 50m
@@ -81,8 +71,6 @@ spec:
             runAsGroup: 568
             fsGroup: 568
             fsGroupChangePolicy: OnRootMismatch
-        deployment:
-          progressDeadlineSeconds: 600  # Give 10 minutes for the deployment to make progress
     service:
       app:
         controller: *app

@@ -308,5 +308,5 @@ spec:
         path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
           - path: /data
-            subPath: media
+            subPath: Media
             readOnly: true

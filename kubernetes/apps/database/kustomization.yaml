@@ -6,7 +6,7 @@ resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
   # Flux-Kustomizations
-  - ./crunchy-postgres/ks.yaml
+  #- ./crunchy-postgres/ks.yaml
   - ./dragonfly/ks.yaml
  # - ./cloudnative-pg/ks.yaml
  # - ./ext-postgres-operator/ks.yaml

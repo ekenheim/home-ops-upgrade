@@ -35,6 +35,11 @@ spec:
               TZ: ${TIMEZONE}
             securityContext:
               privileged: true
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
         pod:
           annotations:
             configmap.reloader.stakater.com/reload: &config network-ups-tools-config
@@ -55,9 +60,9 @@ spec:
         globalMounts:
           - path: /etc/nut
             readOnly: true
-      ups:
-        type: hostPath
-        hostPath: /dev/bus/usb
-        globalMounts:
-          - path: /dev/bus/usb
-            readOnly: false
+      # ups:
+      #   type: hostPath
+      #   hostPath: /dev/bus/usb/001/004
+      #   globalMounts:
+      #     - path: /dev/bus/usb/001/001
+      #       readOnly: false

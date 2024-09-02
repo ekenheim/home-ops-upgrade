@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -62,7 +62,7 @@ spec:
             gethomepage.dev/icon: cilium.png
             gethomepage.dev/name: Hubble
             gethomepage.dev/group: Observability
-            gethomepage.dev/description: Network Monitoring Dashboard.
+            gethomepage.dev/description: Network Monitoring Dashboard
             external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
           hosts: ["hubble.${SECRET_DOMAIN}"]
     operator:

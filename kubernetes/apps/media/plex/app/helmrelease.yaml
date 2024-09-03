@@ -73,7 +73,6 @@ spec:
         pod:
           nodeSelector:
             intel.feature.node.kubernetes.io/gpu: "true"
-            plex-node: "true"
           affinity:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:

@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -60,9 +60,9 @@ spec:
         globalMounts:
           - path: /etc/nut
             readOnly: true
-      ups:
-        type: hostPath
-        hostPath: /dev/bus/usb/001/004  # Update this path
-        globalMounts:
-          - path: /dev/bus/usb/001/001  # Update this path
-            readOnly: false
+      # ups:
+      #   type: hostPath
+      #   hostPath: /dev/bus/usb/001/004
+      #   globalMounts:
+      #     - path: /dev/bus/usb/001/001
+      #       readOnly: false

@@ -73,7 +73,7 @@ spec:
             env:
               WEBUI_NAME: Ollama
               WEBUI_URL: https://ollama.${SECRET_DOMAIN}
-              DATA_DIR: /data
+              DATA_DIR: /ui-config
               OLLAMA_BASE_URL: http://ollama-backend.datasci.svc.cluster.local:11434
               WEBUI_AUTH_TRUSTED_EMAIL_HEADER: X-authentik-email
               AUDIO_OPENAI_API_BASE_URL: https://piper.${SECRET_DOMAIN}/v1
@@ -121,9 +121,13 @@ spec:
       backend-config:
         enabled: true
         existingClaim: ollama-backend-config
+        globalMounts:
+          - path: /backend-config
       ui-config:
         enabled: true
         existingClaim: ollama-ui-config
+        globalMounts:
+          - path: /ui-config
       models:
         enabled: true
         existingClaim: ollama-models

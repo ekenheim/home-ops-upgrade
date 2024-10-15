@@ -3,7 +3,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: ollama-models
-  namespace: ai
+  namespace: datasci
 spec:
   accessModes:
     - ReadWriteOnce

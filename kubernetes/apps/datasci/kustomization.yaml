@@ -15,5 +15,5 @@ resources:
   - ./whisper/ks.yaml
   - ./piper/ks.yaml
   #- ./dask/ks.yaml
-  #- ./ray/ks.yaml
+  - ./ray/ks.yaml
   - ./ollama/ks.yaml

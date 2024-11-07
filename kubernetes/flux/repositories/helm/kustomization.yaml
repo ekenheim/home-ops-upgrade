@@ -43,3 +43,4 @@ resources:
   - ./userinit-controller.yaml
   - ./weave-gitops.yaml
   - ./windmill.yaml
+  - ./nvidia-charts.yaml

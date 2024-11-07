@@ -221,6 +221,22 @@ patches:
   #      extraKernelArgs:
   #        - net.ifnames=0
 
+  # Add NVIDIA support for worker3
+  - |-
+    machine:
+      install:
+        extensions:
+          - image: ghcr.io/siderolabs/nvidia-container-toolkit:v1.14.4
+      kernel:
+        modules:
+          - name: nvidia
+          - name: nvidia_uvm
+          - name: nvidia_drm
+          - name: nvidia_modeset
+      sysctls:
+        vm.nr_hugepages: "1024"
+    node:
+      hostname: worker3
 
 controlPlane:
   patches:

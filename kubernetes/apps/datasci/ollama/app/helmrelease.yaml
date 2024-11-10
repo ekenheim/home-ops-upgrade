@@ -60,7 +60,7 @@ spec:
                         values:
                           - "true"
           nodeSelector:
-            intel.feature.node.kubernetes.io/gpu: "true"
+            nvidia.feature.node.kubernetes.io/gpu: "true"
       ui:
         type: deployment
         annotations:
@@ -137,8 +137,8 @@ spec:
         enabled: true
         existingClaim: ollama-models
         advancedMounts:
-          backend: 
-            main: 
+          backend:
+            main:
               - path: *pvc
       tmp:
         enabled: true

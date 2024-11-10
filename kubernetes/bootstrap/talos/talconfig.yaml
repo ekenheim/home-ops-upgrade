@@ -106,11 +106,12 @@ nodes:
   - hostname: "worker3"
     ipAddress: "192.168.50.155"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/installer/06342eba209603ed301980ec4996bc7fc9647fdbf6528cce27aca09c2c4cf8f1:v1.8.2
+    talosImageURL: factory.talos.dev/installer/1980e003acd04ee13e0812adc032e4d65cfd298fa0bf5ee9611fd2258a70b6e3:v1.8.2
     controlPlane: false
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: BC:24:11:81:A1:DE
+          driver: e1000e
+          #hardwareAddr: BC:24:11:81:A1:DE
         dhcp: true
         mtu: 1500
         routes:
@@ -124,7 +125,6 @@ nodes:
           officialExtensions:
             - siderolabs/i915-ucode
             - siderolabs/intel-ucode
-            - siderolabs/nut-client
             - siderolabs/nonfree-kmod-nvidia-production
             - siderolabs/nvidia-container-toolkit-production
     patches:

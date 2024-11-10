@@ -106,7 +106,7 @@ nodes:
   - hostname: "worker3"
     ipAddress: "192.168.50.155"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
+    talosImageURL: factory.talos.dev/installer/06342eba209603ed301980ec4996bc7fc9647fdbf6528cce27aca09c2c4cf8f1:v1.8.2
     controlPlane: false
     networkInterfaces:
       - deviceSelector:
@@ -116,6 +116,32 @@ nodes:
         routes:
           - network: 0.0.0.0/0
             gateway: "192.168.50.1"
+    schematic:
+      customization:
+        extraKernelArgs:
+          - net.ifnames=0
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/i915-ucode
+            - siderolabs/intel-ucode
+            - siderolabs/nut-client
+            - siderolabs/nonfree-kmod-nvidia-production
+            - siderolabs/nvidia-container-toolkit-production
+    patches:
+      - |-
+        - op: add
+          path: /machine/kernel
+          value:
+            modules:
+              - name: nvidia
+              - name: nvidia_uvm
+              - name: nvidia_drm
+              - name: nvidia_modeset
+      - |-
+        - op: add
+          path: /machine/sysctls
+          value:
+            net.core.bpf_jit_harden: 1
 
 patches:
   # Configure containerd
@@ -220,23 +246,6 @@ patches:
   #    install:
   #      extraKernelArgs:
   #        - net.ifnames=0
-
-  # Add NVIDIA support for worker3
-  - |-
-    machine:
-      install:
-        extensions:
-          - image: ghcr.io/siderolabs/nvidia-container-toolkit:v1.14.4
-      kernel:
-        modules:
-          - name: nvidia
-          - name: nvidia_uvm
-          - name: nvidia_drm
-          - name: nvidia_modeset
-      sysctls:
-        vm.nr_hugepages: "1024"
-    node:
-      hostname: worker3
 
 controlPlane:
   patches:

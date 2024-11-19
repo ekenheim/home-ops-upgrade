@@ -25,6 +25,11 @@ spec:
   uninstall:
     keepHistory: false
   values:
+    ollama:
+      gpu:
+        enabled: true
+        type: 'nvidia'
+        number: 1
     controllers:
       backend:
         type: statefulset

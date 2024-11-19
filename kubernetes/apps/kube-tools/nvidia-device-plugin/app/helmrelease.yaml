@@ -15,30 +15,34 @@ spec:
         namespace: flux-system
   maxHistory: 2
   install:
-    crds: CreateReplace
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
-    crds: CreateReplace
     remediation:
+      strategy: rollback
       retries: 3
-  uninstall:
-    keepHistory: false
   values:
+    image:
+      repository: nvcr.io/nvidia/k8s-device-plugin
+      tag: v0.17.0
     runtimeClassName: nvidia
-    nodeSelector:
-      nvidia.feature.node.kubernetes.io/gpu: "true"
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: feature.node.kubernetes.io/pci-0300_10de.present
+                  operator: In
+                  values:
+                    - "true"
     config:
       map:
         default: |-
           version: v1
-          flags:
-            migStrategy: none
           sharing:
             timeSlicing:
               renameByDefault: false
-              failRequestsGreaterThanOne: false
               resources:
                 - name: nvidia.com/gpu
-                  replicas: 1
+                  replicas: 4

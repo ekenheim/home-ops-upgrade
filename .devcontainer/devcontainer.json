@@ -6,7 +6,8 @@
     "SOPS_AGE_KEY_FILE": "${containerWorkspaceFolder}/.age.key"
   },
   "postCreateCommand": {
-    "deps": "task deps"
+    "deps": "task deps",
+    "command": "apt-get update && apt-get install -y age"
   },
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {
@@ -16,7 +17,6 @@
       "minikube": "none"
     },
     "ghcr.io/devcontainers/features/python:1": {},
-    "ghcr.io/devcontainers-contrib/features/age:1": {},
     "ghcr.io/devcontainers-contrib/features/cloudflared:1": {},
     "ghcr.io/devcontainers-contrib/features/go-task:1": {},
     "ghcr.io/devcontainers-contrib/features/sops:1": {},

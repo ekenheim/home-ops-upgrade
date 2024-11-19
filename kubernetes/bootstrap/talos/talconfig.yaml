@@ -147,23 +147,7 @@ nodes:
           path: /machine/files
           value:
             - op: create
-              path: /etc/cri/conf.d/20-nvidia-container-runtime.part
-              content: |-
-                [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia]
-                  privileged_without_host_devices = false
-                  runtime_engine = ""
-                  runtime_root = ""
-                  runtime_type = "io.containerd.runc.v2"
-                  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia.options]
-                    BinaryName = "/usr/bin/nvidia-container-runtime"
-                [plugins."io.containerd.grpc.v1.cri"]
-                  default_runtime_name = "nvidia"
-      - |-
-        - op: add
-          path: /machine/files
-          value:
-            - op: create
-              path: /etc/nvidia-container-runtime/config.toml
+              path: /var/etc/nvidia-container-runtime/config.toml
               content: |-
                 disable-require = false
                 #swarm-resource = "DOCKER_RESOURCE_GPU"
@@ -183,7 +167,7 @@ nodes:
 
                 [nvidia-container-runtime]
                 #debug = "/var/log/nvidia-container-runtime.log"
-                
+
                 # Specify the runtimes to use with docker
                 [nvidia-container-runtime.runtimes]
                 containerd = "/run/containerd/containerd.sock"

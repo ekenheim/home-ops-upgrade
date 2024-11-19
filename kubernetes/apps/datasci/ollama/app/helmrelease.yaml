@@ -37,7 +37,6 @@ spec:
               tag: 0.4.2
             env:
               TZ: ${TIMEZONE}
-              LIBVA_DRIVER_NAME: i965
               OLLAMA_HOST: 0.0.0.0
               OLLAMA_ORIGINS: "*"
               OLLAMA_MODELS: &pvc /models

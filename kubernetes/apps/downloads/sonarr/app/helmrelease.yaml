@@ -39,7 +39,6 @@ spec:
               repository: ghcr.io/joryirving/sonarr-develop
               tag: 4.0.11.2724@sha256:4e10536c47333a8e6b914316b29fd0a345e8427414c1718573ca59f6d8da87c7
             env:
-              TZ: ${TIMEZONE}
               SONARR__APP__INSTANCENAME: Sonarr
               SONARR__APP__THEME: dark
               SONARR__AUTH__METHOD: External
@@ -48,9 +47,14 @@ spec:
               SONARR__LOG__LEVEL: info
               SONARR__SERVER__PORT: &port 80
               SONARR__UPDATE__BRANCH: develop
+              TZ: ${TIMEZONE}
+              SONARR__POSTGRES__HOST: "postgres-pgbouncer.database.svc.cluster.local"
+              SONARR__POSTGRES__PORT: "5432"
+              SONARR__POSTGRES__MAINDB: "sonarr_main"
+              SONARR__POSTGRES__USER: "sonarr"
             envFrom:
-            - secretRef:
-                name: sonarr-secret
+              - secretRef:
+                  name: sonarr-secret
             probes:
               liveness: &probes
                 enabled: true
@@ -80,7 +84,6 @@ spec:
         runAsGroup: 568
         fsGroup: 568
         fsGroupChangePolicy: OnRootMismatch
-        supplementalGroups: [10000]
         seccompProfile: { type: RuntimeDefault }
     service:
       app:

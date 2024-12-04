@@ -6,4 +6,8 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./pvc.yaml
-  - ../../../../templates/gatus/guarded
+  - ../../../../../shared/templates/gatus/guarded
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled

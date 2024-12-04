@@ -5,6 +5,10 @@ kind: PostgresCluster
 metadata:
   name: &name postgres
 spec:
+  metadata:
+    labels:
+      crunchy-userinit.ramblurr.github.com/enabled: "true"
+      crunchy-userinit.ramblurr.github.com/superuser: &superuser "postgres"
   postgresVersion: 16
   patroni: # turn on sync writes to at least 1 other replica
     dynamicConfiguration:

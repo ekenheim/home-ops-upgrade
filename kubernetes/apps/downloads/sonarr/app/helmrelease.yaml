@@ -48,11 +48,6 @@ spec:
               SONARR__SERVER__PORT: &port 80
               SONARR__UPDATE__BRANCH: develop
               TZ: ${TIMEZONE}
-              SONARR__POSTGRES__HOST: "postgres-pgbouncer.database.svc.cluster.local"
-              SONARR__POSTGRES__PORT: "5432"
-              SONARR__POSTGRES__MAINDB: "sonarr_main"
-              SONARR__POSTGRES__USER: "sonarr"
-              SONARR__DATABASE_TYPE: "postgres"
             envFrom:
             - secretRef:
                 name: sonarr-secret

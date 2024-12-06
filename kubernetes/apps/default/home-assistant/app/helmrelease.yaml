@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -20,6 +20,7 @@ spec:
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
   dependsOn:
     - name: rook-ceph-cluster
@@ -43,8 +44,6 @@ spec:
                 enabled: false
               readiness:
                 enabled: false
-              startup:
-                enabled: false
             resources:
               requests:
                 cpu: 50m
@@ -65,10 +64,10 @@ spec:
               - "/config/.vscode"
               - --extensions-dir
               - "/config/.vscode"
-        pod:
-          securityContext:
-            fsGroupChangePolicy: OnRootMismatch
-            seccompProfile: { type: RuntimeDefault }
+    defaultPodOptions:
+      securityContext:
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
         controller: *app
@@ -90,37 +89,25 @@ spec:
       app:
         className: external
         annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Home
-          gethomepage.dev/name: Home-Assistant
-          gethomepage.dev/icon: home-assistant.png
-          gethomepage.dev/description: Home Automation Software
-          gethomepage.dev/widget.type: homeassistant
-          gethomepage.dev/widget.url: http://home-assistant.default:8123
-          gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_HASS_TOKEN}}` }}"
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
         hosts:
-          - host: &host hass.${SECRET_DOMAIN}
+          - host: hass.${SECRET_DOMAIN}
             paths:
               - path: /
                 service:
                   identifier: app
                   port: http
-        tls:
-          - hosts:
-              - *host
       codeserver:
         className: internal
+        annotations:
+          external-dns.alpha.kubernetes.io/target: internal-utility.${SECRET_DOMAIN}
         hosts:
-          - host: &host hass-code.${SECRET_DOMAIN}
+          - host: hass-code.${SECRET_DOMAIN}
             paths:
             - path: /
               service:
                 identifier: codeserver
                 port: http
-        tls:
-          - hosts:
-              - *host
     persistence:
       config:
         existingClaim: *app

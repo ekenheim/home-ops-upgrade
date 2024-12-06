@@ -39,6 +39,10 @@ spec:
               tag: 2024.12.0@sha256:03e19104a1378d2f51c83a213b6325731185ac76e70e71a9a99d1f4284a0b7ea
             env:
               TZ: ${TIMEZONE}
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
+              fsGroup: 0
             probes:
               liveness:
                 enabled: false

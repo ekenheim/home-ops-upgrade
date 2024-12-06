@@ -66,9 +66,9 @@ spec:
               - "/config/.vscode"
     defaultPodOptions:
       securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+        runAsUser: 911
+        runAsGroup: 911
+        fsGroup: 911
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile: { type: RuntimeDefault }
     service:

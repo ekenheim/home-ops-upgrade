@@ -83,12 +83,6 @@ spec:
       prefectApiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 
       env:
-        - name: PREFECT_API_DATABASE_CONNECTION_URL
-          valueFrom:
-            secretKeyRef:
-              name: prefect-db-secret
-              key: PREFECT_API_DATABASE_CONNECTION_URL
-
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
 

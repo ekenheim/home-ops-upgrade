@@ -58,6 +58,7 @@ spec:
                 memory: 16Gi
                 nvidia.com/gpu: "1"
         pod:
+          runtimeClassName: nvidia
           affinity:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:

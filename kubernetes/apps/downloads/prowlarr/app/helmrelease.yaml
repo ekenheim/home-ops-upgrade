@@ -45,8 +45,10 @@ spec:
               PROWLARR__SERVER__PORT: &port 80
               PROWLARR__UPDATE__BRANCH: develop
             envFrom:
-            - secretRef:
-                name: prowlarr-secret
+              - secretRef:
+                  name: prowlarr-secret
+              - secretRef:
+                  name: prowlarr-db-secret
             resources:
               requests:
                 cpu: 10m

@@ -47,7 +47,7 @@ spec:
       targetPath: postgresql.externalHostname
     - kind: Secret
       name: prefect-db-secret
-      valuesKey: PREFECT_API_DATABASE_CONNECTION_URL
+      valuesKey: connection-string
       targetPath: PREFECT_API_DATABASE_CONNECTION_URL
     - kind: Secret
       name: prefect-db-secret

@@ -84,7 +84,7 @@ spec:
               MLFLOW_BACKEND_STORE_URI:
                 valueFrom:
                   secretKeyRef:
-                    name: mlflow-secret
+                    name: mlflow-db-secret
                     key: MLFLOW_BACKEND_STORE_URI
               POSTGRES_DB:
                 valueFrom:

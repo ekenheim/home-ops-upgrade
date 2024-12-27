@@ -82,7 +82,6 @@ spec:
                 drop:
                   - ALL
                 add:
-                  - CHOWN
                   - SETGID
                   - SETUID
                   - DAC_OVERRIDE

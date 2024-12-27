@@ -59,7 +59,9 @@ spec:
               WEB_PORT: &port 80
             envFrom:
             - secretRef:
-                name: gatus-secret
+                  name: gatus-secret
+            - secretRef:
+                  name: gatus-db-secret
             probes:
               liveness: &probes
                 enabled: true

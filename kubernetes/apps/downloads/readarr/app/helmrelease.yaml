@@ -44,7 +44,9 @@ spec:
               READARR__LOG_LEVEL: info
             envFrom:
             - secretRef:
-                name: readarr-secret
+                  name: readarr-secret
+            - secretRef:
+                  name: readarr-db-secret
             resources:
               requests:
                 cpu: 15m

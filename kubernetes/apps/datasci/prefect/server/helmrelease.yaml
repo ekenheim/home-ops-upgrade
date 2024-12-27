@@ -30,47 +30,47 @@ spec:
           kind: Pod
   valuesFrom:
     - kind: Secret
-      name: prefect-secret
+      name: prefect-db-secret
       valuesKey: postgresql.auth.database
       targetPath: postgresql.auth.database
     - kind: Secret
-      name: prefect-secret
+      name: prefect-db-secret
       valuesKey: postgresql.auth.username
       targetPath: postgresql.auth.username
     - kind: Secret
-      name: prefect-secret
+      name: prefect-db-secret
       valuesKey: postgresql.auth.password
       targetPath: postgresql.auth.password
     - kind: Secret
-      name: prefect-secret
+      name: prefect-db-secret
       valuesKey: postgresql.externalHostname
       targetPath: postgresql.externalHostname
     - kind: Secret
-      name: prefect-secret
+      name: prefect-db-secret
       valuesKey: PREFECT_API_DATABASE_CONNECTION_URL
       targetPath: PREFECT_API_DATABASE_CONNECTION_URL
     - kind: Secret
-      name: prefect-secret
+      name: prefect-db-secret
       valuesKey: PREFECT_API_DATABASE_PASSWORD
       targetPath: PREFECT_API_DATABASE_PASSWORD
     - kind: Secret
-      name: prefect-secret
+      name: prefect-db-secret
       valuesKey: username
       targetPath: secret.username
     - kind: Secret
-      name: prefect-secret
+      name: prefect-db-secret
       valuesKey: password
       targetPath: secret.password
     - kind: Secret
-      name: prefect-secret
+      name: prefect-db-secret
       valuesKey: postgresql.externalHostname
       targetPath: secret.host
     - kind: Secret
-      name: prefect-secret
+      name: prefect-db-secret
       valuesKey: port
       targetPath: secret.port
     - kind: Secret
-      name: prefect-secret
+      name: prefect-db-secret
       valuesKey: postgresql.auth.database
       targetPath: secret.database
   values:
@@ -124,4 +124,4 @@ spec:
       enabled: false #https://github.com/PrefectHQ/prefect/issues/14602 until this is fixed
       useSubChart: false
       auth:
-        existingSecret: prefect-secret
+        existingSecret: prefect-db-secret

@@ -86,6 +86,21 @@ spec:
                   secretKeyRef:
                     name: mlflow-secret
                     key: MLFLOW_BACKEND_STORE_URI
+              POSTGRES_DB:
+                valueFrom:
+                  secretKeyRef:
+                    name: mlflow-db-secret
+                    key: POSTGRES_DB
+              POSTGRES_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: mlflow-db-secret
+                    key: POSTGRES_USER
+              POSTGRES_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: mlflow-db-secret
+                    key: POSTGRES_PASSWORD
               MLFLOW_DEFAULT_ARTIFACT_ROOT: /data
               MLFLOW_SERVE_ARTIFACTS: true
               MLFLOW_HOST: 0.0.0.0

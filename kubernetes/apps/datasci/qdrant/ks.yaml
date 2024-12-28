@@ -10,8 +10,6 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: rook-ceph-cluster
-      namespace: storage
     - name: volsync
       namespace: volsync
   path: ./kubernetes/apps/datasci/qdrant/app

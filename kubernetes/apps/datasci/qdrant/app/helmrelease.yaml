@@ -7,11 +7,11 @@ spec:
   interval: 30m
   chart:
     spec:
-      chart: app-template
-      version: 3.6.0
+      chart: qdrant
+      version: 0.7.4
       sourceRef:
         kind: HelmRepository
-        name: bjw-s
+        name: qdrant
         namespace: flux-system
   install:
     remediation:
@@ -24,70 +24,42 @@ spec:
     - name: rook-ceph-cluster
       namespace: rook-ceph
   values:
-    defaultPodOptions:
-      securityContext:
-        fsGroup: 65534
-        runAsGroup: 65534
-        runAsUser: 65534
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
+    replicaCount: 1
 
-    controllers:
-      main:
-        annotations:
-          reloader.stakater.com/auto: "true"
-        containers:
-          main:
-            image:
-              repository: qdrant/qdrant
-              tag: v1.12.5
-            env:
-              QDRANT__SERVICE__HTTP_PORT: &port 6333
-              QDRANT__SERVICE__GRPC_PORT: &grpcPort 6334
-              QDRANT__STORAGE__STORAGE_PATH: "/data"
-            resources:
-              requests:
-                cpu: 100m
-                memory: 500Mi
-              limits:
-                memory: 4Gi
+    image:
+      repository: qdrant/qdrant
+      tag: v1.12.5
+      pullPolicy: IfNotPresent
 
     service:
-      main:
-        controller: main
-        ports:
-          http:
-            port: *port
-          grpc:
-            port: *grpcPort
-          p2p:
-            port: 6335
+      type: ClusterIP
+      port: 6333
+      grpcPort: 6334
 
     ingress:
-      main:
-        enabled: true
-        className: internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: AI
-          gethomepage.dev/name: Qdrant
-          gethomepage.dev/icon: database.png
-          gethomepage.dev/description: Vector Database
-          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-        hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                pathType: Prefix
-                service:
-                  identifier: main
-                  port: http
+      enabled: true
+      className: internal
+      annotations:
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/group: AI
+        gethomepage.dev/name: Qdrant
+        gethomepage.dev/icon: database.png
+        gethomepage.dev/description: Vector Database
+        external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+      hosts:
+        - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              pathType: Prefix
 
     persistence:
-      data:
-        enabled: true
-        type: persistentVolumeClaim
-        storageClass: ceph-block
-        accessMode: ReadWriteOnce
-        size: 10Gi
+      enabled: true
+      storageClass: ceph-block
+      accessMode: ReadWriteOnce
+      size: 10Gi
+
+    securityContext:
+      fsGroup: 65534
+      runAsGroup: 65534
+      runAsUser: 65534
+      runAsNonRoot: true

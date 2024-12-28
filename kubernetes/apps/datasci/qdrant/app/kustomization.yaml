@@ -5,7 +5,7 @@ resources:
   #- ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./pvc.yaml
-  - ../../../../templates/gatus/guarded
+  #- ../../../../templates/gatus/guarded
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

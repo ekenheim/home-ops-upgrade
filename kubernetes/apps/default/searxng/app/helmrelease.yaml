@@ -33,6 +33,7 @@ spec:
         runAsGroup: 977
         fsGroup: 977
         fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [977]
         seccompProfile: { type: RuntimeDefault }
 
     controllers:
@@ -78,6 +79,9 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
+              runAsUser: 977
+              runAsGroup: 977
+              runAsNonRoot: true
               capabilities:
                 drop:
                   - ALL

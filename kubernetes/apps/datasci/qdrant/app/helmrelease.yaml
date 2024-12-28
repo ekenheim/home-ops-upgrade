@@ -108,4 +108,4 @@ spec:
         enabled: true
         existingClaim: qdrant
         type: persistentVolumeClaim
-        subPath: qdrant-data            # Added subPath to isolate data
+        #subPath: qdrant-data            # Added subPath to isolate data

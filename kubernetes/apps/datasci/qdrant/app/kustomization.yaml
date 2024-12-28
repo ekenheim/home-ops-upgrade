@@ -4,5 +4,3 @@ kind: Kustomization
 namespace: datasci
 resources:
   - ./helmrelease.yaml
-  - ../../../../templates/volsync
-  - ../../../../templates/gatus/guarded

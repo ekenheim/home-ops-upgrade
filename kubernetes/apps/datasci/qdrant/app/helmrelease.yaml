@@ -104,8 +104,7 @@ spec:
                   port: 6333
 
     persistence:
-      data:
-        enabled: true
-        existingClaim: qdrant
+      config:
+        existingClaim: *app
         globalMounts:
           - path: /data

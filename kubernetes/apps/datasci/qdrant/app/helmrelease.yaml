@@ -40,7 +40,7 @@ spec:
             env:
               QDRANT__SERVICE__HTTP_PORT: &port 6333
               QDRANT__SERVICE__GRPC_PORT: &grpcPort 6334
-              QDRANT__STORAGE__STORAGE_PATH: "/qdrant/storage"
+              QDRANT__STORAGE__STORAGE_PATH: "/data"
             resources:
               requests:
                 cpu: 100m
@@ -107,4 +107,3 @@ spec:
         enabled: true
         existingClaim: qdrant
         type: persistentVolumeClaim
-        mountPath: /qdrant/storage

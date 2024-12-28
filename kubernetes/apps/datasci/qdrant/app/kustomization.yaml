@@ -4,6 +4,6 @@ kind: Kustomization
 namespace: datasci
 resources:
   - ./helmrelease.yaml
-  - ./pvc.yaml
+  #- ./pvc.yaml
   - ../../../../templates/volsync
   - ../../../../templates/gatus/guarded

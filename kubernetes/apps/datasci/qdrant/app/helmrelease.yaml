@@ -107,4 +107,5 @@ spec:
       data:
         enabled: true
         existingClaim: qdrant
-        type: pvc
+        globalMounts:
+          - path: /data

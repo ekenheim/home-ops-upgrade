@@ -100,4 +100,3 @@ spec:
         enabled: true
         existingClaim: qdrant
         type: persistentVolumeClaim
-        mountPath: /qdrant/storage

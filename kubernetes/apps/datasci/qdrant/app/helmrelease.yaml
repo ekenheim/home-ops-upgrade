@@ -109,4 +109,4 @@ spec:
         enabled: true
         existingClaim: *app
         globalMounts:
-          - path: /data # defaults to persistence.key
+          - path: /config

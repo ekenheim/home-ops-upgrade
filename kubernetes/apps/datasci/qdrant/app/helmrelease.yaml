@@ -52,6 +52,12 @@ spec:
                 drop:
                   - ALL
 
+    podSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+      fsGroupChangePolicy: OnRootMismatch
+
     service:
       main:
         controller: main
@@ -85,3 +91,4 @@ spec:
       data:
         enabled: true
         existingClaim: qdrant
+        mountPath: /qdrant/storage

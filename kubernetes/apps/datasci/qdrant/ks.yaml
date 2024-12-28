@@ -5,7 +5,7 @@ metadata:
   name: &app qdrant
   namespace: flux-system
 spec:
-  targetNamespace: default
+  targetNamespace: datasci
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app

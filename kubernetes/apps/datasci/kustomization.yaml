@@ -16,3 +16,4 @@ resources:
   #- ./dask/ks.yaml
   - ./ray/ks.yaml
   - ./ollama/ks.yaml
+  - ./qdrant/ks.yaml

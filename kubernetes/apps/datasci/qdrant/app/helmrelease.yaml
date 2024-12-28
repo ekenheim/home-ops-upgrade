@@ -66,15 +66,12 @@ spec:
           http:
             port: *port
             protocol: TCP
-            checksEnabled: true
           grpc:
             port: *grpcPort
             protocol: TCP
-            checksEnabled: false
           p2p:
             port: 6335
             protocol: TCP
-            checksEnabled: false
 
     ingress:
       main:
@@ -100,5 +97,4 @@ spec:
       data:
         enabled: true
         existingClaim: qdrant
-        mountPath: /qdrant/storage
-        accessModes: ["ReadWriteOnce"]
+        type: pvc

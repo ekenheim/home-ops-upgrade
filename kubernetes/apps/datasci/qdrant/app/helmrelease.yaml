@@ -54,6 +54,7 @@ spec:
                 add:
                   - CHOWN
                   - DAC_OVERRIDE
+                  - FOWNER
 
     podSecurityContext:
       runAsUser: 1000

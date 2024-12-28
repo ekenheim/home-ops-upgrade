@@ -48,8 +48,8 @@ spec:
               limits:
                 memory: 4Gi
             securityContext:
-              runAsUser: 1000
-              runAsGroup: 1000
+              runAsUser: 1001
+              runAsGroup: 1001
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
               capabilities:
@@ -63,11 +63,11 @@ spec:
                   - SETUID
 
     podSecurityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
-      fsGroup: 1000
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001
       fsGroupChangePolicy: Always
-      supplementalGroups: [1000]
+      supplementalGroups: [1001]
 
     service:
       main:

@@ -51,12 +51,15 @@ spec:
               capabilities:
                 drop:
                   - ALL
+                add:
+                  - CHOWN
+                  - DAC_OVERRIDE
 
     podSecurityContext:
       runAsUser: 1000
       runAsGroup: 1000
       fsGroup: 1000
-      fsGroupChangePolicy: OnRootMismatch
+      fsGroupChangePolicy: Always
 
     service:
       main:
@@ -97,3 +100,4 @@ spec:
         enabled: true
         existingClaim: qdrant
         type: persistentVolumeClaim
+        mountPath: /qdrant/storage

@@ -97,4 +97,4 @@ spec:
       data:
         enabled: true
         existingClaim: qdrant
-        type: pvc
+        type: persistentVolumeClaim

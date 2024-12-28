@@ -67,19 +67,10 @@ spec:
               limits:
                 memory: 2Gi
             securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
               runAsUser: 977
               runAsGroup: 977
-              runAsNonRoot: true
-              capabilities:
-                drop:
-                  - ALL
-                add:
-                  - CHOWN
-                  - SETGID
-                  - SETUID
-                  - DAC_OVERRIDE
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
 
       redis:
         pod:
@@ -153,3 +144,8 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /etc/searxng
+
+    podSecurityContext:
+      runAsUser: 977
+      runAsGroup: 977
+      fsGroup: 977

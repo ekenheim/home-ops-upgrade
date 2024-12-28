@@ -30,6 +30,14 @@ spec:
     - name: volsync
       namespace: storage
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsGroup: 65534
+        runAsUser: 65534
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+
     controllers:
       main:
         annotations:
@@ -49,40 +57,16 @@ spec:
                 memory: 500Mi
               limits:
                 memory: 4Gi
-            securityContext:
-              runAsGroup: 65534
-              runAsUser: 65534
-              runAsNonRoot: true
-              capabilities:
-                drop:
-                  - ALL
-                add:
-                  - CHOWN
-                  - DAC_OVERRIDE
-                  - FOWNER
-                  - SETGID
-                  - SETUID
-
-    podSecurityContext:
-      runAsUser: 65534
-      runAsGroup: 65534
-      fsGroup: 65534
-      fsGroupChangePolicy: "OnRootMismatch"
-      supplementalGroups: [65534]
 
     service:
       main:
-        controller: main
         ports:
           http:
             port: *port
-            protocol: TCP
           grpc:
             port: *grpcPort
-            protocol: TCP
           p2p:
             port: 6335
-            protocol: TCP
 
     ingress:
       main:
@@ -105,8 +89,8 @@ spec:
                   port: 6333
 
     persistence:
-      config:
+      data:
         enabled: true
         existingClaim: *app
         globalMounts:
-          - path: /config
+          - path: /data

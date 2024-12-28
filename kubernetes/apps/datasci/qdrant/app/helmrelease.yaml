@@ -50,10 +50,9 @@ spec:
               limits:
                 memory: 4Gi
             securityContext:
-              runAsUser: 1001
-              runAsGroup: 1001
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: false
+              runAsGroup: 65534
+              runAsUser: 65534
+              runAsNonRoot: true
               capabilities:
                 drop:
                   - ALL
@@ -65,11 +64,11 @@ spec:
                   - SETUID
 
     podSecurityContext:
-      runAsUser: 1001
-      runAsGroup: 1001
-      fsGroup: 1001
+      runAsUser: 65534
+      runAsGroup: 65534
+      fsGroup: 65534
       fsGroupChangePolicy: "OnRootMismatch"
-      supplementalGroups: [1001]
+      supplementalGroups: [65534]
 
     service:
       main:
@@ -107,6 +106,7 @@ spec:
 
     persistence:
       config:
+        enabled: true
         existingClaim: *app
         globalMounts:
-          - path: /data
+          - path: /data # defaults to persistence.key

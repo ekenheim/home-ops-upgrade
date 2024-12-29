@@ -64,3 +64,26 @@ spec:
       runAsUser: 65534
       runAsNonRoot: true
 
+    webui:
+      enabled: true
+      image:
+        repository: qdrant/qdrant-web-ui
+        tag: latest
+        pullPolicy: IfNotPresent
+      ingress:
+        enabled: true
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: AI
+          gethomepage.dev/name: Qdrant UI
+          gethomepage.dev/icon: database.png
+          gethomepage.dev/description: Vector Database UI
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+        hosts:
+          - host: "qdrant-ui.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                pathType: Prefix
+                servicePort: 80
+

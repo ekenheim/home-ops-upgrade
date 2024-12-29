@@ -46,7 +46,7 @@ spec:
         gethomepage.dev/icon: database.png
         gethomepage.dev/description: Vector Database
         external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-      hosts:
+      rules:
         - host: "qdrant.${SECRET_DOMAIN}"
           http:
             paths:

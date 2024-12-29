@@ -63,9 +63,9 @@ spec:
       storageClass: ceph-block
       accessMode: ReadWriteOnce
       size: 10Gi
-
     securityContext:
       fsGroup: 65534
       runAsGroup: 65534
       runAsUser: 65534
       runAsNonRoot: true
+

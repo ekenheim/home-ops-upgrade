@@ -48,14 +48,15 @@ spec:
         external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
       hosts:
         - host: "qdrant.${SECRET_DOMAIN}"
-          paths:
-            - path: /
-              pathType: Prefix
-              backend:
-                service:
-                  name: qdrant
-                  port:
-                    number: 6333
+          http:
+            paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                  service:
+                    name: qdrant
+                    port:
+                      number: 6333
 
     persistence:
       enabled: true

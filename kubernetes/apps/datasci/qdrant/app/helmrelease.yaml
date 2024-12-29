@@ -46,17 +46,12 @@ spec:
         gethomepage.dev/icon: database.png
         gethomepage.dev/description: Vector Database
         external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-      rules:
+      hosts:
         - host: "qdrant.${SECRET_DOMAIN}"
-          http:
-            paths:
-              - path: /
-                pathType: Prefix
-                backend:
-                  service:
-                    name: qdrant
-                    port:
-                      name: http
+          paths:
+            - path: /
+              pathType: Prefix
+              servicePort: 6333
 
     persistence:
       enabled: true

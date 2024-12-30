@@ -132,14 +132,13 @@ spec:
         scrapeInterval: 1m # Must match interval in Grafana Helm chart
         enableAdminAPI: true
         enableFeatures:
-          - auto-gomemlimit
           - memory-snapshot-on-shutdown
-          - new-service-discovery-manager
         externalLabels:
           cluster: ${CLUSTER_NAME}
         resources:
           requests:
             cpu: 100m
+            memory: 2Gi
           limits:
             memory: 2Gi
         replicaExternalLabelName: __replica__

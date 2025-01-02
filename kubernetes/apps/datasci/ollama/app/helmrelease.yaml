@@ -81,11 +81,11 @@ spec:
               WEBUI_NAME: Ollama
               WEBUI_URL: https://ollama.${SECRET_DOMAIN}
               DATA_DIR: /data
-              OLLAMA_BASE_URL: http://ollama-backend:11434
+              OLLAMA_HOST: 0.0.0.0
               #WEBUI_AUTH_TRUSTED_EMAIL_HEADER: X-authentik-email
-              AUDIO_OPENAI_API_BASE_URL: https://piper.${SECRET_DOMAIN}/v1
-              AUDIO_OPENAI_API_KEY: sk-111111111111 # fake key needed to make ui happy
-              RAG_EMBEDDING_ENGINE: ollama
+              #AUDIO_OPENAI_API_BASE_URL: https://piper.${SECRET_DOMAIN}/v1
+              #AUDIO_OPENAI_API_KEY: sk-111111111111 # fake key needed to make ui happy
+              #RAG_EMBEDDING_ENGINE: ollama
             resources:
               requests:
                 cpu: 200m
@@ -111,8 +111,6 @@ spec:
         className: external
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-        #  nginx.ingress.kubernetes.io/whitelist-source-range: |
-       #     10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
         hosts:
           - host: &host ollama.${SECRET_DOMAIN}
             paths:
@@ -124,23 +122,6 @@ spec:
           - hosts:
               - *host
             secretName: ollama-tls-external
-
-      api:
-        enabled: true
-        className: external
-        annotations:
-          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-        hosts:
-          - host: &api-host api.ollama.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: backend
-                  port: 11434
-        tls:
-          - hosts:
-              - *api-host
-            secretName: ollama-api-tls-external
 
     persistence:
       backend-config:

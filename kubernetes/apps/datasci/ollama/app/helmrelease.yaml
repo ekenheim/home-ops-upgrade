@@ -123,6 +123,23 @@ spec:
               - *host
             secretName: ollama-tls-external
 
+      api:
+        enabled: true
+        className: external
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hosts:
+          - host: &api-host api.ollama.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                service:
+                  identifier: backend
+                  port: 11434
+        tls:
+          - hosts:
+              - *api-host
+            secretName: ollama-api-tls-external
+
     persistence:
       backend-config:
         enabled: true

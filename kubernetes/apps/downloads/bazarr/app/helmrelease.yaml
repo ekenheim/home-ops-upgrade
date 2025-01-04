@@ -121,6 +121,7 @@ spec:
     persistence:
       config:
         existingClaim: *app
+        size: 1Gi
       cache:
         type: emptyDir
         globalMounts:

@@ -121,6 +121,10 @@ spec:
     persistence:
       config:
         existingClaim: *app
+      cache:
+        type: emptyDir
+        globalMounts:
+          - path: /config/cache
       data:
         type: nfs
         server: ${NAS_IP:=temp}
@@ -129,6 +133,18 @@ spec:
         - path: /data
       add-ons:
         type: emptyDir
+      tmp:
+        type: emptyDir
+      log:
+        type: emptyDir
+        globalMounts:
+          - path: /config/log
+      scripts:
+        type: configMap
+        name: bazarr-scripts
+        defaultMode: 0775
+        globalMounts:
+          - readOnly: true
     env:
       TZ: "${TIMEZONE}"
       BAZARR__INSTANCE_NAME: bazarr

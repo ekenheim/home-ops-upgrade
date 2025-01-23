@@ -8,4 +8,5 @@ resources:
   #- ./mesh-ingress.yaml
   #- ./portainer-ingress.yaml
   - ./tdarr-ingress.yaml
+  - ./supermicro-ingress.yaml
   #- ./vpn-endpoint.yaml

@@ -23,7 +23,7 @@ spec:
   values:
     image:
       repository: rayproject/ray
-      tag: 2.42.0
+      tag: 2.42.1
       pullPolicy: IfNotPresent
 
     head:

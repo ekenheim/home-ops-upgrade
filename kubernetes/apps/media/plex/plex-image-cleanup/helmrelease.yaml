@@ -29,8 +29,11 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         cronjob:
-          schedule: "30 8 * * *"
+          schedule: "@daily"
+          timeZone: &timeZone ${TIMEZONE}
+          concurrencyPolicy: Forbid
           successfulJobsHistory: 1
+          failedJobsHistory: 1
         containers:
           app:
             image:
@@ -57,9 +60,7 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
-              capabilities:
-                drop:
-                  - ALL
+              capabilities: { drop: ["ALL"] }
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -67,7 +68,6 @@ spec:
         runAsGroup: 100
         fsGroup: 100
         fsGroupChangePolicy: OnRootMismatch
-        seccompProfile: { type: RuntimeDefault }
       affinity:
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

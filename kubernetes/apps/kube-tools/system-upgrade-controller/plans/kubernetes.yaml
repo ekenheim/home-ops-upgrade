@@ -6,7 +6,7 @@ metadata:
   name: kubernetes
 spec:
   # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-  version: v1.32.2
+  version: v1.32.3
   serviceAccountName: system-upgrade
   secrets:
     - name: talos

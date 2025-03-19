@@ -37,7 +37,7 @@ spec:
           main:
             image:
               repository: ghcr.io/zwave-js/zwave-js-ui
-              tag: 9.33.0@sha256:e2febaed461f0779a394c9b43b6275638fad3d126bf2d058bdc683983cb46c56
+              tag: 10.0.2@sha256:d88be4ef460acff839f8b7f82edc12f596c4252247baeb03030834ae58d3c8a5
             env:
               TZ: ${TIMEZONE}
               ZWAVE_SERIAL_PORT: /dev/serial/by-id/usb-0658_0200-if00

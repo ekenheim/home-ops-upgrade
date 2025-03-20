@@ -108,7 +108,7 @@ jobs:
         with:
           args: >-
             get cluster
-            --path /github/workspace/default/kubernetes/apps
+            --path /github/workspace/default/kubernetes/apps/flux-system
             --enable-images
             --output yaml
             --output-file default.yaml
@@ -118,7 +118,7 @@ jobs:
         with:
           args: >-
             get cluster
-            --path /github/workspace/kubernetes/apps
+            --path /github/workspace/kubernetes/apps/flux-system
             --enable-images
             --output yaml
             --output-file pull.yaml

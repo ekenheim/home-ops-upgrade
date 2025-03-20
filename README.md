@@ -1,8 +1,5 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/logo.png" align="center" width="144px" height="144px"/>
-
-
 ### My Homelab Repository :snowflake:
 
 _... automated via [Flux](https://fluxcd.io), [Renovate](https://github.com/renovatebot/renovate) and [GitHub Actions](https://github.com/features/actions)_ 🤖
@@ -117,8 +114,7 @@ graph TD;
 
 <details>
   <summary>Click to see a high-level network diagram</summary>
-
-  <img src="https://raw.githubusercontent.com/ekenhomeirving/home-ops/main/.docs/assets/network-topology.png" align="center" alt="dns"/>
+  <!-- Network diagram removed -->
 </details>
 
 ---
@@ -209,7 +205,7 @@ Be sure to check out [kubesearch.dev](https://kubesearch.dev/) for ideas on how 
 
 ## 📜 Changelog
 
-See my _awful_ [commit history](https://github.com/ekenhome/home-ops-upgrade/commits/main)
+See my _awful_ [commit history](https://github.com/ekenheim/home-ops-upgrade/commits/main)
 
 ---
 

@@ -45,8 +45,8 @@ jobs:
         shell: bash
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          echo "::add-path::/home/linuxbrew/.linuxbrew/bin"
-          echo "::add-path::/home/linuxbrew/.linuxbrew/sbin"
+          echo "eval \"\$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)\"" >> $GITHUB_ENV
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
       - name: Setup Workflow Tools
         shell: bash

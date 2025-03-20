@@ -14,10 +14,30 @@ jobs:
   label-sync:
     name: Label Sync
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
     steps:
+      - name: Get Secrets
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            d3349f37-6ff4-406b-861a-b16101048306 > BOT_APP_ID
+            12826224-0a9e-45f2-b8bb-b1610104f8c4 > BOT_APP_PRIVATE_KEY
+
+      - name: Generate Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: "${{ env.BOT_APP_ID }}"
+          private-key: "${{ env.BOT_APP_PRIVATE_KEY }}"
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          token: "${{ steps.app-token.outputs.token }}"
           sparse-checkout: .github/labels.yaml
 
       - name: Sync Labels
@@ -25,3 +45,4 @@ jobs:
         with:
           config-file: .github/labels.yaml
           delete-other-labels: true
+          token: ${{ steps.app-token.outputs.token }}

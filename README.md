@@ -187,11 +187,7 @@ Total RAM: 32GB
 
 ## ⭐ Stargazers
 
-<div align="center">
-
-[![Star History Chart](https://api.star-history.com/svg?repos=ekenheim/home-ops-upgrade&type=Date)](https://star-history.com/#ekenheim/home-ops-upgrade&Date)
-
-</div>
+<!-- Star history chart removed due to timeout issues -->
 
 ---
 

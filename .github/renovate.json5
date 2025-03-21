@@ -4,18 +4,14 @@
     ":skipStatusChecks",
     "github>ekenheim/renovate-config",
     "github>ekenheim/renovate-config:autoMerge",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/allowedVersions.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/autoMerge.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/clusters.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/commitMessage.json5",
+    "github>ekenheim/home-ops-upgrade//.github/renovate/autoMergeDocker.json5",
     "github>ekenheim/home-ops-upgrade//.github/renovate/customManagers.json5",
     "github>ekenheim/home-ops-upgrade//.github/renovate/grafanaDashboards.json5",
     "github>ekenheim/home-ops-upgrade//.github/renovate/groups.json5",
-    "github>ekenheim/home-ops-upgrade//.github/renovate/packageRules.json5"
+    "github>ekenheim/home-ops-upgrade//.github/renovate/packageRules.json5",
   ],
   "ignorePaths": [
     "**/*.sops.*",
-    "**/.archive/**",
     "**/resources/**"
   ],
   "flux": {
@@ -30,9 +26,9 @@
   },
   "kubernetes": {
     "fileMatch": [
-      "(^|/)\\.taskfiles/.+\\.ya?ml(?:\\.j2)?$",
+      "(^|/)\\.taskfiles/.+\\.ya?ml$",
       "(^|/)ansible/.+\\.ya?ml(?:\\.j2)?$",
-      "(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"
+      "(^|/)kubernetes/.+\\.ya?ml$"
     ]
   }
 }

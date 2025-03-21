@@ -41,7 +41,7 @@ jobs:
       - name: Run flux-local test
         uses: docker://ghcr.io/allenporter/flux-local:v7.2.1
         with:
-          args: test --enable-helm --all-namespaces --path /github/workspace/kubernetes/clusters/${{ matrix.cluster }} -v
+          args: test --enable-helm --all-namespaces --path /github/workspace/kubernetes -v
 
   diff:
     if: ${{ needs.pre-job.outputs.any_changed == 'true' }}
@@ -74,8 +74,8 @@ jobs:
           args: >-
             diff ${{ matrix.resources }}
             --unified 6
-            --path /github/workspace/pull/kubernetes/clusters/${{ matrix.cluster }}
-            --path-orig /github/workspace/default/kubernetes/clusters/${{ matrix.cluster }}
+            --path /github/workspace/pull/kubernetes
+            --path-orig /github/workspace/default/kubernetes
             --strip-attrs "helm.sh/chart,checksum/config,app.kubernetes.io/version,chart"
             --limit-bytes 10000
             --all-namespaces
@@ -96,7 +96,7 @@ jobs:
 
       - name: Generate Token
         if: ${{ steps.diff.outputs.diff != '' }}
-        uses: actions/create-github-app-token@af35edadc00be37caa72ed9f3e6d5f7801bfdf09 # v1.11.7
+        uses: actions/create-github-app-token@21cfef2b496dd8ef5b904c159339626a10ad380e # v1.11.6
         id: app-token
         with:
           app-id: ${{ secrets.BOT_APP_ID }}

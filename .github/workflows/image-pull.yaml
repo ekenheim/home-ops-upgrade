@@ -51,7 +51,7 @@ jobs:
           args: >-
             get cluster
             --all-namespaces
-            --path /github/workspace/kubernetes/clusters/${{ matrix.cluster }}
+            --path /github/workspace/kubernetes
             --enable-images
             --only-images
             --output json

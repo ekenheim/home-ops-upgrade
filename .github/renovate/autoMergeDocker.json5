@@ -1,0 +1,40 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "packageRules": [
+    {
+      "description": ["Auto-merge container digests updates"],
+      "matchDatasources": ["docker"],
+      "automerge": true,
+      "automergeType": "branch",
+      "matchUpdateTypes": ["digest"],
+      "matchPackageNames": ["/bjw-s/", "/bjw-s-labs/", "/home-operations/", "/joryirving/", "buroa", "/ekenheim/"],
+      "ignoreTests": true
+    },
+    {
+      "description": "Auto-merge OCI Charts",
+      "matchDatasources": ["docker"],
+      "automerge": true,
+      "automergeType": "pr",
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchPackageNames": ["/kube-prometheus-stack/", "prefect", "reloader", "windmill"],
+      "ignoreTests": false
+    },
+    {
+      "description": "Auto-merge GitHub Releases",
+      "matchDatasources": ["github-releases"],
+      "automerge": true,
+      "automergeType": "pr",
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchPackageNames": ["/gateway-api/", "/prometheus-operator/"],
+      "ignoreTests": false
+    },
+    {
+      "description": ["Auto-merge container updates for hugo blog"],
+      "matchDatasources": ["docker"],
+      "automerge": true,
+      "automergeType": "branch",
+      "matchUpdateTypes": ["major", "minor", "patch", "digest"],
+      "matchPackageNames": ["ghcr.io/ekenheim/agency", "ghcr.io/ekenheim/bloghugo"]
+    }
+  ]
+}

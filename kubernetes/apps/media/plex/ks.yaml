@@ -25,7 +25,7 @@ spec:
     substitute:
       APP: *app
       GATUS_URL_PATH: /web/index.html
-      VOLSYNC_CAPACITY: 50Gi
+      VOLSYNC_CAPACITY: 70Gi
       VOLSYNC_CACHE_CAPACITY: 30Gi
 ---
 # yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json

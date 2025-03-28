@@ -109,11 +109,5 @@ spec:
         path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
         - path: /Downloads
-      music:
-        type: nfs
-        server: ${NAS_IP:=temp}
-        path: ${SECRET_NFS_MUSIC:=temp}
-        globalMounts:
-        - path: /Music
       incomplete:
         type: emptyDir

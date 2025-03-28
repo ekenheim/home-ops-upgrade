@@ -40,6 +40,10 @@ spec:
       databases: ["prefect"]
       password:
         type: AlphaNumeric
+    - name: "feast"
+      databases: ["feast"]
+      password:
+        type: AlphaNumeric
     - name: "atuin"
       databases: ["atuin"]
       password:

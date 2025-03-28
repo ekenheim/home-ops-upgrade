@@ -3,22 +3,19 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app pgadmin
-  namespace: flux-system
+  name: &app feast
+  namespace: &namespace datasci
 spec:
-  targetNamespace: database
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-    - name: cnpg-cluster-default
-    - name: rook-ceph-cluster
-  path: ./kubernetes/apps/database/pgadmin/app
-  prune: true
+  interval: 30m
+  path: ./kubernetes/apps/datasci/feast/app
+  prune: false
   sourceRef:
     kind: GitRepository
-    name: home-kubernetes
-  wait: false
-  interval: 30m
-  retryInterval: 1m
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
   timeout: 5m
+  wait: true

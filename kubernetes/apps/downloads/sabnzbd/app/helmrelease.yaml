@@ -112,7 +112,7 @@ spec:
       music:
         type: nfs
         server: ${NAS_IP:=temp}
-        path: ${SECRET_NFS_MUSIC:=temp}
+        path: ${SECRET_NFS_MUSIC:=/temp}
         globalMounts:
         - path: /Music
       incomplete:

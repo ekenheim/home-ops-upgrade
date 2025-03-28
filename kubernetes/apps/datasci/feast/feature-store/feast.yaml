@@ -18,7 +18,7 @@ spec:
       server:
         envFrom:
         - secretRef:
-            name: feast-secret
+            name: feast-db-secret
         env:
         - name: MPLCONFIGDIR
           value: /tmp
@@ -32,4 +32,4 @@ spec:
           store:
             type: sql
             secretRef:
-              name: feast-secret
+              name: feast-db-secret

@@ -40,34 +40,9 @@ spec:
             env:
               TZ: ${TIMEZONE}
             securityContext:
-              privileged: true
-            volumeMounts:
-              - name: dbus
-                mountPath: /run/dbus
-              - name: bluetooth
-                mountPath: /var/run/bluetooth
-        podSpec:
-          hostNetwork: true
-          volumes:
-            - name: dbus
-              hostPath:
-                path: /run/dbus
-            - name: bluetooth
-              hostPath:
-                path: /var/run/bluetooth
-          app:
-            image:
-              repository: ghcr.io/joryirving/home-assistant
-              tag: 2025.3.4@sha256:c7abdcae90a1a788f5e3a627c9fd2d232a734e36fadd0d0a602830d6f92ba78e
-            env:
-              TZ: ${TIMEZONE}
-            securityContext:
-              privileged: true  # Required for Bluetooth access
-            volumeMounts:
-              - name: dbus
-                mountPath: /run/dbus
-              - name: bluetooth
-                mountPath: /var/run/bluetooth
+              runAsUser: 0
+              runAsGroup: 0
+              fsGroup: 0
             probes:
               liveness:
                 enabled: false

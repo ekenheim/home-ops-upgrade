@@ -41,6 +41,9 @@ spec:
 
       ## connection settings
       apiConfig: "selfHostedServer"
+      selfHostedServerApiConfig:
+        apiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
+
       config:
         # -- name of prefect work pool the worker will poll
         workPool: default

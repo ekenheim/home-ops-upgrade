@@ -65,7 +65,7 @@ spec:
 
       ## connection settings
       # -- one of 'cloud' or 'server'
-      apiConfig: server
+      apiConfig: "selfHostedServer"
       # selfHostedCloudApiConfig:
       #   accountId: ""
       #   workspaceId: ""

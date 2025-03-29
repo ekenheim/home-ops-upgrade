@@ -32,7 +32,7 @@ spec:
   values:
     worker:
       # -- unique cluster identifier, if none is provided this value will be inferred at time of helm install
-      clusterUid: ""
+      clusterUid: "k8s-cluster"
 
       image:
         repository: prefecthq/prefect

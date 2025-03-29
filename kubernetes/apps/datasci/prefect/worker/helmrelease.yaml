@@ -36,12 +36,13 @@ spec:
 
       image:
         repository: prefecthq/prefect
-        tag: 2-python3.11-kubernetes
+        prefectTag: 2-python3.11-kubernetes
         debug: false
 
-      env:
-        - name: PREFECT_API_URL
-          value: http://prefect-server.datasci.svc.cluster.local:4200/api
+      ## connection settings
+      apiConfig: "selfHostedServer"
+      serverApiConfig:
+        apiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 
       ## general configuration of the agent
       config:

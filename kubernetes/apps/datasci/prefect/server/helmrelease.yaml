@@ -7,7 +7,7 @@ spec:
   chart:
     spec:
       chart: prefect-server
-      version: 2025.3.28152731
+      version: 2025.3.21180514
       sourceRef:
         kind: HelmRepository
         name: prefect
@@ -91,6 +91,11 @@ spec:
 
         - name: PREFECT_API_DATABASE_TIMEOUT
           value: "60"
+
+        - name: PREFECT_API_DATABASE_READ_ONLY
+          value: "false"
+        - name: PREFECT_API_DATABASE_CONNECT_ARGS
+          value: "{\"options\": \"-c default_transaction_read_only=off\"}"
 
       podSecurityContext:
         runAsUser: 1000

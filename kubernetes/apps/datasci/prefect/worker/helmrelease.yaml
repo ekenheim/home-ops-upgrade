@@ -36,8 +36,12 @@ spec:
 
       image:
         repository: prefecthq/prefect
-        prefectTag: 2-python3.11-kubernetes
+        tag: 2-python3.11-kubernetes
         debug: false
+
+      env:
+        - name: PREFECT_API_URL
+          value: http://prefect-server.datasci.svc.cluster.local:4200/api
 
       ## general configuration of the agent
       config:
@@ -62,11 +66,6 @@ spec:
         name:
         # -- maximum number of flow runs to start simultaneously (default: unlimited)
         limit:
-
-      ## connection settings
-      apiConfig: "selfHostedServer"
-      serverApiConfig:
-        apiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
 
       replicaCount: 1
 

@@ -52,13 +52,9 @@ spec:
         http2: true
         type: kubernetes
         installPolicy: prompt
-        # Add the API URL here instead
-        apiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
+        limit: null
 
       ## general configuration of the agent
-      # -- maximum number of flow runs to start simultaneously (default: unlimited)
-      limit:
-
       replicaCount: 1
 
       resources:

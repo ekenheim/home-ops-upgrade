@@ -17,7 +17,7 @@ spec:
   retryInterval: 2m
   sourceRef:
     kind: OCIRepository
-    name: home-kubernetes
+    name: flux-system
     namespace: flux-system
   targetNamespace: kube-tools
   timeout: 5m
@@ -47,7 +47,7 @@ spec:
   retryInterval: 2m
   sourceRef:
     kind: OCIRepository
-    name: home-kubernetes
+    name: flux-system
     namespace: flux-system
   targetNamespace: kube-tools
   timeout: 5m

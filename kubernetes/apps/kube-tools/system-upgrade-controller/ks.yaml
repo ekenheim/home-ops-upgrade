@@ -16,8 +16,8 @@ spec:
   prune: true
   retryInterval: 2m
   sourceRef:
-    kind: GitRepository
-    name: flux-system
+    kind: OCIRepository
+    name: home-kubernetes
     namespace: flux-system
   targetNamespace: kube-tools
   timeout: 5m
@@ -46,8 +46,8 @@ spec:
   prune: true
   retryInterval: 2m
   sourceRef:
-    kind: GitRepository
-    name: flux-system
+    kind: OCIRepository
+    name: home-kubernetes
     namespace: flux-system
   targetNamespace: kube-tools
   timeout: 5m

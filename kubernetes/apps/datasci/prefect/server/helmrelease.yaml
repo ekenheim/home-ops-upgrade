@@ -77,10 +77,8 @@ spec:
     server:
       image:
         repository: prefecthq/prefect
-        prefectTag: 3-python3.12-kubernetes
+        tag: 3-python3.12-kubernetes
         debug: true
-
-      prefectApiUrl: https://prefect.${SECRET_DOMAIN}/api
 
       env:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
@@ -96,6 +94,9 @@ spec:
           value: "false"
         - name: PREFECT_API_DATABASE_CONNECT_ARGS
           value: "{\"options\": \"-c default_transaction_read_only=off\"}"
+
+        - name: PREFECT_API_URL
+          value: https://prefect.${SECRET_DOMAIN}/api
 
       podSecurityContext:
         runAsUser: 1000

@@ -98,10 +98,6 @@ spec:
         - name: PREFECT_API_URL
           value: https://prefect.${SECRET_DOMAIN}/api
 
-        - name: PREFECT_SERVER_API_HOST
-          value: "0.0.0.0"  # Listen on all interfaces
-        - name: PREFECT_SERVER_API_PORT
-          value: "4200"
 
       podSecurityContext:
         runAsUser: 1000

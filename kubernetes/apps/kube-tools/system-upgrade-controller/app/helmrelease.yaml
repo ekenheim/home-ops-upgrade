@@ -5,12 +5,10 @@ kind: HelmRelease
 metadata:
   name: &app system-upgrade-controller
 spec:
-  targetNamespace: kube-tools
   interval: 1h
   chartRef:
     kind: OCIRepository
     name: app-template
-    namespace: flux-system
   install:
     remediation:
       retries: -1
@@ -22,7 +20,7 @@ spec:
     controllers:
       system-upgrade-controller:
         strategy: RollingUpdate
-        replicas: 1
+        replicas: ${REPLICAS:=1}
         containers:
           app:
             image:

@@ -64,27 +64,15 @@ spec:
         limit:
 
       ## connection settings
-      # -- one of 'cloud' or 'server'
       apiConfig: "selfHostedServer"
-      # selfHostedCloudApiConfig:
-      #   accountId: ""
-      #   workspaceId: ""
-      #   apiKeySecret:
-      #     name: prefect-api-key
-      #     key: key
-      #   cloudUrl: https://api.prefect.cloud/api
-      # selfHostedCloudApiConfig:
-      #   apiUrl: "" # (PREFECT_API_URL)
-      #   accountId: ""
-      #   workspaceId: ""
-      #   apiKeySecret:
-      #     # -- prefect API secret name
-      #     key: key
-      #   uiUrl: ""
-      serverApiConfig:
-        # -- prefect API url (PREFECT_API_URL); should be in-cluster URL if the worker is deployed in the same cluster as the API
+
+      # Remove serverApiConfig and replace with selfHostedServerConfig
+      selfHostedServerConfig:
         apiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
-        # uiUrl: http://localhost:4200
+
+      # Remove these commented sections as they're not needed
+      # selfHostedCloudApiConfig:
+      # serverApiConfig:
 
       replicaCount: 1
 

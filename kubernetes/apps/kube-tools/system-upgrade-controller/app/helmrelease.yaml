@@ -5,6 +5,7 @@ kind: HelmRelease
 metadata:
   name: &app system-upgrade-controller
 spec:
+  targetNamespace: kube-tools
   interval: 1h
   chartRef:
     kind: OCIRepository

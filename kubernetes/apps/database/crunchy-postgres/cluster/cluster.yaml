@@ -97,6 +97,10 @@ spec:
       databases: ["sonarr_main", "sonarr_log"]
       password:
         type: AlphaNumeric
+    - name: "lidarr"
+      databases: ["lidarr_main", "lidarr_log"]
+      password:
+        type: AlphaNumeric
     - name: "mlflow"
       databases: ["mlflow"]
       password:

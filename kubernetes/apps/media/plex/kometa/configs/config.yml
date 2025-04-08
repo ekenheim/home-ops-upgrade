@@ -162,18 +162,10 @@ libraries:
       assets_for_all: true
 
   Movies 4K:
-    overlays:
-      4K:
-        plex_search:
-          all:
-            resolution: 4K
-      HDR:
-        plex_search:
-          all:
-            hdr: true
     collection_files:
     - repo: Movies4k.yml
     overlay_files:
+    - repo: overlays_movies4k.yml
     - default: commonsense
       template_variables:
         vertical_offset: 37
@@ -208,8 +200,6 @@ libraries:
     operations:
       mass_content_rating_update: mdb_commonsense
       assets_for_all: true
-
-
 
 playlist_files:
 - repo: playlist.yml

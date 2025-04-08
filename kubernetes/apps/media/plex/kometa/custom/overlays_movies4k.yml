@@ -1,0 +1,9 @@
+overlays:
+  4K:
+    plex_search:
+      all:
+        resolution: 4K
+  HDR:
+    plex_search:
+      all:
+        hdr: true

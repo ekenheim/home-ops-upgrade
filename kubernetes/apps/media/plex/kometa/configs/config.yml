@@ -268,9 +268,9 @@ webhooks:
   run_end:
   delete:
 
-tautulli:
-  url: http://tautulli.media.svc.cluster.local:8181
-  apikey: <<TAUTULLI_API_KEY>>
+#tautulli:
+#  url: http://tautulli.media.svc.cluster.local:8181
+#  apikey: <<TAUTULLI_API_KEY>>
 
 radarr:
   url: http://radarr.downloads.svc.cluster.local

@@ -6,7 +6,7 @@ metadata:
 spec:
   containers:
   - name: mlflow
-    image: ghcr.io/ninerealmlabs/mlflow-server:2.21.2@sha256:b89d0869a3fd6a3512e70a89958681b0c6e1ec6a645a303a00477aae438f4941
+    image: ghcr.io/ninerealmlabs/mlflow-server:2.21.3@sha256:3da185a82cc33e919edae89b17c8c0276cff20118bf454e9dd7037ad8d1828c7
     command: ["sleep", "3600"]  # This will keep the pod running for an hour
     env:
     - name: MLFLOW_BACKEND_STORE_URI

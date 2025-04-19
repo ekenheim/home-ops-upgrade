@@ -67,9 +67,8 @@ spec:
       tls: true
     postgresql:
       enabled: false
-      secret:
-        create: true
-        port: 5432
+    secret:
+      port: 5432
   valuesFrom:
     - kind: Secret
       name: prefect-db-secret

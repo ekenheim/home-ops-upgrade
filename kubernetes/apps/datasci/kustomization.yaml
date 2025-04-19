@@ -12,8 +12,9 @@ resources:
   - ./mlflow/ks.yaml
   - ./prefect/ks.yaml
   #- ./windmill/ks.yaml
-  #- ./piper/ks.yaml
-  #- ./dask/ks.yaml
+  - ./piper/ks.yaml
+  - ./dask/ks.yaml
   - ./ray/ks.yaml
   - ./ollama/ks.yaml
   - ./qdrant/ks.yaml
+  - ./flyte/ks.yaml

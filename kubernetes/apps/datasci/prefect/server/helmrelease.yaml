@@ -28,87 +28,32 @@ spec:
           - /spec/containers/resources/limits
         target:
           kind: Pod
-  valuesFrom:
-    - kind: Secret
-      name: prefect-db-secret
-      valuesKey: postgresql.auth.database
-      targetPath: postgresql.auth.database
-    - kind: Secret
-      name: prefect-db-secret
-      valuesKey: postgresql.auth.username
-      targetPath: postgresql.auth.username
-    - kind: Secret
-      name: prefect-db-secret
-      valuesKey: postgresql.auth.password
-      targetPath: postgresql.auth.password
-    - kind: Secret
-      name: prefect-db-secret
-      valuesKey: postgresql.externalHostname
-      targetPath: postgresql.externalHostname
-    - kind: Secret
-      name: prefect-db-secret
-      valuesKey: connection-string
-      targetPath: PREFECT_API_DATABASE_CONNECTION_URL
-    - kind: Secret
-      name: prefect-db-secret
-      valuesKey: PREFECT_API_DATABASE_PASSWORD
-      targetPath: PREFECT_API_DATABASE_PASSWORD
-    - kind: Secret
-      name: prefect-db-secret
-      valuesKey: username
-      targetPath: secret.username
-    - kind: Secret
-      name: prefect-db-secret
-      valuesKey: password
-      targetPath: secret.password
-    - kind: Secret
-      name: prefect-db-secret
-      valuesKey: postgresql.externalHostname
-      targetPath: secret.host
-    - kind: Secret
-      name: prefect-db-secret
-      valuesKey: port
-      targetPath: secret.port
-    - kind: Secret
-      name: prefect-db-secret
-      valuesKey: postgresql.auth.database
-      targetPath: secret.database
   values:
+    global:
+      prefect:
+        image:
+          repository: prefecthq/prefect
+          prefectTag: 3-python3.12-kubernetes
     server:
-      image:
-        repository: prefecthq/prefect
-        prefectTag: 3-python3.12-kubernetes
-        debug: true
-
+      debug: true
       uiConfig:
         enabled: true
         prefectUiApiUrl: "https://prefect.${SECRET_DOMAIN}/api"
-
       env:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START
           value: "True"
-
-        - name: PREFECT_API_DATABASE_CONNECTION_TIMEOUT
-          value: "60"
-
-        - name: PREFECT_API_DATABASE_TIMEOUT
-          value: "60"
-
       podSecurityContext:
         runAsUser: 1000
         runAsNonRoot: true
         fsGroup: 1002
-
       containerSecurityContext:
         runAsUser: 1000
         runAsNonRoot: true
         readOnlyRootFilesystem: true
         allowPrivilegeEscalation: false
-
     service:
       type: ClusterIP
       port: 4200
-
     ingress:
       enabled: true
       className: internal
@@ -120,9 +65,25 @@ spec:
         nginx.ingress.kubernetes.io/whitelist-source-range: |
           10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
       tls: true
-
     postgresql:
-      enabled: false #https://github.com/PrefectHQ/prefect/issues/14602 until this is fixed
-      useSubChart: false
-      auth:
-        existingSecret: prefect-db-secret
+      enabled: false
+      secret:
+        create: true
+        port: 5432
+  valuesFrom:
+    - kind: Secret
+      name: prefect-db-secret
+      valuesKey: postgresql.auth.database
+      targetPath: secret.database
+    - kind: Secret
+      name: prefect-db-secret
+      valuesKey: postgresql.auth.username
+      targetPath: secret.username
+    - kind: Secret
+      name: prefect-db-secret
+      valuesKey: postgresql.auth.password
+      targetPath: secret.password
+    - kind: Secret
+      name: prefect-db-secret
+      valuesKey: postgresql.externalHostname
+      targetPath: secret.host

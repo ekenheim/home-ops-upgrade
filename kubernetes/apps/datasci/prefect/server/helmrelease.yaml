@@ -80,7 +80,9 @@ spec:
         prefectTag: 3-python3.12-kubernetes
         debug: true
 
-      prefectApiUrl: https://prefect.${SECRET_DOMAIN}/api
+      uiConfig:
+        enabled: true
+        prefectUiApiUrl: "https://prefect.${SECRET_DOMAIN}/api"
 
       env:
         - name: PREFECT_API_DATABASE_MIGRATE_ON_START

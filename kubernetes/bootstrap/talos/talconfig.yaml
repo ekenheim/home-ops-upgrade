@@ -106,7 +106,7 @@ nodes:
   - hostname: "worker3"
     ipAddress: "192.168.50.155"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/installer/1980e003acd04ee13e0812adc032e4d65cfd298fa0bf5ee9611fd2258a70b6e3:v1.8.2
+    talosImageURL: factory.talos.dev/installer/3f399a21b708f704ba780927f691c1c14809a2f57ab285e8ed7eb9575cb1fd98:v1.9.5
     controlPlane: false
     networkInterfaces:
       - deviceSelector:

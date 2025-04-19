@@ -109,7 +109,7 @@ spec:
       databases: ["mydb", "umami"]
       password:
         type: AlphaNumeric
-    - name: "windmills"
+    - name: "windmill"
       databases: ["windmill"]
       password:
         type: AlphaNumeric

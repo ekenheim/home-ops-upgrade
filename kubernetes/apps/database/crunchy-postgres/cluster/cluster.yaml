@@ -36,6 +36,10 @@ spec:
             matchLabels:
               postgres-operator.crunchydata.com/data: postgres
   users:
+    - name: "prefect"
+      databases: ["prefect"]
+      password:
+        type: AlphaNumeric
     - name: "atuin"
       databases: ["atuin"]
       password:

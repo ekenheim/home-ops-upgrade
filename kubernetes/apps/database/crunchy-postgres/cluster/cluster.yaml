@@ -54,6 +54,10 @@ spec:
       password:
         type: AlphaNumeric
     # Applications
+    - name: "prefect"
+      databases: ["prefect"]
+      password:
+        type: AlphaNumeric
     - name: "atuin"
       databases: ["atuin"]
       password:
@@ -102,10 +106,6 @@ spec:
       databases: ["sonarr_main", "sonarr_log"]
       password:
         type: AlphaNumeric
-    #- name: "lidarr"
-    #  databases: ["lidarr_main", "lidarr_log"]
-    #  password:
-    #    type: AlphaNumeric
     - name: "mlflow"
       databases: ["mlflow"]
       password:

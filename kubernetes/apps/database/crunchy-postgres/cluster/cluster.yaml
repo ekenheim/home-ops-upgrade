@@ -10,12 +10,23 @@ spec:
       crunchy-userinit.ramblurr.github.com/enabled: "true"
       crunchy-userinit.ramblurr.github.com/superuser: &superuser "postgres"
   postgresVersion: 16
+  monitoring:
+    pgmonitor:
+      exporter:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64M
+          limits:
+            memory: 512M
   patroni: # turn on sync writes to at least 1 other replica
     dynamicConfiguration:
       synchronous_mode: true
       postgresql:
+        max_wal_size: 5GB
         synchronous_commit: "on"
-        jit: on
+        parameters:
+          max_connections: 500
   instances:
     - name: postgres
       metadata:
@@ -36,6 +47,13 @@ spec:
             matchLabels:
               postgres-operator.crunchydata.com/data: postgres
   users:
+    # Superuser
+    - name: "postgres"
+      databases: ["postgres"]
+      options: "SUPERUSER"
+      password:
+        type: AlphaNumeric
+    # Applications
     - name: "prefect"
       databases: ["prefect"]
       password:
@@ -62,12 +80,6 @@ spec:
         type: AlphaNumeric
     - name: "paperless"
       databases: ["paperless"]
-      password:
-        type: AlphaNumeric
-    - name: "postgres"
-      databases:
-        - postgres
-      options: SUPERUSER
       password:
         type: AlphaNumeric
     - name: "prowlarr"

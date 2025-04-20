@@ -54,10 +54,6 @@ spec:
       password:
         type: AlphaNumeric
     # Applications
-    - name: "prefect"
-      databases: ["prefect"]
-      password:
-        type: AlphaNumeric
     - name: "atuin"
       databases: ["atuin"]
       password:

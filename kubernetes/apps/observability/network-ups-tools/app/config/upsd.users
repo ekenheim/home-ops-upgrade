@@ -1,3 +1,5 @@
-[monuser]
-  password = secret
-  upsmon master
+[admin]
+password = "admin"
+actions = SET
+instcmds = ALL
+upsmon master

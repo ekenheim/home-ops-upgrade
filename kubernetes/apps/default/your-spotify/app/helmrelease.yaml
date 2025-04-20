@@ -1,0 +1,127 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/common-3.1.0/charts/library/common/values.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app your-spotify
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      server:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: yooooomi/your_spotify_server
+              tag: 1.13.0@sha256:5024b3d369788c12cb0a0f1ba2cb636ed64950202b4d1a364bd4a0a4c841eb66
+            env:
+              TIMEZONE: Australia/Sydney
+              API_ENDPOINT: &endpoint https://spotify.goyangi.cloud/api
+              CLIENT_ENDPOINT: https://spotify.goyangi.cloud
+              MONGO_ENDPOINT: mongodb://your-spotify-mongodb:27017/your_spotify # mongo sucks
+              PORT: &port 8080
+            envFrom:
+              - secretRef:
+                  name: your-spotify-secret
+            probes: &probes
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+              startup:
+                enabled: true
+            securityContext: &securityContext
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities: { drop: [ 'ALL' ] }
+            resources:
+              requests:
+                cpu: 10m
+                memory: 500Mi
+      web:
+        containers:
+          app:
+            image:
+              repository: yooooomi/your_spotify_client
+              tag: 1.13.0@sha256:1da7816f1c45a917f0b5ccc5fc8f04fe3c9d874352ba3206f4ea6bb0891930a7
+            env:
+              API_ENDPOINT: *endpoint
+            probes: *probes
+            securityContext: *securityContext
+      mongodb: # mongo still sucks
+        type: statefulset
+        statefulset:
+          podManagementPolicy: OrderedReady
+        containers:
+          app:
+            image:
+              repository: docker.io/library/mongo
+              tag: 6.0.4-focal
+            probes: *probes
+    service:
+      server:
+        controller: server
+        primary: true
+        ports:
+          http:
+            port: *port
+      web:
+        controller: web
+        ports:
+          http:
+            port: &webport 3000
+      mongodb:
+        controller: mongodb
+        ports:
+          http:
+            port: 27017
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.goyangi.cloud"
+          - spotify.goyangi.cloud
+        parentRefs:
+          - name: external
+            namespace: kube-system
+            sectionName: https
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: "/api"
+            filters:
+              - type: URLRewrite
+                urlRewrite:
+                  path:
+                    type: ReplacePrefixMatch
+                    replacePrefixMatch: "/"
+            backendRefs:
+              - name: server
+                port: *port
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: "/"
+            backendRefs:
+              - name: web
+                port: *webport
+    persistence:
+      configs:
+        existingClaim: *app
+        advancedMounts:
+          mongodb:
+            app:
+              - path: /data/db

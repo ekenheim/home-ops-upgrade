@@ -1,121 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: flyte
-  namespace: flyte
 spec:
-  interval: 5m
+  interval: 30m
   chart:
     spec:
-      chart: flyte
-      version: 1.1.0
+      chart: flyte-binary
+      version: v1.15.0
       sourceRef:
         kind: HelmRepository
-        name: flyte
+        name: flyteorg
         namespace: flux-system
-  values:
-    # Database configuration
-    postgresql:
-      enabled: true
-      auth:
-        username: flyte
-        database: flyte
-        existingSecret: flyte-db-secret
-      persistence:
-        enabled: true
-        size: 20Gi
-        storageClass: ceph-rbd
-
-    # Core Flyte configuration
-    configmap:
-      admin:
-        host: flyte.${SECRET_DOMAIN}
-        insecure: false
-        useAuth: true
-        storage:
-          type: minio
-          connection:
-            endpoint: http://minio.minio.svc.cluster.local:9000
-            accessKeySecret: flyte-minio-secret
-            accessKeySecretKey: accesskey
-            secretKeySecret: flyte-minio-secret
-            secretKeySecretKey: secretkey
-            region: us-east-1
-            secure: false
-            bucket: flyte
-
-    # Authentication configuration
-    auth:
-      enabled: true
-      type: oauth2
-      oauth2:
-        clientId: flyte
-        clientSecret:
-          name: flyte-oauth-secret
-          key: client-secret
-        scopes:
-          - openid
-          - profile
-          - email
-        authServerUrl: https://sso.${SECRET_DOMAIN}
-        tokenUrl: https://sso.${SECRET_DOMAIN}/application/o/token/
-        userInfoUrl: https://sso.${SECRET_DOMAIN}/application/o/userinfo/
-        redirectUrl: https://flyte.${SECRET_DOMAIN}/oauth2/callback
-
-    # Ingress configuration
-    ingress:
-      enabled: true
-      className: external
-      annotations:
-        cert-manager.io/cluster-issuer: letsencrypt-prod
-        gethomepage.dev/enabled: "true"
-        gethomepage.dev/icon: flyte.png
-        gethomepage.dev/name: Flyte
-        gethomepage.dev/group: Data Science
-        gethomepage.dev/description: Workflow Automation Platform
-      hosts:
-        - host: flyte.${SECRET_DOMAIN}
-          paths:
-            - path: /
-              pathType: Prefix
-      tls:
-        - secretName: flyte-tls
-          hosts:
-            - flyte.${SECRET_DOMAIN}
-
-    # Resource configurations
-    resources:
-      admin:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
-      console:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
-      datacatalog:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
-
-    # Storage configuration
-    storage:
-      type: minio
-      connection:
-        endpoint: http://minio.minio.svc.cluster.local:9000
-        accessKeySecret: flyte-minio-secret
-        accessKeySecretKey: accesskey
-        secretKeySecret: flyte-minio-secret
-        secretKeySecretKey: secretkey
-        region: us-east-1
-        secure: false
-        bucket: flyte
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  valuesFrom:
+    - kind: Secret
+      name: flyte-secret
+      valuesKey: values.yaml

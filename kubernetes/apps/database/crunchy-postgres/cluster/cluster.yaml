@@ -21,7 +21,7 @@ spec:
       metadata:
         labels:
           app.kubernetes.io/name: crunchy-postgres
-      replicas: &replica 4
+      replicas: &replica 1
       dataVolumeClaimSpec:
         storageClassName: local-hostpath
         accessModes: ["ReadWriteOnce"]
@@ -36,10 +36,6 @@ spec:
             matchLabels:
               postgres-operator.crunchydata.com/data: postgres
   users:
-    - name: "prefect"
-      databases: ["prefect"]
-      password:
-        type: AlphaNumeric
     - name: "atuin"
       databases: ["atuin"]
       password:

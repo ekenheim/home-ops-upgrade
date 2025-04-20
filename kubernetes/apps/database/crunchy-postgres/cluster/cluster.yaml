@@ -65,8 +65,9 @@ spec:
       password:
         type: AlphaNumeric
     - name: "postgres"
-      databases: ["postgres"]
-      options: "SUPERUSER"
+      databases:
+        - postgres
+      options: SUPERUSER
       password:
         type: AlphaNumeric
     - name: "prowlarr"

@@ -27,7 +27,7 @@ spec:
       namespace: rook-ceph
     - name: volsync
       namespace: storage
-    - name: ghost-mariadb
+    - name: mlblog-mariadb
       namespace: blog
   values:
     controllers:
@@ -71,7 +71,7 @@ spec:
                   port: http
         tls:
           - hosts:
-              - *host
+              - blog.${SECRET_DOMAIN}
     persistence:
       content:
         enabled: true

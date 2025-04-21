@@ -26,7 +26,7 @@ spec:
   values:
     image:
       repository: tccr.io/truecharts/strapi
-      tag: 4.20.1
+      tag: 16.2.2
 
     env:
       TZ: "${TIMEZONE}"

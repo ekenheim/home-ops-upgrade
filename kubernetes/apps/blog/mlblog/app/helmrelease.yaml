@@ -1,0 +1,80 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mlblog
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.7.3
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: volsync
+      namespace: storage
+    - name: ghost-mariadb
+      namespace: blog
+  values:
+    controllers:
+      mlblog:
+        containers:
+          app:
+            image:
+              repository: ghost
+              tag: 5.117.0
+            env:
+              TZ: "Stockholm/Europe"
+              url: "https://blog.${SECRET_DOMAIN}"
+              database__client: mysql
+              database__connection__host: mlblog-mariadb.blog.svc.cluster.local
+              database__connection__user: mlblog
+              database__connection__database: mlblog
+              NODE_ENV: production
+            envFrom:
+              - secretRef:
+                  name: mlblog-secret
+    service:
+      app:
+        controller: mlblog
+        ports:
+          http:
+            port: 2368
+    ingress:
+      app:
+        className: external
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_SECONDARY_DOMAIN}
+          nginx.ingress.kubernetes.io/configuration-snippet: |
+            more_set_headers "Content-Security-Policy: default-src 'self' 'unsafe-inline' data:; connect-src 'self' ninerealmlabs.com *.ninerealmlabs.com umami.${SECRET_DOMAIN}; img-src *; font-src 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ninerealmlabs.com *.ninerealmlabs.com umami.${SECRET_DOMAIN}; style-src 'self' 'unsafe-inline'";
+        hosts:
+          - host: &host "${SECRET_SECONDARY_DOMAIN}"
+            paths:
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+              - *host
+    persistence:
+      content:
+        enabled: true
+        globalMounts:
+          - path: /var/lib/ghost/content
+        existingClaim: ghost

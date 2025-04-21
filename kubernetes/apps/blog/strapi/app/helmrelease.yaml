@@ -48,22 +48,30 @@ spec:
     ingress:
       main:
         enabled: true
-        ingressClassName: nginx
+        ingressClassName: external
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-production
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
           nginx.ingress.kubernetes.io/proxy-body-size: "0"
           nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
           nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
           nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+          nginx.ingress.kubernetes.io/configuration-snippet: |
+            more_set_headers "Content-Security-Policy: default-src 'self' 'unsafe-inline' data:; connect-src 'self' umami.${SECRET_DOMAIN}; img-src *; font-src 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' umami.${SECRET_DOMAIN}; style-src 'self' 'unsafe-inline'";
         hosts:
           - host: &host "strapi.${SECRET_DOMAIN}"
             paths:
               - path: /
                 pathType: Prefix
+                service:
+                  identifier: app
+                  port: http
         tls:
           - hosts:
               - *host
             secretName: strapi-tls
+      middlewares:
+        enabled: false
 
     persistence:
       data:

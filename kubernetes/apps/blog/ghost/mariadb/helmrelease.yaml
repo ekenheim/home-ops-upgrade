@@ -23,6 +23,8 @@ spec:
     primary:
       persistence:
         existingClaim: ghost-mariadb
+        size: 5Gi
+        storageClass: ceph-block
     resources:
       requests:
         cpu: 10m

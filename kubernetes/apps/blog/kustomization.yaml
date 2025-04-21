@@ -6,8 +6,8 @@ resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
   # Flux-Kustomizations
-  - ./hugo/ks.yaml
+  #- ./hugo/ks.yaml
   - ./ghost/ks.yaml
   #- ./agency/ks.yaml
   - ./umami/ks.yaml
-  - ./strapi/ks.yaml
+  #- ./strapi/ks.yaml

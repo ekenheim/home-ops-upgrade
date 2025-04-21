@@ -28,26 +28,6 @@ spec:
       repository: tccr.io/truecharts/strapi
       tag: 16.2.2
 
-    ingressMiddlewares:
-      enabled: false
-
-    env:
-      TZ: "${TIMEZONE}"
-      NODE_ENV: production
-      STRAPI_TELEMETRY_DISABLED: "true"
-
-    envFrom:
-      - secretRef:
-          name: strapi-secret
-      - secretRef:
-          name: strapi-db-secret
-
-    service:
-      main:
-        ports:
-          http:
-            port: 1337
-
     ingress:
       main:
         enabled: true
@@ -73,8 +53,23 @@ spec:
           - hosts:
               - *host
             secretName: strapi-tls
-      middlewares:
-        enabled: false
+
+    env:
+      TZ: "${TIMEZONE}"
+      NODE_ENV: production
+      STRAPI_TELEMETRY_DISABLED: "true"
+
+    envFrom:
+      - secretRef:
+          name: strapi-secret
+      - secretRef:
+          name: strapi-db-secret
+
+    service:
+      main:
+        ports:
+          http:
+            port: 1337
 
     persistence:
       data:

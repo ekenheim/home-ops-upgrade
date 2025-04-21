@@ -1,0 +1,84 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: strapi
+  namespace: blog
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: strapi
+      version: 1.0.0
+      sourceRef:
+        kind: HelmRepository
+        name: truecharts
+        namespace: flux-system
+  maxHistory: 3
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    image:
+      repository: tccr.io/truecharts/strapi
+      tag: 4.20.1
+
+    env:
+      TZ: "${TIMEZONE}"
+      NODE_ENV: production
+      STRAPI_TELEMETRY_DISABLED: "true"
+
+    envFrom:
+      - secretRef:
+          name: strapi-secret
+      - secretRef:
+          name: strapi-db-secret
+
+    service:
+      main:
+        ports:
+          http:
+            port: 1337
+
+    ingress:
+      main:
+        enabled: true
+        ingressClassName: nginx
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt-production
+        hosts:
+          - host: &host "strapi.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - hosts:
+              - *host
+            secretName: strapi-tls
+
+    persistence:
+      data:
+        enabled: true
+        type: pvc
+        storageClass: ceph-block
+        accessMode: ReadWriteOnce
+        size: 10Gi
+        mountPath: /opt/app/public/uploads
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 250Mi
+      limits:
+        memory: 2Gi
+
+    podSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+      fsGroupChangePolicy: "OnRootMismatch"

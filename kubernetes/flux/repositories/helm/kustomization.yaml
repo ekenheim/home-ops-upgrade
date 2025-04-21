@@ -45,4 +45,5 @@ resources:
   - ./weave-gitops.yaml
   - ./windmill.yaml
   - ./qdrant.yaml
+  - ./truecharts.yaml
   - ./nvidia-charts.yaml

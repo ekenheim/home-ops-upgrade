@@ -118,6 +118,10 @@ spec:
       databases: ["windmill"]
       password:
         type: AlphaNumeric
+    - name: "strapi"
+      databases: ["strapi"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

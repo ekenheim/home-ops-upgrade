@@ -34,17 +34,11 @@ spec:
         env:
           - name: UNIFI_HOST
             value: https://192.168.1.1
-          - name: UNIFI_EXTERNAL_CONTROLLER
-            value: "false"
           - name: UNIFI_API_KEY
             valueFrom:
               secretKeyRef:
                 name: &secret external-dns-unifi-secret
                 key: api-key
-          - name: UNIFI_SKIP_TLS_VERIFY
-            value: "true"
-          - name: UNIFI_SITE
-            value: "default"
           - name: LOG_LEVEL
             value: *logLevel
         livenessProbe:
@@ -60,8 +54,7 @@ spec:
           initialDelaySeconds: 10
           timeoutSeconds: 5
     extraArgs:
-      - --ignore-ingress-tls-spec
-      - --webhook-provider-url=http://localhost:8888
+        - --ignore-ingress-tls-spec
     policy: sync
     sources: ["ingress", "service"]
     txtOwnerId: main
@@ -69,5 +62,5 @@ spec:
     domainFilters: ["${SECRET_DOMAIN}", "${SECRET_SECONDARY_DOMAIN}"]
     serviceMonitor:
       enabled: true
-    podAnnotations:
-      secret.reloader.stakater.com/reload: *secret
+podAnnotations:
+  secret.reloader.stakater.com/reload: *secret

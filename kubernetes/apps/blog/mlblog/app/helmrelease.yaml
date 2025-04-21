@@ -77,4 +77,4 @@ spec:
         enabled: true
         globalMounts:
           - path: /var/lib/ghost/content
-        existingClaim: ghost
+        existingClaim: mlblog

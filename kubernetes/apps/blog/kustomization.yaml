@@ -10,4 +10,5 @@ resources:
   - ./ghost/ks.yaml
   #- ./agency/ks.yaml
   - ./umami/ks.yaml
-  #- ./strapi/ks.yaml
+  - ./mlblog/ks.yaml
+  - ./strapi/ks.yaml

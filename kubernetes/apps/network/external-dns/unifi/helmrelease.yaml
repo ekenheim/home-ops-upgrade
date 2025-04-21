@@ -24,7 +24,7 @@ spec:
       retries: 3
   values:
     fullnameOverride: *app
-    # logLevel: debug
+    logLevel: &logLevel debug
     provider:
       name: webhook
       webhook:
@@ -34,19 +34,19 @@ spec:
         env:
           - name: UNIFI_HOST
             value: https://192.168.1.1
+          - name: UNIFI_EXTERNAL_CONTROLLER
+            value: "false"
           - name: UNIFI_API_KEY
             valueFrom:
               secretKeyRef:
                 name: &secret external-dns-unifi-secret
                 key: api-key
-          - name: UNIFI_EXTERNAL_CONTROLLER
-            value: "false"
           - name: UNIFI_SKIP_TLS_VERIFY
             value: "true"
           - name: UNIFI_SITE
             value: "default"
           - name: LOG_LEVEL
-            value: "info"
+            value: *logLevel
         livenessProbe:
           httpGet:
             path: /healthz
@@ -61,12 +61,12 @@ spec:
           timeoutSeconds: 5
     extraArgs:
       - --ignore-ingress-tls-spec
-      - --webhook-provider-url=http://external-dns-unifi:8888
+      - --webhook-provider-url=http://localhost:8888
     policy: sync
     sources: ["ingress", "service"]
     txtOwnerId: main
     txtPrefix: k8s.main.
-    domainFilters: ["${SECRET_DOMAIN}"]
+    domainFilters: ["${SECRET_DOMAIN}", "${SECRET_SECONDARY_DOMAIN}"]
     serviceMonitor:
       enabled: true
     podAnnotations:

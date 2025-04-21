@@ -15,7 +15,7 @@ spec:
   dependsOn:
     - name: external-secrets-stores
       namespace: kube-system
-  path: ./kubernetes/main/apps/blog/ghost/mariadb
+  path: ./kubernetes/apps/blog/ghost/mariadb
   prune: true
   sourceRef:
     kind: GitRepository
@@ -42,7 +42,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/main/apps/blog/ghost/app
+  path: ./kubernetes/apps/blog/ghost/app
   prune: true
   sourceRef:
     kind: GitRepository

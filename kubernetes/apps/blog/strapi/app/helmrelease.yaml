@@ -28,6 +28,9 @@ spec:
       repository: tccr.io/truecharts/strapi
       tag: 16.2.2
 
+    ingressMiddlewares:
+      enabled: false
+
     env:
       TZ: "${TIMEZONE}"
       NODE_ENV: production

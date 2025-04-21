@@ -12,9 +12,6 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *appdb
-  dependsOn:
-    - name: external-secrets-stores
-      namespace: kube-system
   path: ./kubernetes/apps/blog/ghost/mariadb
   prune: true
   sourceRef:

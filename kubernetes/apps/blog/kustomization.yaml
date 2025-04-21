@@ -9,4 +9,4 @@ resources:
   - ./hugo/ks.yaml
   - ./ghost/ks.yaml
   #- ./agency/ks.yaml
-  #- ./umami/ks.yaml
+  - ./umami/ks.yaml

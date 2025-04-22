@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: ghost
+  name: &app ghost
 spec:
   interval: 30m
   chart:
@@ -50,7 +50,7 @@ spec:
                   name: ghost-secret
     service:
       app:
-        controller: ghost
+        controller: *app
         ports:
           http:
             port: 2368
@@ -59,8 +59,6 @@ spec:
         className: external
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_SECONDARY_DOMAIN}
-          nginx.ingress.kubernetes.io/configuration-snippet: |
-            more_set_headers "Content-Security-Policy: default-src 'self' 'unsafe-inline' data:; connect-src 'self' ninerealmlabs.com *.ninerealmlabs.com umami.${SECRET_DOMAIN}; img-src *; font-src 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ninerealmlabs.com *.ninerealmlabs.com umami.${SECRET_DOMAIN}; style-src 'self' 'unsafe-inline'";
         hosts:
           - host: &host "${SECRET_SECONDARY_DOMAIN}"
             paths:

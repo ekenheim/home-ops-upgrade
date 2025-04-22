@@ -50,7 +50,7 @@ spec:
                   name: mlblog-secret
     service:
       app:
-        controller: mlblog
+        controller: *app
         ports:
           http:
             port: 2368
@@ -62,7 +62,7 @@ spec:
           nginx.ingress.kubernetes.io/configuration-snippet: |
             more_set_headers "Content-Security-Policy: default-src 'self' 'unsafe-inline' data:; connect-src 'self' ninerealmlabs.com *.ninerealmlabs.com umami.${SECRET_DOMAIN}; img-src *; font-src 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ninerealmlabs.com *.ninerealmlabs.com umami.${SECRET_DOMAIN}; style-src 'self' 'unsafe-inline'";
         hosts:
-          - host: blog.${SECRET_DOMAIN}
+          - host: &host "blog.${SECRET_DOMAIN}"
             paths:
               - path: /
                 pathType: Prefix
@@ -71,7 +71,7 @@ spec:
                   port: http
         tls:
           - hosts:
-              - blog.${SECRET_DOMAIN}
+              - *host
     persistence:
       content:
         enabled: true

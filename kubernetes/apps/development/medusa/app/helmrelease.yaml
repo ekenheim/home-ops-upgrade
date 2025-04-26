@@ -28,6 +28,29 @@ spec:
             fsGroup: 1000
             runAsNonRoot: true
             fsGroupChangePolicy: OnRootMismatch
+        initContainers:
+          migrate-db:
+            image:
+              repository: medusajs/medusa-starter-default
+              tag: latest
+              pullPolicy: IfNotPresent
+            command: ["sh", "-c", "medusa db:migrate"]
+            envFrom:
+              - secretRef:
+                  name: medusa-secret
+              - secretRef:
+                  name: medusa-db-secret
+          create-admin-user:
+            image:
+              repository: medusajs/medusa-starter-default
+              tag: latest
+              pullPolicy: IfNotPresent
+            command: ["sh", "-c", "medusa user -e admin@medusajs.com -p supersecret || true"]
+            envFrom:
+              - secretRef:
+                  name: medusa-secret
+              - secretRef:
+                  name: medusa-db-secret
         containers:
           app:
             image:
@@ -38,7 +61,6 @@ spec:
               - /bin/sh
               - -c
               - |
-                medusa db:migrate
                 medusa start
             env:
               NODE_ENV: production

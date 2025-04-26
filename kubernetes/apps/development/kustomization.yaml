@@ -6,6 +6,9 @@ resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
   # Flux-Kustomizations
+  - ./umami/ks.yaml
+  - ./medusa/ks.yaml
+  #- ./meilisearch/ks.yaml
   #- ./backstage/ks.yaml
   #- ./atlantis/ks.yaml
   #- ./code-server/ks.yaml

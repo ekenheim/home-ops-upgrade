@@ -54,6 +54,9 @@ spec:
               - *host
             secretName: strapi-tls
         middleware: false
+        chain: false
+        redirect: false
+        stripPrefix: false
 
     env:
       TZ: "${TIMEZONE}"

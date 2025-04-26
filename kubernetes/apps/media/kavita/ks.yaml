@@ -6,6 +6,7 @@ metadata:
   name: &app kavita
   namespace: flux-system
 spec:
+  dependsOn: []
   targetNamespace: media
   commonMetadata:
     labels:

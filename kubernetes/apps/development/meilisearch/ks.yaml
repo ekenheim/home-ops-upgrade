@@ -5,6 +5,7 @@ kind: Kustomization
 metadata:
   name: meilisearch
 spec:
+  dependsOn: []
   targetNamespace: development
   commonMetadata:
     labels:

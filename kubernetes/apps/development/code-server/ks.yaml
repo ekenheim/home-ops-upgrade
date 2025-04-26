@@ -5,6 +5,7 @@ metadata:
   name: &app code-server
   namespace: &namespace development
 spec:
+  dependsOn: []
   targetNamespace: *namespace
   commonMetadata:
     labels:

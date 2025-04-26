@@ -5,14 +5,14 @@ metadata:
   name: &app medusa
   namespace: flux-system
 spec:
-  targetNamespace: blog
+  targetNamespace: development
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: crunchy-postgres-operator-cluster
     - name: dragonfly-cluster
-  path: ./kubernetes/apps/blog/medusa/app
+  path: ./kubernetes/apps/development/medusa/app
   prune: true
   sourceRef:
     kind: GitRepository

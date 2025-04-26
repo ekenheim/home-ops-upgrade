@@ -33,8 +33,10 @@ spec:
             image:
               repository: tccr.io/truecharts/strapi
               tag: 16.2.2
-            command: ["/bin/sh"]
-            args: ["-c", "strapi start"]
+            command:
+              - /bin/sh
+              - -c
+              - strapi start
             env:
               NODE_ENV: production
               STRAPI_TELEMETRY_DISABLED: "true"

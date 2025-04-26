@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: medusa-config
+data:
+  store.json: |
+    {
+      "plugins": [
+        "medusa-fulfillment-manual",
+        "medusa-payment-manual",
+        "medusa-file-s3"
+      ],
+      "project_config": {
+        "redis_url": "redis://${REDIS_HOST}:${REDIS_PORT}",
+        "database_url": "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}",
+        "database_type": "postgres",
+        "store_cors": "https://medusa.${SECRET_DOMAIN}",
+        "admin_cors": "https://medusa.${SECRET_DOMAIN}",
+        "redis_prefix": "medusa:",
+        "database_logging": ["error", "warn"],
+        "cache_ttl": 3600,
+        "search_engine": "elasticsearch",
+        "search_engine_options": {
+          "host": "${ELASTICSEARCH_HOST}",
+          "port": "${ELASTICSEARCH_PORT}"
+        },
+        "rate_limiter": {
+          "enabled": true,
+          "max_requests": 100,
+          "window_ms": 60000
+        }
+      }
+    }

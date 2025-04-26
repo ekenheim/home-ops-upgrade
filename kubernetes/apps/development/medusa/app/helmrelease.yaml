@@ -31,7 +31,7 @@ spec:
         initContainers:
           migrate-db:
             image:
-              repository: medusajs/medusa-starter-default
+              repository: medusajs/medusa
               tag: latest
               pullPolicy: IfNotPresent
             command: ["sh", "-c", "medusa db:migrate"]
@@ -42,7 +42,7 @@ spec:
                   name: medusa-db-secret
           create-admin-user:
             image:
-              repository: medusajs/medusa-starter-default
+              repository: medusajs/medusa
               tag: latest
               pullPolicy: IfNotPresent
             command: ["sh", "-c", "medusa user -e admin@medusajs.com -p supersecret || true"]
@@ -54,7 +54,7 @@ spec:
         containers:
           app:
             image:
-              repository: medusajs/medusa-starter-default
+              repository: medusajs/medusa
               tag: latest
               pullPolicy: IfNotPresent
             command:
@@ -69,6 +69,7 @@ spec:
               DISABLE_MEDUSA_ADMIN: "false"
               MEDUSA_WORKER_MODE: "server"
               PORT: "9000"
+              MEDUSA_CONFIG_FILE: "/app/config/store.json"
             envFrom:
               - secretRef:
                   name: medusa-secret
@@ -98,6 +99,13 @@ spec:
               readOnlyRootFilesystem: true
               capabilities:
                 drop: [ALL]
+        extraVolumes:
+          - name: medusa-config
+            configMap:
+              name: medusa-config
+        extraVolumeMounts:
+          - name: medusa-config
+            mountPath: /app/config
       medusa-worker:
         strategy: Recreate
         pod:

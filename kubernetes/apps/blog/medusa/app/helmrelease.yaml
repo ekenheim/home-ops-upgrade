@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &name strapi
+  name: &name medusa
 spec:
   interval: 15m
   maxHistory: 3
@@ -19,7 +19,7 @@ spec:
     defaultPodOptions:
       automountServiceAccountToken: false
     controllers:
-      strapi:
+      medusa-server:
         strategy: Recreate
         pod:
           securityContext:
@@ -31,28 +31,82 @@ spec:
         containers:
           app:
             image:
-              repository: tccr.io/truecharts/strapi
-              tag: 16.2.2
+              repository: medusajs/medusa
+              tag: latest
             command:
               - /bin/sh
               - -c
-              - strapi start
+              - |
+                medusa db:migrate
+                medusa start
             env:
               NODE_ENV: production
-              STRAPI_TELEMETRY_DISABLED: "true"
+              MEDUSA_TELEMETRY_ENABLED: "false"
               TZ: "${TIMEZONE}"
+              DISABLE_MEDUSA_ADMIN: "false"
+              MEDUSA_WORKER_MODE: "server"
+              PORT: "9000"
             envFrom:
               - secretRef:
-                  name: strapi-secret
+                  name: medusa-secret
               - secretRef:
-                  name: strapi-db-secret
+                  name: medusa-db-secret
             probes:
               liveness:
                 enabled: true
+                path: /health
+                port: 9000
               readiness:
                 enabled: true
+                path: /health
+                port: 9000
               startup:
                 enabled: true
+                path: /health
+                port: 9000
+            resources:
+              requests:
+                cpu: 100m
+                memory: 250Mi
+              limits:
+                memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: [ALL]
+      medusa-worker:
+        strategy: Recreate
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            runAsNonRoot: true
+            fsGroupChangePolicy: OnRootMismatch
+        containers:
+          app:
+            image:
+              repository: medusajs/medusa
+              tag: latest
+            command:
+              - /bin/sh
+              - -c
+              - |
+                medusa db:migrate
+                medusa start
+            env:
+              NODE_ENV: production
+              MEDUSA_TELEMETRY_ENABLED: "false"
+              TZ: "${TIMEZONE}"
+              DISABLE_MEDUSA_ADMIN: "true"
+              MEDUSA_WORKER_MODE: "worker"
+              PORT: "9000"
+            envFrom:
+              - secretRef:
+                  name: medusa-secret
+              - secretRef:
+                  name: medusa-db-secret
             resources:
               requests:
                 cpu: 100m
@@ -66,10 +120,10 @@ spec:
                 drop: [ALL]
     service:
       app:
-        controller: strapi
+        controller: medusa-server
         ports:
           http:
-            port: 1337
+            port: 9000
     ingress:
       app:
         className: external
@@ -83,7 +137,7 @@ spec:
           nginx.ingress.kubernetes.io/configuration-snippet: |
             more_set_headers "Content-Security-Policy: default-src 'self' 'unsafe-inline' data:; connect-src 'self' umami.${SECRET_DOMAIN}; img-src *; font-src 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' umami.${SECRET_DOMAIN}; style-src 'self' 'unsafe-inline'";
         hosts:
-          - host: &host "strapi.${SECRET_DOMAIN}"
+          - host: &host "medusa.${SECRET_DOMAIN}"
             paths:
               - path: /
                 service:
@@ -92,7 +146,7 @@ spec:
         tls:
           - hosts:
               - *host
-            secretName: strapi-tls
+            secretName: medusa-tls
     persistence:
       data:
         type: persistentVolumeClaim
@@ -100,5 +154,5 @@ spec:
         accessMode: ReadWriteOnce
         size: 10Gi
         globalMounts:
-          - path: /opt/app/public/uploads
+          - path: /app/data
             readOnly: false

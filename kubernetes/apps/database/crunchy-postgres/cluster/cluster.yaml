@@ -118,8 +118,8 @@ spec:
       databases: ["windmill"]
       password:
         type: AlphaNumeric
-    - name: "strapi"
-      databases: ["strapi"]
+    - name: "medusa"
+      databases: ["medusa"]
       password:
         type: AlphaNumeric
   backups:

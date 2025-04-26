@@ -31,8 +31,9 @@ spec:
         containers:
           app:
             image:
-              repository: medusajs/medusa
+              repository: medusajs/medusa-starter-default
               tag: latest
+              pullPolicy: IfNotPresent
             command:
               - /bin/sh
               - -c
@@ -87,8 +88,9 @@ spec:
         containers:
           app:
             image:
-              repository: medusajs/medusa
+              repository: medusajs/medusa-starter-default
               tag: latest
+              pullPolicy: IfNotPresent
             command:
               - /bin/sh
               - -c

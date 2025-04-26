@@ -10,8 +10,9 @@ _... automated via [Flux](https://fluxcd.io), [Renovate](https://github.com/reno
 
 [![Discord](https://img.shields.io/discord/673534664354430999?style=for-the-badge&label&logo=discord&logoColor=white&color=blue)](https://discord.gg/home-operations)&nbsp;&nbsp;
 [![Talos](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.ekenhome.se%2Fquery%3Fformat%3Dendpoint%26metric%3Dtalos_version&style=for-the-badge&logo=talos&logoColor=white&color=blue&label=%20)](https://www.talos.dev/)&nbsp;&nbsp;
-[![Kubernetes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.ekenhome.dev%2Fquery%3Fformat%3Dendpoint%26metric%3Dkubernetes_version&style=for-the-badge&logo=kubernetes&logoColor=white&label=%20)](https://www.talos.dev/)&nbsp;&nbsp;
-[![Renovate](https://img.shields.io/github/actions/workflow/status/ekenheim/ekenheim/scheduled-renovate.yaml?branch=main&label=&logo=renovatebot&style=for-the-badge&color=blue)](https://github.com/joryirving/joryirving/actions/workflows/scheduled-renovate.yaml)
+[![Kubernetes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.ekenhome.se%2Fkubernetes_version&style=for-the-badge&logo=kubernetes&logoColor=white&color=blue&label=%20)](https://www.talos.dev/)&nbsp;&nbsp;
+[![Flux](https://img.shields.io/badge/Flux-v2.5.1-blue?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io/)&nbsp;&nbsp;
+[![Renovate](https://img.shields.io/github/actions/workflow/status/ekenheim/ekenheim/actions/workflows/scheduled-renovate.yaml?branch=main&label=&logo=renovatebot&style=for-the-badge&color=blue)](https://github.com/ekenheim/ekenheim/actions/workflows/scheduled-renovate.yaml)
 
 </div>
 
@@ -39,7 +40,7 @@ _... automated via [Flux](https://fluxcd.io), [Renovate](https://github.com/reno
 
 ## Overview
 
-This is a monorepository is for my home kubernetes clusters.
+This is a monorepository for my home Kubernetes clusters.
 I try to adhere to Infrastructure as Code (IaC) and GitOps practices using tools like [Ansible](https://www.ansible.com/), [Terraform](https://www.terraform.io/), [Kubernetes](https://kubernetes.io/), [Flux](https://github.com/fluxcd/flux2), [Renovate](https://github.com/renovatebot/renovate), and [GitHub Actions](https://github.com/features/actions).
 
 The purpose here is to learn k8s, while practicing Gitops.
@@ -48,11 +49,9 @@ The purpose here is to learn k8s, while practicing Gitops.
 
 ## ⛵ Kubernetes
 
-There is a template over at [onedr0p/cluster-template](https://github.com/onedr0p/cluster-template) if you want to try and follow along with some of the practices I use here.
-
 ### Installation
 
-My clusters are a mix of [k3s](https://k3s.io/) provisioned overtop bare-metal Debian using the [Ansible](https://www.ansible.com/) galaxy role [ansible-role-k3s](https://github.com/PyratLabs/ansible-role-k3s), and [talos linux](https://www.talos.dev) immutable kubernetes OS. This is a semi-hyper-converged cluster, workloads and block storage are sharing the same available resources on my nodes while I have a separate NAS server with ZFS for NFS/SMB shares, bulk file storage and backups.
+My clusters are running on [Talos Linux](https://www.talos.dev) immutable Kubernetes OS. This is a semi-hyper-converged cluster, workloads and block storage are sharing the same available resources on my nodes while I have a separate NAS server with ZFS for NFS/SMB shares, bulk file storage and backups.
 
 ### Core Components
 
@@ -63,7 +62,6 @@ My clusters are a mix of [k3s](https://k3s.io/) provisioned overtop bare-metal D
 - [external-secrets](https://github.com/external-secrets/external-secrets/): managed Kubernetes secrets using [Bitwarden](https://bitwarden.com/).
 - [ingress-nginx](https://github.com/kubernetes/ingress-nginx/): ingress controller for Kubernetes using NGINX as a reverse proxy and load balancer
 - [longhorn](https://longhorn.io/): Cloud native distributed block storage for Kubernetes
-- [rook-ceph](https://rook.io/): Cloud native distributed block storage for Kubernetes
 - [sops](https://toolkit.fluxcd.io/guides/mozilla-sops/): managed secrets for Kubernetes, Ansible, and Terraform which are committed to Git
 - [spegel](https://github.com/XenitAB/spegel): stateless cluster local OCI registry mirror
 - [tf-controller](https://github.com/weaveworks/tf-controller): additional Flux component used to run Terraform from within a Kubernetes cluster.
@@ -71,7 +69,7 @@ My clusters are a mix of [k3s](https://k3s.io/) provisioned overtop bare-metal D
 
 ### GitOps
 
-[Flux](https://github.com/fluxcd/flux2) watches the clusters in my [kubernetes](./kubernetes/) folder (see Directories below) and makes the changes to my clusters based on the state of my Git repository.
+[Flux](https://github.com/fluxcd/flux2) watches the clusters in my [kubernetes](./kubernetes/) folder and makes the changes to my clusters based on the state of my Git repository.
 
 The way Flux works for me here is it will recursively search the `kubernetes/${cluster}/apps` folder until it finds the most top level `kustomization.yaml` per directory and then apply all the resources listed in it. That aforementioned `kustomization.yaml` will generally only have a namespace resource and one or many Flux kustomizations. Those Flux kustomizations will generally have a `HelmRelease` or other resources related to the application underneath it which will be applied.
 
@@ -79,15 +77,22 @@ The way Flux works for me here is it will recursively search the `kubernetes/${c
 
 ### Directories
 
-This Git repository contains the following directories under [Kubernetes](./kubernetes/).
+This Git repository contains the following directories:
 
 ```sh
-📁 kubernetes
-│── 📁 apps           # applications
-│── 📁 bootstrap      # bootstrap procedures
-│── 📁 flux           # core flux configuration
-└── 📁 templates      # re-useable components
- ```
+📁 .
+├── 📁 .devcontainer/    # Development container configuration
+├── 📁 .github/          # GitHub Actions workflows
+├── 📁 .taskfiles/       # Taskfile configurations
+├── 📁 ansible/          # Ansible playbooks and roles
+├── 📁 clusterconfig/    # Cluster configuration files
+├── 📁 kubernetes/       # Kubernetes manifests
+│   ├── 📁 apps/         # Application deployments
+│   ├── 📁 bootstrap/    # Bootstrap procedures
+│   ├── 📁 flux/         # Core flux configuration
+│   └── 📁 templates/    # Re-useable components
+└── 📁 terraform/        # Terraform configurations
+```
 
 ### Flux Workflow
 
@@ -123,16 +128,13 @@ graph TD;
 
 While most of my infrastructure and workloads are self-hosted I do rely upon the cloud for certain key parts of my setup. This saves me from having to worry about two things. (1) Dealing with chicken/egg scenarios and (2) services I critically need whether my cluster is online or not.
 
-The alternative solution to these two problems would be to host a Kubernetes cluster in the cloud and deploy applications like [HCVault](https://www.vaultproject.io/), [Vaultwarden](https://github.com/dani-garcia/vaultwarden), [ntfy](https://ntfy.sh/), and [Gatus](https://gatus.io/). However, maintaining another cluster and monitoring another group of workloads is a lot more time and effort than I am willing to put in.
-
 | Service                                   | Use                                                               | Cost           |
 |-------------------------------------------|-------------------------------------------------------------------|----------------|
 | [Bitwarden](https://bitwarden.com/)       | Secrets with [External Secrets](https://external-secrets.io/)     | ~$10/yr        |
 | [Cloudflare](https://www.cloudflare.com/) | Domain and S3                                                     | ~$30/yr        |
 | [GitHub](https://github.com/)             | Hosting this repository and continuous integration/deployments    | Free           |
-| [NextDNS](https://nextdns.io/)            | My router DNS server which includes AdBlocking                    | ~$20/yr        |
 | [Healthcheck.io](https://healthcheck.io/) | Monitoring internet connectivity and external facing applications | Free           |
-|                                           |                                                                   | Total: ~$5/mo  |
+|                                           |                                                                   | Total: ~$3.33/mo  |
 
 ---
 
@@ -140,54 +142,35 @@ The alternative solution to these two problems would be to host a Kubernetes clu
 
 ### Main Kubernetes Cluster
 
-| Name  | Device         | CPU       | OS Disk   | Data Disk | RAM  | OS    | Purpose           |
-|-------|----------------|-----------|-----------|-----------|------|-------|-------------------|
-| Ayaka | Dell 7080mff   | i5-10500T | 480GB SSD | 1TB NVME  | 64GB | Talos | k8s control-plane |
-| Eula  | Dell 7080mff   | i7-10700T | 480GB SSD | 1TB NVME  | 64GB | Talos | k8s control-plane |
-| Ganyu | Dell 3080mff   | i5-10500T | 240GB SSD | 1TB NVME  | 64GB | Talos | k8s control-plane |
-| HuTao | Dell 3080mff   | i5-10500T | 480GB SSD | 1TB NVME  | 40GB | Talos | k8s worker        |
-| Navia | Dell 3080mff   | i5-10500T | 256GB SSD | N/A       | 64GB | Talos | k8s worker        |
-| Yelan | Dell 3080mff   | i5-10500T | 240GB SSD | 1TB NVME  | 40GB | Talos | k8s worker        |
+| Name    | Device         | CPU       | OS Disk   | Data Disk | RAM  | OS    | Purpose           | Status |
+|---------|----------------|-----------|-----------|-----------|------|-------|-------------------|--------|
+| master1 | Dell 7080mff   | 16 cores  | 113GB SSD | 1TB NVME  | 64GB | Talos | k8s control-plane | Ready  |
+| master2 | Dell 7080mff   | 16 cores  | 233GB SSD | 1TB NVME  | 64GB | Talos | k8s control-plane | Ready  |
+| master3 | Dell 3080mff   | 16 cores  | 233GB SSD | 1TB NVME  | 64GB | Talos | k8s control-plane | Ready  |
+| worker1 | Dell 3080mff   | 4 cores   | 975GB SSD | 1TB NVME  | 64GB | Talos | k8s worker        | NotReady |
+| worker2 | Dell 3080mff   | 2 cores   | 233GB SSD | N/A       | 64GB | Talos | k8s worker        | Ready  |
+| worker3 | Dell 3080mff   | 40 cores  | 101GB SSD | 1TB NVME  | 120GB| Talos | k8s worker        | NotReady |
 
-Total CPU: 76 threads
-Total RAM: 336GB
-
-### Pi Kubernetes Cluster
-
-| Name    | Device        | CPU        | OS Disk   | RAM | OS     | Purpose           |
-|---------|---------------|------------|-----------|-----|--------|-------------------|
-| Jingliu | Raspberry Pi5 | Cortex A76 | 240GB SSD | 8GB | Debian | k8s control-plane |
-| Kafka   | Raspberry Pi5 | Cortex A76 | 240GB SSD | 8GB | Debian | k8s control-plane |
-| Himeko  | Raspberry Pi4 | Cortex A72 | 256GB SSD | 8GB | Debian | k8s control-plane |
-| Bronya  | Raspberry Pi4 | Cortex A72 | 240GB SSD | 8GB | Debian | k8s worker        |
-
-Total CPU: 16 threads
-Total RAM: 32GB
+Total CPU: 94 cores
+Total RAM: 440GB
 
 ### Supporting Hardware
 
 | Name  | Device         | CPU           | OS Disk      | Data Disk | RAM   | OS       | Purpose               |
 |-------|----------------|---------------|--------------|-----------|-------|----------|-----------------------|
-| NAS   | HP z820        | E5-2680v2     | 32GB USB     | -         | 128GB | Unraid   | NAS/NFS/Backup        |
-| DAS   | Lenovo SA120   | -             | -            | 72TB      | -     | -        | DAS w/ Parity         |
-| Amber | Raspberry Pi4  | Cortex A72    | 120GB mSD    | -         | 4GB   | Raspbian | Wireguard/MeshCentral |
-| Mika  | Beelink Mini-S | Celeron N5095 | 1TB M.2 SATA | -         | 16GB  | Debian   | Omni (test)           |
+| NAS   | Gigabyte C246M | E5-2680v2     | 32GB USB     | 78TB      | 128GB | Unraid   | NAS/NFS/Backup        |
 
 ### Networking/UPS Hardware
 
 | Device                | Purpose                          |
 |-----------------------|----------------------------------|
-| Back-UPS 600          | UPS - Network                    |
-| Unifi UDM Base        | Router                           |
-| Netgear GS324P        | 24 Port PoE Switch - Network     |
-| Tripp Lite 1500       | UPS - Server Rack                |
-| YuanLey YS25-0801P    | 9 Port PoE 2.5G Switch - Rack    |
-
----
-
-## ⭐ Stargazers
-
-<!-- Star history chart removed due to timeout issues -->
+| Rellio 2200 VSD      | UPS - Server Rack                |
+| Unifi UDM Pro        | Router                           |
+| Unifi USW-16-PoE     | 16 Port PoE Switch               |
+| Unifi US 8           | 8 Port Switch                    |
+| Unifi US 8           | 8 Port Switch                    |
+| Unifi USW Lite 16 PoE| 16 Port Lite PoE Switch          |
+| Unifi AC Pro         | Access Point                     |
 
 ---
 

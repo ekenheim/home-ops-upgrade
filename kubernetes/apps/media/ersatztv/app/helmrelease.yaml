@@ -96,4 +96,5 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /transcode
+            readOnly: false
 

@@ -1,37 +1,74 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: strapi
-  namespace: blog
+  name: &name strapi
 spec:
   interval: 15m
+  maxHistory: 3
   chart:
     spec:
-      chart: strapi
-      version: 16.2.2
+      chart: app-template
+      version: 3.7.3
       sourceRef:
         kind: HelmRepository
-        name: truecharts
+        name: bjw-s
         namespace: flux-system
-  maxHistory: 3
-  install:
-    createNamespace: true
-    remediation:
-      retries: 3
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      retries: 3
   values:
-    image:
-      repository: tccr.io/truecharts/strapi
-      tag: 16.2.2
-
+    defaultPodOptions:
+      automountServiceAccountToken: false
+    controllers:
+      strapi:
+        strategy: Recreate
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            runAsNonRoot: true
+            fsGroupChangePolicy: OnRootMismatch
+        containers:
+          app:
+            image:
+              repository: tccr.io/truecharts/strapi
+              tag: 16.2.2
+            env:
+              NODE_ENV: production
+              STRAPI_TELEMETRY_DISABLED: "true"
+              TZ: "${TIMEZONE}"
+            envFrom:
+              - secretRef:
+                  name: strapi-secret
+              - secretRef:
+                  name: strapi-db-secret
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+              startup:
+                enabled: true
+            resources:
+              requests:
+                cpu: 100m
+                memory: 250Mi
+              limits:
+                memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: [ALL]
+    service:
+      app:
+        controller: strapi
+        ports:
+          http:
+            port: 1337
     ingress:
-      main:
-        enabled: true
-        ingressClassName: external
+      app:
+        className: external
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-production
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
@@ -45,7 +82,6 @@ spec:
           - host: &host "strapi.${SECRET_DOMAIN}"
             paths:
               - path: /
-                pathType: Prefix
                 service:
                   identifier: app
                   port: http
@@ -53,46 +89,12 @@ spec:
           - hosts:
               - *host
             secretName: strapi-tls
-        middleware: false
-        chain: false
-        redirect: false
-        stripPrefix: false
-
-    env:
-      TZ: "${TIMEZONE}"
-      NODE_ENV: production
-      STRAPI_TELEMETRY_DISABLED: "true"
-
-    envFrom:
-      - secretRef:
-          name: strapi-secret
-      - secretRef:
-          name: strapi-db-secret
-
-    service:
-      main:
-        ports:
-          http:
-            port: 1337
-
     persistence:
       data:
-        enabled: true
-        type: pvc
+        type: persistentVolumeClaim
         storageClass: ceph-block
         accessMode: ReadWriteOnce
         size: 10Gi
-        mountPath: /opt/app/public/uploads
-
-    resources:
-      requests:
-        cpu: 100m
-        memory: 250Mi
-      limits:
-        memory: 2Gi
-
-    podSecurityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
-      fsGroup: 1000
-      fsGroupChangePolicy: "OnRootMismatch"
+        globalMounts:
+          - path: /opt/app/public/uploads
+            readOnly: false

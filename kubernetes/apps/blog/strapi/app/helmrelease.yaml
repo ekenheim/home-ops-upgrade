@@ -53,6 +53,7 @@ spec:
           - hosts:
               - *host
             secretName: strapi-tls
+        middleware: false
 
     env:
       TZ: "${TIMEZONE}"

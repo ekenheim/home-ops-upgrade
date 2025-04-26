@@ -1,0 +1,49 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: code-server
+spec:
+  interval: 30m
+  chart:
+    spec:
+      # renovate: registryUrl=https://wrmilling.github.io/wrmilling-charts/
+      chart: code-server
+      version: 2.5.0
+      sourceRef:
+        kind: HelmRepository
+        name: wrmilling-charts
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    controller:
+      type: statefulset
+      annotations:
+        reloader.stakater.com/auto: "true"
+    image:
+      repository: codercom/code-server
+      tag: 4.92.2
+    ingress:
+      enabled: true
+      hosts:
+        - host: &host code.mapanare.net
+          paths:
+            - /
+      tls:
+        - secretName: mapanare-net-tls
+          hosts:
+            - *host
+    persistence:
+      enabled: true
+      existingClaim: code-server-storage
+    extraVars:
+      - name: DISABLE_TELEMETRY
+        value: "true"

@@ -1,0 +1,270 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gitlab
+spec:
+  releaseName: gitlab
+  interval: 30m
+  chart:
+    spec:
+      chart: gitlab
+      version: 8.11.1
+      sourceRef:
+        kind: HelmRepository
+        name: gitlab-charts
+        namespace: flux-system
+      interval: 15m
+  timeout: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    global:
+      edition: ce
+      time_zone: America/Santiago
+      extraEnv:
+        GITLAB_LOG_LEVEL: 'error'
+      initialRootPassword:
+        secret: &secret gitlab-secret
+        key: INITIAL_ROOT_PASSWORD
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      hosts:
+        domain: &domain mapanare.net
+        minio:
+          name: mss.mapanare.net
+      ingress:
+        class: nginx
+        annotations:
+          nginx.ingress.kubernetes.io/enable-global-auth: 'false'
+        # Wildcard is configured by default
+        configureCertmanager: false
+        # TLS is enabled by default
+        tls:
+          enabled: true
+          secretName: mapanare-net-tls
+      certmanager:
+        installCRDs: false
+        install: false
+        rbac:
+          create: false
+      kas:
+        enabled: false
+      pages:
+        enabled: true
+      email:
+        display_name: 'GitLab'
+        from: 'gitlab@mapanare.net'
+        reply_to: 'no-reply@mapanare.net'
+      psql:
+        port: 5000
+        password:
+          secret: *secret
+          key: GITLAB_DB_PASSWORD
+      redis:
+        host: dragonfly.databases.svc.cluster.local:6379
+        auth:
+          enabled: false
+        # sentinels:
+        #   - host: redis-node-0.redis-headless.databases.svc.cluster.local
+        #     port: 26379
+        #   - host: redis-node-1.redis-headless.databases.svc.cluster.local
+        #     port: 26379
+        #   - host: redis-node-2.redis-headless.databases.svc.cluster.local
+        #     port: 26379
+      smtp:
+        enabled: true
+#        address: "${SECRET_SMTP_HOST}"
+#        port: ""
+#        user_name: ""
+        domain: *domain
+        starttls_auto: true
+        password:
+          secret: *secret
+          key: SMTP_PASSWORD
+      appConfig:
+        omniauth:
+          enabled: true
+          providers:
+            - secret: gitlab-saml-secret
+    # Reduce memory usage
+    gitlab:
+      gitaly:
+        resources:
+          requests:
+            cpu: 80m
+            memory: 340M
+          limits:
+            cpu: 1800m
+      webservice:
+        minReplicas: 1
+        maxReplicas: 2
+        # https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/examples/ref/2k.yaml
+        workerProcesses: 2
+        resources:
+          limits:
+            memory: 3.0Gi # roughly, 1.5GB/worker
+          requests:
+            cpu: "1.1" # requests.cpu <= workerProcesses
+            memory: 2.50Gi # roughly, 1.25GB/worker
+      # sidekiq:
+      #   minReplicas: 1
+      #   maxReplicas: 2
+      # gitlab-shell:
+      #   minReplicas: 1
+      #   maxReplicas: 2
+      gitlab-pages:
+        # The default requests are massive for a static server
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+    # Disable things we handle by ourselves
+    postgresql:
+      install: false
+    redis:
+      install: false
+    certmanager:
+      install: false
+    nginx-ingress:
+      enabled: false
+    prometheus:
+      install: false
+    grafana:
+      enabled: false
+    gitlab-runner:
+      concurrent: 2
+      runners:
+        nodeSelector:
+          kubernetes.io/arch: amd64
+        secret: gitlab-runner-secret
+        config: |
+          [[runners]]
+            environment = ["FF_GITLAB_REGISTRY_HELPER_IMAGE=true"]
+            builds_dir = "/builds"
+            [runners.feature_flags]
+              FF_USE_ADVANCED_POD_SPEC_CONFIGURATION = true
+            [runners.kubernetes]
+              node_selector_overwrite_allowed = ".*"
+              image = "alpine:latest"
+              privileged = true
+              # build container
+              cpu_limit = "600m"
+              memory_limit = "1Gi"
+              # service containers
+              service_cpu_limit = "600m"
+              service_memory_limit = "1Gi"
+              # helper container
+              helper_cpu_limit = "600m"
+              helper_memory_limit = "200Mi"
+              [[runners.kubernetes.volumes.host_path]]
+                name = "devices"
+                host_path = "/dev"
+                mount_path = "/dev"
+                read_only = true
+              [[runners.kubernetes.pod_spec]]
+                name = "ephemeral-builds"
+                patch_type = "strategic"
+                patch = '''
+                  containers:
+                  - name: build
+                    volumeMounts:
+                    - name: builds
+                      mountPath: /builds
+                  - name: helper
+                    volumeMounts:
+                    - name: builds
+                      mountPath: /builds
+                  volumes:
+                  - name: builds
+                    ephemeral:
+                      volumeClaimTemplate:
+                        spec:
+                          accessModes: [ ReadWriteOnce ]
+                          resources:
+                            requests:
+                              storage: 8Gi
+              '''
+              [[runners.kubernetes.volumes.empty_dir]]
+                name = "docker-certs"
+                mount_path = "/certs/client"
+                medium = "Memory"
+            # [runners.cache]
+            #   Type = "gcs"
+            #   Path = "runner"
+            #   Shared = true
+            #   [runners.cache.gcs]
+            #     BucketName = "gitlab-runner-cache-lxsj5esx"
+        # cache:
+        #   secretName: google-application-credentials
+      securityContext:
+        runAsUser: 999
+        fsGroup: 999
+      resources:
+        requests:
+          cpu: 1000m
+          memory: 512M
+      volumes:
+        - name: root-gitlab-runner
+          emptyDir:
+            medium: "Memory"
+      volumeMounts:
+        - name: root-gitlab-runner
+          mountPath: /.gitlab-runner
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: dummy-app
+            spec:
+              template:
+                spec:
+                  nodeSelector:
+                    kubernetes.io/arch: amd64
+          - patch: |-
+            apiVersion: apps/v1
+            kind: StatefulSet
+            metadata:
+              name: dummy-app
+            spec:
+              template:
+                spec:
+                  nodeSelector:
+                    kubernetes.io/arch: amd64
+  valuesFrom:
+    # DATABASE
+    - kind: Secret
+      name: *secret
+      valuesKey: GITLAB_DB_HOST
+      targetPath: global.psql.host
+    - kind: Secret
+      name: *secret
+      valuesKey: GITLAB_DB_NAME
+      targetPath: global.psql.database
+    - kind: Secret
+      name: *secret
+      valuesKey: GITLAB_DB_USERNAME
+      targetPath: global.psql.username
+    # STMP
+    - kind: Secret
+      name: *secret
+      valuesKey: SMTP_SERVER
+      targetPath: global.smtp.address
+    - kind: Secret
+      name: *secret
+      valuesKey: SMTP_USERNAME
+      targetPath: global.smtp.user_name
+    - kind: Secret
+      name: *secret
+      valuesKey: SMTP_PORT
+      targetPath: global.smtp.port

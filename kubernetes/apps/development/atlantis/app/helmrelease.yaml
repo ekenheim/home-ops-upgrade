@@ -1,0 +1,110 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app atlantis
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: atlantis
+      version: 5.17.2
+      sourceRef:
+        kind: HelmRepository
+        name: runatlantis
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    commonLabels:
+      app.kubernetes.io/name: *app
+      app.kubernetes.io/instance: *app
+    podTemplate:
+      annotations:
+        secret.reloader.stakater.com/reload: &secret atlantis-secret
+    image:
+      repository: ghcr.io/runatlantis/atlantis
+      tag: v0.34-alpine
+    atlantisUrl: https://atlantis.mapanare.net
+    orgAllowlist: gitlab.com/mapanare.labs/*
+    enableDiffMarkdownFormat: true
+    logLevel: "debug"
+    environment:
+      ATLANTIS_DEFAULT_TF_VERSION: v1.0.0
+      ATLANTIS_WRITE_GIT_CREDS: "true"
+      # ATLANTIS_GH_APP_KEY_FILE: /config/github.pem
+    loadEnvFromSecrets:
+      - *secret
+    # If managing secrets outside the chart for the webhook, use this variable to reference the secret name
+    # vcsSecretName: 'mysecret'
+    ## To be used for mounting credential files (when using google provider).
+    serviceAccountSecrets:
+    # credentials: <json file as base64 encoded string>
+    # credentials-staging: <json file as base64 encoded string>
+    ## Use Server Side Repo Config,
+    ## ref: https://www.runatlantis.io/docs/server-side-repo-config.html
+    ## Example default configuration
+    # repoConfig: |
+    #  ---
+    #  repos:
+    #  - id: /.*/
+    #    apply_requirements: []
+    #    workflow: default
+    #    allowed_overrides: []
+    #    allow_custom_workflows: false
+    #  workflows:
+    #    default:
+    #      plan:
+    #        steps: [init, plan]
+    #      apply:
+    #        steps: [apply]
+    #  # metrics:
+    #  #   prometheus:
+    #  #     endpoint: /metrics
+    # Use Diff Markdown Format for color coding diffs
+    service:
+      type: ClusterIP
+      # port: 80
+      targetPort: 4141
+      # loadBalancerIP: null
+    ingress:
+      enabled: true
+      ingressClassName: external
+      annotations:
+        external-dns.alpha.kubernetes.io/target: external.mapanare.net
+      hosts:
+        - host: &host "atlantis.mapanare.net"
+          paths:
+            - /
+      tls:
+        - hosts:
+            - *host
+    resources:
+      requests:
+        memory: 350Mi
+        cpu: 100m
+      limits:
+        memory: 1Gi
+        # cpu: 1000m
+    volumeClaim:
+      enabled: true
+      dataStorage: 5Gi
+      storageClassName: ceph-block
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+    servicemonitor:
+      # to enable a Prometheus servicemonitor, set enabled to true,
+      #   and enable the metrics in this file's repoConfig
+      #   by setting a value for metrics.prometheus.endpoint
+      enabled: false
+    readinessProbe:
+      periodSeconds: 5
+      initialDelaySeconds: 10

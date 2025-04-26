@@ -11,4 +11,4 @@ resources:
   #- ./agency/ks.yaml
   - ./umami/ks.yaml
   - ./mlblog/ks.yaml
-  #- ./strapi/ks.yaml
+  - ./strapi/ks.yaml

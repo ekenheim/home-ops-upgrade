@@ -13,4 +13,4 @@ resources:
   - ./tautulli/ks.yaml
   - ./maintainerr/ks.yaml
   - ./wizarr/ks.yaml
-
+  - ./xteve/ks.yaml

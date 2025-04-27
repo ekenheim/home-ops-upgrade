@@ -56,7 +56,6 @@ jobs:
             --only-images
             --output json
             --output-file images.json
-            --ignore-errors
 
       - name: Output Images
         id: images

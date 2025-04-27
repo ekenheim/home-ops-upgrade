@@ -1,37 +1,44 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/common-3.1.0/charts/library/common/values.schema.json
-apiVersion: helm.toolkit.fluxcd.io/v2
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: &app your-spotify
 spec:
-  interval: 1h
-  chartRef:
-    kind: OCIRepository
-    name: app-template
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.7.3
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  maxHistory: 2
   install:
     remediation:
-      retries: -1
+      retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
-      strategy: rollback
       retries: 3
+  uninstall:
+    keepHistory: false
   values:
     controllers:
       server:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
-          app:
+          main:
             image:
-              repository: yooooomi/your_spotify_server
+              repository: ghcr.io/yooooomi/your_spotify_server
               tag: 1.13.1@sha256:552f1577b38fdd2d9e1a52a5f945c5471f57feaed9684c7b88abc9640c4a2fac
             env:
               TIMEZONE: Australia/Sydney
-              API_ENDPOINT: &endpoint https://spotify.goyangi.cloud/api
-              CLIENT_ENDPOINT: https://spotify.goyangi.cloud
-              MONGO_ENDPOINT: mongodb://your-spotify-mongodb:27017/your_spotify # mongo sucks
+              API_ENDPOINT: &endpoint https://spotify.${SECRET_DOMAIN}/api
+              CLIENT_ENDPOINT: https://spotify.${SECRET_DOMAIN}
+              MONGO_ENDPOINT: mongodb://your-spotify-mongodb:27017/your_spotify
               PORT: &port 8080
             envFrom:
               - secretRef:
@@ -53,20 +60,20 @@ spec:
                 memory: 500Mi
       web:
         containers:
-          app:
+          main:
             image:
-              repository: yooooomi/your_spotify_client
-              tag: 1.13.0@sha256:1da7816f1c45a917f0b5ccc5fc8f04fe3c9d874352ba3206f4ea6bb0891930a7
+              repository: ghcr.io/yooooomi/your_spotify_client
+              tag: 1.13.1@sha256:a9672141625f47ce34aa837ddab15d436bc6b3a72cff001a906fe79b078403e5
             env:
               API_ENDPOINT: *endpoint
             probes: *probes
             securityContext: *securityContext
-      mongodb: # mongo still sucks
+      mongodb:
         type: statefulset
         statefulset:
           podManagementPolicy: OrderedReady
         containers:
-          app:
+          main:
             image:
               repository: docker.io/library/mongo
               tag: 6.0.4-focal
@@ -88,40 +95,35 @@ spec:
         ports:
           http:
             port: 27017
-    route:
-      app:
-        hostnames:
-          - "{{ .Release.Name }}.goyangi.cloud"
-          - spotify.goyangi.cloud
-        parentRefs:
-          - name: external
-            namespace: kube-system
-            sectionName: https
-        rules:
-          - matches:
-              - path:
-                  type: PathPrefix
-                  value: "/api"
-            filters:
-              - type: URLRewrite
-                urlRewrite:
-                  path:
-                    type: ReplacePrefixMatch
-                    replacePrefixMatch: "/"
-            backendRefs:
-              - name: server
-                port: *port
-          - matches:
-              - path:
-                  type: PathPrefix
-                  value: "/"
-            backendRefs:
-              - name: web
-                port: *webport
+    ingress:
+      main:
+        enabled: true
+        className: nginx
+        annotations:
+          external-dns.alpha.kubernetes.io/target: ingress.${SECRET_DOMAIN}
+          hajimari.io/icon: mdi:spotify
+        hosts:
+          - host: &host "spotify.${SECRET_DOMAIN}"
+            paths:
+              - path: /api
+                pathType: Prefix
+                service:
+                  identifier: server
+                  port: http
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: web
+                  port: http
+        tls:
+          - hosts:
+              - *host
     persistence:
       configs:
+        enabled: true
+        type: persistentVolumeClaim
         existingClaim: *app
         advancedMounts:
           mongodb:
-            app:
+            main:
               - path: /data/db

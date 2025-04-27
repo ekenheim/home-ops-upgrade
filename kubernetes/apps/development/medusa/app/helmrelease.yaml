@@ -126,6 +126,7 @@ spec:
     service:
       medusa-server:
         controller: medusa-server
+        type: LoadBalancer
         ports:
           http:
             port: 9000
@@ -155,6 +156,6 @@ spec:
         enabled: true
         type: persistentVolumeClaim
         accessMode: ReadWriteOnce
-        size: 1Gi
+        size: 10Gi
         globalMounts:
           - path: /app/data

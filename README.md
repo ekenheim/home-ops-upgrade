@@ -12,7 +12,6 @@ _... automated via [Flux](https://fluxcd.io), [Renovate](https://github.com/reno
 [![Talos](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.ekenhome.se%2Fquery%3Fformat%3Dendpoint%26metric%3Dtalos_version&style=for-the-badge&logo=talos&logoColor=white&color=blue&label=%20)](https://www.talos.dev/)&nbsp;&nbsp;
 [![Kubernetes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.ekenhome.se%2Fkubernetes_version&style=for-the-badge&logo=kubernetes&logoColor=white&color=blue&label=%20)](https://www.talos.dev/)&nbsp;&nbsp;
 [![Flux](https://img.shields.io/badge/Flux-v2.5.1-blue?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io/)&nbsp;&nbsp;
-[![Renovate](https://img.shields.io/github/actions/workflow/status/ekenheim/ekenheim/actions/workflows/scheduled-renovate.yaml?branch=main&label=&logo=renovatebot&style=for-the-badge&color=blue)](https://github.com/ekenheim/ekenheim/actions/workflows/scheduled-renovate.yaml)
 
 </div>
 

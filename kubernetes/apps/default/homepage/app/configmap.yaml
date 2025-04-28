@@ -18,7 +18,7 @@ data:
             - icon: google-calendar.png
               href: 'https://calendar.google.com'
         - Outlook:
-            - icon: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/outlook.png
+            - icon: https://raw.githubusercontent.com/joryirving/home-ops/main/docs/src/assets/icons/outlook.png
               href: 'https://outlook.com'
     - Media:
         - YouTube:
@@ -28,14 +28,14 @@ data:
             - icon: spotify.png
               href: 'http://open.spotify.com'
         - Youtube Music:
-            - icon: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/youtube-music.png
+            - icon: https://raw.githubusercontent.com/joryirving/home-ops/main/docs/src/assets/icons/youtube-music.png
               href: 'https://music.youtube.com'
     - Reading:
         - Beyond:
-            - icon: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/beyond.png
+            - icon: https://raw.githubusercontent.com/joryirving/home-ops/main/docs/src/assets/icons/beyond.png
               href: 'https://forums.beyond.ca/search.php?do=getnew&contenttype=vBForum_Post'
         - Western Subaru Club:
-            - icon: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/wsc.png
+            - icon: https://raw.githubusercontent.com/joryirving/home-ops/main/docs/src/assets/icons/wsc.png
               href: 'http://westernsubaruclub.com/smf/index.php?action=unread'
         - Reddit:
             - icon: reddit.png
@@ -71,29 +71,13 @@ data:
               url: https://healthchecks.io/
               key: {{HOMEPAGE_VAR_HEALTHCHECK_TOKEN}}
               uuid: {{HOMEPAGE_VAR_HEALTHCHECK_UUID}}
-        - NextDNS:
-            href: https://my.nextdns.io
-            icon: nextdns.png
-            description: NextDNS
-            widget:
-              type: nextdns
-              profile: {{HOMEPAGE_VAR_NEXTDNS_ID}}
-              key: {{HOMEPAGE_VAR_NEXTDNS_API}}
-        # - Unifi:
-        #     href: https://unifi.ui.com
-        #     icon: unifi.png
-        #     description: Unifi Dashboard
-        #     widget:
-        #       type: unifi
-        #       url: https://192.168.1.1:443
-        #       username: {{HOMEPAGE_VAR_UNIFI_USERNAME}}
-        #       password: {{HOMEPAGE_VAR_UNIFI_PASSWORD}}
+
     - Calendar:
         - Agenda:
             widget:
               type: calendar
               view: agenda # optional - possible values monthly, agenda
-              maxEvents: 15 # optional - defaults to 10
+              maxEvents: 20 # optional - defaults to 10
               integrations: # optional
                 - type: sonarr # active widget type that is currently enabled on homepage - possible values: radarr, sonarr>
                   service_group: Downloads # group name where widget exists
@@ -105,31 +89,28 @@ data:
                   service_group: Downloads # group name where widget exists
                   service_name: Readarr # service name for that widget
     - Infrastructure:
-        - MeshCentral:
-            href: https://mesh.${SECRET_DOMAIN}
-            icon: meshcentral.png
-            description: MeshCentral Dashboard
-        - Portainer:
-            href: &url https://portainer.${SECRET_DOMAIN}
-            icon: portainer.png
-            description: Docker Container Management
-            widget:
-              type: portainer
-              url: http://${NAS_IP}:9000
-              env: 1
-              key: {{HOMEPAGE_VAR_PORTAINER_TOKEN}}
+
         - Unraid:
             href: https://nas.${SECRET_DOMAIN}
             icon: unraid.png
             description: Unraid NAS
+    - Home:
+        - Home-Assistant:
+            href: https://hass.${SECRET_DOMAIN}
+            icon: home-assistant.png
+            description: Home Automation Software
+            widget:
+              type: homeassistant
+              url: https://hass.${SECRET_DOMAIN}
+              key: {{HOMEPAGE_VAR_HASS_TOKEN}}
   settings.yaml: |
     title: Dashboard
-    favicon: https://github.com/walkxcode/dashboard-icons/blob/main/png/heimdall.png
+    favicon: https://github.com/homarr-labs/dashboard-icons/blob/main/png/heimdall.png
     useEqualHeights: true
     theme: dark
-    #background:
-    #  image: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/assets/101518784_p0.jpg
-    #  opacity: 20
+    background:
+      image: https://raw.githubusercontent.com/joryirving/home-ops/main/docs/src/assets/101518784_p0.jpg
+      opacity: 20
     color: slate
     headerStyle: clean
     quicklaunch:
@@ -144,7 +125,7 @@ data:
         icon: mdi-network
       Games:
         style: row
-        columns: 2
+        columns: 3
         icon: mdi-minecraft
       Calendar:
         style: column
@@ -174,7 +155,7 @@ data:
         icon: mdi-download-circle
   widgets.yaml: |
     - logo:
-        icon: https://raw.githubusercontent.com/joryirving/home-ops/main/.docs/icons/lds-transparent.png
+        icon: https://raw.githubusercontent.com/joryirving/home-ops/main/docs/src/assets/icons/lds-transparent.png
     - search:
         provider: [duckduckgo, google]
         focus: false

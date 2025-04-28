@@ -122,6 +122,10 @@ spec:
       databases: ["medusa"]
       password:
         type: AlphaNumeric
+    - name: "flyte"
+      databases: ["flyte"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

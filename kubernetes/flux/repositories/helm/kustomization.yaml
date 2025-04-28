@@ -17,6 +17,7 @@ resources:
   - ./dragonfly.yaml
   - ./external-dns.yaml
   - ./external-secrets.yaml
+  - ./flyte.yaml
   - ./grafana.yaml
   - ./homepage.yaml
   - ./ingress-nginx.yaml

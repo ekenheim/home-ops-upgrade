@@ -10,7 +10,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/datasci/piper/app
+  path: ./kubernetes/apps/datasci/whisper/app
   prune: true
   sourceRef:
     kind: GitRepository

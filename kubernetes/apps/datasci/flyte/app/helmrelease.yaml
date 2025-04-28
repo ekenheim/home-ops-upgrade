@@ -7,11 +7,11 @@ spec:
   interval: 30m
   chart:
     spec:
-      chart: flyte
-      version: v1.15.3
+      chart: flyte-binary
+      version: v1.15.0
       sourceRef:
         kind: HelmRepository
-        name: flyte
+        name: flyteorg
         namespace: flux-system
   install:
     remediation:

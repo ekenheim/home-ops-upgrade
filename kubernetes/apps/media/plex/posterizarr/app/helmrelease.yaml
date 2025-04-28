@@ -89,6 +89,6 @@ spec:
         server: ${NAS_IP:=temp}
         path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
-        - path: /assets
-          subPath: Media/ppm/assets
+          - path: /assets
+            subPath: Media/ppm/assets
 

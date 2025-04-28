@@ -8,6 +8,7 @@ resources:
   # Flux-Kustomizations
   - ./umami/ks.yaml
   - ./medusa/ks.yaml
+  - ./resume/ks.yaml
   #- ./meilisearch/ks.yaml
   #- ./backstage/ks.yaml
   #- ./atlantis/ks.yaml

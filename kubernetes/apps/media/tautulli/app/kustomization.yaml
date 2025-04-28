@@ -4,5 +4,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./helmrelease.yaml
+  - ./pvc.yaml
   - ../../../../templates/gatus/external
   - ../../../../templates/volsync
+configMapGenerator:
+  - name: posterizarr-watcher
+    files:
+      - posterizarr.py=./scripts/posterizarr.py
+generatorOptions:
+  disableNameSuffixHash: true

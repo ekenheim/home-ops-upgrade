@@ -88,3 +88,25 @@ spec:
     persistence:
       config:
         existingClaim: *app
+      logs:
+        type: emptyDir
+        globalMounts:
+          - path: /config/logs
+      tmp:
+        type: emptyDir
+      posterizarr-watcher-script:
+        type: configMap
+        name: posterizarr-watcher
+        globalMounts:
+          - path: /scripts
+      cache:
+        existingClaim: tautulli-cache
+        globalMounts:
+          - path: /config/cache
+      posterizarr-watcher:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        globalMounts:
+        - path: /config/watcher
+          subPath: Media/ppm/watcher

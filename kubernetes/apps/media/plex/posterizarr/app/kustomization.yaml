@@ -6,7 +6,7 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./pvc.yaml
-  - ../../../../templates/volsync
+  - ../../../../../templates/volsync
 configMapGenerator:
   - name: posterizarr-configmap
     files:

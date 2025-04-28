@@ -79,7 +79,7 @@ spec:
         server: ${NAS_IP:=temp}
         path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
-        - path: /assets
+        - path: /config/watcher
           subPath: Media/ppm/watcher
       config-file:
         type: configMap

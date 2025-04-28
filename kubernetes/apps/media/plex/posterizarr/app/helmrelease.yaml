@@ -1,0 +1,94 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app posterizarr
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.7.3
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      posterizarr:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          init-config:
+            image:
+              repository: docker.io/mikefarah/yq
+              tag: 4.45.1@sha256:2c100efaca06e95ffe452cfe9bfc0048b493f0f3a072d5fe06f828c638d9462b
+              pullPolicy: IfNotPresent
+            command:
+              - "/bin/sh"
+            args:
+              - "/app/config-file/init-config.sh"
+            envFrom:
+            - secretRef:
+                name: posterizarr-secret
+            resources:
+              requests:
+                cpu: 10m
+                memory: 10Mi
+              limits:
+                memory: 128Mi
+        containers:
+          app:
+            image:
+              repository: ghcr.io/dapperdivers/posterizarr
+              tag: 1.0.11@sha256:367dad33e84e5d90af94dc1db8a249a1297f918feb40a69ff8582edabdbbbb51
+            env:
+              TZ: ${TIME_ZONE}
+            resources:
+              requests:
+                cpu: 100m
+                memory: 4096M
+              limits:
+                memory: 8192M
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop:
+                - ALL
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 140
+        fsGroup: 150
+        fsGroupChangePolicy: OnRootMismatch
+    persistence:
+      config:
+        existingClaim: *app
+      posterizarr-watcher:
+        existingClaim: posterizarr-watcher
+        globalMounts:
+          - path: /config/watcher
+      config-file:
+        type: configMap
+        defaultMode: 511
+        name: posterizarr-configmap
+        globalMounts:
+          - path: /app/config-file
+      assets:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        globalMounts:
+        - path: /assets
+          subPath: Media/ppm/assets
+

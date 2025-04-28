@@ -62,29 +62,17 @@ spec:
             port: 3001
     ingress:
       app:
-        annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
         className: external
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
         hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          - host: &host "${SECRET_DOMAIN}"
             paths:
               - path: /
-                service:
-                  identifier: app
-                  port: http
-          - host: "resume.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-          - host: "${SECRET_DOMAIN}"
-            paths:
-              - path: /
+                pathType: Prefix
                 service:
                   identifier: app
                   port: http
         tls:
           - hosts:
               - *host
-            secretName: ${SECRET_DOMAIN/./-}-tls

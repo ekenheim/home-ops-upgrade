@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: flyte-binary
-      version: v1.15.3
+      version: v1.16.0
       sourceRef:
         kind: HelmRepository
         name: flyteorg
@@ -24,7 +24,4 @@ spec:
   valuesFrom:
     - kind: Secret
       name: flyte-secret
-      valuesKey: values.yaml
-    - kind: Secret
-      name: flyte-db-secret
       valuesKey: values.yaml

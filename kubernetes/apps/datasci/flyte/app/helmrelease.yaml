@@ -27,13 +27,13 @@ spec:
       valuesKey: values.yaml
     - kind: Secret
       name: flyte-db-secret
-      targetPath: configuration.database.connection
-      valuesKey: database__connection__string
-    - kind: Secret
-      name: flyte-db-secret
-      targetPath: configuration.database.user
+      targetPath: configuration.database
       valuesKey: database__username
     - kind: Secret
       name: flyte-db-secret
-      targetPath: configuration.database.password
+      targetPath: configuration.database
       valuesKey: database__password
+    - kind: Secret
+      name: flyte-db-secret
+      targetPath: configuration.database
+      valuesKey: database__connection__string

@@ -28,3 +28,4 @@ spec:
     - kind: Secret
       name: flyte-db-secret
       targetPath: configuration.database
+      valuesKey: database__connection__string

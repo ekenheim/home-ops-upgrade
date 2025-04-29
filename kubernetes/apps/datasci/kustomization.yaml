@@ -17,4 +17,4 @@ resources:
   - ./ray/ks.yaml
   - ./ollama/ks.yaml
   - ./qdrant/ks.yaml
-  - ./flyte/ks.yaml
+  #- ./flyte/ks.yaml

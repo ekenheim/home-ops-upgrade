@@ -28,11 +28,11 @@ spec:
     - kind: Secret
       name: flyte-db-secret
       targetPath: configuration.database
-      valuesKey: database__username
+      valuesKey: username
     - kind: Secret
       name: flyte-db-secret
       targetPath: configuration.database
-      valuesKey: database__password
+      valuesKey: password
     - kind: Secret
       name: flyte-db-secret
       targetPath: configuration.database

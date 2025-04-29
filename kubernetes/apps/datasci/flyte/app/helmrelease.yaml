@@ -3,6 +3,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: flyte
+  namespace: datasci
 spec:
   interval: 30m
   chart:
@@ -24,4 +25,7 @@ spec:
   valuesFrom:
     - kind: Secret
       name: flyte-secret
+      valuesKey: values.yaml
+    - kind: Secret
+      name: flyte-db-secret
       valuesKey: values.yaml

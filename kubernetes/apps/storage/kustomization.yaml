@@ -7,7 +7,7 @@ resources:
   - ./namespace.yaml
   # Flux-Kustomizations
   - ./openebs/ks.yaml
-  - ./minio/ks.yaml
+  #- ./minio/ks.yaml
   - ./minio-secondary/ks.yaml
   - ./snapshot-controller/ks.yaml
   - ./volsync/ks.yaml

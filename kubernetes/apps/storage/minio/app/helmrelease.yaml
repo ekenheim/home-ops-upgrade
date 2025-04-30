@@ -48,8 +48,7 @@ spec:
                   name: *app
             args:
               - server
-              - /data1
-              - /data2
+              - /data
               - --console-address
               - :9001
             probes:
@@ -124,12 +123,4 @@ spec:
         server: ${NAS_IP:=temp}
         path: ${SECRET_NFS_MINIO:=temp}
         globalMounts:
-          - path: /data1
-      drive2:
-        enabled: true
-        accessMode: ReadWriteMany
-        size: 300Gi
-        storageClass: ceph-filesystem
-        globalMounts:
-          - path: /data2
-            subPath: data2
+          - path: /data

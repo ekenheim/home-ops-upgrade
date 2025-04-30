@@ -24,7 +24,7 @@ spec:
       retries: 3
   values:
     controllers:
-      minio:
+      minio-secondary:
         labels:
           nfsMount: "true"
         annotations:
@@ -77,7 +77,7 @@ spec:
                 memory: 3Gi
     service:
       app:
-        controller: *app
+        controller: minio-secondary
         ports:
           http:
             port: 9001

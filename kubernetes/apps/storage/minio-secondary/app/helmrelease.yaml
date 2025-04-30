@@ -34,6 +34,11 @@ spec:
             image:
               repository: quay.io/minio/minio
               tag: RELEASE.2025-03-12T18-04-18Z
+            securityContext:
+              privileged: true
+              runAsUser: 0
+              runAsGroup: 0
+              allowPrivilegeEscalation: true
             env:
               MINIO_API_CORS_ALLOW_ORIGIN: https://minio-secondary.${SECRET_DOMAIN},https://s3-secondary.${SECRET_DOMAIN}
               MINIO_BROWSER_REDIRECT_URL: https://minio-secondary.${SECRET_DOMAIN}
@@ -66,9 +71,6 @@ spec:
                   timeoutSeconds: 10
                   failureThreshold: 6
               readiness: *probes
-            securityContext:
-              privileged: true
-              runAsUser: 99
             resources:
               requests:
                 memory: 100Mi
@@ -121,9 +123,9 @@ spec:
     persistence:
       data:
         enabled: true
-        type: persistentVolumeClaim
-        storageClass: ceph-filesystem
         accessMode: ReadWriteMany
-        size: 300Gi  # Adjust this size based on your needs
+        size: 300Gi
+        storageClass: ceph-filesystem
         globalMounts:
           - path: /data
+            subPath: data

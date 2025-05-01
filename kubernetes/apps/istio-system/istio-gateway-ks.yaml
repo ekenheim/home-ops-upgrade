@@ -8,7 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: istio-istiod
-  path: ./kubernetes/apps/istio-system/istio/app
+  path: ./kubernetes/apps/istio-system/istio/app/gateway
   targetNamespace: istio-system
   prune: true
   wait: true # Wait for gateway to be ready

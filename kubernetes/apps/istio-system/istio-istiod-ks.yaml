@@ -8,7 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: istio-base
-  path: ./kubernetes/apps/istio-system/istio/app
+  path: ./kubernetes/apps/istio-system/istio/app/istiod
   targetNamespace: istio-system
   prune: true
   wait: true # Wait for control plane to be ready

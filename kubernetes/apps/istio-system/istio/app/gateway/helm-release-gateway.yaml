@@ -1,0 +1,49 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta1.json
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: istio-ingress
+  namespace: istio-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: gateway
+      version: 1.20.0
+      sourceRef:
+        kind: HelmRepository
+        name: istio
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    service:
+      annotations:
+        external-dns.alpha.kubernetes.io/hostname: "${SECRET_DOMAIN},*.${SECRET_DOMAIN}"
+        io.cilium/lb-ipam-ips: "${SVC_ISTIO_ADDR}"
+      loadBalancerIP: "${SVC_ISTIO_ADDR}"
+    # Configure Kiali Dashboard
+    # kiali:
+    #   enabled: true
+    #   dashboard:
+    #     auth:
+    #       strategy: anonymous
+    #   ingress:
+    #     enabled: true
+    #     hosts:
+    #       - kiali.${SECRET_DOMAIN}
+    #     tls:
+    #       - secretName: kiali-tls
+    #         hosts:
+    #           - kiali.${SECRET_DOMAIN}
+    # resources:
+    #   requests:
+    #     cpu: 100m
+    #     memory: 128Mi
+    #   limits:
+    #     memory: 256Mi

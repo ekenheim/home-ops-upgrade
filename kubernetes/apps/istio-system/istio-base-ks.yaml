@@ -6,7 +6,7 @@ metadata:
   name: istio-base
   namespace: flux-system
 spec:
-  path: ./kubernetes/apps/istio-system/istio/app
+  path: ./kubernetes/apps/istio-system/istio/app/base
   targetNamespace: istio-system
   prune: true
   wait: true # Wait for CRDs to be ready

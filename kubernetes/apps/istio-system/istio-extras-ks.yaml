@@ -8,7 +8,7 @@ metadata:
 spec:
   dependsOn:
     - name: istio-gateway
-  path: ./kubernetes/apps/istio-system/istio/app
+  path: ./kubernetes/apps/istio-system/istio/app/extras
   targetNamespace: istio-system
   prune: true
   wait: true # Changed from false to ensure dependencies are fully met

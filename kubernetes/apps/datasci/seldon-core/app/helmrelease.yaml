@@ -27,9 +27,9 @@ spec:
       create: true
     certManager:
       enabled: true
-#    istio:
-#      enabled: true
-#      gateway: datasci/seldon-gateway
+    istio:
+      enabled: true
+      gateway: istio-system/cluster-gateway
     predictiveUnit:
       defaultEnvSecretRefName: seldon-core-secret
     usageMetrics:

@@ -6,6 +6,8 @@ metadata:
   name: istio-base
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: gateway-api-crds # Add dependency on Gateway API CRDs
   path: ./kubernetes/apps/istio-system/istio/app/base
   targetNamespace: istio-system
   prune: true

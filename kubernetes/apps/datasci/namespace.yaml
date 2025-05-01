@@ -7,3 +7,13 @@ metadata:
     goldilocks.fairwinds.com/enabled: "true"
   annotations:
     volsync.backube/privileged-movers: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-system
+  labels:
+    goldilocks.fairwinds.com/enabled: "true"
+    istio-injection: enabled  # This label will enable Istio sidecar injection in this namespace
+  annotations:
+    volsync.backube/privileged-movers: "true"

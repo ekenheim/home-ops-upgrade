@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - base/
+  - istio-external-auth-patches/
+patches:
+  - target:
+      kind: Deployment
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: this-is-ignored
+      spec:
+        template:
+          metadata:
+            annotations:
+              reloader.stakater.com/auto: "true"

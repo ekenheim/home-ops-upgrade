@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - default-dashboard.yaml
+  - serve-dashboard.yaml
+  - serve-deployment-dashboard.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
+    grafana_folder: Ray # Put these dashboards in a 'Ray' folder in Grafana
+  labels:
+    grafana_dashboard: "1"

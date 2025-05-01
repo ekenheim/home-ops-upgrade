@@ -7,7 +7,8 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m
-  path: ./kubernetes/base/gateway-api
+  # Corrected path:
+  path: ./kubernetes/apps/istio-system/gateway-api
   prune: true
   wait: true # Ensure CRDs are created before dependents
   sourceRef:

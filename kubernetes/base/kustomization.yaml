@@ -1,7 +1,0 @@
----
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  # Apply Gateway API CRDs Kustomization
-  - gateway-api-ks.yaml
-  # Add other base Kustomizations or resources here if needed in the future

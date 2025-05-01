@@ -18,3 +18,4 @@ resources:
   - ./ollama/ks.yaml
   - ./qdrant/ks.yaml
   - ./flyte/ks.yaml
+  - ./seldon-core/ks.yaml

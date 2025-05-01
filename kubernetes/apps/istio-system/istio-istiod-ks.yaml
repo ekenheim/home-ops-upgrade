@@ -18,3 +18,11 @@ spec:
   sourceRef:
     kind: GitRepository
     name: home-kubernetes
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: istiod
+      namespace: istio-system
+    - apiVersion: gateway.networking.k8s.io/v1
+      kind: GatewayClass
+      name: istio # Default Istio GatewayClass name

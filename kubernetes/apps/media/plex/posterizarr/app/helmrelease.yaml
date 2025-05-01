@@ -93,5 +93,6 @@ spec:
         path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
         - path: /assets
-          subPath: Media/ppm/assets
+          #subPath: Media/ppm/assets
+
 

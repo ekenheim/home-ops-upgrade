@@ -67,7 +67,7 @@
     "ReplaceThumbwithBackdrop": "false"
   },
   "Notification": {
-    "SendNotification": "true",
+    "SendNotification": "false",
     "DiscordUserName": "Posterizarr",
     "AppriseUrl": "discord://{WebhookID}/{WebhookToken}/",
     "Discord": "https://discordapp.com/api/webhooks/${WebhookID}/${WebhookToken}",

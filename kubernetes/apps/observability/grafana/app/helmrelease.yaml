@@ -43,6 +43,9 @@ spec:
         check_for_updates: false
         check_for_plugin_updates: false
         reporting_enabled: false
+      # Add security section to allow embedding
+      security:
+        allow_embedding: true
       auth:
         signout_redirect_url: https://sso.${SECRET_DOMAIN}/application/o/grafana/end-session/
         oauth_auto_login: false

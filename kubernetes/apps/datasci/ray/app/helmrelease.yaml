@@ -37,6 +37,13 @@ spec:
         requests:
           cpu: "1"
           memory: "2G"
+      containerEnv:
+        - name: RAY_PROMETHEUS_HOST
+          value: "http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090"
+        - name: RAY_GRAFANA_HOST
+          value: "http://grafana.observability.svc.cluster.local:80"
+        - name: RAY_GRAFANA_IFRAME_HOST
+          value: "https://grafana.${SECRET_DOMAIN}"
 
     worker:
       groupName: workergroup
@@ -78,7 +85,6 @@ spec:
 
   dependsOn:
     - name: kuberay-operator
-
 ---
 apiVersion: v1
 kind: Service
@@ -108,3 +114,4 @@ spec:
   selector:
     ray.io/node-type: head
     ray.io/cluster: ray-kuberay
+

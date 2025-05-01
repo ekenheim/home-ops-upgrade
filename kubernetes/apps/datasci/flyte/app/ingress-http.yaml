@@ -77,6 +77,83 @@ spec:
               number: 8088
       # Add other paths like /login, /logout, /callback, /me, /config, /oauth2 if needed
       # based on the http.yaml template and your auth setup
+      - path: /login
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: flyte-http
+            port:
+              number: 8088
+      - path: /login/.*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: flyte-http
+            port:
+              number: 8088
+      - path: /logout
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: flyte-http
+            port:
+              number: 8088
+      - path: /logout/.*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: flyte-http
+            port:
+              number: 8088
+      - path: /callback
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: flyte-http
+            port:
+              number: 8088
+      - path: /callback/.*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: flyte-http
+            port:
+              number: 8088
+      - path: /me
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: flyte-http
+            port:
+              number: 8088
+      - path: /config
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: flyte-http
+            port:
+              number: 8088
+      - path: /config/.*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: flyte-http
+            port:
+              number: 8088
+      - path: /oauth2
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: flyte-http
+            port:
+              number: 8088
+      - path: /oauth2/.*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: flyte-http
+            port:
+              number: 8088
   tls:
   - hosts:
     - "flyte.${SECRET_DOMAIN}"

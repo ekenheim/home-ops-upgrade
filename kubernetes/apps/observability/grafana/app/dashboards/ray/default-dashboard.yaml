@@ -8,7 +8,6 @@ metadata:
     grafana_dashboard: "1" # Label for Grafana sidecar to discover
 data:
   default_grafana_dashboard.json: |
-    #{{DASHBOARD_JSON}} # Placeholder for the actual JSON content
     {
     "annotations": {
         "list": [

@@ -20,6 +20,7 @@ resources:
   - ./flyte.yaml
   - ./grafana.yaml
   - ./homepage.yaml
+  - ./istio.yaml
   - ./ingress-nginx.yaml
   - ./intel.yaml
   - ./itzg.yaml

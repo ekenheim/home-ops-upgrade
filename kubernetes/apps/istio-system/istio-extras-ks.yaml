@@ -11,7 +11,7 @@ spec:
   path: ./kubernetes/apps/istio-system/istio/app
   targetNamespace: istio-system
   prune: true
-  wait: false # Usually not strictly necessary to wait for these
+  wait: true # Changed from false to ensure dependencies are fully met
   interval: 30m
   retryInterval: 1m
   timeout: 5m

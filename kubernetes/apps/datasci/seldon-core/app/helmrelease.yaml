@@ -27,9 +27,9 @@ spec:
       create: true
     certManager:
       enabled: true
-    istio:
-      enabled: true
-      gateway: ml-system/seldon-gateway
+#    istio:
+#      enabled: true
+#      gateway: datasci/seldon-gateway
     predictiveUnit:
       defaultEnvSecretRefName: seldon-core-secret
     usageMetrics:

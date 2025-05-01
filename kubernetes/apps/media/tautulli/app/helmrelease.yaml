@@ -54,9 +54,9 @@ spec:
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
-        runAsUser: 568
-        runAsGroup: 568
-        fsGroup: 568
+        runAsUser: 1000
+        runAsGroup: 140
+        fsGroup: 150
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile: { type: RuntimeDefault }
     service:
@@ -109,4 +109,10 @@ spec:
         path: ${SECRET_NFS_WATCHER:=temp}
         globalMounts:
         - path: /config/watcher
+      assets:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_PPM:=temp}
+        globalMounts:
+        - path: /assets
 

@@ -47,13 +47,15 @@ spec:
         # Add other external-specific annotations if required
 
       # Common TLS config (can be overridden by httpTls/grpcTls if needed)
-      tls:
+      # Explicit TLS sections instead of combined
+      httpTls: # Specific TLS for HTTP ingress
         - hosts:
             - "flyte.${SECRET_DOMAIN}"
-          secretName: flyte-tls # Assuming a secret named flyte-tls exists or is managed elsewhere
-        - hosts:
-            - "flyte-api.${SECRET_DOMAIN}"
-          secretName: flyte-api-tls # Assuming a secret named flyte-api-tls exists or is managed elsewhere
+          secretName: flyte-tls
+      grpcTls: # Specific TLS for gRPC ingress
+       - hosts:
+           - "flyte-api.${SECRET_DOMAIN}"
+         secretName: flyte-api-tls # Use a potentially different secret if needed
 
   valuesFrom:
     - kind: Secret

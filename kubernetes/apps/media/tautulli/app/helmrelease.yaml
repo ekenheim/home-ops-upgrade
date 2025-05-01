@@ -106,7 +106,7 @@ spec:
       posterizarr-watcher:
         type: nfs
         server: ${NAS_IP:=temp}
-        path: ${SECRET_NFS_DATA:=temp}
+        path: ${SECRET_NFS_WATCHER:=temp}
         globalMounts:
         - path: /config/watcher
-          subPath: /Media/ppm/watcher
+

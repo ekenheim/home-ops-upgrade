@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: istio-gateway
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: istio-istiod
+  path: ./kubernetes/apps/istio-system/istio/app
+  targetNamespace: istio-system
+  prune: true
+  wait: true # Wait for gateway to be ready
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes

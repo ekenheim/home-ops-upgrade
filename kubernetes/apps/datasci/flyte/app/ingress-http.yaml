@@ -1,0 +1,83 @@
+---
+# Ingress for Flyte Console (HTTP)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: flyte-http # Keep the name consistent if possible, or choose a new one
+  namespace: datasci
+  labels:
+    app.kubernetes.io/instance: flyte
+    app.kubernetes.io/component: http-ingress # Custom label
+  annotations:
+    kubernetes.io/ingress.class: "internal"
+    nginx.ingress.kubernetes.io/app-root: "/console"
+    # Add any other necessary internal annotations
+spec:
+  ingressClassName: internal
+  rules:
+  - host: "flyte.${SECRET_DOMAIN}"
+    http:
+      paths:
+      # Paths copied from the helm template output for http.yaml (adjust if needed)
+      - path: /console
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-http # Service name created by the chart
+            port:
+              number: 8088 # Default HTTP port from chart values/template
+      - path: /console/.*
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-http
+            port:
+              number: 8088
+      - path: /api
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-http
+            port:
+              number: 8088
+      - path: /api/.*
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-http
+            port:
+              number: 8088
+      - path: /healthcheck
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-http
+            port:
+              number: 8088
+      - path: /v1/.*
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-http
+            port:
+              number: 8088
+      - path: /.well-known
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-http
+            port:
+              number: 8088
+      - path: /.well-known/.*
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-http
+            port:
+              number: 8088
+      # Add other paths like /login, /logout, /callback, /me, /config, /oauth2 if needed
+      # based on the http.yaml template and your auth setup
+  tls:
+  - hosts:
+    - "flyte.${SECRET_DOMAIN}"
+    secretName: flyte-tls # Assumes cert-manager or similar provides this

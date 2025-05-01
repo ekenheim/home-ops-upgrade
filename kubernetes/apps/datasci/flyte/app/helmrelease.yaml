@@ -22,40 +22,37 @@ spec:
       strategy: rollback
       retries: 3
   values:
-    # Configuration specific to the flyte-binary chart
     ingress:
-      create: true # Enable ingress creation by the chart
-      ingressClassName: internal # Default class for console/http
-      host: "flyte.${SECRET_DOMAIN}" # Console hostname
-      annotations:
-        # Add any common annotations here if needed
-        # e.g., nginx specific settings common to both
-        nginx.ingress.kubernetes.io/app-root: "/console" # From original ExternalSecret
-      httpAnnotations: # Annotations specific to the HTTP ingress (console)
-        # We'll set the class explicitly here for the console
-        kubernetes.io/ingress.class: "internal"
-        # Add other internal-specific annotations if required
+      create: false # Disable ingress creation by the chart
+    # Configuration specific to the flyte-binary chart - Ingress removed as it will be managed manually
+    # ingress:
+    #   create: true
+    #   ingressClassName: internal
+    #   host: "flyte.${SECRET_DOMAIN}"
+    #   annotations:
+    #     nginx.ingress.kubernetes.io/app-root: "/console"
+    #   httpAnnotations:
+    #     kubernetes.io/ingress.class: "internal"
+    #
 
-      separateGrpcIngress: true # We want a separate ingress for API/gRPC
-      grpcHost: "flyte-api.${SECRET_DOMAIN}" # API hostname
-      grpcIngressClassName: external # Class for gRPC/api
-      grpcAnnotations:
-        # Annotations specific to the gRPC ingress (API)
-        kubernetes.io/ingress.class: "external"
-        external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-        nginx.ingress.kubernetes.io/backend-protocol: "GRPC" # Important for gRPC
-        # Add other external-specific annotations if required
+    #   separateGrpcIngress: true
+    #   grpcHost: "flyte-api.${SECRET_DOMAIN}"
+    #   grpcIngressClassName: external
+    #   grpcAnnotations:
+    #     kubernetes.io/ingress.class: "external"
+    #     external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+    #     nginx.ingress.kubernetes.io/backend-protocol: "GRPC" # Important for gRPC
+    #
 
-      # Common TLS config (can be overridden by httpTls/grpcTls if needed)
-      # Explicit TLS sections instead of combined
-      httpTls: # Specific TLS for HTTP ingress
-        - hosts:
-            - "flyte.${SECRET_DOMAIN}"
-          secretName: flyte-tls
-      grpcTls: # Specific TLS for gRPC ingress
-       - hosts:
-           - "flyte-api.${SECRET_DOMAIN}"
-         secretName: flyte-api-tls # Use a potentially different secret if needed
+    #   # Explicit TLS sections instead of combined
+    #   httpTls: # Specific TLS for HTTP ingress
+    #     - hosts:
+    #         - "flyte.${SECRET_DOMAIN}"
+    #       secretName: flyte-tls
+    #   grpcTls: # Specific TLS for gRPC ingress
+    #    - hosts:
+    #        - "flyte-api.${SECRET_DOMAIN}"
+    #      secretName: flyte-api-tls # Use a potentially different secret if needed
 
   valuesFrom:
     - kind: Secret

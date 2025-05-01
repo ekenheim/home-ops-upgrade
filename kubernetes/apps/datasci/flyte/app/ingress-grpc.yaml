@@ -1,0 +1,110 @@
+---
+# Ingress for Flyte API (gRPC)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: flyte-grpc # Keep the name consistent if possible, or choose a new one
+  namespace: datasci
+  labels:
+    app.kubernetes.io/instance: flyte
+    app.kubernetes.io/component: grpc-ingress # Custom label
+  annotations:
+    kubernetes.io/ingress.class: "external"
+    external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    # Add any other necessary external/gRPC annotations
+spec:
+  ingressClassName: external
+  rules:
+  - host: "flyte-api.${SECRET_DOMAIN}" # Correct host for the API
+    http:
+      paths:
+      # Paths copied from the helm template output for grpc.yaml
+      - path: /flyteidl.service.AdminService
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-grpc # Service name created by the chart
+            port:
+              number: 8089 # Default gRPC port from chart values/template
+      - path: /flyteidl.service.AdminService/.*
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-grpc
+            port:
+              number: 8089
+      - path: /flyteidl.service.AuthMetadataService
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-grpc
+            port:
+              number: 8089
+      - path: /flyteidl.service.AuthMetadataService/.*
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-grpc
+            port:
+              number: 8089
+      - path: /flyteidl.service.DataProxyService
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-grpc
+            port:
+              number: 8089
+      - path: /flyteidl.service.DataProxyService/.*
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-grpc
+            port:
+              number: 8089
+      - path: /flyteidl.service.IdentityService
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-grpc
+            port:
+              number: 8089
+      - path: /flyteidl.service.IdentityService/.*
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-grpc
+            port:
+              number: 8089
+      - path: /flyteidl.service.SignalService
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-grpc
+            port:
+              number: 8089
+      - path: /flyteidl.service.SignalService/.*
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-grpc
+            port:
+              number: 8089
+      - path: /grpc.health.v1.Health
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-grpc
+            port:
+              number: 8089
+      - path: /grpc.health.v1.Health/.*
+        pathType: ImplementationSpecific # Or Prefix if needed
+        backend:
+          service:
+            name: flyte-flyte-binary-grpc
+            port:
+              number: 8089
+  tls:
+  - hosts:
+    - "flyte-api.${SECRET_DOMAIN}"
+    secretName: flyte-api-tls # Assumes cert-manager or similar provides this

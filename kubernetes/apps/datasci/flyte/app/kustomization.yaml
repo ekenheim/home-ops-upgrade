@@ -6,5 +6,7 @@ resources:
   # - ./backup/  # nothing to back up currently
   - ./helmrelease.yaml
   - ./externalsecret.yaml
+  - ./ingress-grpc.yaml
+  - ./ingress-http.yaml
   - ../../../../templates/volsync
   - ../../../../templates/gatus/guarded

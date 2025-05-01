@@ -22,6 +22,49 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
+  values:
+    service:
+      console:
+        controller: flyte-console
+        ports:
+          http:
+            port: 8080
+      api:
+        controller: flyte-api
+        ports:
+          http:
+            port: 8081
+    ingress:
+      console:
+        enabled: true
+        className: internal
+        hosts:
+          - host: "flyte.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: console
+                  port: http
+        tls:
+          - hosts:
+              - "flyte.${SECRET_DOMAIN}"
+      api:
+        enabled: true
+        className: external
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+        hosts:
+          - host: "flyte-api.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: api
+                  port: http
+        tls:
+          - hosts:
+              - "flyte-api.${SECRET_DOMAIN}"
   valuesFrom:
     - kind: Secret
       name: flyte-secret

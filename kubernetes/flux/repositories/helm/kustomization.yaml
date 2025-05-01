@@ -48,3 +48,4 @@ resources:
   - ./qdrant.yaml
   - ./truecharts.yaml
   - ./nvidia-charts.yaml
+  - ./seldonio.yaml

@@ -23,56 +23,56 @@ spec:
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-flyte-binary-http # Service name created by the chart
+            name: flyte-http # CORRECTED Service name created by the chart
             port:
               number: 8088 # Default HTTP port from chart values/template
       - path: /console/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-flyte-binary-http
+            name: flyte-http # CORRECTED
             port:
               number: 8088
       - path: /api
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-flyte-binary-http
+            name: flyte-http # CORRECTED
             port:
               number: 8088
       - path: /api/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-flyte-binary-http
+            name: flyte-http # CORRECTED
             port:
               number: 8088
       - path: /healthcheck
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-flyte-binary-http
+            name: flyte-http # CORRECTED
             port:
               number: 8088
       - path: /v1/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-flyte-binary-http
+            name: flyte-http # CORRECTED
             port:
               number: 8088
       - path: /.well-known
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-flyte-binary-http
+            name: flyte-http # CORRECTED
             port:
               number: 8088
       - path: /.well-known/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-flyte-binary-http
+            name: flyte-http # CORRECTED
             port:
               number: 8088
       # Add other paths like /login, /logout, /callback, /me, /config, /oauth2 if needed

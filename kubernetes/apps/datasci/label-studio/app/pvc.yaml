@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: label-studio
+  namespace: datasci # Optional: Kustomize/Flux usually handle this
+  labels:
+    app.kubernetes.io/instance: label-studio
+    app.kubernetes.io/name: label-studio
+    # Add any other standard labels you use
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi # Default size, adjust if needed
+  storageClassName: ceph-block # Based on common usage in your repo

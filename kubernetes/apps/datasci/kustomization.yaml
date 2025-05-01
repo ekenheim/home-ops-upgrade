@@ -19,6 +19,5 @@ resources:
   - ./qdrant/ks.yaml
   - ./flyte/ks.yaml
   - ./label-studio/ks.yaml
-  - ./istio-system/cluster-local-gateway/ks.yaml
 
   #- ./seldon-core/ks.yaml - disabled for now as it's not ready for use. and uncertain about istio integration.

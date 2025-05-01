@@ -126,6 +126,10 @@ spec:
       databases: ["flyte"]
       password:
         type: AlphaNumeric
+    - name: "label-studio"
+      databases: ["label-studio"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

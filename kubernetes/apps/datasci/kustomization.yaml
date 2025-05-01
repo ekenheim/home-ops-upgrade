@@ -18,4 +18,5 @@ resources:
   - ./ollama/ks.yaml
   - ./qdrant/ks.yaml
   - ./flyte/ks.yaml
-  - ./seldon-core/ks.yaml
+  - ./label-studio/ks.yaml
+  #- ./seldon-core/ks.yaml - disabled for now as it's not ready for use. and uncertain about istio integration.

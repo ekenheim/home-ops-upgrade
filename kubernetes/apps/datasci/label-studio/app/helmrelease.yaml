@@ -1,45 +1,54 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: &app label-studio
 spec:
+  chart:
+    spec:
+      chart: app-template
+      version: 3.7.3 # Match mlflow's version or specify desired version
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
   interval: 1h
-  chartRef:
-    kind: OCIRepository
-    name: app-template
+  # Add dependsOn if needed, like mlflow
+  # dependsOn:
+  #   - name: rook-ceph-cluster
+  #     namespace: rook-ceph
+  #   - name: volsync
+  #     namespace: storage
   install:
     remediation:
-      retries: -1
+      retries: 3 # Align with mlflow
   upgrade:
     cleanupOnFail: true
     remediation:
       strategy: rollback
       retries: 3
+  # Add driftDetection if desired
+  # driftDetection:
+  #   mode: enabled
   values:
     controllers:
       label-studio:
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 17
-            envFrom: &envFrom
-              - secretRef:
-                  name: label-studio-secret
         containers:
           app:
             image:
               repository: heartexlabs/label-studio
               tag: 1.17.0@sha256:9e537980c551ced53188844e3708e470c8086e2cc578a36b4cbc2a2b9a2caae4
             env:
-              CSRF_TRUSTED_ORIGINS: "https://label-studio.goyangi.cloud"
+              CSRF_TRUSTED_ORIGINS: "https://label-studio.${SECRET_DOMAIN}"
               EXPERIMENTAL_FEATURES: 1
               SSRF_PROTECTION_ENABLED: "true"
-            envFrom: *envFrom
+              DJANGO_DB: default
+            envFrom:
+              - secretRef:
+                  name: label-studio-db-secret
             probes:
               liveness: &probes
                 enabled: true
@@ -53,6 +62,17 @@ spec:
                   timeoutSeconds: 1
                   failureThreshold: 3
               readiness: *probes
+              startup: # Add startup probe like mlflow
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 5
+                  timeoutSeconds: 1
+                  failureThreshold: 30 # Adjust as needed
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -66,8 +86,8 @@ spec:
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
+        runAsUser: 65534 # Match mlflow
+        runAsGroup: 65534 # Match mlflow
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile: {type: RuntimeDefault}
@@ -79,7 +99,7 @@ spec:
             port: *port
     route:
       app:
-        hostnames: ["label-studio.goyangi.cloud"]
+        hostnames: ["label-studio.${SECRET_DOMAIN}"]
         parentRefs:
           - name: internal
             namespace: kube-system
@@ -90,6 +110,8 @@ spec:
                 port: *port
     persistence:
       data:
-        type: emptyDir
+        # type: emptyDir # Change from emptyDir
+        enabled: true # Enable persistence
+        existingClaim: *app # Use an existing PVC named label-studio
         globalMounts:
-          - path: /label-studio/data/
+          - path: /label-studio/data/ # Keep the mount path

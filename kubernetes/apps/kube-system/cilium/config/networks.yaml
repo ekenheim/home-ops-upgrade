@@ -1,0 +1,27 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumloadbalancerippool_v2alpha1.json
+apiVersion: cilium.io/v2alpha1
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: main-lan-pool
+spec:
+  blocks:
+    # IPs from Main LAN (192.168.1.x) dedicated for K8s LoadBalancers
+    # Outside DHCP range (192.168.1.6 - 192.168.1.220)
+    - cidr: 192.168.1.221/29
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumbgppeeringpolicy_v2alpha1.json
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPPeeringPolicy
+metadata:
+  name: default
+spec:
+  # Apply this policy to all nodes (adjust nodeSelector if needed)
+  nodeSelector:
+    matchLabels: {}
+  virtualRouters:
+    - localASN: 64514 # K8s Cluster ASN (from joryirving example)
+      exportPodCIDR: false # Do not advertise internal Pod CIDR
+      neighbors:
+        - peerAddress: "192.168.50.1/32" # UDM Pro IP on K8s VLAN
+          peerASN: 64513 # UDM Pro ASN (from joryirving example)

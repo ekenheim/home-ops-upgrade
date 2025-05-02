@@ -7,6 +7,7 @@ bpf:
   hostLegacyRouting: true
   masquerade: true
   tproxy: true
+  bpfClockProbe: true
 cgroup:
   automount:
     enabled: false
@@ -30,8 +31,7 @@ k8sServicePort: 7445
 kubeProxyReplacement: true
 kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
 l2announcements:
-  enabled: true
-#  enabled: false
+  enabled: false
 loadBalancer:
   algorithm: maglev
   mode: dsr
@@ -76,3 +76,5 @@ securityContext:
       - NET_ADMIN
       - SYS_ADMIN
       - SYS_RESOURCE
+bgpControlPlane:
+  enabled: true

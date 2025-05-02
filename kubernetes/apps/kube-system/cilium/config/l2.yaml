@@ -1,24 +1,4 @@
 ---
-# https://docs.cilium.io/en/latest/network/l2-announcements
-# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliuml2announcementpolicy_v2alpha1.json
-apiVersion: cilium.io/v2alpha1
-kind: CiliumL2AnnouncementPolicy
-metadata:
-  name: policy
-spec:
-  loadBalancerIPs: true
-  interfaces:
-    - ^(ens|enp).*
-  nodeSelector:
-    matchLabels:
-      # kubernetes.io/os: linux # Apply to all nodes (causes conflicts)
-      kubernetes.io/hostname: worker2 # Apply only to worker2
----
-# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumloadbalancerippool_v2alpha1.json
-apiVersion: cilium.io/v2alpha1
-kind: CiliumLoadBalancerIPPool
-metadata:
-  name: pool
-spec:
-  blocks:
-    - cidr: "${NODE_CIDR}"
+# Contains CiliumL2AnnouncementPolicy originally, but that conflicts with BGP.
+# Leaving file to avoid breaking kustomization, but its content is effectively ignored
+# as l2announcements.enabled=false should be set in Helm values when using BGP.

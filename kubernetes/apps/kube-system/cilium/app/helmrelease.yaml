@@ -28,6 +28,12 @@ spec:
     - kind: ConfigMap
       name: cilium-helm-values
   values:
+    bgpControlPlane:
+      enabled: true
+    gatewayAPI:
+      enabled: true
+    l2announcements:
+      enabled: false
     hubble:
       enabled: true
       metrics:

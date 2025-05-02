@@ -29,13 +29,11 @@ spec:
               repository: cschranz/gpu-jupyter
               tag: v1.9_cuda-12.6_ubuntu-24.04_python-only
             env:
-              TZ: "America/Chicago"
+              TZ: "Europe/Stockholm"
               SHUTDOWN_INACTIVE_KERNELS: "true"
               GRANT_SUDO: "yes"
               JUPYTER_ENABLE_LAB: "yes"
               #NVIDIA_VISIBLE_DEVICES: "1"
-            envFrom:
-              - secret: ml-workspace-creds
     service:
       main:
         controller: main
@@ -63,7 +61,6 @@ spec:
         tls:
           - hosts:
               - *host
-            secretName: acme-crt-secret-sparks-codes
     persistence:
       workspace:
         enabled: true

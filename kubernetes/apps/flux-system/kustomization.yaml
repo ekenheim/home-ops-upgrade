@@ -6,6 +6,7 @@ resources:
   - ./namespace.yaml
   - ./addons/ks.yaml
   - ./tofu-controller/ks.yaml
-  - ./weave-gitops/ks.yaml
-  - ./clickops/ks.yaml
+#  - ./weave-gitops/ks.yaml
+#  - ./clickops/ks.yaml
+  - ./flux-operator/ks.yaml
   - ./headlamp/ks.yaml

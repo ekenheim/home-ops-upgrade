@@ -1,0 +1,83 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jupyter-notebook
+  namespace: datasci
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.7.3
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s-charts
+        namespace: flux-system
+      interval: 15m
+  values:
+    defaultPodOptions:
+      #runtimeClassName: "nvidia"
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+    controllers:
+      main:
+        containers:
+          main:
+            image:
+              repository: cschranz/gpu-jupyter
+              tag: v1.9_cuda-12.6_ubuntu-24.04_python-only
+            env:
+              TZ: "America/Chicago"
+              SHUTDOWN_INACTIVE_KERNELS: "true"
+              GRANT_SUDO: "yes"
+              JUPYTER_ENABLE_LAB: "yes"
+              #NVIDIA_VISIBLE_DEVICES: "1"
+            envFrom:
+              - secret: ml-workspace-creds
+    service:
+      main:
+        controller: main
+        ports:
+          http:
+            port: 8888
+    ingress:
+      main:
+        enabled: true
+        className: "internal"
+        annotations:
+          hajimari.io/enable: "true"
+          hajimari.io/appName: "Jupyter Notebook"
+          hajimari.io/info: "Machine Learning Workspace"
+          hajimari.io/icon: "brain"
+          hajimari.io/targetBlank: "true"
+        hosts:
+          - host: &host jupyter.${SECRET_DOMAIN}
+            paths:
+              - path: "/"
+                pathType: "Prefix"
+                service:
+                  identifier: main
+                  port: http
+        tls:
+          - hosts:
+              - *host
+            secretName: acme-crt-secret-sparks-codes
+    persistence:
+      workspace:
+        enabled: true
+        type: persistentVolumeClaim
+        accessMode: ReadWriteMany
+        storageClass: ceph-filesystem
+        size: 50Gi
+        retain: true
+        globalMounts:
+          - path: /home/robin/Notebooks
+      shm:
+        enabled: true
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 8Gi
+        globalMounts:
+          - path: /dev/shm

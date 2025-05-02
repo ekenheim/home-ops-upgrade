@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cert-manager.io/certificate_v1.json
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: "${SECRET_DOMAIN//./-}" # Name derived from domain
+  namespace: kube-system # Place certificate in kube-system
+spec:
+  secretName: "${SECRET_DOMAIN//./-}-tls" # Secret name the Gateways reference
+  issuerRef:
+    name: letsencrypt-production # Your ClusterIssuer
+    kind: ClusterIssuer
+  commonName: "${SECRET_DOMAIN}" # Your main domain
+  dnsNames:
+    - "${SECRET_DOMAIN}" # Your main domain
+    - "*.${SECRET_DOMAIN}" # Wildcard for subdomains

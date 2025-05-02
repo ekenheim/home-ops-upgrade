@@ -3,18 +3,28 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: internal-gateway
-  namespace: kube-system # Deploy gateway resources in kube-system
-  annotations:
-    # Optional: Use internal-specific address pool if defined in Cilium
-    # io.cilium/gateway-ipam: internal
+  name: internal # Match example name
+  namespace: kube-system # Ensure namespace
+  # annotations:
+    # external-dns.alpha.kubernetes.io/target: &hostname ${INTERNAL_DOMAIN}.jory.dev # Adapt hostname later
 spec:
   gatewayClassName: cilium
+  # Restore addresses block from example
+  addresses:
+    - type: IPAddress
+      value: ${SVC_GATEWAY_INTERNAL}
+    - type: IPAddress
+      value: "::ffff:${SVC_GATEWAY_INTERNAL}"
+  # Restore infrastructure block from example (optional)
+  # infrastructure:
+  #   annotations:
+  #     external-dns.alpha.kubernetes.io/hostname: *hostname # Adapt hostname later
   listeners:
-    # HTTPS Internal
+    # HTTPS Internal (Example has HTTP too, but we'll keep just HTTPS for now)
     - name: https
       protocol: HTTPS
       port: 443
+      # hostname: "*.jory.dev" # Adapt hostname later
       allowedRoutes:
         namespaces:
           from: All
@@ -24,4 +34,4 @@ spec:
         # Assumes a wildcard cert named '*-tls' in the 'kube-system' namespace
         certificateRefs:
           - name: "${SECRET_DOMAIN//./-}-tls"
-            namespace: kube-system
+            # namespace: kube-system # Namespace is inherited

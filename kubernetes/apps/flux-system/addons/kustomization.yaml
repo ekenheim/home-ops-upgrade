@@ -5,4 +5,4 @@ kind: Kustomization
 resources:
   - ./httproute.yaml
   - ./receiver.yaml
-  - ./github/secret.sops.yaml
+  - ./webooks/github/secret.sops.yaml

@@ -101,8 +101,24 @@ spec:
                   secretKeyRef:
                     name: mlflow-db-secret
                     key: POSTGRES_PASSWORD
-              MLFLOW_DEFAULT_ARTIFACT_ROOT: /data
-              MLFLOW_SERVE_ARTIFACTS: true
+
+              # --- S3 Artifact Store Config ---
+              MLFLOW_DEFAULT_ARTIFACT_ROOT: s3://mlflow-artifacts/
+              MLFLOW_S3_ENDPOINT_URL: http://minio-secondary.storage.svc.cluster.local:9000
+              AWS_ACCESS_KEY_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: mlflow-minio-creds
+                    key: AWS_ACCESS_KEY_ID
+              AWS_SECRET_ACCESS_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: mlflow-minio-creds
+                    key: AWS_SECRET_ACCESS_KEY
+              # --- End S3 Config ---
+
+              # Set to false when using external S3 store directly from clients
+              MLFLOW_SERVE_ARTIFACTS: "false"
               MLFLOW_HOST: 0.0.0.0
               MLFLOW_PORT: &port 5000
             # envFrom:

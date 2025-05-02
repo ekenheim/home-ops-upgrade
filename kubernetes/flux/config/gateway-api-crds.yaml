@@ -10,7 +10,14 @@ spec:
   url: https://github.com/kubernetes-sigs/gateway-api
   ref:
     tag: v1.3.0
-  # No ignore needed if Kustomization path is ./config/crd/
+  # Fetch both standard and experimental CRDs
+  ignore: |
+    # exclude everything
+    /*
+    # include CRDs from standard channel
+    !config/crd/standard/**/*.yaml
+    # include CRDs from experimental channel
+    !config/crd/experimental/**/*.yaml
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -20,8 +27,8 @@ metadata:
   name: gateway-api-crds # CRD Kustomization Name
   namespace: flux-system # Must be in flux-system
 spec:
-  # Point to the base CRD directory, let Kustomize find definitions
-  path: ./config/crd/
+  # Path should be root to use the repo's own kustomization.yaml
+  path: ./
   prune: false
   sourceRef:
     kind: GitRepository

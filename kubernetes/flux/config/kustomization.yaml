@@ -4,4 +4,4 @@ kind: Kustomization
 resources:
   - ./flux.yaml
   - ./cluster.yaml
-  - ./gateway-api-crds.yaml
+  # - ./gateway-api-crds.yaml # Removed - CRDs managed by istio-system/gateway-api-crds

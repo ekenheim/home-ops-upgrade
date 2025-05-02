@@ -15,7 +15,7 @@ resources:
   #- ./whisper/ks.yaml
   #- ./dask/ks.yaml
   - ./ray/ks.yaml
-  - ./ollama/ks.yaml
+  #- ./ollama/ks.yaml
   - ./qdrant/ks.yaml
   - ./flyte/ks.yaml
   - ./label-studio/ks.yaml

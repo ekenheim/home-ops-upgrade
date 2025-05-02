@@ -1,37 +1,37 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/gateway_v1.json
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/gateway_v1.json
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: internal # Match example name
-  namespace: kube-system # Ensure namespace
-  # annotations:
-    # external-dns.alpha.kubernetes.io/target: &hostname ${INTERNAL_DOMAIN}.jory.dev # Adapt hostname later
+  name: internal
+  annotations:
+    external-dns.alpha.kubernetes.io/target: &hostname internal.${SECRET_DOMAIN}
 spec:
   gatewayClassName: cilium
-  # Restore addresses block from example
   addresses:
     - type: IPAddress
       value: ${SVC_GATEWAY_INTERNAL}
     - type: IPAddress
-      value: "::ffff:${SVC_GATEWAY_INTERNAL}"
-  # Restore infrastructure block from example (optional)
-  # infrastructure:
-  #   annotations:
-  #     external-dns.alpha.kubernetes.io/hostname: *hostname # Adapt hostname later
+      value: ::ffff:${SVC_GATEWAY_INTERNAL}
+  infrastructure:
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: *hostname
   listeners:
-    # HTTPS Internal (Example has HTTP too, but we'll keep just HTTPS for now)
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*.${SECRET_DOMAIN}"
+      allowedRoutes:
+        namespaces:
+          from: Same
     - name: https
       protocol: HTTPS
       port: 443
-      # hostname: "*.jory.dev" # Adapt hostname later
+      hostname: "*.${SECRET_DOMAIN}"
       allowedRoutes:
         namespaces:
           from: All
       tls:
-        mode: Terminate
-        # Reference certificate secrets managed by cert-manager
-        # Assumes a wildcard cert named '*-tls' in the 'kube-system' namespace
         certificateRefs:
-          - name: "${SECRET_DOMAIN//./-}-tls"
-            # namespace: kube-system # Namespace is inherited
+          - kind: Secret
+            name: ${SECRET_DOMAIN//./-}-tls

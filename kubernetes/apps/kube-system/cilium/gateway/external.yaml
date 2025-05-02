@@ -1,45 +1,37 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/gateway_v1.json
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/gateway_v1.json
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: external
-  namespace: kube-system # Deploy gateway resources in kube-system
-  # annotations:
-    # external-dns.alpha.kubernetes.io/target: &hostname ${EXTERNAL_DOMAIN}.jory.dev # Adapt hostname later
+  annotations:
+    external-dns.alpha.kubernetes.io/target: &hostname external.${SECRET_DOMAIN}
 spec:
   gatewayClassName: cilium
-  # Restore addresses block from example
   addresses:
     - type: IPAddress
       value: ${SVC_GATEWAY_EXTERNAL}
     - type: IPAddress
-      value: "::ffff:${SVC_GATEWAY_EXTERNAL}"
-  # Restore infrastructure block from example (optional)
-  # infrastructure:
-  #   annotations:
-  #     external-dns.alpha.kubernetes.io/hostname: *hostname # Adapt hostname later
+      value: ::ffff:${SVC_GATEWAY_EXTERNAL}
+  infrastructure:
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: *hostname
   listeners:
-    # HTTP (Redirects to HTTPS)
     - name: http
       protocol: HTTP
       port: 80
-      # hostname: "*.jory.dev" # Adapt hostname later
+      hostname: "*.${SECRET_DOMAIN}"
       allowedRoutes:
         namespaces:
-          # from: Same # Example uses Same, but All might be needed depending on where HTTPRoutes live
-          from: All
-    # HTTPS (Terminates TLS)
+          from: Same
     - name: https
       protocol: HTTPS
       port: 443
-      # hostname: "*.jory.dev" # Adapt hostname later
+      hostname: "*.${SECRET_DOMAIN}"
       allowedRoutes:
         namespaces:
           from: All
       tls:
-        mode: Terminate
         certificateRefs:
-          # Reference secret using the domain variable
-          - name: "${SECRET_DOMAIN//./-}-tls"
-            # namespace: kube-system # Namespace is inherited
+          - kind: Secret
+            name: ${SECRET_DOMAIN//./-}-tls

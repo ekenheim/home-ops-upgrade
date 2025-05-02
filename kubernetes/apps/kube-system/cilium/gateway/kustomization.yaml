@@ -4,7 +4,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: kube-system # Target namespace for these resources
 resources:
-  # - crds.yaml # Removed - CRDs managed centrally
+  - crds.yaml # Ensure CRD Flux definitions are included
   - external.yaml
   - internal.yaml
   - certificate.yaml # Add the certificate definition

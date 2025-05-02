@@ -1,0 +1,39 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  # NOTE: Flux resources must be in flux-system namespace
+  name: gateway-api-crd
+  namespace: flux-system
+spec:
+  interval: 30m
+  url: https://github.com/kubernetes-sigs/gateway-api
+  ref:
+  # renovate: datasource=github-releases depName=kubernetes-sigs/gateway-api
+    tag: v1.3.0
+  ignore: |
+    # exclude everything
+    /*
+    # include only experimental CRDs (as per Jory's example)
+    !config/crd/experimental
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  # NOTE: Flux resources must be in flux-system namespace
+  name: gateway-api # Use the name from Jory's example
+  namespace: flux-system
+spec:
+  # No path needed, Kustomize uses the kustomization.yaml at the repo root
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: gateway-api-crd
+    # Namespace must match GitRepository
+    namespace: flux-system
+  wait: true
+  interval: 15m
+  retryInterval: 1m
+  timeout: 5m
+  # No health checks needed here, the parent Kustomization waits

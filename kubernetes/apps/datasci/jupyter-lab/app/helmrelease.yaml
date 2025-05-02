@@ -73,7 +73,7 @@ spec:
         size: 50Gi
         retain: true
         globalMounts:
-          - path: /home/robin/Notebooks
+          - path: /home/jovyan/Notebooks
       shm:
         enabled: true
         type: emptyDir

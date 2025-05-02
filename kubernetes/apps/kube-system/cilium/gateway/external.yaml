@@ -1,0 +1,31 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/gateway_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: external-gateway
+  namespace: kube-system # Deploy gateway resources in kube-system
+spec:
+  gatewayClassName: cilium
+  listeners:
+    # HTTP (Redirects to HTTPS)
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    # HTTPS (Terminates TLS)
+    - name: https
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        # Reference certificate secrets managed by cert-manager
+        # Assumes a wildcard cert named '*-tls' in the 'kube-system' namespace
+        certificateRefs:
+          - name: "${SECRET_DOMAIN//./-}-tls"
+            namespace: kube-system

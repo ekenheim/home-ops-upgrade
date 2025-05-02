@@ -117,8 +117,8 @@ spec:
                     key: AWS_SECRET_ACCESS_KEY
               # --- End S3 Config ---
 
-              # Set to false when using external S3 store directly from clients
-              MLFLOW_SERVE_ARTIFACTS: "false"
+              # Set to true to have MLflow server proxy artifact requests
+              MLFLOW_SERVE_ARTIFACTS: "true"
               MLFLOW_HOST: 0.0.0.0
               MLFLOW_PORT: &port 5000
             # envFrom:

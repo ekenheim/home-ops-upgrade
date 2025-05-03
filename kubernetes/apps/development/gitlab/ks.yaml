@@ -5,7 +5,7 @@ metadata:
   name: &app gitlab
   namespace: flux-system
 spec:
-  targetNamespace: *namespace
+  targetNamespace: development
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app

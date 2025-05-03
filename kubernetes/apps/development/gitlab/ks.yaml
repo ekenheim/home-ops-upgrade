@@ -22,7 +22,7 @@ spec:
   prune: true
   sourceRef:
     kind: GitRepository
-    name: home-operations
+    name: home-kubernetes
     namespace: flux-system
   wait: true
   interval: 30m

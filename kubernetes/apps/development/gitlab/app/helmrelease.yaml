@@ -87,6 +87,29 @@ spec:
           secret: gitlab-bitwarden-secret
           key: SMTP_PASSWORD
       appConfig:
+        object_store:
+          enabled: true
+          proxy_download: true
+          connection:
+            secret: gitlab-bitwarden-secret
+          config:
+            provider: AWS
+            region: us-east-1
+            endpoint: http://minio-secondary-app.storage.svc.cluster.local:9000
+            path_style: true
+            accessKey:
+              secret: gitlab-bitwarden-secret
+              key: MINIO_ACCESS_KEY
+            secretKey:
+              secret: gitlab-bitwarden-secret
+              key: MINIO_SECRET_KEY
+          buckets:
+            artifacts: gitlab-artifacts
+            lfs: gitlab-lfs
+            uploads: gitlab-uploads
+            packages: gitlab-packages
+            mr_diffs: gitlab-mr-diffs
+            terraform_state: gitlab-terraform-state
         uploads:
           object_store:
             enabled: true
@@ -107,31 +130,8 @@ spec:
             enabled: true
         omniauth:
           enabled: false
-      objectstorage:
-        enabled: true
-        proxy_download: true
-        connection:
-          secret: gitlab-bitwarden-secret
-        config:
-          provider: AWS
-          region: us-east-1
-          endpoint: http://minio-secondary-app.storage.svc.cluster.local:9000
-          path_style: true
-          accessKey:
-            secret: gitlab-bitwarden-secret
-            key: MINIO_ACCESS_KEY
-          secretKey:
-            secret: gitlab-bitwarden-secret
-            key: MINIO_SECRET_KEY
-        buckets:
-          artifacts: gitlab-artifacts
-          lfs: gitlab-lfs
-          uploads: gitlab-uploads
-          packages: gitlab-packages
-          mr_diffs: gitlab-mr-diffs
-          terraform_state: gitlab-terraform-state
-    minio:
-      install: false
+      minio:
+        enabled: false
     gitlab:
       gitaly:
         resources: {}

@@ -36,7 +36,7 @@ spec:
     revisionHistoryLimit: 1
 
     # This URL is for runner registration, keep it as is if registration works.
-    gitlabUrl: http://gitlab-webservice-default.development.svc.cluster.local:8080
+    #gitlabUrl: http://gitlab-webservice-default.development.svc.cluster.local:8080
 
     replicas: 2
 
@@ -78,6 +78,8 @@ spec:
       # Injecting the clone_url directly into the runner's config
       config: |
         [[runners]]
+          # Add the URL for registration here
+          url = "http://gitlab-webservice-default.development.svc.cluster.local:8080"
           # Add the clone_url here to force internal IP for git operations
           clone_url = "http://gitlab-webservice-default.development.svc.cluster.local:8080"
           environment = ["FF_GITLAB_REGISTRY_HELPER_IMAGE=true"]

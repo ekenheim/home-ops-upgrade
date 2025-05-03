@@ -130,6 +130,8 @@ spec:
           packages: gitlab-packages
           mr_diffs: gitlab-mr-diffs
           terraform_state: gitlab-terraform-state
+    minio:
+      install: false
     gitlab:
       gitaly:
         resources: {}

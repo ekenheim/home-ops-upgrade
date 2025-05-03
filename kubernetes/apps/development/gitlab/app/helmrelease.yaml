@@ -96,7 +96,7 @@ spec:
           config:
             provider: AWS
             region: us-east-1
-            endpoint: http://minio-secondary-app.storage.svc.cluster.local:9000
+            endpoint: http://minio-secondary.storage.svc.cluster.local:9000
             path_style: true
             accessKey:
               secret: gitlab-bitwarden-secret

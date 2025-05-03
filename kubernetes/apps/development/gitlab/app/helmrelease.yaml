@@ -65,6 +65,9 @@ spec:
         enabled: false
       pages:
         enabled: true
+        objectStore:
+          enabled: true
+          bucket: gitlab-pages
       email:
         display_name: 'GitLab'
         from: 'gitlab@${SECRET_DOMAIN}'

@@ -151,6 +151,7 @@ spec:
       enabled: false
     gitlab-runner:
       install: true
+      gitlabUrl: http://gitlab-webservice-default.development.svc.cluster.local
       concurrent: 2
       runners:
         nodeSelector:

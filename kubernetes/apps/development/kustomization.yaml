@@ -8,7 +8,7 @@ resources:
   # Flux-Kustomizations
   - ./umami/ks.yaml
   - ./gitlab/ks.yaml
-  #- ./gitlab/runner-ks.yaml
+  - ./gitlab/runner-ks.yaml
   #- ./gitlab/agent-ks.yaml
   #- ./medusa/ks.yaml
   #- ./resume/ks.yaml

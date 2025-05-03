@@ -138,6 +138,9 @@ spec:
       gitlab-shell:
         minReplicas: 1
         maxReplicas: 2
+        service:
+          type: LoadBalancer
+          loadBalancerIP: ${GITLAB_LB_IP}
         resources: {}
       gitlab-pages:
         resources: {}

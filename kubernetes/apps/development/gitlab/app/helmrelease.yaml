@@ -63,13 +63,15 @@ spec:
           create: false
       kas:
         enabled: false
+      # Disable GitLab Pages
       pages:
-        enabled: true
-        objectStore:
-          enabled: true
-          bucket: gitlab-pages
-          connection:
-            secret: gitlab-bitwarden-secret
+        enabled: false
+        # Keep objectStore config commented/removed or it might still cause issues
+        # objectStore:
+        #   enabled: true
+        #   bucket: gitlab-pages
+        #   connection:
+        #     secret: gitlab-bitwarden-secret
       email:
         display_name: 'GitLab'
         from: 'gitlab@${SECRET_DOMAIN}'

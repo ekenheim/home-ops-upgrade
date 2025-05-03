@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gitlab-agent
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/development/gitlab/agent
+  targetNamespace: development
+  sourceRef:
+    kind: GitRepository
+    name: home-ops
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: &appname gitlab-agent
+  prune: true
+  wait: false
+  interval: 10m

@@ -93,7 +93,14 @@ spec:
         password:
           secret: gitlab-bitwarden-secret
           key: SMTP_PASSWORD
+        authentication: plain
+      monitoring:
+        enabled: true
       appConfig:
+        enableUsagePing: false
+        enableSeatLink: false
+        enableImpersonation: true
+        usernameChangingEnabled: false
         import_sources:
           github: true
           bitbucket: true

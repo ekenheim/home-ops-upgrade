@@ -90,8 +90,6 @@ spec:
         object_store:
           enabled: true
           proxy_download: true
-          connection:
-            secret: gitlab-bitwarden-secret
           config:
             provider: AWS
             region: us-east-1
@@ -119,9 +117,6 @@ spec:
         lfs:
           object_store:
             enabled: true
-        packages:
-          object_store:
-            enabled: true
         external_diffs:
           object_store:
             enabled: true
@@ -134,6 +129,8 @@ spec:
         enabled: false
     gitlab:
       gitaly:
+        persistence:
+          existingClaim: gitlab-gitaly
         resources: {}
       webservice:
         minReplicas: 1

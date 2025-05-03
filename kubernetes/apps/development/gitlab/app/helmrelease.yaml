@@ -89,6 +89,29 @@ spec:
       appConfig:
         omniauth:
           enabled: false
+      objectstorage:
+        enabled: true
+        proxy_download: true
+        connection:
+          secret: gitlab-bitwarden-secret
+        config:
+          provider: AWS
+          region: us-east-1
+          endpoint: http://minio-secondary-app.storage.svc.cluster.local:9000
+          path_style: true
+          accessKey:
+            secret: gitlab-bitwarden-secret
+            key: MINIO_ACCESS_KEY
+          secretKey:
+            secret: gitlab-bitwarden-secret
+            key: MINIO_SECRET_KEY
+        buckets:
+          artifacts: gitlab-artifacts
+          lfs: gitlab-lfs
+          uploads: gitlab-uploads
+          packages: gitlab-packages
+          mr_diffs: gitlab-mr-diffs
+          terraform_state: gitlab-terraform-state
     gitlab:
       gitaly:
         resources: {}
@@ -97,10 +120,42 @@ spec:
         maxReplicas: 2
         workerProcesses: 2
         resources: {}
+        uploads:
+          enabled: true
+          storage: external
+          external:
+            connection:
+              secret: gitlab-bitwarden-secret
+              key: connection
+            bucket: gitlab-uploads
       sidekiq:
         minReplicas: 1
         maxReplicas: 2
         resources: {}
+        artifacts:
+          enabled: true
+          storage: external
+          external:
+            connection:
+              secret: gitlab-bitwarden-secret
+              key: connection
+            bucket: gitlab-artifacts
+        lfs:
+          enabled: true
+          storage: external
+          external:
+            connection:
+              secret: gitlab-bitwarden-secret
+              key: connection
+            bucket: gitlab-lfs
+        packages:
+          enabled: true
+          storage: external
+          external:
+            connection:
+              secret: gitlab-bitwarden-secret
+              key: connection
+            bucket: gitlab-packages
       gitlab-shell:
         minReplicas: 1
         maxReplicas: 2

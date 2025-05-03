@@ -94,6 +94,10 @@ spec:
           secret: gitlab-bitwarden-secret
           key: SMTP_PASSWORD
       appConfig:
+        import_sources:
+          github: true
+          bitbucket: true
+          gitlab_project: true
         object_store:
           enabled: true
           proxy_download: true

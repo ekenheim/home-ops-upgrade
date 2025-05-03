@@ -79,7 +79,7 @@ spec:
       config: |
         [[runners]]
           # Add the clone_url here to force internal IP for git operations
-          clone_url = "https://192.168.50.187"
+          clone_url = "http://gitlab-webservice-default.development.svc.cluster.local:8080"
           environment = ["FF_GITLAB_REGISTRY_HELPER_IMAGE=true"]
           builds_dir = "/builds"
 

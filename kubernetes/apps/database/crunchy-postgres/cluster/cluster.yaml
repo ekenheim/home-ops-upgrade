@@ -130,6 +130,10 @@ spec:
       databases: ["label-studio"]
       password:
         type: AlphaNumeric
+    - name: "gitlab"
+      databases: ["gitlab"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

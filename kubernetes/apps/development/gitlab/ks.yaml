@@ -13,8 +13,6 @@ spec:
     - ../../../../flux/components/gatus/internal
   dependsOn:
     - name: external-secrets-stores
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
     - name: dragonfly-operator
   path: ./kubernetes/apps/development/gitlab/app
   prune: true

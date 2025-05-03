@@ -78,10 +78,10 @@ spec:
       # Injecting the clone_url directly into the runner's config
       config: |
         [[runners]]
-          # Add the URL for registration here
+          # Keep registration URL using service name (assuming registration works)
           url = "http://gitlab-webservice-default.development.svc.cluster.local:8080"
-          # Add the clone_url here to force internal IP for git operations
-          clone_url = "http://gitlab-webservice-default.development.svc.cluster.local:8080"
+          # Use IP address for clone URL again
+          clone_url = "http://192.168.50.187"
           environment = ["FF_GITLAB_REGISTRY_HELPER_IMAGE=true"]
           builds_dir = "/builds"
 

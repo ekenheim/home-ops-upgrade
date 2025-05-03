@@ -119,6 +119,15 @@ spec:
                 volumes:
                 - name: builds
                   emptyDir: {}
+                # Explicitly configure DNS to ensure cluster service resolution
+                dnsConfig:
+                  nameservers:
+                    - 10.43.0.10 # CoreDNS ClusterIP
+                  searches:
+                    # Standard K8s search domains for the namespace
+                    - development.svc.cluster.local
+                    - svc.cluster.local
+                    - cluster.local
               '''
 
       # -- Configuration for the Kubernetes executor

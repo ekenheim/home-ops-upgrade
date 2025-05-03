@@ -68,6 +68,8 @@ spec:
         objectStore:
           enabled: true
           bucket: gitlab-pages
+          connection:
+            secret: gitlab-bitwarden-secret
       email:
         display_name: 'GitLab'
         from: 'gitlab@${SECRET_DOMAIN}'
@@ -111,36 +113,6 @@ spec:
             packages: gitlab-packages
             mr_diffs: gitlab-mr-diffs
             terraform_state: gitlab-terraform-state
-            pages: gitlab-pages
-            # backups: gitlab-backups # Define if using object storage for backups
-            # registry: gitlab-registry # Define if using object storage for registry
-
-        # Enable object storage for specific features (using the consolidated connection)
-        uploads:
-          object_store:
-            enabled: true
-        artifacts:
-          object_store:
-            enabled: true
-        lfs:
-          object_store:
-            enabled: true
-        packages:
-          object_store:
-            enabled: true
-        external_diffs: # Corresponds to mr_diffs bucket
-          object_store:
-            enabled: true
-        terraform_state:
-          object_store:
-            enabled: true
-        # Add Pages object store enablement
-        pages:
-          object_store:
-            enabled: true
-        # Keep omniauth disabled unless configured
-        omniauth:
-          enabled: false
       minio:
         enabled: false
     gitlab:

@@ -7,7 +7,7 @@ metadata:
 spec:
   targetNamespace: development
   dependsOn:
-    - name: gitlab # Depends on the main gitlab Kustomization in flux-system
+    #- name: gitlab # Depends on the main gitlab Kustomization in flux-system
     - name: external-secrets-stores # Depends on the secret store being available
   path: ./kubernetes/apps/development/gitlab/runner # Path to the runner kustomization.yaml
   prune: true

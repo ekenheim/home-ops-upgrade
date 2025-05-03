@@ -35,6 +35,7 @@ spec:
 
     revisionHistoryLimit: 1
 
+    # This URL is for runner registration, keep it as is if registration works.
     gitlabUrl: http://gitlab-webservice-default.development.svc.cluster.local:8080
 
     replicas: 2
@@ -44,8 +45,8 @@ spec:
     concurrent: 6
     checkInterval: 10
 
-    logLevel: info  # debug, info, warn, error, fatal, panic
-    logFormat: json # runner, text, json
+    logLevel: info
+    logFormat: json
 
     rbac:
       create: true
@@ -74,8 +75,11 @@ spec:
       name: development-runner
       tags: "development,k8s"
 
+      # Injecting the clone_url directly into the runner's config
       config: |
         [[runners]]
+          # Add the clone_url here to force internal IP for git operations
+          clone_url = "https://192.168.50.187"
           environment = ["FF_GITLAB_REGISTRY_HELPER_IMAGE=true"]
           builds_dir = "/builds"
 
@@ -112,7 +116,7 @@ spec:
                     mountPath: /builds
                 volumes:
                 - name: builds
-                  emptyDir: {} # Use emptyDir for builds volume
+                  emptyDir: {}
               '''
 
       # -- Configuration for the Kubernetes executor

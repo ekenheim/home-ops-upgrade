@@ -35,3 +35,12 @@ spec:
 
     serviceMonitor:
       enabled: true
+
+    # Define resource requests and limits for the agent pod
+    resources:
+      requests:
+        cpu: 50m
+        memory: 100Mi
+      limits:
+        cpu: 200m
+        memory: 250Mi

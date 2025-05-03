@@ -121,3 +121,59 @@ spec:
                           requests:
                             storage: 10Gi
               '''
+
+      # -- Configuration for the Kubernetes executor
+      # ref: https://docs.gitlab.com/runner/executors/kubernetes.html
+      # kubernetes:
+      #   # -- The default image to use for the Kubernetes executor
+      #   image: ubuntu:22.04
+      #   # -- Disable default annotations for the service account
+      #   serviceAccountAnnotations: {}
+      #   # -- Overwrite the default annotations for the pod.
+      #   podAnnotations: {}
+      #   # -- Overwrite the default labels for the pod.
+      #   podLabels: {}
+      #   # -- Run all containers with the privileged flag enabled
+      #   # This is required if you want to build docker images with Kaniko
+      #   privileged: true # Set to true if using dind requires it, or for Kaniko buildah etc.
+      #   # -- The default DNS policy for the pod.
+      #   # Set to "default" or "ClusterFirstWithHostNet" if you experience issues with DNS resolution.
+      #   # Default: ClusterFirst
+      #   dnsPolicy: Default # Corrected capitalization
+      #   # -- Add volumes to the pod.
+      #   # ref: https://kubernetes.io/docs/concepts/storage/volumes/
+      #   volumes:
+      #     # -- Define a volume named 'builds' using an ephemeral VolumeClaimTemplate
+      #     builds:
+      #       ephemeral:
+      #         volumeClaimTemplate:
+      #           spec:
+      #             storageClassName: ceph-block # Use your default storage class
+      #             accessModes: ["ReadWriteOnce"] # Standard access mode for block storage
+      #             resources:
+      #               requests:
+      #                 storage: 10Gi # Request 10Gi for build data
+      #     # Example: Mount ConfigMap as a volume
+      #     # - name: my-configmap-volume
+      #     #   configMap:
+      #     #     name: my-configmap
+      #     # Example: Mount Secret as a volume
+      #     # - name: my-secret-volume
+      #     #   secret:
+      #     #     secretName: my-secret
+      #   # -- Mount volumes into the build container.
+      #   # build_mounts:
+      #   # Example: Mount the ConfigMap volume into the build container
+      #   # - name: my-configmap-volume
+      #   #   mountPath: /path/to/configmap
+      #   # Example: Mount the Secret volume into the build container
+      #   # - name: my-secret-volume
+      #   #   mountPath: /path/to/secret
+      #   # -- Mount volumes into the helper container.
+      #   # helper_mounts:
+      #   # Example: Mount the ConfigMap volume into the helper container
+      #   # - name: my-configmap-volume
+      #   #   mountPath: /path/to/configmap
+      #   # Example: Mount the Secret volume into the helper container
+      #   # - name: my-secret-volume
+      #   #   mountPath: /path/to/secret

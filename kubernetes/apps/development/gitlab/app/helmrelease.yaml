@@ -156,6 +156,9 @@ spec:
       install: false
     grafana:
       enabled: false
+    # Disable the pre-upgrade check job due to stale DB data
+    gitlab-upgrade-check:
+      enabled: false
   valuesFrom:
     - kind: Secret
       name: gitlab-db-secret

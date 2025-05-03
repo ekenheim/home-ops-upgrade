@@ -50,3 +50,4 @@ resources:
   - ./truecharts.yaml
   - ./nvidia-charts.yaml
   - ./seldonio.yaml
+  - ./gitlab-charts.yaml

@@ -6,14 +6,18 @@ metadata:
   name: gitlab-agent
   namespace: flux-system
 spec:
-  path: ./kubernetes/apps/development/gitlab/agent
   targetNamespace: development
+  dependsOn:
+    - name: gitlab # Depends on the main gitlab Kustomization (which deploys KAS)
+  path: ./kubernetes/apps/development/gitlab/agent # Path to the agent kustomization.yaml
+  prune: true
   sourceRef:
     kind: GitRepository
-    name: home-kubernetes
+    name: home-kubernetes # Source repository
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
   commonMetadata:
     labels:
       app.kubernetes.io/name: &appname gitlab-agent
-  prune: true
-  wait: false
-  interval: 10m

@@ -29,7 +29,8 @@ spec:
 
   values:
     config:
-      kasAddress: wss://kas.${CLUSTER_SECRET_PRD_DOMAIN}/-/kubernetes-agent/
+      # Use internal gRPC address for KAS
+      kasAddress: grpc://gitlab-kas.development.svc.cluster.local:8150
       secretName: gitlab-agent-secret
 
     serviceMonitor:

@@ -9,8 +9,6 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  components:
-    - ../../../../flux/components/gatus/internal
   dependsOn:
     - name: external-secrets-stores
     - name: dragonfly-operator

@@ -87,6 +87,24 @@ spec:
           secret: gitlab-bitwarden-secret
           key: SMTP_PASSWORD
       appConfig:
+        uploads:
+          object_store:
+            enabled: true
+        artifacts:
+          object_store:
+            enabled: true
+        lfs:
+          object_store:
+            enabled: true
+        packages:
+          object_store:
+            enabled: true
+        external_diffs:
+          object_store:
+            enabled: true
+        terraform_state:
+          object_store:
+            enabled: true
         omniauth:
           enabled: false
       objectstorage:

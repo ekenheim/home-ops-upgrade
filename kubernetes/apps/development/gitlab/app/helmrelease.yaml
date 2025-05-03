@@ -62,7 +62,7 @@ spec:
         rbac:
           create: false
       kas:
-        enabled: false
+        enabled: true
       # Disable GitLab Pages
       pages:
         enabled: false
@@ -121,16 +121,33 @@ spec:
             terraform_state: gitlab-terraform-state
       minio:
         enabled: false
+    # Enable Registry
+    registry:
+      enabled: true
+    # Storage config will reference a secret created by ExternalSecret
+    storage:
+      secret: gitlab-registry-storage-secret
+      key: config.yml
     gitlab:
       gitaly:
         persistence:
           existingClaim: gitlab-gitaly
-        resources: {}
+        resources:
+          requests:
+            cpu: 80m
+            memory: 660M
+          limits:
+            memory: 660M
       webservice:
         minReplicas: 1
         maxReplicas: 2
-        workerProcesses: 2
-        resources: {}
+        workerProcesses: 1
+        resources:
+          limits:
+            memory: 2Gi
+          requests:
+            cpu: 100m
+            memory: 2Gi
       sidekiq:
         minReplicas: 1
         maxReplicas: 2
@@ -142,8 +159,17 @@ spec:
           type: LoadBalancer
           loadBalancerIP: ${GITLAB_LB_IP}
         resources: {}
-      gitlab-pages:
-        resources: {}
+      toolbox:
+        backups:
+          cron:
+            enabled: true
+            concurrencyPolicy: Replace
+          objectStorage:
+            config:
+              secret: gitlab-s3cmd-secret
+              key: .s3cfg
+          bucket: gitlab-backups
+          tmpBucket: gitlab-tmp
     postgresql:
       install: false
     redis:
@@ -156,6 +182,9 @@ spec:
       install: false
     grafana:
       enabled: false
+    # Explicitly disable bundled runner
+    gitlab-runner:
+      install: false
     # Disable the pre-upgrade check job due to stale DB data
     gitlab-upgrade-check:
       enabled: false

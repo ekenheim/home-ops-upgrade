@@ -36,7 +36,7 @@ spec:
     revisionHistoryLimit: 1
 
     # This URL is for runner registration, keep it as is if registration works.
-    gitlabUrl: http://gitlab-webservice-default.development.svc.cluster.local:8080
+    #gitlabUrl: http://gitlab-webservice-default.development.svc.cluster.local:8080
 
     replicas: 2
 
@@ -99,7 +99,7 @@ spec:
             namespace = "{{.Release.Namespace}}"
             image = "ubuntu:22.04"
             privileged = true
-            dns_policy = "ClusterFirst"
+            dns_policy = "default"
 
             [[runners.kubernetes.pod_spec]]
               name = "ephemeral-builds"

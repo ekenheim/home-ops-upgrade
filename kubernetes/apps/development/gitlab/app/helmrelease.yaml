@@ -108,6 +108,11 @@ spec:
             packages: gitlab-packages
             mr_diffs: gitlab-mr-diffs
             terraform_state: gitlab-terraform-state
+            pages: gitlab-pages
+            # backups: gitlab-backups # Define if using object storage for backups
+            # registry: gitlab-registry # Define if using object storage for registry
+
+        # Enable object storage for specific features (using the consolidated connection)
         uploads:
           object_store:
             enabled: true
@@ -117,12 +122,20 @@ spec:
         lfs:
           object_store:
             enabled: true
-        external_diffs:
+        packages:
+          object_store:
+            enabled: true
+        external_diffs: # Corresponds to mr_diffs bucket
           object_store:
             enabled: true
         terraform_state:
           object_store:
             enabled: true
+        # Add Pages object store enablement
+        pages:
+          object_store:
+            enabled: true
+        # Keep omniauth disabled unless configured
         omniauth:
           enabled: false
       minio:

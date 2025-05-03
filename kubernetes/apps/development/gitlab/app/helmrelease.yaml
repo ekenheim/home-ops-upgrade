@@ -120,42 +120,10 @@ spec:
         maxReplicas: 2
         workerProcesses: 2
         resources: {}
-        uploads:
-          enabled: true
-          storage: external
-          external:
-            connection:
-              secret: gitlab-bitwarden-secret
-              key: connection
-            bucket: gitlab-uploads
       sidekiq:
         minReplicas: 1
         maxReplicas: 2
         resources: {}
-        artifacts:
-          enabled: true
-          storage: external
-          external:
-            connection:
-              secret: gitlab-bitwarden-secret
-              key: connection
-            bucket: gitlab-artifacts
-        lfs:
-          enabled: true
-          storage: external
-          external:
-            connection:
-              secret: gitlab-bitwarden-secret
-              key: connection
-            bucket: gitlab-lfs
-        packages:
-          enabled: true
-          storage: external
-          external:
-            connection:
-              secret: gitlab-bitwarden-secret
-              key: connection
-            bucket: gitlab-packages
       gitlab-shell:
         minReplicas: 1
         maxReplicas: 2

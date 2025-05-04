@@ -5,3 +5,7 @@ kind: Kustomization
 resources:
   - ./helmrelease.yaml
   - ./externalsecret.yaml
+# configurations:
+#   - ./config.yaml
+# patches:
+#   - path: ./patch.yaml

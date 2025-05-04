@@ -49,10 +49,9 @@ spec:
                     name: medusa-db-secret
                     key: REDIS_URL
             command:
-              # Changed from yarn medusa migrations run to yarn medusa db:migrate based on docs
-              - sh
-              - -c
-              - yarn medusa db:migrate
+              - node # Execute with node
+              - node_modules/.bin/medusa # Path to the executable
+              - db:migrate # Arguments to the executable
             resources:
               requests:
                 cpu: 100m

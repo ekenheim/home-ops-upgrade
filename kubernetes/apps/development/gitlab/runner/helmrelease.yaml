@@ -30,6 +30,12 @@ spec:
   values:
     nameOverride: gitlab-runner
 
+    # Add hostAliases to map registry hostname to internal ingress ClusterIP
+    hostAliases:
+      - ip: "10.43.79.113"
+        hostnames:
+          - "registry.ekenhome.se"
+
     podAnnotations:
       secret.reloader.stakater.com/reload: gitlab-runner-secret, gitlab-runner-cache-secret
 

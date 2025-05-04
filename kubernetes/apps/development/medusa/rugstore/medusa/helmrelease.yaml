@@ -184,13 +184,13 @@ spec:
         #   - hosts:
         #       - *host
 
-    persistence:
-      data:
-        # Only enable if Medusa is configured for local file storage
-        # and you aren't using Minio/S3
-        enabled: false
-        # type: persistentVolumeClaim
-        # accessMode: ReadWriteOnce
-        # size: 10Gi
-        # globalMounts:
-        #   - path: /app/data
+    # persistence:
+    #   data:
+    #     # Only enable if Medusa is configured for local file storage
+    #     # and you aren't using Minio/S3
+    #     enabled: false
+    #     # type: persistentVolumeClaim
+    #     # accessMode: ReadWriteOnce
+    #     # size: 10Gi
+    #     # globalMounts:
+    #     #   - path: /app/data

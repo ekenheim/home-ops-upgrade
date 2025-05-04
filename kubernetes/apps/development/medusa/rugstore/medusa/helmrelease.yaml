@@ -31,7 +31,7 @@ spec:
           migrate-db:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: latest
+              tag: main
             env:
               NODE_ENV: development
               DATABASE_TYPE: postgres
@@ -60,7 +60,7 @@ spec:
           main:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: latest
+              tag: main
             env:
               NODE_ENV: development
               PORT: "9000"
@@ -118,7 +118,7 @@ spec:
           main:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: latest
+              tag: main
             env:
               NODE_ENV: development
               DATABASE_TYPE: postgres

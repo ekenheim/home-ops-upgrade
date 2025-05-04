@@ -41,7 +41,7 @@ spec:
         domain: ${SECRET_DOMAIN}
         externalIP: ""
         gitlab:
-          name: "gitlab.${SECRET_DOMAIN}"
+          name: &host "gitlab.${SECRET_DOMAIN}"
       ingress:
         class: internal
         annotations:
@@ -52,10 +52,12 @@ spec:
           gethomepage.dev/icon: gitlab.svg
           gethomepage.dev/description: "Git Repository Manager"
           nginx.ingress.kubernetes.io/enable-global-auth: 'false'
+          nginx.ingress.kubernetes.io/whitelist-source-range: |
+            10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
         configureCertmanager: false
         tls:
-          enabled: true
-          secretName: "${SECRET_DOMAIN}-tls"
+          - hosts:
+              - *host
       certmanager:
         installCRDs: false
         install: false

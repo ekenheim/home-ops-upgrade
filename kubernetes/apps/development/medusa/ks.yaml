@@ -12,7 +12,7 @@ spec:
   dependsOn:
     - name: crunchy-postgres-operator-cluster
     - name: dragonfly-cluster
-  path: ./kubernetes/apps/development/medusa/app
+  path: ./kubernetes/apps/development/medusa/rugstore/medusa
   prune: true
   sourceRef:
     kind: GitRepository

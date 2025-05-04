@@ -27,10 +27,39 @@ spec:
   values:
     controllers:
       medusa-server:
+        initContainers:
+          migrate-db:
+            image:
+              repository: ghcr.io/ekenheim/ecom/medusa
+              tag: latest
+            env:
+              NODE_ENV: development
+              DATABASE_TYPE: postgres
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: medusa-secret
+                    key: DATABASE_URL
+              REDIS_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: medusa-secret
+                    key: REDIS_URL
+            command:
+              - sh
+              - -c
+              - medusa migrations run
+            resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+
         containers:
           main:
             image:
-              repository: ghcr.io/medusajs/medusa
+              repository: ghcr.io/ekenheim/ecom/medusa
               tag: latest
             env:
               NODE_ENV: development
@@ -70,7 +99,6 @@ spec:
               - sh
               - -c
               - >
-                medusa migrations run &&
                 medusa start
             resources:
               requests:
@@ -89,7 +117,7 @@ spec:
         containers:
           main:
             image:
-              repository: ghcr.io/medusajs/medusa
+              repository: ghcr.io/ekenheim/ecom/medusa
               tag: latest
             env:
               NODE_ENV: development
@@ -108,7 +136,6 @@ spec:
               - sh
               - -c
               - >
-                medusa migrations run &&
                 medusa start
             resources:
               requests:
@@ -126,7 +153,7 @@ spec:
     service:
       medusa-server:
         controller: medusa-server
-        type: LoadBalancer
+        type: ClusterIP
         ports:
           http:
             port: 9000
@@ -134,7 +161,7 @@ spec:
 
     ingress:
       main:
-        enabled: true
+        enabled: false
         className: nginx
         annotations:
           external-dns.alpha.kubernetes.io/target: ingress.${SECRET_DOMAIN}

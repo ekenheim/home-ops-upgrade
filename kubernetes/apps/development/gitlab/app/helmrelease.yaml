@@ -133,6 +133,12 @@ spec:
     # Enable Registry
     registry:
       enabled: true
+      tls:
+        enabled: true
+        secretName: gitlab-registry-tls # Let cert-manager store cert here
+        issuer:
+          name: letsencrypt-production
+          kind: ClusterIssuer
     # Storage config will reference a secret created by ExternalSecret
     storage:
       secret: gitlab-registry-storage-secret

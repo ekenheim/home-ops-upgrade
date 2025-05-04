@@ -33,7 +33,7 @@ spec:
             image:
               # Use the ImagePolicy marker for automation later
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: main # {"$imagepolicy": "development:medusa-main:tag"}
+              tag: sha256:13b652aabb0f9f6d3383ac528cbe07335ab800b49b2d2088d8f858e6add55fa1
             env:
               # NODE_ENV should be production for deployed environments
               NODE_ENV: production

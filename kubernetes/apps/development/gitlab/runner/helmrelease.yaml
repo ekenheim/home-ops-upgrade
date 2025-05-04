@@ -80,8 +80,8 @@ spec:
         [[runners]]
           # Keep registration URL using service name (assuming registration works)
           url = "http://gitlab-webservice-default.development.svc.cluster.local:8080"
-          # Try HTTPS clone URL with IP address
-          clone_url = "https://192.168.50.187"
+          # Try HTTP clone URL with internal service name
+          clone_url = "http://gitlab-webservice-default.development.svc.cluster.local:8080"
           environment = ["FF_GITLAB_REGISTRY_HELPER_IMAGE=true"]
           builds_dir = "/builds"
 

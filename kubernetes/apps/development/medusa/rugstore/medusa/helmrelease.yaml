@@ -33,7 +33,7 @@ spec:
             image:
               # Use the ImagePolicy marker for automation later
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: 0.0.9
+              tag: 0.0.11
             env:
               # NODE_ENV should be production for deployed environments
               NODE_ENV: production
@@ -65,7 +65,7 @@ spec:
             image:
               # Use the ImagePolicy marker for automation later
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: 0.0.9
+              tag: 0.0.11
             env:
               # NODE_ENV should be production for deployed environments
               NODE_ENV: production

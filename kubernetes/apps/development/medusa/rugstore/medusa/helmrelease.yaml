@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 3.7.3
+      version: 3.7.3 # Consider using the latest patch version if available
       sourceRef:
         kind: HelmRepository
         name: bjw-s
@@ -27,13 +27,16 @@ spec:
   values:
     controllers:
       medusa-server:
+        # This controller runs the main Medusa backend server
         initContainers:
           migrate-db:
             image:
+              # Use the ImagePolicy marker for automation later
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: main
+              tag: main # {"$imagepolicy": "development:medusa-main:tag"}
             env:
-              NODE_ENV: development
+              # NODE_ENV should be production for deployed environments
+              NODE_ENV: production
               DATABASE_TYPE: postgres
               DATABASE_URL:
                 valueFrom:
@@ -46,9 +49,10 @@ spec:
                     name: medusa-db-secret
                     key: REDIS_URL
             command:
+              # Changed from yarn medusa migrations run to yarn medusa db:migrate based on docs
               - sh
               - -c
-              - yarn medusa migrations run
+              - yarn medusa db:migrate
             resources:
               requests:
                 cpu: 100m
@@ -59,10 +63,12 @@ spec:
         containers:
           main:
             image:
+              # Use the ImagePolicy marker for automation later
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: main
+              tag: main # {"$imagepolicy": "development:medusa-main:tag"}
             env:
-              NODE_ENV: development
+              # NODE_ENV should be production for deployed environments
+              NODE_ENV: production
               PORT: "9000"
               DATABASE_TYPE: postgres
               DATABASE_URL:
@@ -95,17 +101,16 @@ spec:
                   secretKeyRef:
                     name: medusa-secret
                     key: ADMIN_CORS
-            command:
-              - sh
-              - -c
-              - >
-                medusa start
+              # Add other necessary env vars from secrets/configmaps (e.g., Minio, Meilisearch)
+            command: # Use the command defined in the Dockerfile CMD
+              - yarn
+              - start
             resources:
               requests:
-                cpu: 100m
-                memory: 128Mi
+                cpu: 100m # Adjust based on performance monitoring
+                memory: 256Mi # Adjust based on performance monitoring
               limits:
-                memory: 256Mi
+                memory: 512Mi # Adjust based on performance monitoring
         pod:
           securityContext:
             runAsUser: 1000
@@ -114,45 +119,46 @@ spec:
             fsGroupChangePolicy: "OnRootMismatch"
 
       medusa-worker:
-        containers:
-          main:
-            image:
-              repository: ghcr.io/ekenheim/ecom/medusa
-              tag: main
-            env:
-              NODE_ENV: development
-              DATABASE_TYPE: postgres
-              DATABASE_URL:
-                valueFrom:
-                  secretKeyRef:
-                    name: medusa-db-secret
-                    key: DATABASE_URL
-              REDIS_URL:
-                valueFrom:
-                  secretKeyRef:
-                    name: medusa-db-secret
-                    key: REDIS_URL
-            command:
-              - sh
-              - -c
-              - >
-                medusa start
-            resources:
-              requests:
-                cpu: 100m
-                memory: 128Mi
-              limits:
-                memory: 256Mi
-        pod:
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            fsGroup: 1000
-            fsGroupChangePolicy: "OnRootMismatch"
+        # Disable the worker controller for now
+        enabled: false
+        # containers:
+        #   main:
+        #     image:
+        #       repository: ghcr.io/ekenheim/ecom/medusa
+        #       tag: main # {"$imagepolicy": "development:medusa-main:tag"}
+        #     env:
+        #       NODE_ENV: production
+        #       DATABASE_TYPE: postgres
+        #       DATABASE_URL:
+        #         valueFrom:
+        #           secretKeyRef:
+        #             name: medusa-db-secret
+        #             key: DATABASE_URL
+        #       REDIS_URL:
+        #         valueFrom:
+        #           secretKeyRef:
+        #             name: medusa-db-secret
+        #             key: REDIS_URL
+        #     # IMPORTANT: Find the correct command for the worker in package.json
+        #     # command:
+        #     #  - yarn
+        #     #  - start:worker # Example, replace with actual command
+        #     resources:
+        #       requests:
+        #         cpu: 100m
+        #         memory: 128Mi
+        #       limits:
+        #         memory: 256Mi
+        # pod:
+        #   securityContext:
+        #     runAsUser: 1000
+        #     runAsGroup: 1000
+        #     fsGroup: 1000
+        #     fsGroupChangePolicy: "OnRootMismatch"
 
     service:
       medusa-server:
-        controller: medusa-server
+        controller: medusa-server # Ensure this matches the enabled controller name
         type: ClusterIP
         ports:
           http:
@@ -161,28 +167,30 @@ spec:
 
     ingress:
       main:
-        enabled: false
-        className: nginx
-        annotations:
-          external-dns.alpha.kubernetes.io/target: ingress.${SECRET_DOMAIN}
-          hajimari.io/icon: mdi:shopping
-        hosts:
-          - host: &host "medusa.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                pathType: Prefix
-                service:
-                  identifier: medusa-server
-                  port: http
-        tls:
-          - hosts:
-              - *host
+        enabled: false # Keep disabled for now unless external access needed
+        # className: nginx
+        # annotations:
+        #   external-dns.alpha.kubernetes.io/target: ingress.${SECRET_DOMAIN}
+        #   hajimari.io/icon: mdi:shopping
+        # hosts:
+        #   - host: &host "medusa.${SECRET_DOMAIN}"
+        #     paths:
+        #       - path: /
+        #         pathType: Prefix
+        #         service:
+        #           identifier: medusa-server # Matches the service key
+        #           port: http
+        # tls:
+        #   - hosts:
+        #       - *host
 
     persistence:
       data:
-        enabled: true
-        type: persistentVolumeClaim
-        accessMode: ReadWriteOnce
-        size: 10Gi
-        globalMounts:
-          - path: /app/data
+        # Only enable if Medusa is configured for local file storage
+        # and you aren't using Minio/S3
+        enabled: false
+        # type: persistentVolumeClaim
+        # accessMode: ReadWriteOnce
+        # size: 10Gi
+        # globalMounts:
+        #   - path: /app/data

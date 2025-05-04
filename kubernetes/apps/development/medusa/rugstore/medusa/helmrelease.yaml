@@ -48,7 +48,7 @@ spec:
             command:
               - sh
               - -c
-              - medusa migrations run
+              - yarn medusa migrations run
             resources:
               requests:
                 cpu: 100m

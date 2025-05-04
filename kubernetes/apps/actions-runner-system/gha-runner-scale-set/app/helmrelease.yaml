@@ -47,3 +47,56 @@ spec:
     controllerServiceAccount:
       name: gha-runner-scale-set-controller
       namespace: actions-runner-system
+
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gha-runner-scale-set-ecom
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: gha-runner-scale-set
+      version: 0.11.0
+      sourceRef:
+        kind: HelmRepository
+        name: actions-runner-controller
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: gha-runner-scale-set-controller
+      namespace: actions-runner-system
+  valuesFrom:
+    - kind: Secret
+      name: actions-runner-controller-auth-secret
+      valuesKey: github_token
+      targetPath: githubConfigSecret.github_token
+  values:
+    nameOverride: gha-runner-scale-set-ecom
+    runnerScaleSetName: gha-runner-scale-set-ecom
+    githubConfigUrl: https://github.com/ekenheim/ecom
+    minRunners: 1
+    maxRunners: 10
+    containerMode:
+      type: dind
+    template:
+      spec:
+        containers:
+          - name: runner
+            image: ghcr.io/joryirving/actions-runner:2.323.0@sha256:6d90491757f4830b6cabe5a086519096ee21547bccf1acdd242f966c4dbd6711
+            command: ["/home/runner/run.sh"]
+            envFrom:
+              - secretRef:
+                  name: ecom-storefront-build-secrets
+    controllerServiceAccount:
+      name: gha-runner-scale-set-controller
+      namespace: actions-runner-system

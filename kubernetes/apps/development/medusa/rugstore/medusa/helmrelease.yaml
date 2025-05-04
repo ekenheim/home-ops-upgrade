@@ -38,12 +38,12 @@ spec:
               DATABASE_URL:
                 valueFrom:
                   secretKeyRef:
-                    name: medusa-secret
+                    name: medusa-db-secret
                     key: DATABASE_URL
               REDIS_URL:
                 valueFrom:
                   secretKeyRef:
-                    name: medusa-secret
+                    name: medusa-db-secret
                     key: REDIS_URL
             command:
               - sh
@@ -68,12 +68,12 @@ spec:
               DATABASE_URL:
                 valueFrom:
                   secretKeyRef:
-                    name: medusa-secret
+                    name: medusa-db-secret
                     key: DATABASE_URL
               REDIS_URL:
                 valueFrom:
                   secretKeyRef:
-                    name: medusa-secret
+                    name: medusa-db-secret
                     key: REDIS_URL
               JWT_SECRET:
                 valueFrom:
@@ -125,12 +125,12 @@ spec:
               DATABASE_URL:
                 valueFrom:
                   secretKeyRef:
-                    name: medusa-secret
+                    name: medusa-db-secret
                     key: DATABASE_URL
               REDIS_URL:
                 valueFrom:
                   secretKeyRef:
-                    name: medusa-secret
+                    name: medusa-db-secret
                     key: REDIS_URL
             command:
               - sh

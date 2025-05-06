@@ -12,9 +12,9 @@ configMapGenerator:
     files:
       - config.json.template=./config/config.json.template
       - init-config.sh=./config/init-config.sh
-      - overlay-innerglow.png=./config/temp/overlay-innerglow.png
-      - backgroundoverlay-innerglow.png=./config/temp/backgroundoverlay-innerglow.png
-      - Rocky.ttf=./config/temp/Rocky.ttf
+      - overlay-innerglow.png=./config/overlay-innerglow.png
+      - backgroundoverlay-innerglow.png=./config/backgroundoverlay-innerglow.png
+      - Rocky.ttf=./config/Rocky.ttf
     options:
       disableNameSuffixHash: true
 generatorOptions:

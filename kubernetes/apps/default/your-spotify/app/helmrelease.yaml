@@ -101,7 +101,7 @@ spec:
         className: external
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-          nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+          nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
           hajimari.io/icon: mdi:spotify
         hosts:
           - host: &host "spotify.${SECRET_DOMAIN}"

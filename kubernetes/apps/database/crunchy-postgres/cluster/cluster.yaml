@@ -134,6 +134,10 @@ spec:
       databases: ["gitlab"]
       password:
         type: AlphaNumeric
+    - name: "coder"
+      databases: ["coder"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

@@ -24,7 +24,7 @@ spec:
     keepHistory: false
   values:
     podAnnotations:
-      secret.reloader.stakater.com/reload: coder-secret
+      secret.reloader.stakater.com/reload: coder-secret,coder-db-secret
     coder:
       initContainers:
         - name: 01-init-db
@@ -33,12 +33,14 @@ spec:
           envFrom:
             - secretRef:
                 name: coder-secret
+            - secretRef:
+                name: coder-db-secret
       env:
         # DB
         - name: CODER_PG_CONNECTION_URL
           valueFrom:
             secretKeyRef:
-              name: coder-secret
+              name: coder-db-secret
               key: CODER_PG_CONNECTION_URL
         # App
         - name: CODER_ACCESS_URL
@@ -68,5 +70,12 @@ spec:
         #       key: CODER_OIDC_CLIENT_SECRET
       ingress:
         enable: true
-        className: nginx
-        host: coder.mapanare.net
+        className: internal
+        annotations:
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+        host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
+        # If your chart supports TLS configuration directly in Ingress object:
+        # tls:
+        #   - hosts:
+        #       - "{{ .Release.Name }}.${SECRET_DOMAIN}"
+        #     secretName: coder-tls # cert-manager will create this based on an Issuer/ClusterIssuer

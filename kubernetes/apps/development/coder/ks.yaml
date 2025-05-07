@@ -9,12 +9,15 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  dependsOn:
+    - name: external-secrets-stores
+    - name: crunchy-postgres-operator-cluster
+    - name: crunchy-postgres-stores
   path: ./kubernetes/apps/development/coder/app
   prune: true
   sourceRef:
     kind: GitRepository
-    name: flux-system
-    namespace: flux-system
+    name: home-kubernetes
   wait: true
   interval: 30m
   retryInterval: 1m

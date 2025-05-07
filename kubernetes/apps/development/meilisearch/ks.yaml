@@ -12,7 +12,6 @@ spec:
       app.kubernetes.io/name: meilisearch
   dependsOn:
     - name: external-secrets
-      namespace: external-secrets
   path: ./kubernetes/apps/development/meilisearch/app
   prune: false
   sourceRef:

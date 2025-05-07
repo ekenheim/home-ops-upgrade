@@ -23,3 +23,8 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
+  postBuild:
+    substitute:
+      APP: meilisearch
+      VOLSYNC_CAPACITY: 5Gi
+      GATUS_SUBDOMAIN: meilisearch

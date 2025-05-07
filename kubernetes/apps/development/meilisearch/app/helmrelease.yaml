@@ -30,10 +30,11 @@ spec:
     auth:
       existingMasterKeySecret: meilisearch-secret
     persistence:
-      enabled: true
-      storageClass: ceph-rbd
-      accessMode: ReadWriteOnce
-      size: 5Gi
+      data:
+        enabled: true
+        existingClaim: *app
+        globalMounts:
+          - path: /data
     serviceMonitor:
       enabled: true
     service:

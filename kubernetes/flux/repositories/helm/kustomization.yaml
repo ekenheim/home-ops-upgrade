@@ -45,6 +45,7 @@ resources:
   - ./tofu-controller.yaml
   - ./userinit-controller.yaml
   - ./weave-gitops.yaml
+  - ./meilisearch.yaml
   - ./windmill.yaml
   - ./qdrant.yaml
   - ./truecharts.yaml

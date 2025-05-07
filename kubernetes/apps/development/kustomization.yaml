@@ -7,12 +7,12 @@ resources:
   - ./namespace.yaml
   # Flux-Kustomizations
   - ./umami/ks.yaml
+  - ./meilisearch/ks.yaml
   #- ./gitlab/ks.yaml
   #- ./gitlab/runner-ks.yaml
   #- ./gitlab/agent-ks.yaml
   #- ./medusa/ks.yaml
   #- ./resume/ks.yaml
-  - ./meilisearch/ks.yaml
   #- ./backstage/ks.yaml
   #- ./atlantis/ks.yaml
   #- ./code-server/ks.yaml

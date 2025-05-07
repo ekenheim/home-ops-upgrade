@@ -69,8 +69,6 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 140
-        fsGroup: 150
-        fsGroupChangePolicy: OnRootMismatch
     persistence:
       config:
         existingClaim: *app

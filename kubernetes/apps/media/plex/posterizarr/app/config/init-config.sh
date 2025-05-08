@@ -30,31 +30,30 @@ echo "Container ready to start"
 
 # NEW: Copy asset files from the ConfigMap mount to the PVC
 ASSET_SOURCE_DIR="/app/config-file"
-ASSET_DEST_DIR="/config" # This is the PVC
+ASSET_DEST_DIR_ROOT="/config" # Posterizarr's Script Root
+ASSET_DEST_DIR_TEMP="/config/temp" # Posterizarr's working temp directory
 
-echo "INFO: Copying asset files from $ASSET_SOURCE_DIR to $ASSET_DEST_DIR..."
+echo "INFO: Copying asset files from $ASSET_SOURCE_DIR..."
 
-# Ensure target directory exists (it should, as it's a PVC mount)
-mkdir -p "$ASSET_DEST_DIR"
+# Ensure target directories exist
+mkdir -p "$ASSET_DEST_DIR_ROOT"
+mkdir -p "$ASSET_DEST_DIR_TEMP"
 
 # Copy asset files
-if [ -f "$ASSET_SOURCE_DIR/overlay-innerglow.png" ]; then
-    cp "$ASSET_SOURCE_DIR/overlay-innerglow.png" "$ASSET_DEST_DIR/overlay-innerglow.png"
-else
-    echo "WARN: overlay-innerglow.png not found in $ASSET_SOURCE_DIR"
-fi
+copy_asset() {
+    local asset_filename="$1"
+    if [ -f "$ASSET_SOURCE_DIR/$asset_filename" ]; then
+        echo "INFO: Copying $asset_filename to $ASSET_DEST_DIR_ROOT and $ASSET_DEST_DIR_TEMP"
+        cp "$ASSET_SOURCE_DIR/$asset_filename" "$ASSET_DEST_DIR_ROOT/$asset_filename"
+        cp "$ASSET_SOURCE_DIR/$asset_filename" "$ASSET_DEST_DIR_TEMP/$asset_filename"
+    else
+        echo "WARN: $asset_filename not found in $ASSET_SOURCE_DIR"
+    fi
+}
 
-if [ -f "$ASSET_SOURCE_DIR/backgroundoverlay-innerglow.png" ]; then
-    cp "$ASSET_SOURCE_DIR/backgroundoverlay-innerglow.png" "$ASSET_DEST_DIR/backgroundoverlay-innerglow.png"
-else
-    echo "WARN: backgroundoverlay-innerglow.png not found in $ASSET_SOURCE_DIR"
-fi
-
-if [ -f "$ASSET_SOURCE_DIR/Rocky.ttf" ]; then
-    cp "$ASSET_SOURCE_DIR/Rocky.ttf" "$ASSET_DEST_DIR/Rocky.ttf"
-else
-    echo "WARN: Rocky.ttf not found in $ASSET_SOURCE_DIR"
-fi
+copy_asset "overlay-innerglow.png"
+copy_asset "backgroundoverlay-innerglow.png"
+copy_asset "Rocky.ttf"
 
 echo "INFO: Asset files copy process completed."
 

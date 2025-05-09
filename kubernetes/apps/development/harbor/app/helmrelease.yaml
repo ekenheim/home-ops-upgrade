@@ -32,15 +32,11 @@ spec:
           secretName: tls.harbor
       ingress:
         className: internal
-        annotations:
-          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
         hosts:
-          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
+          core: harbor.${SECRET_DOMAIN}
+        annotations:
+          "cert-manager.io/cluster-issuer": "letsencrypt-production"
+          "external-dns.alpha.kubernetes.io/target": "internal.${SECRET_DOMAIN}"
 
     externalURL: https://harbor.${SECRET_DOMAIN}
     ipFamily:

@@ -1,0 +1,54 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/kustomization-kustomize-v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app harbor
+  namespace: &namespace harbor
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  interval: 30m
+  path: ./app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: *namespace
+  timeout: 5m
+  wait: true
+  postBuild:
+    substitute:
+      # APP_NAME: harbor # Example, if needed in manifests
+      # SECRET_DOMAIN: "${SECRET_DOMAIN}" # Already global, but can be explicit
+      # Values below will be sourced from the secret
+      SECRET_HARBOR_ADMIN_PASSWORD: "temp"
+      SECRET_HARBOR_ENCRPYTION_KEY: "temp"
+    substituteFrom:
+      - kind: Secret
+        name: harbor-app-values # K8s secret created by the ExternalSecret
+        optional: false
+# --- # Temporarily disabling harbor-backup
+# # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/kustomization-kustomize-v1.json
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: &app harbor-backup
+#   namespace: &namespace harbor
+# spec:
+#   commonMetadata:
+#     labels:
+#       app.kubernetes.io/name: *app
+#   interval: 30m
+#   path: ./backup
+#   prune: true
+#   sourceRef:
+#     kind: GitRepository
+#     name: flux-system
+#     namespace: flux-system
+#   targetNamespace: *namespace
+#   timeout: 5m
+#   wait: true
+#   # If harbor-backup ever needs these values, add similar postBuild section here

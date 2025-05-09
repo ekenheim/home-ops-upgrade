@@ -46,6 +46,7 @@ resources:
   - ./userinit-controller.yaml
   - ./weave-gitops.yaml
   - ./coder-charts.yaml
+  - ./harbor.yaml
   - ./meilisearch.yaml
   - ./windmill.yaml
   - ./qdrant.yaml

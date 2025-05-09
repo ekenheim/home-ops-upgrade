@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: harbor
+  name: &app harbor
 spec:
   interval: 30m
   timeout: 15m
@@ -31,12 +31,17 @@ spec:
         secret:
           secretName: tls.harbor
       ingress:
-        controller: default
-        hosts:
-          core: harbor.${SECRET_DOMAIN}
+        className: internal
         annotations:
-          "cert-manager.io/cluster-issuer": "letsencrypt-production"
-          "external-dns.alpha.kubernetes.io/target": "external.${SECRET_DOMAIN}"
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+        hosts:
+          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+
     externalURL: https://harbor.${SECRET_DOMAIN}
     ipFamily:
       ipv6:

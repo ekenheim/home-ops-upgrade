@@ -9,12 +9,12 @@ metadata:
     app.kubernetes.io/instance: flyte
     app.kubernetes.io/component: grpc-ingress # Custom label
   annotations:
-    kubernetes.io/ingress.class: "external"
-    external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+    kubernetes.io/ingress.class: "internal"
+    external-dns.alpha.kubernetes.io/target: "internal.${SECRET_DOMAIN}"
     nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
     # Add any other necessary external/gRPC annotations
 spec:
-  ingressClassName: external
+  ingressClassName: internal
   rules:
   - host: "flyte-api.${SECRET_DOMAIN}" # Correct host for the API
     http:

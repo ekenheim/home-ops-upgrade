@@ -16,4 +16,4 @@ resources:
   #- ./backstage/ks.yaml
   #- ./atlantis/ks.yaml
   #- ./code-server/ks.yaml
-  - ./coder/ks.yaml
+  #- ./coder/ks.yaml

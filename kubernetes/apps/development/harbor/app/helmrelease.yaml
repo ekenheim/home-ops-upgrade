@@ -25,19 +25,18 @@ spec:
       retries: 3
   values:
     expose:
-      type: LoadBalancer
+      type: ingress
       tls:
         enabled: true
-        certSource: secret
         secret:
-          secretName: harbor-tls
-        auto:
-          commonName: "harbor.${SECRET_DOMAIN}"
-      loadBalancer:
-        loadBalancerIP: "${SVC_HARBOR_ADDR}"
+          secretName: tls.harbor
+      ingress:
+        className: internal
+        hosts:
+          core: harbor.${SECRET_DOMAIN}
         annotations:
-          "cert-manager.io/cluster-issuer": "letsencrypt-prod"
-          "external-dns.alpha.kubernetes.io/hostname": "harbor.${SECRET_DOMAIN}"
+          "cert-manager.io/cluster-issuer": "letsencrypt-production"
+          "external-dns.alpha.kubernetes.io/target": "internal.${SECRET_DOMAIN}"
 
     externalURL: https://harbor.${SECRET_DOMAIN}
     ipFamily:
@@ -85,4 +84,4 @@ spec:
 
     nginx:
       podAnnotations:
-        secret.reloader.stakater.com/reload: harbor-tls
+        secret.reloader.stakater.com/reload: tls.harbor

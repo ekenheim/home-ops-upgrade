@@ -29,14 +29,14 @@ spec:
       tls:
         enabled: true
         secret:
-          secretName: tls.harbor
+          secretName: ${SECRET_DOMAIN}-tls
       ingress:
         className: internal
         hosts:
           core: harbor.${SECRET_DOMAIN}
         annotations:
-          "cert-manager.io/cluster-issuer": "letsencrypt-production"
           "external-dns.alpha.kubernetes.io/target": "internal.${SECRET_DOMAIN}"
+          "reloader.stakater.com/auto": "true"
 
     externalURL: https://harbor.${SECRET_DOMAIN}
     ipFamily:

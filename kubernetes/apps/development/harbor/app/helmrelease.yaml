@@ -30,6 +30,8 @@ spec:
         enabled: true
         secret:
           secretName: tls.harbor
+        auto:
+          commonName: harbor.${SECRET_DOMAIN}
       loadBalancer:
         annotations:
           "external-dns.alpha.kubernetes.io/hostname": "harbor.${SECRET_DOMAIN}"

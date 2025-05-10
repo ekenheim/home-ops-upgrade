@@ -25,17 +25,18 @@ spec:
       retries: 3
   values:
     expose:
-      type: loadBalancer
+      type: ingress
       tls:
         enabled: true
         secret:
           secretName: tls.harbor
-        auto:
-          commonName: harbor.${SECRET_DOMAIN}
-      loadBalancer:
+      ingress:
+        className: internal
+        hosts:
+          core: harbor.${SECRET_DOMAIN}
         annotations:
-          "external-dns.alpha.kubernetes.io/hostname": "harbor.${SECRET_DOMAIN}"
-          "io.cilium/lb-ipam-ips": "${SVC_HARBOR_ADDR}"
+          "cert-manager.io/cluster-issuer": "letsencrypt-production"
+          "external-dns.alpha.kubernetes.io/target": "internal.${SECRET_DOMAIN}"
 
     externalURL: https://harbor.${SECRET_DOMAIN}
     ipFamily:

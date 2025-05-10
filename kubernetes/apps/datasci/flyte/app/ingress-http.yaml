@@ -3,11 +3,11 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: flyte-http # Keep the name consistent if possible, or choose a new one
+  name: flyte-http
   namespace: datasci
   labels:
     app.kubernetes.io/instance: flyte
-    app.kubernetes.io/component: http-ingress # Custom label
+    app.kubernetes.io/component: http-ingress
   annotations:
     kubernetes.io/ingress.class: "internal"
     nginx.ingress.kubernetes.io/app-root: "/console"
@@ -23,56 +23,56 @@ spec:
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http # CORRECTED Service name created by the chart
+            name: flyte-flyte-binary-http
             port:
               number: 8088 # Default HTTP port from chart values/template
       - path: /console/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http # CORRECTED
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /api
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http # CORRECTED
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /api/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http # CORRECTED
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /healthcheck
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http # CORRECTED
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /v1/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http # CORRECTED
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /.well-known
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http # CORRECTED
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /.well-known/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http # CORRECTED
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       # Add other paths like /login, /logout, /callback, /me, /config, /oauth2 if needed
@@ -81,77 +81,77 @@ spec:
         pathType: ImplementationSpecific
         backend:
           service:
-            name: flyte-http
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /login/.*
         pathType: ImplementationSpecific
         backend:
           service:
-            name: flyte-http
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /logout
         pathType: ImplementationSpecific
         backend:
           service:
-            name: flyte-http
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /logout/.*
         pathType: ImplementationSpecific
         backend:
           service:
-            name: flyte-http
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /callback
         pathType: ImplementationSpecific
         backend:
           service:
-            name: flyte-http
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /callback/.*
         pathType: ImplementationSpecific
         backend:
           service:
-            name: flyte-http
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /me
         pathType: ImplementationSpecific
         backend:
           service:
-            name: flyte-http
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /config
         pathType: ImplementationSpecific
         backend:
           service:
-            name: flyte-http
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /config/.*
         pathType: ImplementationSpecific
         backend:
           service:
-            name: flyte-http
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /oauth2
         pathType: ImplementationSpecific
         backend:
           service:
-            name: flyte-http
+            name: flyte-flyte-binary-http
             port:
               number: 8088
       - path: /oauth2/.*
         pathType: ImplementationSpecific
         backend:
           service:
-            name: flyte-http
+            name: flyte-flyte-binary-http
             port:
               number: 8088
   tls:

@@ -90,6 +90,10 @@ spec:
         ports:
           http:
             port: &webport 3000
+        annotations:
+          nginx.ingress.kubernetes.io/proxy-body-size: "0"
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+          nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
       mongodb:
         controller: mongodb
         ports:
@@ -112,6 +116,10 @@ spec:
         hosts:
           - host: &host "spotify.${SECRET_DOMAIN}"
             paths:
+            - path: /api
+              service:
+                identifier: server
+                port: http
             - path: /
               service:
                 identifier: web

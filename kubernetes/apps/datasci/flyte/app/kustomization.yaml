@@ -8,6 +8,6 @@ resources:
   - ./externalsecret.yaml
   - ./ingress-grpc.yaml
   - ./ingress-http.yaml
-  - ./flyte-clusterrolebinding.yaml
+  #- ./flyte-clusterrolebinding.yaml
   - ../../../../templates/volsync
   - ../../../../templates/gatus/guarded

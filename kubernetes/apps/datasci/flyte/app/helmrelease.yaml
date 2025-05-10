@@ -25,16 +25,16 @@ spec:
     ingress:
       create: false
 
-    clusterResourceManager:
-      enabled: true
+  #  clusterResourceManager:
+  #    enabled: true
 
-    binary:
-      components:
-        clusterResourceManager:
-          enabled: true
+  #  binary:
+  #    components:
+  #      clusterResourceManager:
+  #        enabled: true
 
-    clusterRole:
-      create: true
+  #  clusterRole:
+  #    create: true
 
   valuesFrom:
     - kind: Secret

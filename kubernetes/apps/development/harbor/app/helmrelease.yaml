@@ -29,7 +29,7 @@ spec:
       tls:
         enabled: true
         secret:
-          secretName: ${SECRET_DOMAIN}-tls
+          secretName: harbor-tls
       ingress:
         className: internal
         hosts:

@@ -67,9 +67,9 @@ spec:
 #          regionendpoint: https://${SECRET_BACKUP_SERVER}
 #          rootdirectory: /prod
 
-#    # our CSI does not support ReadWriteMany so we must use Recreate on pods
-#    updateStrategy:
-#      type: Recreate
+    # our CSI does not support ReadWriteMany so we must use Recreate on pods
+    updateStrategy:
+      type: Recreate
 
     harborAdminPassword: "${SECRET_HARBOR_ADMIN_PASSWORD}"
     # The secret key used for encryption. Must be a string of 16 chars.

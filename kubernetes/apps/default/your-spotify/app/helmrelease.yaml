@@ -101,45 +101,13 @@ spec:
         className: external
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-          nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-          hajimari.io/icon: mdi:spotify
-          nginx.ingress.kubernetes.io/rewrite-target: /$2
-          nginx.ingress.kubernetes.io/configuration-snippet: |
-            location ~* \.css$ {
-              add_header Content-Type "text/css" always;
-            }
-            location ~* \.js$ {
-              add_header Content-Type "application/javascript" always;
-            }
-            location ~* \.json$ {
-              add_header Content-Type "application/json" always;
-            }
-            location ~* \.html$ {
-              add_header Content-Type "text/html" always;
-            }
-          nginx.ingress.kubernetes.io/proxy-body-size: "0"
-          nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-          nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-          nginx.ingress.kubernetes.io/ssl-redirect: "true"
-          nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
         hosts:
-          - host: &host "spotify.${SECRET_DOMAIN}"
+          - host: "spotify.${SECRET_DOMAIN}"
             paths:
-              - path: /api(/|$)(.*)
-                pathType: Prefix
-                service:
-                  identifier: server
-                  port: http
-              - path: /static/(.*)
-                pathType: Prefix
-                service:
-                  identifier: web
-                  port: http
-              - path: /
-                pathType: Prefix
-                service:
-                  identifier: web
-                  port: http
+            - path: /
+              service:
+                identifier: app
+                port: http
         tls:
           - hosts:
               - *host

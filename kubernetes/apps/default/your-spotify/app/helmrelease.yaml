@@ -110,7 +110,7 @@ spec:
               more_set_headers "Content-Type: application/javascript";
             }
         hosts:
-          - host: "spotify.${SECRET_DOMAIN}"
+          - host: &host "spotify.${SECRET_DOMAIN}"
             paths:
             - path: /
               service:

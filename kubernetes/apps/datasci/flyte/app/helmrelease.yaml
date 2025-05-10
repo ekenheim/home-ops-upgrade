@@ -25,44 +25,11 @@ spec:
     ingress:
       create: false # Disable ingress creation by the chart
 
-    # Configure Flyte to use a single namespace
-    namespaceController:
-      enabled: false  # Disable automatic namespace creation
-
-    # Configure resource management for the single namespace
-    resourceManager:
+    clusterResourceManager:
       enabled: true
-      config:
-        # Global resource limits for the namespace
-        resourceLimits:
-          cpu: "16"
-          memory: "32Gi"
-        # Default resource requests per workflow
-        defaultResourceRequests:
-          cpu: "1"
-          memory: "2Gi"
-        # Enable project-based resource tracking
-        projectResourceTracking: true
-        # Add project labels to all resources
-        projectLabels:
-          enabled: true
-          prefix: "flyte.project"
 
-    # Force Flyte to use datasci namespace for all workflows
-    propeller:
-      enabled: true
-      config:
-        namespace: datasci
-        defaultNamespace: datasci
-        namespaceTemplate: datasci
-        # Disable namespace creation
-        createNamespace: false
-        # Configure resource manager
-        resourceManager:
-          enabled: true
-          config:
-            namespace: datasci
-            defaultNamespace: datasci
+    clusterRole:
+      create: true
 
   valuesFrom:
     - kind: Secret

@@ -28,7 +28,9 @@ spec:
       type: LoadBalancer
       tls:
         enabled: true
-        secretName: harbor-tls
+        certSource: secret
+        secret:
+          secretName: harbor-tls
         auto:
           commonName: "harbor.${SECRET_DOMAIN}"
       loadBalancer:

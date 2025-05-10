@@ -24,7 +24,7 @@ spec:
   values:
     service:
       annotations:
-        external-dns.alpha.kubernetes.io/hostname: "${SECRET_DOMAIN},*.${SECRET_DOMAIN}"
+        external-dns.alpha.kubernetes.io/hostname: "istio.${SECRET_DOMAIN},*.istio.${SECRET_DOMAIN}"
         io.cilium/lb-ipam-ips: "${SVC_ISTIO_ADDR}"
       loadBalancerIP: "${SVC_ISTIO_ADDR}"
     # Configure Kiali Dashboard

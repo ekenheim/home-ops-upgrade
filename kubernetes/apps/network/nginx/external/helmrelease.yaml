@@ -69,6 +69,10 @@ spec:
         proxy-buffer-size: 16k
         ssl-protocols: TLSv1.3 TLSv1.2
         use-forwarded-headers: "true"
+        types-hash-max-size: 2048
+        types-hash-bucket-size: 64
+        mime-types-include: /etc/nginx/mime.types
+        mime-types-default: application/octet-stream
       metrics:
         enabled: true
         serviceMonitor:

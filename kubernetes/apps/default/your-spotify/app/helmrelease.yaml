@@ -101,6 +101,14 @@ spec:
         className: external
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          nginx.ingress.kubernetes.io/configuration-snippet: |
+            more_set_headers "Content-Type: $content_type";
+            if ($request_uri ~* \.css$) {
+              more_set_headers "Content-Type: text/css";
+            }
+            if ($request_uri ~* \.js$) {
+              more_set_headers "Content-Type: application/javascript";
+            }
         hosts:
           - host: "spotify.${SECRET_DOMAIN}"
             paths:

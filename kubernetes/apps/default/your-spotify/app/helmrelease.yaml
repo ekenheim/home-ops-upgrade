@@ -104,6 +104,13 @@ spec:
           nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
           hajimari.io/icon: mdi:spotify
           nginx.ingress.kubernetes.io/rewrite-target: /$2
+          nginx.ingress.kubernetes.io/configuration-snippet: |
+            more_set_headers "Content-Type: text/css" always;
+            more_set_headers "Content-Type: application/javascript" always;
+            more_set_headers "X-Content-Type-Options: nosniff" always;
+          nginx.ingress.kubernetes.io/proxy-body-size: "0"
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+          nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
         hosts:
           - host: &host "spotify.${SECRET_DOMAIN}"
             paths:
@@ -111,6 +118,11 @@ spec:
                 pathType: Prefix
                 service:
                   identifier: server
+                  port: http
+              - path: /static/(.*)
+                pathType: Prefix
+                service:
+                  identifier: web
                   port: http
               - path: /
                 pathType: Prefix

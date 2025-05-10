@@ -48,6 +48,22 @@ spec:
           enabled: true
           prefix: "flyte.project"
 
+    # Force Flyte to use datasci namespace for all workflows
+    propeller:
+      enabled: true
+      config:
+        namespace: datasci
+        defaultNamespace: datasci
+        namespaceTemplate: datasci
+        # Disable namespace creation
+        createNamespace: false
+        # Configure resource manager
+        resourceManager:
+          enabled: true
+          config:
+            namespace: datasci
+            defaultNamespace: datasci
+
   valuesFrom:
     - kind: Secret
       name: flyte-secret

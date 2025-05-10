@@ -23,10 +23,10 @@ spec:
       retries: 3
   values:
     ingress:
-      create: false # Disable ingress creation by the chart
+      create: false
 
     clusterResourceManager:
-    enabled: true
+      enabled: true
 
     binary:
       components:

@@ -37,10 +37,15 @@ spec:
         annotations:
           "cert-manager.io/cluster-issuer": "letsencrypt-production"
           "external-dns.alpha.kubernetes.io/target": "internal.${SECRET_DOMAIN}"
-          io.cilium/lb-ipam-ips: ${SVC_HARBOR_ADDR}
-        ports:
-          http:
-            port: 5000
+      service:
+        app:
+          controller: *app
+          type: LoadBalancer
+          annotations:
+            io.cilium/lb-ipam-ips: ${SVC_HARBOR_ADDR}
+          ports:
+            http:
+              port: 5000
 
     externalURL: https://harbor.${SECRET_DOMAIN}
     ipFamily:

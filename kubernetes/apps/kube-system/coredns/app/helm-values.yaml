@@ -24,10 +24,6 @@ servers:
           class error
       - name: prometheus
         parameters: 0.0.0.0:9153
-      - name: hosts
-        configBlock: |-
-          /etc/coredns/hosts
-          fallthrough
       - name: kubernetes
         parameters: cluster.local in-addr.arpa ip6.arpa
         configBlock: |-

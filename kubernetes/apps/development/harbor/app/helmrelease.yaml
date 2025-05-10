@@ -88,6 +88,7 @@ spec:
 
     service:
       registry:
+        controller: harbor
         type: LoadBalancer
         annotations:
           external-dns.alpha.kubernetes.io/hostname: registry.${SECRET_DOMAIN}
@@ -95,7 +96,5 @@ spec:
         ports:
           registry:
             port: 5000
-            targetPort: 5000
           controller:
             port: 8080
-            targetPort: 8080

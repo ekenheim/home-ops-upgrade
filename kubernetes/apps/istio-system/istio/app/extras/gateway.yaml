@@ -7,6 +7,7 @@ metadata:
   namespace: istio-system
   annotations:
     external-dns.alpha.kubernetes.io/hostname: "istio.${SECRET_DOMAIN},*.istio.${SECRET_DOMAIN}"
+    io.cilium/lb-ipam-ips: "${SVC_GATEWAY_ADDR}"
 spec:
   gatewayClassName: istio
   listeners:

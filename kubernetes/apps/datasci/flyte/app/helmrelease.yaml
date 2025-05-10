@@ -21,9 +21,9 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  values:
-    ingress:
-      create: false
+  #values:
+    #ingress:
+    #  create: false
 
   #  clusterResourceManager:
   #    enabled: true

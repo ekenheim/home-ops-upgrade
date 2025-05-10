@@ -85,3 +85,17 @@ spec:
     nginx:
       podAnnotations:
         secret.reloader.stakater.com/reload: tls.harbor
+
+    service:
+      registry:
+        type: LoadBalancer
+        annotations:
+          external-dns.alpha.kubernetes.io/hostname: registry.${SECRET_DOMAIN}
+          io.cilium/lb-ipam-ips: ${SVC_HARBOR_ADDR}
+        ports:
+          registry:
+            port: 5000
+            targetPort: 5000
+          controller:
+            port: 8080
+            targetPort: 8080

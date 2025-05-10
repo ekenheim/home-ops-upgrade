@@ -29,6 +29,8 @@ spec:
       tls:
         enabled: true
         secretName: harbor-tls
+        auto:
+          commonName: "harbor.${SECRET_DOMAIN}"
       loadBalancer:
         loadBalancerIP: "${SVC_HARBOR_ADDR}"
         annotations:

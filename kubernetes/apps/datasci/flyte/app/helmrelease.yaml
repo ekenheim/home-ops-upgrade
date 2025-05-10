@@ -26,7 +26,12 @@ spec:
       create: false # Disable ingress creation by the chart
 
     clusterResourceManager:
-      enabled: true
+    enabled: true
+
+    binary:
+      components:
+        clusterResourceManager:
+          enabled: true
 
     clusterRole:
       create: true

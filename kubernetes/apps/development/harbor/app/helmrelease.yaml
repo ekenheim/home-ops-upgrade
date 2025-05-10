@@ -29,6 +29,8 @@ spec:
       tls:
         enabled: true
         secretName: harbor-ingress
+        auto:
+          commonName: "harbor.dummy.com"
       loadBalancer:
         loadBalancerIP: "${SVC_HARBOR_ADDR}"
 

@@ -24,35 +24,29 @@ spec:
   values:
     ingress:
       create: false # Disable ingress creation by the chart
-    # Configuration specific to the flyte-binary chart - Ingress removed as it will be managed manually
-    # ingress:
-    #   create: true
-    #   ingressClassName: internal
-    #   host: "flyte.${SECRET_DOMAIN}"
-    #   annotations:
-    #     nginx.ingress.kubernetes.io/app-root: "/console"
-    #   httpAnnotations:
-    #     kubernetes.io/ingress.class: "internal"
-    #
 
-    #   separateGrpcIngress: true
-    #   grpcHost: "flyte-api.${SECRET_DOMAIN}"
-    #   grpcIngressClassName: external
-    #   grpcAnnotations:
-    #     kubernetes.io/ingress.class: "external"
-    #     external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-    #     nginx.ingress.kubernetes.io/backend-protocol: "GRPC" # Important for gRPC
-    #
+    # Configure Flyte to use a single namespace
+    namespaceController:
+      enabled: false  # Disable automatic namespace creation
 
-    #   # Explicit TLS sections instead of combined
-    #   httpTls: # Specific TLS for HTTP ingress
-    #     - hosts:
-    #         - "flyte.${SECRET_DOMAIN}"
-    #       secretName: flyte-tls
-    #   grpcTls: # Specific TLS for gRPC ingress
-    #    - hosts:
-    #        - "flyte-api.${SECRET_DOMAIN}"
-    #      secretName: flyte-api-tls # Use a potentially different secret if needed
+    # Configure resource management for the single namespace
+    resourceManager:
+      enabled: true
+      config:
+        # Global resource limits for the namespace
+        resourceLimits:
+          cpu: "16"
+          memory: "32Gi"
+        # Default resource requests per workflow
+        defaultResourceRequests:
+          cpu: "1"
+          memory: "2Gi"
+        # Enable project-based resource tracking
+        projectResourceTracking: true
+        # Add project labels to all resources
+        projectLabels:
+          enabled: true
+          prefix: "flyte.project"
 
   valuesFrom:
     - kind: Secret

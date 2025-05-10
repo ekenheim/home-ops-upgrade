@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: harbor-ingress # Name of the Certificate resource itself
+  namespace: development
+spec:
+  secretName: harbor-ingress # This is the K8s Secret that will be created/updated for Harbor to use
+  issuerRef:
+    name: letsencrypt-production # Assuming this is your production ClusterIssuer
+    kind: ClusterIssuer
+  dnsNames:
+    - harbor.${SECRET_DOMAIN} # Flux will substitute SECRET_DOMAIN
+  # If you want to try adding the IP SAN (ensure your issuer supports it for private IPs):
+  # ipAddresses:
+  #   - ${SVC_HARBOR_ADDR} # Flux will substitute SVC_HARBOR_ADDR

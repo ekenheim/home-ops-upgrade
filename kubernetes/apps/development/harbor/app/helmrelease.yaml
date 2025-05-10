@@ -97,6 +97,12 @@ spec:
           registry:
             port: 5000
             targetPort: 5000
+            protocol: TCP
+          registry-https:
+            port: 5001
+            targetPort: 5001
+            protocol: TCP
           controller:
             port: 8080
             targetPort: 8080
+            protocol: TCP

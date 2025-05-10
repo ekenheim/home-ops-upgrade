@@ -6,19 +6,19 @@ metadata:
   name: cluster-gateway
   namespace: istio-system
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: "${SECRET_DOMAIN},*.${SECRET_DOMAIN}"
+    external-dns.alpha.kubernetes.io/hostname: "istio.${SECRET_DOMAIN},*.istio.${SECRET_DOMAIN}"
 spec:
   gatewayClassName: istio
   listeners:
     - name: http
-      hostname: "*.example.com"
+      hostname: "*.istio"
       port: 80
       protocol: HTTP
       allowedRoutes:
         namespaces:
           from: All
     - name: https
-      hostname: "*.example.com"
+      hostname: "*.istio"
       port: 443
       protocol: HTTPS
       allowedRoutes:

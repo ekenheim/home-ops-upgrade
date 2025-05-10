@@ -32,7 +32,7 @@ spec:
         auto:
           commonName: "harbor.dummy.com"
       loadBalancer:
-        loadBalancerIP: "${SVC_HARBOR_ADDR}"
+        loadBalancerIP: 192.168.50.188
 
     externalURL: https://harbor.${SECRET_DOMAIN}
     ipFamily:

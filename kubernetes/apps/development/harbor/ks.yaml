@@ -26,10 +26,10 @@ spec:
       # Values below will be sourced from the secret
       SECRET_HARBOR_ADMIN_PASSWORD: "temp"
       SECRET_HARBOR_ENCRPYTION_KEY: "temp"
-    substituteFrom:
-      - kind: Secret
-        name: harbor-app-values # K8s secret created by the ExternalSecret
-        optional: false
+    #substituteFrom:
+    #  - kind: Secret
+    #    name: harbor-app-values # K8s secret created by the ExternalSecret
+    #    optional: false
 # --- # Temporarily disabling harbor-backup
 # # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/kustomization-kustomize-v1.json
 # apiVersion: kustomize.toolkit.fluxcd.io/v1

@@ -24,84 +24,84 @@ spec:
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-grpc # CORRECTED Service name created by the chart
+            name: flyte-flyte-binary-grpc # CORRECTED Service name created by the chart
             port:
               number: 8089 # Default gRPC port from chart values/template
       - path: /flyteidl.service.AdminService/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-grpc # CORRECTED
+            name: flyte-flyte-binary-grpc # CORRECTED
             port:
               number: 8089
       - path: /flyteidl.service.AuthMetadataService
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-grpc # CORRECTED
+            name: flyte-flyte-binary-grpc # CORRECTED
             port:
               number: 8089
       - path: /flyteidl.service.AuthMetadataService/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-grpc # CORRECTED
+            name: flyte-flyte-binary-grpc # CORRECTED
             port:
               number: 8089
       - path: /flyteidl.service.DataProxyService
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-grpc # CORRECTED
+            name: flyte-flyte-binary-grpc # CORRECTED
             port:
               number: 8089
       - path: /flyteidl.service.DataProxyService/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-grpc # CORRECTED
+            name: flyte-flyte-binary-grpc # CORRECTED
             port:
               number: 8089
       - path: /flyteidl.service.IdentityService
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-grpc # CORRECTED
+            name: flyte-flyte-binary-grpc # CORRECTED
             port:
               number: 8089
       - path: /flyteidl.service.IdentityService/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-grpc # CORRECTED
+            name: flyte-flyte-binary-grpc # CORRECTED
             port:
               number: 8089
       - path: /flyteidl.service.SignalService
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-grpc # CORRECTED
+            name: flyte-flyte-binary-grpc # CORRECTED
             port:
               number: 8089
       - path: /flyteidl.service.SignalService/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-grpc # CORRECTED
+            name: flyte-flyte-binary-grpc # CORRECTED
             port:
               number: 8089
       - path: /grpc.health.v1.Health
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-grpc # CORRECTED
+            name: flyte-flyte-binary-grpc # CORRECTED
             port:
               number: 8089
       - path: /grpc.health.v1.Health/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-grpc # CORRECTED
+            name: flyte-flyte-binary-grpc # CORRECTED
             port:
               number: 8089
   tls:

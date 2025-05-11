@@ -40,7 +40,7 @@ spec:
     - kind: Secret
       name: flyte-secret
       valuesKey: values.yaml
-      optional: false
+      optional: true
       targetPath: .
     - kind: Secret
       name: flyte-db-secret

@@ -35,6 +35,8 @@ spec:
           secretName: harbor-ingress
       loadBalancer:
         IP: "${SVC_HARBOR_ADDR}"
+        annotations:
+          external-dns.alpha.kubernetes.io/hostname: harbor.${SECRET_DOMAIN}
 
     externalURL: https://harbor.${SECRET_DOMAIN}
     ipFamily:

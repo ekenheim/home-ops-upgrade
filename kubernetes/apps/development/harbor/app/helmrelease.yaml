@@ -28,9 +28,11 @@ spec:
       type: loadBalancer
       tls:
         enabled: true
-        secretName: harbor-ingress
+        certSource: secret
         auto:
           commonName: "harbor.dummy.com"
+        secret:
+          secretName: harbor-ingress
       loadBalancer:
         IP: "${SVC_HARBOR_ADDR}"
 

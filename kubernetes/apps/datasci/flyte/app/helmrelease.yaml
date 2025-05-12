@@ -45,3 +45,21 @@ spec:
       name: flyte-db-secret
       valuesKey: values.yaml
 
+  values:
+    webhook:
+      enabled: true
+      secretManager:
+        k8s:
+          enabled: true
+          defaultEnvVars:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: flyte-s3-credentials
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: flyte-s3-credentials
+                  key: AWS_SECRET_ACCESS_KEY
+

@@ -1,160 +1,110 @@
 ---
-# Ingress for Flyte Console (HTTP)
+# Ingress for Flyte API (gRPC)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: flyte-http
+  name: flyte-grpc # Keep the name consistent if possible, or choose a new one
   namespace: datasci
   labels:
     app.kubernetes.io/instance: flyte
-    app.kubernetes.io/component: http-ingress
+    app.kubernetes.io/component: grpc-ingress # Custom label
   annotations:
     kubernetes.io/ingress.class: "internal"
-    nginx.ingress.kubernetes.io/app-root: "/console"
-    # Add any other necessary internal annotations
+    external-dns.alpha.kubernetes.io/target: "internal.${SECRET_DOMAIN}"
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    # Add any other necessary external/gRPC annotations
 spec:
   ingressClassName: internal
   rules:
-  - host: "flyte.${SECRET_DOMAIN}"
+  - host: "flyte-api.${SECRET_DOMAIN}" # Correct host for the API
     http:
       paths:
-      # Paths copied from the helm template output for http.yaml (adjust if needed)
-      - path: /console
+      # Paths copied from the helm template output for grpc.yaml
+      - path: /flyteidl.service.AdminService
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http
+            name: flyte-grpc # CORRECTED Service name created by the chart
             port:
-              number: 8088 # Default HTTP port from chart values/template
-      - path: /console/.*
+              number: 8089 # Default gRPC port from chart values/template
+      - path: /flyteidl.service.AdminService/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http
+            name: flyte-grpc # CORRECTED
             port:
-              number: 8088
-      - path: /api
+              number: 8089
+      - path: /flyteidl.service.AuthMetadataService
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http
+            name: flyte-grpc # CORRECTED
             port:
-              number: 8088
-      - path: /api/.*
+              number: 8089
+      - path: /flyteidl.service.AuthMetadataService/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http
+            name: flyte-grpc # CORRECTED
             port:
-              number: 8088
-      - path: /healthcheck
+              number: 8089
+      - path: /flyteidl.service.DataProxyService
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http
+            name: flyte-grpc # CORRECTED
             port:
-              number: 8088
-      - path: /v1/.*
+              number: 8089
+      - path: /flyteidl.service.DataProxyService/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http
+            name: flyte-grpc # CORRECTED
             port:
-              number: 8088
-      - path: /.well-known
+              number: 8089
+      - path: /flyteidl.service.IdentityService
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http
+            name: flyte-grpc # CORRECTED
             port:
-              number: 8088
-      - path: /.well-known/.*
+              number: 8089
+      - path: /flyteidl.service.IdentityService/.*
         pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http
+            name: flyte-grpc # CORRECTED
             port:
-              number: 8088
-      # Add other paths like /login, /logout, /callback, /me, /config, /oauth2 if needed
-      # based on the http.yaml template and your auth setup
-      - path: /login
-        pathType: ImplementationSpecific
+              number: 8089
+      - path: /flyteidl.service.SignalService
+        pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http
+            name: flyte-grpc # CORRECTED
             port:
-              number: 8088
-      - path: /login/.*
-        pathType: ImplementationSpecific
+              number: 8089
+      - path: /flyteidl.service.SignalService/.*
+        pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http
+            name: flyte-grpc # CORRECTED
             port:
-              number: 8088
-      - path: /logout
-        pathType: ImplementationSpecific
+              number: 8089
+      - path: /grpc.health.v1.Health
+        pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http
+            name: flyte-grpc # CORRECTED
             port:
-              number: 8088
-      - path: /logout/.*
-        pathType: ImplementationSpecific
+              number: 8089
+      - path: /grpc.health.v1.Health/.*
+        pathType: ImplementationSpecific # Or Prefix if needed
         backend:
           service:
-            name: flyte-http
+            name: flyte-grpc # CORRECTED
             port:
-              number: 8088
-      - path: /callback
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: flyte-http
-            port:
-              number: 8088
-      - path: /callback/.*
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: flyte-http
-            port:
-              number: 8088
-      - path: /me
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: flyte-http
-            port:
-              number: 8088
-      - path: /config
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: flyte-http
-            port:
-              number: 8088
-      - path: /config/.*
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: flyte-http
-            port:
-              number: 8088
-      - path: /oauth2
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: flyte-http
-            port:
-              number: 8088
-      - path: /oauth2/.*
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: flyte-http
-            port:
-              number: 8088
+              number: 8089
   tls:
   - hosts:
-    - "flyte.${SECRET_DOMAIN}"
-    secretName: flyte-tls # Assumes cert-manager or similar provides this
+    - "flyte-api.${SECRET_DOMAIN}"
+    secretName: flyte-api-tls # Assumes cert-manager or similar provides this

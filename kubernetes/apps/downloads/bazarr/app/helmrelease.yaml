@@ -38,7 +38,7 @@ spec:
           app:
             image:
               repository: ghcr.io/joryirving/bazarr
-              tag: 1.5.1@sha256:fd40141be6bf0ca038e108fcbb392a950f8b2af3506c4d48e6a48a11fcdaf4c8
+              tag: 1.5.2@sha256:f717d75cbdfb1c6a76220f2b17e396cee4194356daa31159d119391a321662ad
             env:
               TZ: "${TIMEZONE}"
               BAZARR__INSTANCE_NAME: bazarr

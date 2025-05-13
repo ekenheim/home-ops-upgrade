@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: flyte-cluster-resource-manager
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["create", "get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["serviceaccounts"]
+  verbs: ["create", "get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: flyte-cluster-resource-manager
+subjects:
+- kind: ServiceAccount
+  name: flyte
+  namespace: datasci
+roleRef:
+  kind: ClusterRole
+  name: flyte-cluster-resource-manager
+  apiGroup: rbac.authorization.k8s.io

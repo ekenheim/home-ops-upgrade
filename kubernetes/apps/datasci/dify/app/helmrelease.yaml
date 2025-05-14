@@ -163,6 +163,8 @@ spec:
 
     # Plugin Daemon component (if it's a top-level key in the chart's values)
     pluginDaemon:
+      persistence:
+        enabled: false # Explicitly disable persistence for pluginDaemon
       extraVolumeMounts: |-
         - name: plugin-daemon-data
           mountPath: /data # Defaults to /data in chart

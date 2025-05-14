@@ -191,12 +191,10 @@ spec:
       # accessMode: ReadWriteOnce # Defined in PVC
       # size: 10Gi # Defined in PVC
       # storageClass: ceph-block # Defined in PVC
-      existingClaim: dify # Use the manually created PVC
+      existingClaim: dify # Use the manually created PVC for the main volume
       data:
-        enabled: true
-        existingClaim: dify # Use the manually created PVC for the data component if chart links it explicitly
-                            # If the main 'dify' PVC is the data PVC, this specific entry might be redundant
-                            # with the top-level existingClaim, but it's safer to include if chart uses it.
+        enabled: true # data component enabled, should use the main 'dify' PVC via top-level existingClaim
+        # existingClaim: dify # REMOVED - to avoid conflict/reattempt to define for main PVC
         # accessMode: ReadWriteOnce # Defined in PVC
         # size: ... # Defined in PVC
         # storageClass: ... # Defined in PVC

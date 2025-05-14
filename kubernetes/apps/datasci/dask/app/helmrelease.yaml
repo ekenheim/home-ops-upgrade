@@ -1,109 +1,47 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.solanyn.dev/source.toolkit.fluxcd.io/helmrepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: dask
+  namespace: dask-system
+spec:
+  interval: 12h
+  url: https://helm.dask.org/
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app dask-gateway
+  name: dask
 spec:
-  interval: 15m
+  interval: 1h
   chart:
     spec:
-      chart: dask-gateway
-      version: 2025.4.0
+      chart: dask-kubernetes-operator
+      version: 2025.4.3
       sourceRef:
         kind: HelmRepository
         name: dask
         namespace: flux-system
   install:
     remediation:
-      retries: 3
+      retries: -1
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
   values:
-    controller:
-      enabled: true
-      loglevel: INFO
-      completedClusterMaxAge: 86400
-      completedClusterCleanupPeriod: 600
-      backoffBaseDelay: 0.1
-      backoffMaxDelay: 300
-      k8sApiRateLimit: 50
-      k8sApiRateLimitBurst: 100
-    gateway:
-      replicas: 1
-      prefix: /
-      loglevel: INFO
-      auth:
-        type: simple
-        simple:
-          password: "dask"
-      image:
-        name: ghcr.io/dask/dask-gateway-server
-        tag: 2024.1.0
-      backend:
-        image:
-          name: ghcr.io/dask/dask-gateway
-          tag: 2024.1.0
-        environment: {}
-        scheduler:
-          cores:
-            limit: 1
-            request: 0.1
-          memory:
-            limit: 1G
-            request: 512M
-        worker:
-          cores:
-            limit: 2
-            request: 0.5
-          memory:
-            limit: 4G
-            request: 2G
-          extraPodConfig: {}
-          extraContainerConfig: {}
-          threads:
-    traefik:
-      replicas: 1
-      image:
-        name: traefik
-        tag: "2.10.6"
-      loglevel: WARN
-      dashboard: false
-      service:
-        type: LoadBalancer
-        ports:
-          web:
-            port: 80
-          tcp:
-            port: web
-    rbac:
-      enabled: true
-
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: dask-gateway-ingress
-  namespace: datasci
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
-spec:
-  ingressClassName: internal
-  rules:
-    - host: dask-gateway.${SECRET_DOMAIN}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: api-dask-gateway
-                port:
-                  number: 8000
+    nameOverride: "dask"
+    fullnameOverride: "dask"
+    nodeSelector: {}
+    metrics:
+      scheduler:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+      worker:
+        enabled: true
+        podMonitor:
+          enabled: true

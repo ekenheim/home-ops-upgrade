@@ -27,6 +27,11 @@ spec:
 
     replicaCount: 1
 
+    # Disable all chart-managed persistence, we will use extraVolumes
+    persistence:
+      enabled: false
+    # data, assets, pluginDaemon sections under persistence are now ignored due to parent enabled: false
+
     dify:
       # Use customFiles to create .env.production from the ExternalSecret
       customFiles:
@@ -121,6 +126,47 @@ spec:
           secretName: dify-secret
           key: S3_USE_SSL
 
+      # Define extraVolumes pointing to our manually created PVCs
+      extraVolumes: |-
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: dify
+        - name: app-assets
+          persistentVolumeClaim:
+            claimName: dify-assets
+        - name: plugin-daemon-data
+          persistentVolumeClaim:
+            claimName: dify-plugin-daemon
+
+      # Mount these volumes into the respective components
+      # API component
+      api:
+        extraVolumeMounts: |-
+          - name: app-data
+            mountPath: /app/api/storage
+          - name: app-assets # Assuming this mount path for assets
+            mountPath: /app/api/assets
+
+      # Worker component
+      worker:
+        extraVolumeMounts: |-
+          - name: app-data
+            mountPath: /app/api/storage # Workers often need same data access as API
+          - name: app-assets # Assuming this mount path for assets
+            mountPath: /app/api/assets
+
+      # Plugin Daemon component - This section under 'dify' might be incorrect if 'pluginDaemon' is a top-level key in chart
+      # pluginDaemon:
+      #   extraVolumeMounts: |-
+      #     - name: plugin-daemon-data
+      #       mountPath: /data # Common mount path for data, check chart/docs
+
+    # Plugin Daemon component (if it's a top-level key in the chart's values)
+    pluginDaemon:
+      extraVolumeMounts: |-
+        - name: plugin-daemon-data
+          mountPath: /data # Defaults to /data in chart
+
     ingress:
       enabled: true
       className: internal
@@ -185,39 +231,6 @@ spec:
       #   secretKey: populated-by-secret
       #   region: populated-by-secret
       #   useSSL: true
-
-    persistence:
-      enabled: true
-      # accessMode: ReadWriteOnce # Defined in PVC
-      # size: 10Gi # Defined in PVC
-      # storageClass: ceph-block # Defined in PVC
-      existingClaim: dify # Use the manually created PVC for the main volume
-      data:
-        enabled: true # data component enabled, should use the main 'dify' PVC via top-level existingClaim
-        # existingClaim: dify # REMOVED - to avoid conflict/reattempt to define for main PVC
-        # accessMode: ReadWriteOnce # Defined in PVC
-        # size: ... # Defined in PVC
-        # storageClass: ... # Defined in PVC
-      upload:
-        enabled: false # S3 is used
-      assets:
-        enabled: true
-        existingClaim: dify-assets # Use the manually created PVC
-        # accessMode: ReadWriteOnce # Defined in PVC
-        # size: ... # Defined in PVC
-        # storageClass: ... # Defined in PVC
-      pluginDaemon:
-        enabled: true
-        existingClaim: dify-plugin-daemon # Use the manually created PVC
-        # accessMode: ReadWriteOnce # Defined in PVC
-        # size: "1Gi" # Defined in PVC
-        # storageClass: ... # Defined in PVC
-
-    # Refer to the chart's values.yaml for other options like admin user setup,
-    # resource requests/limits, etc.
-    # admin:
-    #   email: "admin@yourdomain.com"
-    #   password: "${SECRET_DIFY_ADMIN_PASSWORD}" # Manage via SOPS or ExternalSecret
 
     dependsOn:
       - name: qdrant

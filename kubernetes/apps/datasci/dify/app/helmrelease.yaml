@@ -23,9 +23,7 @@ spec:
       retries: 3
   dependsOn:
     - name: qdrant
-      namespace: datasci # Assuming qdrant is in datasci
     - name: dragonfly-cluster # Added Dragonfly dependency
-      namespace: database
     # - name: postgresql # Add if using an external, Flux-managed PostgreSQL
     #   namespace: database
   values:

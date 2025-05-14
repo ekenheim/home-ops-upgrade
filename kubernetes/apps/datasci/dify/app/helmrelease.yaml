@@ -32,7 +32,7 @@ spec:
       customFiles:
         ".env.production": |-
           EDITION=SELF_HOSTED
-          CONSOLE_URL=${APP_URL}
+          CONSOLE_URL=https://dify.${SECRET_DOMAIN}
           APP_URL=https://dify.${SECRET_DOMAIN}
           API_URL=https://dify.${SECRET_DOMAIN}/api
 
@@ -187,27 +187,30 @@ spec:
       #   useSSL: true
 
     persistence:
-      enabled: true # Main persistence toggle
+      enabled: true
       accessMode: ReadWriteOnce
-      size: 10Gi # Default size for volumes
-      storageClass: ceph-block # Or your preferred storage class
-      # existingClaim: ""
-      annotations: {}
+      size: 10Gi
+      storageClass: ceph-block
       data:
-        enabled: true # For core application data/cache
-        # size: 5Gi
-        # storageClass: ceph-block
+        enabled: true
+        accessMode: ReadWriteOnce
       upload:
-        enabled: false # Disabled as S3 is used for uploads
-        # size: 10Gi
-        # storageClass: ceph-block
+        enabled: false
       assets:
-        enabled: true # For application assets
-        # size: 5Gi
-        # storageClass: ceph-block
+        enabled: true
+        accessMode: ReadWriteOnce
+      pluginDaemon:
+        enabled: true
+        accessMode: ReadWriteOnce
+        size: "1Gi"
 
     # Refer to the chart's values.yaml for other options like admin user setup,
     # resource requests/limits, etc.
     # admin:
     #   email: "admin@yourdomain.com"
     #   password: "${SECRET_DIFY_ADMIN_PASSWORD}" # Manage via SOPS or ExternalSecret
+
+    dependsOn:
+      - name: qdrant
+    # - name: dragonfly-cluster # Removed as it's not a HelmRelease
+    # - name: postgresql # Add if using an external, Flux-managed PostgreSQL

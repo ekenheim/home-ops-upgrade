@@ -54,3 +54,4 @@ resources:
   - ./nvidia-charts.yaml
   - ./seldonio.yaml
   - ./gitlab-charts.yaml
+  - ./dify.yaml

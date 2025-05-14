@@ -134,8 +134,8 @@ spec:
       databases: ["gitlab"]
       password:
         type: AlphaNumeric
-    - name: "coder"
-      databases: ["coder"]
+    - name: "dify"
+      databases: ["dify"]
       password:
         type: AlphaNumeric
   backups:

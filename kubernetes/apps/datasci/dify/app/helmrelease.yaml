@@ -1,0 +1,220 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app dify
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: dify
+      version: 0.24.0 # Check for the latest version, 0.24.0 was latest noted
+      sourceRef:
+        kind: HelmRepository
+        name: dify
+        namespace: flux-system
+      interval: 15m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  dependsOn:
+    - name: qdrant
+      namespace: datasci # Assuming qdrant is in datasci
+    - name: dragonfly-cluster # Added Dragonfly dependency
+      namespace: database
+    # - name: postgresql # Add if using an external, Flux-managed PostgreSQL
+    #   namespace: database
+  values:
+    global:
+      imageRegistry: ""
+
+    replicaCount: 1
+
+    dify:
+      # Use customFiles to create .env.production from the ExternalSecret
+      customFiles:
+        ".env.production": |-
+          EDITION=SELF_HOSTED
+          CONSOLE_URL=${APP_URL}
+          APP_URL=https://dify.${SECRET_DOMAIN}
+          API_URL=https://dify.${SECRET_DOMAIN}/api
+
+          # Database - (Values will be injected from dify-secret)
+          DB_USERNAME={{ .Values.dify.secretEnvVars.DB_USERNAME }}
+          DB_PASSWORD={{ .Values.dify.secretEnvVars.DB_PASSWORD }}
+          DB_HOST={{ .Values.dify.secretEnvVars.DB_HOST }}
+          DB_PORT={{ .Values.dify.secretEnvVars.DB_PORT }}
+          DB_DATABASE={{ .Values.dify.secretEnvVars.DB_DATABASE }}
+          DB_CHARSET=utf8mb4
+
+          # Redis (Dragonfly) - (Values will be injected from dify-secret)
+          REDIS_HOST={{ .Values.dify.secretEnvVars.REDIS_HOST }}
+          REDIS_PORT={{ .Values.dify.secretEnvVars.REDIS_PORT }}
+          REDIS_USERNAME={{ .Values.dify.secretEnvVars.REDIS_USERNAME }}
+          REDIS_PASSWORD={{ .Values.dify.secretEnvVars.REDIS_PASSWORD }}
+          REDIS_DB={{ .Values.dify.secretEnvVars.REDIS_DB }}
+
+          # Storage - (Values will be injected from dify-secret)
+          STORAGE_TYPE=s3
+          S3_ENDPOINT={{ .Values.dify.secretEnvVars.S3_ENDPOINT }}
+          S3_BUCKET_NAME={{ .Values.dify.secretEnvVars.S3_BUCKET_NAME }}
+          S3_ACCESS_KEY={{ .Values.dify.secretEnvVars.S3_ACCESS_KEY }}
+          S3_SECRET_KEY={{ .Values.dify.secretEnvVars.S3_SECRET_KEY }}
+          S3_REGION={{ .Values.dify.secretEnvVars.S3_REGION }}
+          S3_USE_SSL={{ .Values.dify.secretEnvVars.S3_USE_SSL }}
+
+          # Vector Store - Qdrant
+          VECTOR_STORE=qdrant
+          QDRANT_ENDPOINT={{ .Values.externalQdrant.endpoint }}
+          # QDRANT_API_KEY= # If your qdrant requires an API key, set it here via secretEnvVars
+
+          # Other settings (refer to Dify docs)
+          # Required if running with multi-tool enabled, which it is by default
+          SANDBOX_SSRFP_PROXY_URL=http://dify-sandbox-ssrf-proxy:8080
+
+      # Mount the DB and S3 credentials from the ExternalSecret into env vars
+      # These are then referenced in the customFiles content above.
+      secretEnvVars:
+        DB_USERNAME:
+          secretName: dify-secret
+          key: DB_USERNAME
+        DB_PASSWORD:
+          secretName: dify-secret
+          key: DB_PASSWORD
+        DB_HOST:
+          secretName: dify-secret
+          key: DB_HOST
+        DB_PORT:
+          secretName: dify-secret
+          key: DB_PORT
+        DB_DATABASE:
+          secretName: dify-secret
+          key: DB_DATABASE
+        REDIS_HOST:
+          secretName: dify-secret
+          key: REDIS_HOST
+        REDIS_PORT:
+          secretName: dify-secret
+          key: REDIS_PORT
+        REDIS_USERNAME:
+          secretName: dify-secret
+          key: REDIS_USERNAME
+        REDIS_PASSWORD:
+          secretName: dify-secret
+          key: REDIS_PASSWORD
+        REDIS_DB:
+          secretName: dify-secret
+          key: REDIS_DB
+        S3_ENDPOINT:
+          secretName: dify-secret
+          key: S3_ENDPOINT
+        S3_BUCKET_NAME:
+          secretName: dify-secret
+          key: S3_BUCKET_NAME
+        S3_ACCESS_KEY:
+          secretName: dify-secret
+          key: S3_ACCESS_KEY
+        S3_SECRET_KEY:
+          secretName: dify-secret
+          key: S3_SECRET_KEY
+        S3_REGION:
+          secretName: dify-secret
+          key: S3_REGION
+        S3_USE_SSL:
+          secretName: dify-secret
+          key: S3_USE_SSL
+
+    ingress:
+      enabled: true
+      className: internal
+      annotations:
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/group: AI
+        gethomepage.dev/name: Dify
+        gethomepage.dev/icon: "brain-circuit.svg" # Ensure this icon exists or use another
+        gethomepage.dev/description: "LLM App Platform"
+        external-dns.alpha.kubernetes.io/target: "internal.${SECRET_DOMAIN}"
+      hosts:
+        - host: &host "dify.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - *host
+          secretName: "dify-tls" # Assumes you have a cert-manager Issuer for this or provide cert manually
+
+    # Disable components managed externally or not needed
+    postgresql:
+      enabled: false # Using external PostgreSQL
+    redis:
+      enabled: false # Using external Redis (Dragonfly)
+    qdrant:
+      enabled: false # Using external Qdrant
+    weaviate:
+      enabled: false
+    milvus:
+      enabled: false
+    proxy:
+      enabled: false # Using main ingress controller
+
+    # External PostgreSQL (not needed if configuring via .env.production + secretEnvVars)
+    # The chart's externalPostgresql doesn't seem to directly support secret refs for password
+    # So, managing via customFiles and secretEnvVars is more flexible.
+    # externalPostgresql:
+    #   enabled: true
+    #   host: populated-by-secret
+    #   port: 5432
+    #   user: populated-by-secret
+    #   password: populated-by-secret
+    #   database: populated-by-secret
+
+    # External Qdrant
+    externalQdrant:
+      enabled: true
+      endpoint: "https://qdrant.ekenhome.se" # Your Qdrant endpoint
+      # apiKey: "${SECRET_QDRANT_API_KEY}" # If Qdrant needs an API key, manage via secrets
+
+    # Storage configuration (S3)
+    # The chart expects S3 creds via env vars which we set up in customFiles
+    # This section is more for configuring chart-specific S3 behavior if any,
+    # but primary creds are via env vars.
+    storage:
+      type: s3
+      # s3:
+      #   bucket: populated-by-secret
+      #   endpoint: populated-by-secret
+      #   accessKey: populated-by-secret
+      #   secretKey: populated-by-secret
+      #   region: populated-by-secret
+      #   useSSL: true
+
+    persistence:
+      enabled: true # Main persistence toggle
+      accessMode: ReadWriteOnce
+      size: 10Gi # Default size for volumes
+      storageClass: ceph-block # Or your preferred storage class
+      # existingClaim: ""
+      annotations: {}
+      data:
+        enabled: true # For core application data/cache
+        # size: 5Gi
+        # storageClass: ceph-block
+      upload:
+        enabled: false # Disabled as S3 is used for uploads
+        # size: 10Gi
+        # storageClass: ceph-block
+      assets:
+        enabled: true # For application assets
+        # size: 5Gi
+        # storageClass: ceph-block
+
+    # Refer to the chart's values.yaml for other options like admin user setup,
+    # resource requests/limits, etc.
+    # admin:
+    #   email: "admin@yourdomain.com"
+    #   password: "${SECRET_DIFY_ADMIN_PASSWORD}" # Manage via SOPS or ExternalSecret

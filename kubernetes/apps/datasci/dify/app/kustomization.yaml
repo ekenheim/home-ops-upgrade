@@ -6,4 +6,7 @@ resources:
   #- ./helmrepository.yaml
   - ./helmrelease.yaml
   - ./externalsecret.yaml
+  - ./pvc-dify-main.yaml
+  - ./pvc-dify-assets.yaml
+  - ./pvc-dify-plugin-daemon.yaml
   # - ./secrets.sops.yaml # Add this if you create a secrets file

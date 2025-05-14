@@ -188,18 +188,32 @@ spec:
 
     persistence:
       enabled: true
-      accessMode: ReadWriteOnce
-      size: 10Gi
-      storageClass: ceph-block
+      # accessMode: ReadWriteOnce # Defined in PVC
+      # size: 10Gi # Defined in PVC
+      # storageClass: ceph-block # Defined in PVC
+      existingClaim: dify # Use the manually created PVC
       data:
         enabled: true
+        existingClaim: dify # Use the manually created PVC for the data component if chart links it explicitly
+                            # If the main 'dify' PVC is the data PVC, this specific entry might be redundant
+                            # with the top-level existingClaim, but it's safer to include if chart uses it.
+        # accessMode: ReadWriteOnce # Defined in PVC
+        # size: ... # Defined in PVC
+        # storageClass: ... # Defined in PVC
       upload:
-        enabled: false
+        enabled: false # S3 is used
       assets:
         enabled: true
+        existingClaim: dify-assets # Use the manually created PVC
+        # accessMode: ReadWriteOnce # Defined in PVC
+        # size: ... # Defined in PVC
+        # storageClass: ... # Defined in PVC
       pluginDaemon:
         enabled: true
-        size: "1Gi"
+        existingClaim: dify-plugin-daemon # Use the manually created PVC
+        # accessMode: ReadWriteOnce # Defined in PVC
+        # size: "1Gi" # Defined in PVC
+        # storageClass: ... # Defined in PVC
 
     # Refer to the chart's values.yaml for other options like admin user setup,
     # resource requests/limits, etc.

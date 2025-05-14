@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dify-assets # Helm chart usually names this <releaseName>-assets
+  namespace: datasci
+  labels:
+    app.kubernetes.io/name: dify
+    app.kubernetes.io/instance: dify
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi # Default for assets, can be adjusted
+  storageClassName: ceph-block
+  volumeMode: Filesystem

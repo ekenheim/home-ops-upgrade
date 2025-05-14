@@ -193,15 +193,12 @@ spec:
       storageClass: ceph-block
       data:
         enabled: true
-        accessMode: ReadWriteOnce
       upload:
         enabled: false
       assets:
         enabled: true
-        accessMode: ReadWriteOnce
       pluginDaemon:
         enabled: true
-        accessMode: ReadWriteOnce
         size: "1Gi"
 
     # Refer to the chart's values.yaml for other options like admin user setup,

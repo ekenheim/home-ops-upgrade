@@ -18,6 +18,13 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+    - name: dask-scheduler
+      hostname: "*.istio.local"
+      port: 8786
+      protocol: TCP
+      allowedRoutes:
+        namespaces:
+          from: All
     - name: https
       hostname: "*.istio.local"
       port: 443

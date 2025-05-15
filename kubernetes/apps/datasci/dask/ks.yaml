@@ -4,6 +4,7 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app dask
+  namespace: flux-system
 spec:
   commonMetadata:
     labels:
@@ -13,8 +14,7 @@ spec:
   prune: false
   sourceRef:
     kind: GitRepository
-    name: flux-system
-    namespace: flux-system
+    name: home-kubernetes
   targetNamespace: datasci
   timeout: 5m
   wait: true
@@ -24,12 +24,11 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app dask-cluster
+  namespace: flux-system
 spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  components:
-    - ../../../../components/gatus/guarded
   dependsOn:
     - name: dask
       namespace: datasci
@@ -42,8 +41,7 @@ spec:
   prune: false
   sourceRef:
     kind: GitRepository
-    name: flux-system
-    namespace: flux-system
+    name: home-kubernetes
   targetNamespace: datasci
   timeout: 5m
   wait: true

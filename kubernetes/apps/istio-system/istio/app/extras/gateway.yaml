@@ -6,20 +6,20 @@ metadata:
   name: cluster-gateway
   namespace: istio-system
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: "istio.${SECRET_DOMAIN},*.istio.${SECRET_DOMAIN}"
+    external-dns.alpha.kubernetes.io/hostname: "istio.local,*.istio.local"
     io.cilium/lb-ipam-ips: "${SVC_GATEWAY_ADDR}"
 spec:
   gatewayClassName: istio
   listeners:
     - name: http
-      hostname: "*.istio"
+      hostname: "*.istio.local"
       port: 80
       protocol: HTTP
       allowedRoutes:
         namespaces:
           from: All
     - name: https
-      hostname: "*.istio"
+      hostname: "*.istio.local"
       port: 443
       protocol: HTTPS
       allowedRoutes:

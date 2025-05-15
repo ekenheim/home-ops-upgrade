@@ -1,0 +1,7 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: dask-selfsigned-issuer
+  namespace: datasci
+spec:
+  selfSigned: {}

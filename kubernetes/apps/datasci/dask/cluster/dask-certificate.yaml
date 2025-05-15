@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: dask-dashboard-tls # Name of the Certificate resource
+  namespace: datasci      # Same namespace as Dask and the Issuer
+spec:
+  secretName: dask-dashboard-tls # Secret where the cert will be stored
+  dnsNames:
+    - dask.istio.local
+  issuerRef:
+    name: dask-selfsigned-issuer # The self-signed issuer we just defined
+    kind: Issuer

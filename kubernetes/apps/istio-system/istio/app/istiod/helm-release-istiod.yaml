@@ -20,6 +20,8 @@ spec:
       autoscaleEnabled: true
       autoscaleMin: 1
       autoscaleMax: 2
+      env:
+        PILOT_ENABLE_ALPHA_GATEWAY_API: "true"
       resources:
         requests:
           cpu: 100m

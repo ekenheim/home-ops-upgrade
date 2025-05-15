@@ -249,6 +249,14 @@ spec:
           - name: plugin-daemon-data # Defined in dify.extraVolumes
             mountPath: /data
         extraEnv: |-
+          - name: EDITION
+            value: "SELF_HOSTED"
+          - name: CONSOLE_URL
+            value: "https://dify.${SECRET_DOMAIN}"
+          - name: APP_URL
+            value: "https://dify.${SECRET_DOMAIN}"
+          - name: API_URL
+            value: "https://dify.${SECRET_DOMAIN}/api"
           - name: DB_USERNAME
             valueFrom:
               secretKeyRef:
@@ -264,46 +272,30 @@ spec:
               secretKeyRef:
                 name: dify-secret
                 key: DB_HOST
+          - name: DB_PORT
+            valueFrom:
+              secretKeyRef:
+                name: dify-secret
+                key: DB_PORT
           - name: DB_DATABASE
             valueFrom:
               secretKeyRef:
                 name: dify-secret
                 key: DB_DATABASE
           - name: DB_CHARSET
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: DB_CHARSET
+            value: "utf8mb4"
           - name: REDIS_HOST
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: REDIS_HOST
+            value: "dragonfly.database" # Point to Dragonfly service
           - name: REDIS_PORT
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: REDIS_PORT
+            value: "6379" # Default Redis/Dragonfly port
           - name: REDIS_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: REDIS_USERNAME
+            value: "" # Assuming no auth for Dragonfly
           - name: REDIS_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: REDIS_PASSWORD
+            value: "" # Assuming no auth for Dragonfly
           - name: REDIS_DB
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: REDIS_DB
-          - name: STORAGE_TYPE
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: STORAGE_TYPE
+            value: "0" # Default Redis DB
+          - name: STORAGE_TYPE # Assuming plugin daemon might need similar storage config
+            value: "s3"
           - name: S3_ENDPOINT
             valueFrom:
               secretKeyRef:
@@ -334,16 +326,8 @@ spec:
               secretKeyRef:
                 name: dify-secret
                 key: S3_USE_SSL
-          - name: VECTOR_STORE
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: VECTOR_STORE
-          - name: QDRANT_ENDPOINT
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: QDRANT_ENDPOINT
+          - name: SANDBOX_SSRFP_PROXY_URL
+            value: "http://dify-sandbox-ssrf-proxy:8080"
 
     ingress:
       enabled: true

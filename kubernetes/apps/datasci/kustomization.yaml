@@ -9,12 +9,12 @@ resources:
   #- ./postgres/
   # Flux-Kustomizations
   - ./docat/ks.yaml
-  - ./dify/ks.yaml
+  #- ./dify/ks.yaml
   - ./mlflow/ks.yaml
   #- ./prefect/ks.yaml
   #- ./windmill/ks.yaml
   #- ./whisper/ks.yaml
-  #- ./dask/ks.yaml
+  - ./dask/ks.yaml
   - ./ray/ks.yaml
   #- ./ollama/ks.yaml
   - ./jupyter-lab/ks.yaml

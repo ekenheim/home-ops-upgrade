@@ -5,13 +5,13 @@ metadata:
   name: dask-gateway
   namespace: datasci
 spec:
-  hostnames: ["dask.${SECRET_DOMAIN}"]
+  hostnames:
+    - dask.istio.se
   parentRefs:
-    - name: internal
-      namespace: kube-system
-      sectionName: https
+    - name: cluster-gateway
+      namespace: istio-system
+      sectionName: https  # must match the listener name in your Gateway
   rules:
     - backendRefs:
         - name: dask-cluster
-          namespace: datasci
           port: 8787

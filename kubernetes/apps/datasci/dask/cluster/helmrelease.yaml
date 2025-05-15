@@ -18,48 +18,34 @@ spec:
             - --dashboard-address
             - "8788"
           ports:
-            - name: http-dashboard # Worker dashboard, if accessed directly
+            - name: http-dashboard
               containerPort: 8788
               protocol: TCP
   scheduler:
     spec:
-      volumes: # <--- NEW SECTION
-        - name: dask-tls-certs
-          secret:
-            secretName: dask-dashboard-tls # Assumes secret 'dask-dashboard-tls' in 'datasci'
       containers:
         - name: scheduler
           image: ghcr.io/dask/dask:2025.5.0-py3.10@sha256:7f1d5a94864e2f3ab9b548a522c73fa682dc4701312e3a15b053ec9a6af4667f
-          args: # <--- MODIFIED ARGS
+          args:
             - dask-scheduler
-            - --dashboard-tls-cert # Specific for the dashboard
-            - /etc/dask-tls/tls.crt
-            - --dashboard-tls-key
-            - /etc/dask-tls/tls.key
           ports:
-            - name: tcp-comm # Usually 8786 for scheduler comms
+            - name: tcp-comm
               containerPort: 8786
               protocol: TCP
-            - name: https-dashboard # Renamed for clarity, still 8787
+            - name: http-dashboard
               containerPort: 8787
               protocol: TCP
-          volumeMounts: # <--- NEW SECTION
-            - name: dask-tls-certs
-              mountPath: /etc/dask-tls # Mount certs here
-              readOnly: true
-          readinessProbe: # <--- MODIFIED PROBE
+          readinessProbe:
             httpGet:
-              port: https-dashboard # Port 8787
-              path: /health # Dask's health endpoint
-              scheme: HTTPS # <--- CHANGED
-            initialDelaySeconds: 10 # Increased delay to allow TLS setup
+              port: http-dashboard
+              path: /health
+            initialDelaySeconds: 5
             periodSeconds: 10
-          livenessProbe: # <--- MODIFIED PROBE
+          livenessProbe:
             httpGet:
-              port: https-dashboard # Port 8787
-              path: /health # Dask's health endpoint
-              scheme: HTTPS # <--- CHANGED
-            initialDelaySeconds: 20 # Increased delay
+              port: http-dashboard
+              path: /health
+            initialDelaySeconds: 15
             periodSeconds: 20
     service:
       type: ClusterIP
@@ -71,7 +57,7 @@ spec:
           protocol: TCP
           port: 8786
           targetPort: "tcp-comm"
-        - name: https-dashboard # Renamed for clarity
+        - name: http-dashboard
           protocol: TCP
-          port: 8787 # Service port remains 8787
-          targetPort: "https-dashboard" # Targets containerPort 8787
+          port: 8787
+          targetPort: "http-dashboard"

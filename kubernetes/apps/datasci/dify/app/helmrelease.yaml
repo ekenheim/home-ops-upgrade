@@ -57,6 +57,8 @@ spec:
       # Mount these volumes into the respective components
       # API component
       api:
+        persistence:
+          accessMode: ReadWriteOnce
         extraVolumeMounts: |-
           - name: app-data
             mountPath: /app/api/storage
@@ -164,6 +166,8 @@ spec:
 
       # Worker component
       worker:
+        persistence:
+          accessMode: ReadWriteOnce
         extraVolumeMounts: |-
           - name: app-data
             mountPath: /app/api/storage # Workers often need same data access as API
@@ -245,6 +249,7 @@ spec:
       pluginDaemon:
         persistence:
           enabled: false # Explicitly disable persistence for pluginDaemon
+          accessMode: ReadWriteOnce
         extraVolumeMounts: |-
           - name: plugin-daemon-data # Defined in dify.extraVolumes
             mountPath: /data

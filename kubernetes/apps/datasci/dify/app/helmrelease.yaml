@@ -26,6 +26,18 @@ spec:
     # - name: dragonfly-cluster
     # - name: postgresql
   values:
+    # Define extraVolumes pointing to our manually created PVCs
+    extraVolumes:
+      - name: app-data
+        persistentVolumeClaim:
+          claimName: dify
+      - name: app-assets
+        persistentVolumeClaim:
+          claimName: dify-assets
+      - name: plugin-daemon-data # This volume is for pluginDaemon
+        persistentVolumeClaim:
+          claimName: dify-plugin-daemon
+
     global:
       imageRegistry: ""
 
@@ -41,18 +53,6 @@ spec:
       #   ".env.production": |-\n          ...
 
       # secretEnvVars: # REMOVED - Secrets will be directly mapped in extraEnv for components
-
-      # Define extraVolumes pointing to our manually created PVCs
-      extraVolumes: |-
-        - name: app-data
-          persistentVolumeClaim:
-            claimName: dify
-        - name: app-assets
-          persistentVolumeClaim:
-            claimName: dify-assets
-        - name: plugin-daemon-data # This volume is for pluginDaemon, but defined globally here
-          persistentVolumeClaim:
-            claimName: dify-plugin-daemon
 
       # Mount these volumes into the respective components
       # API component

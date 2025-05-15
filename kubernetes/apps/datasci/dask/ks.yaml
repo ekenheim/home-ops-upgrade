@@ -4,7 +4,6 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app dask
-  namespace: &namespace datasci
 spec:
   commonMetadata:
     labels:
@@ -16,7 +15,7 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: *namespace
+  targetNamespace: datasci
   timeout: 5m
   wait: true
 ---
@@ -25,7 +24,6 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app dask-cluster
-  namespace: &namespace datasci
 spec:
   commonMetadata:
     labels:
@@ -46,6 +44,6 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: *namespace
+  targetNamespace: datasci
   timeout: 5m
   wait: true

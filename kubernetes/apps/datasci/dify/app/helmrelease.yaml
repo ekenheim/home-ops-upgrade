@@ -26,44 +26,61 @@ spec:
     # - name: dragonfly-cluster
     # - name: postgresql
   values:
-    # Define extraVolumes pointing to our manually created PVCs
-    extraVolumes:
-      - name: app-data
-        persistentVolumeClaim:
-          claimName: dify
-      - name: app-assets
-        persistentVolumeClaim:
-          claimName: dify-assets
-      - name: plugin-daemon-data # This volume is for pluginDaemon
-        persistentVolumeClaim:
-          claimName: dify-plugin-daemon
+    # REMOVE extraVolumes section
+    # extraVolumes:
+    #   - name: app-data
+    #     persistentVolumeClaim:
+    #       claimName: dify
+    #   - name: app-assets
+    #     persistentVolumeClaim:
+    #       claimName: dify-assets
+    #   - name: plugin-daemon-data # This volume is for pluginDaemon
+    #     persistentVolumeClaim:
+    #       claimName: dify-plugin-daemon
 
     global:
       imageRegistry: ""
 
     replicaCount: 1
 
-    # Disable all chart-managed persistence, we will use extraVolumes
+    # Enable and configure chart-managed persistence
     persistence:
-      enabled: false
-    # data, assets, pluginDaemon sections under persistence are now ignored due to parent enabled: false
+      enabled: true
+      data:
+        accessMode: ReadWriteOnce
+        size: 10Gi
+        storageClass: ceph-block
+        nameOverride: "dify-data-v2"
+      assets:
+        accessMode: ReadWriteOnce
+        size: 5Gi
+        storageClass: ceph-block
+        nameOverride: "dify-assets-v2"
+      pluginDaemon:
+        enabled: true
+        accessMode: ReadWriteOnce
+        size: 1Gi
+        storageClass: ceph-block
+        nameOverride: "dify-plugin-daemon-v2"
 
     dify:
       # customFiles: # REMOVED - We will use extraEnv
-      #   ".env.production": |-\n          ...
+      #   ".env.production": |-\\n          ...
 
       # secretEnvVars: # REMOVED - Secrets will be directly mapped in extraEnv for components
 
       # Mount these volumes into the respective components
       # API component
       api:
-        persistence:
-          accessMode: ReadWriteOnce
-        extraVolumeMounts: |-
-          - name: app-data
-            mountPath: /app/api/storage
-          - name: app-assets # Assuming this mount path for assets
-            mountPath: /app/api/assets
+        # REMOVE persistence block
+        # persistence:
+        #   accessMode: ReadWriteOnce
+        # REMOVE extraVolumeMounts
+        # extraVolumeMounts: |-
+        #   - name: app-data
+        #     mountPath: /app/api/storage
+        #   - name: app-assets # Assuming this mount path for assets
+        #     mountPath: /app/api/assets
         extraEnv: |-
           - name: EDITION
             value: "SELF_HOSTED"
@@ -166,13 +183,15 @@ spec:
 
       # Worker component
       worker:
-        persistence:
-          accessMode: ReadWriteOnce
-        extraVolumeMounts: |-
-          - name: app-data
-            mountPath: /app/api/storage # Workers often need same data access as API
-          - name: app-assets # Assuming this mount path for assets
-            mountPath: /app/api/assets
+        # REMOVE persistence block
+        # persistence:
+        #   accessMode: ReadWriteOnce
+        # REMOVE extraVolumeMounts
+        # extraVolumeMounts: |-
+        #   - name: app-data
+        #     mountPath: /app/api/storage # Workers often need same data access as API
+        #   - name: app-assets # Assuming this mount path for assets
+        #     mountPath: /app/api/assets
         extraEnv: |-
           - name: EDITION
             value: "SELF_HOSTED"
@@ -247,12 +266,14 @@ spec:
 
       # Plugin Daemon component (if it's a top-level key in the chart's values)
       pluginDaemon:
-        persistence:
-          enabled: false # Explicitly disable persistence for pluginDaemon
-          accessMode: ReadWriteOnce
-        extraVolumeMounts: |-
-          - name: plugin-daemon-data # Defined in dify.extraVolumes
-            mountPath: /data
+        # REMOVE persistence block
+        # persistence:
+        #   enabled: false # Explicitly disable persistence for pluginDaemon
+        #   accessMode: ReadWriteOnce
+        # REMOVE extraVolumeMounts
+        # extraVolumeMounts: |-
+        #   - name: plugin-daemon-data # Defined in dify.extraVolumes
+        #     mountPath: /data
         extraEnv: |-
           - name: EDITION
             value: "SELF_HOSTED"
@@ -386,9 +407,6 @@ spec:
       # apiKey: "${SECRET_QDRANT_API_KEY}" # If Qdrant needs an API key, manage via secrets
 
     # Storage configuration (S3)
-    # The chart expects S3 creds via env vars which we set up in customFiles
-    # This section is more for configuring chart-specific S3 behavior if any,
-    # but primary creds are via env vars.
     storage:
       type: s3
       # s3:

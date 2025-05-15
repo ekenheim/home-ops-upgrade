@@ -5,3 +5,5 @@ resources:
   - gateway.yaml
   - authz.yaml
   - headscale-istio-envoyfilter.yaml
+  - istio-gw-selfsigned-issuer.yaml
+  - istio-gw-certificate.yaml

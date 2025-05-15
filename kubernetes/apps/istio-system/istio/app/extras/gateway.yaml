@@ -26,7 +26,12 @@ spec:
         namespaces:
           from: All
       tls:
-        mode: Passthrough
+        mode: Terminate
+        certificateRefs:
+          - name: istio-gateway-local-certs
+            kind: Secret
+            group: ""
+            namespace: istio-system
         # certificateRefs:
         #   - name: "${SECRET_DOMAIN/./-}-tls"
         #     kind: Secret

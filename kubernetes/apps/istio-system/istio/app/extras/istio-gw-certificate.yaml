@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: istio-gateway-local-certs # Secret will be named this
+  namespace: istio-system
+spec:
+  secretName: istio-gateway-local-certs
+  dnsNames:
+    - "*.istio.local" # Certificate for the wildcard
+    - "dask.istio.local"
+    - "gw.istio.local"
+  issuerRef:
+    name: istio-gw-selfsigned-issuer
+    kind: Issuer

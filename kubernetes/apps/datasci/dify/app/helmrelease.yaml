@@ -50,18 +50,30 @@ spec:
         accessMode: ReadWriteOnce
         size: 10Gi
         storageClass: ceph-block
-        nameOverride: "dify-data-v2"
+        existingClaim: "dify-data"
       assets:
         accessMode: ReadWriteOnce
         size: 5Gi
         storageClass: ceph-block
-        nameOverride: "dify-assets-v2"
+        existingClaim: "dify-assets"
       pluginDaemon:
         enabled: true
         accessMode: ReadWriteOnce
         size: 1Gi
         storageClass: ceph-block
-        nameOverride: "dify-plugin-daemon-v2"
+        existingClaim: "dify-plugin-daemon"
+
+    # Define our own volumes
+    extraVolumes:
+      - name: app-data
+        persistentVolumeClaim:
+          claimName: dify-data-v2
+      - name: app-assets
+        persistentVolumeClaim:
+          claimName: dify-assets-v2
+      - name: plugin-daemon-data
+        persistentVolumeClaim:
+          claimName: dify-plugin-daemon-v2
 
     dify:
       # customFiles: # REMOVED - We will use extraEnv
@@ -72,15 +84,11 @@ spec:
       # Mount these volumes into the respective components
       # API component
       api:
-        # REMOVE persistence block
-        # persistence:
-        #   accessMode: ReadWriteOnce
-        # REMOVE extraVolumeMounts
-        # extraVolumeMounts: |-
-        #   - name: app-data
-        #     mountPath: /app/api/storage
-        #   - name: app-assets # Assuming this mount path for assets
-        #     mountPath: /app/api/assets
+        extraVolumeMounts: |-
+          - name: app-data
+            mountPath: /app/api/storage
+          - name: app-assets
+            mountPath: /app/api/assets
         extraEnv: |-
           - name: EDITION
             value: "SELF_HOSTED"
@@ -183,15 +191,11 @@ spec:
 
       # Worker component
       worker:
-        # REMOVE persistence block
-        # persistence:
-        #   accessMode: ReadWriteOnce
-        # REMOVE extraVolumeMounts
-        # extraVolumeMounts: |-
-        #   - name: app-data
-        #     mountPath: /app/api/storage # Workers often need same data access as API
-        #   - name: app-assets # Assuming this mount path for assets
-        #     mountPath: /app/api/assets
+        extraVolumeMounts: |-
+          - name: app-data
+            mountPath: /app/api/storage
+          - name: app-assets
+            mountPath: /app/api/assets
         extraEnv: |-
           - name: EDITION
             value: "SELF_HOSTED"
@@ -266,14 +270,9 @@ spec:
 
       # Plugin Daemon component (if it's a top-level key in the chart's values)
       pluginDaemon:
-        # REMOVE persistence block
-        # persistence:
-        #   enabled: false # Explicitly disable persistence for pluginDaemon
-        #   accessMode: ReadWriteOnce
-        # REMOVE extraVolumeMounts
-        # extraVolumeMounts: |-
-        #   - name: plugin-daemon-data # Defined in dify.extraVolumes
-        #     mountPath: /data
+        extraVolumeMounts: |-
+          - name: plugin-daemon-data
+            mountPath: /data
         extraEnv: |-
           - name: EDITION
             value: "SELF_HOSTED"

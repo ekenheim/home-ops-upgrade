@@ -27,6 +27,7 @@ spec:
     domainFilters:
       - ${SECRET_DOMAIN}
       - ${SECRET_SECONDARY_DOMAIN}
+      - istio.local
     extraArgs:
       - --ignore-ingress-tls-spec
       - --webhook-provider-url=http://localhost:8888

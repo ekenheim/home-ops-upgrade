@@ -6,7 +6,7 @@ metadata:
   namespace: datasci
 spec:
   hostnames:
-    - dask.istio.se
+    - dask.istio
   parentRefs:
     - name: cluster-gateway
       namespace: istio-system

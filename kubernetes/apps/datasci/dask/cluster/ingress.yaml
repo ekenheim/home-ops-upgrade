@@ -13,5 +13,5 @@ spec:
       sectionName: https  # must match the listener name in your Gateway
   rules:
     - backendRefs:
-        - name: dask-cluster
+        - name: dask-cluster-scheduler
           port: 8787

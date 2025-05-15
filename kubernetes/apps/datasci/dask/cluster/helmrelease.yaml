@@ -5,7 +5,7 @@ metadata:
   # namespace: datasci # This CR is deployed into datasci by its Kustomization
 spec:
   worker:
-    replicas: 2
+    replicas: 3
     spec:
       containers:
         - name: worker

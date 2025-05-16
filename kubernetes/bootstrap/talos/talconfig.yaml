@@ -21,7 +21,7 @@ cniConfig:
 nodes:
   - hostname: "worker2"
     ipAddress: "192.168.50.32"
-    installDisk: "/dev/sda"
+    installDisk: "/dev/sdb"
     talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
     controlPlane: false
     networkInterfaces:
@@ -106,7 +106,7 @@ nodes:
   - hostname: "worker3"
     ipAddress: "192.168.50.155"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/installer/3f399a21b708f704ba780927f691c1c14809a2f57ab285e8ed7eb9575cb1fd98:v1.9.5
+    talosImageURL: factory.talos.dev/installer/ecd0d866ae091dff599a16632cad94b1f68be82e5a064ed875cd064474532246
     controlPlane: false
     networkInterfaces:
       - deviceSelector:
@@ -123,10 +123,8 @@ nodes:
           - net.ifnames=0
         systemExtensions:
           officialExtensions:
-            - siderolabs/i915-ucode
             - siderolabs/intel-ucode
-            - siderolabs/nonfree-kmod-nvidia-production
-            - siderolabs/nvidia-container-toolkit-production
+            - siderolabs/nvidia-container-toolkit-lts
     patches:
       - |-
         - op: add

@@ -52,6 +52,12 @@ spec:
             - path: /
               pathType: Prefix
               servicePort: 6333
+            - path: /grpc
+              pathType: Prefix
+              servicePort: 6334
+            - path: /metrics
+              pathType: Prefix
+              servicePort: 6335
 
     persistence:
       enabled: true

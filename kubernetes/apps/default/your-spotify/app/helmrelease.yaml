@@ -181,6 +181,7 @@ spec:
           http:
             port: &webport 3000
         annotations:
+          ingressClassName: external
           nginx.ingress.kubernetes.io/proxy-body-size: "0"
           nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
           nginx.ingress.kubernetes.io/proxy-send-timeout: "600"

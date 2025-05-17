@@ -58,6 +58,9 @@ spec:
             - path: /metrics
               pathType: Prefix
               servicePort: 6335
+      tls:
+        - hosts:
+            - "qdrant.${SECRET_DOMAIN}"
 
     persistence:
       enabled: true

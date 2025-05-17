@@ -27,6 +27,7 @@ servers:
       - name: hosts
         configBlock: |-
           192.168.50.188 harbor.ekenhome.se
+          172.67.188.79 s3.ekenhome.se
           fallthrough
       - name: kubernetes
         parameters: cluster.local in-addr.arpa ip6.arpa
@@ -34,9 +35,9 @@ servers:
           pods insecure
           fallthrough in-addr.arpa ip6.arpa
       - name: forward
-        parameters: . /etc/resolv.conf
+        parameters: . /etc/resolv.conf 192.168.1.1
       - name: cache
-        parameters: 30
+        parameters: 300
       - name: loop
       - name: reload
       - name: loadbalance

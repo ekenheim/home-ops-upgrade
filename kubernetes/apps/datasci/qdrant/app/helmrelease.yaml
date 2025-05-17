@@ -46,6 +46,7 @@ spec:
         gethomepage.dev/icon: database.png
         gethomepage.dev/description: Vector Database
         external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+      ingressClassName: internal
       hosts:
         - host: "qdrant.${SECRET_DOMAIN}"
           paths:

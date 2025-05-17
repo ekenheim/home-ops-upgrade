@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/common-3.1.0/charts/library/common/values.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -14,31 +14,35 @@ spec:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
-  maxHistory: 2
   install:
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
-  uninstall:
-    keepHistory: false
   values:
     controllers:
       server:
-        annotations:
-          reloader.stakater.com/auto: "true"
+        strategy: &strategy RollingUpdate
+        rollingUpdate: &rollingUpdate
+          unavailable: 0
+        pod: &pod
+          annotations:
+            reloader.stakater.com/auto: "true"
         containers:
-          main:
+          app:
             image:
-              repository: ghcr.io/yooooomi/your_spotify_server
-              tag: 1.13.1@sha256:552f1577b38fdd2d9e1a52a5f945c5471f57feaed9684c7b88abc9640c4a2fac
+              repository: yooooomi/your_spotify_server
+              tag: 1.13.1
             env:
-              TIMEZONE: Australia/Sydney
+              TIMEZONE: ${TIMEZONE}
+              # Caveat if it includes Spotify in name: https://github.com/Yooooomi/your_spotify/pull/254
               API_ENDPOINT: &endpoint https://spotify.${SECRET_DOMAIN}/api
               CLIENT_ENDPOINT: https://spotify.${SECRET_DOMAIN}
-              MONGO_ENDPOINT: mongodb://your-spotify-mongodb:27017/your_spotify
+              CORS: *client
+              MONGO_ENDPOINT: mongodb://your-spotify-mongodb:27017/your_spotify #mongo sucks
               PORT: &port 8080
             envFrom:
               - secretRef:
@@ -46,184 +50,84 @@ spec:
             probes:
               liveness:
                 enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /health
-                    port: *port
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 3
               readiness:
                 enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /health
-                    port: *port
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 3
               startup:
                 enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /health
-                    port: *port
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 30
             securityContext: &securityContext
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
-              capabilities: { drop: [ 'ALL' ] }
-            resources:
-              requests:
-                cpu: 10m
-                memory: 500Mi
+              capabilities: { drop: ["ALL"] }
       web:
+        strategy: *strategy
+        rollingUpdate: *rollingUpdate
+        pod: *pod
         containers:
-          main:
+          app:
             image:
-              repository: ghcr.io/yooooomi/your_spotify_client
-              tag: 1.13.1@sha256:a9672141625f47ce34aa837ddab15d436bc6b3a72cff001a906fe79b078403e5
+              repository: yooooomi/your_spotify_client
+              tag: 1.13.1
             env:
-              API_ENDPOINT: *endpoint
-            probes:
-              liveness:
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /health
-                    port: *port
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 3
-              readiness:
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /health
-                    port: *port
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 3
-              startup:
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /health
-                    port: *port
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 30
+              TIMEZONE: ${TIMEZONE}
+              API_ENDPOINT: *api_endpoint
+            probes: *probes
             securityContext: *securityContext
-      mongodb:
+      mongodb: #mongo still sucks
         type: statefulset
+        rollingUpdate: *rollingUpdate
         statefulset:
           podManagementPolicy: OrderedReady
         containers:
-          main:
+          app:
             image:
               repository: docker.io/library/mongo
               tag: 6.0.4-focal
-            probes:
-              liveness:
-                enabled: true
-                custom: true
-                spec:
-                  tcpSocket:
-                    port: 27017
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 3
-              readiness:
-                enabled: true
-                custom: true
-                spec:
-                  tcpSocket:
-                    port: 27017
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 3
-              startup:
-                enabled: true
-                custom: true
-                spec:
-                  tcpSocket:
-                    port: 27017
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 30
+            env:
+              TZ: ${TIMEZONE}
+            probes: *probes
     service:
       server:
         controller: server
         primary: true
         ports:
           http:
-            port: *port
+            port: 8080
       web:
         controller: web
         ports:
           http:
-            port: &webport 3000
-        annotations:
-          ingressClassName: external
-          nginx.ingress.kubernetes.io/proxy-body-size: "0"
-          nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-          nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+            port: 3000
       mongodb:
         controller: mongodb
         ports:
           http:
             port: 27017
     ingress:
-      main:
-        enabled: true
+      app:
         className: external
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-          nginx.ingress.kubernetes.io/configuration-snippet: |
-            more_set_headers "Content-Type: $content_type";
-            if ($request_uri ~* \.css$) {
-              more_set_headers "Content-Type: text/css";
-            }
-            if ($request_uri ~* \.js$) {
-              more_set_headers "Content-Type: application/javascript";
-            }
+          nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+          nginx.ingress.kubernetes.io/proxy-body-size: 1000m
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+          nginx.ingress.kubernetes.io/rewrite-target: /$1
         hosts:
-          - host: &host "spotify.${SECRET_DOMAIN}"
+          - host: spotty.${SECRET_DOMAIN}
             paths:
-            - path: /api
-              service:
-                identifier: server
-                port: http
-            - path: /
-              service:
-                identifier: web
-                port: http
-        tls:
-          - hosts:
-              - *host
+              - path: /?(.*)
+                pathType: Prefix
+                service:
+                  identifier: web
+                  port: http
+              - path: /api/?(.*)
+                pathType: Prefix
+                service:
+                  identifier: server
+                  port: http
     persistence:
-      configs:
-        enabled: true
-        type: persistentVolumeClaim
+      mongo:
         existingClaim: *app
         advancedMounts:
           mongodb:
-            main:
-              - path: /data/db
+            app:
+              - path: /data

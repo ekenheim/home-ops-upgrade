@@ -135,6 +135,7 @@ nodes:
               - name: nvidia_uvm
               - name: nvidia_drm
               - name: nvidia_modeset
+              - name: nvidia_peermem
       - |-
         - op: add
           path: /machine/sysctls
@@ -148,25 +149,23 @@ nodes:
               path: /var/etc/nvidia-container-runtime/config.toml
               content: |-
                 disable-require = false
-                #swarm-resource = "DOCKER_RESOURCE_GPU"
-                #accept-nvidia-visible-devices-envvar-when-unprivileged = true
-                #accept-nvidia-visible-devices-as-volume-mounts = true
+                accept-nvidia-visible-devices-envvar-when-unprivileged = true
+                accept-nvidia-visible-devices-as-volume-mounts = true
 
                 [nvidia-container-cli]
-                #root = "/run/nvidia/driver"
-                #path = "/usr/bin/nvidia-container-cli"
+                root = "/run/nvidia/driver"
+                path = "/usr/bin/nvidia-container-cli"
                 environment = []
-                #debug = "/var/log/nvidia-container-toolkit.log"
-                #ldcache = "/etc/ld.so.cache"
+                debug = "/var/log/nvidia-container-toolkit.log"
+                ldcache = "/etc/ld.so.cache"
                 load-kmods = true
-                #no-cgroups = false
-                #user = "root:video"
+                no-cgroups = false
+                user = "root:video"
                 ldconfig = "@/sbin/ldconfig.real"
 
                 [nvidia-container-runtime]
-                #debug = "/var/log/nvidia-container-runtime.log"
+                debug = "/var/log/nvidia-container-runtime.log"
 
-                # Specify the runtimes to use with docker
                 [nvidia-container-runtime.runtimes]
                 containerd = "/run/containerd/containerd.sock"
 

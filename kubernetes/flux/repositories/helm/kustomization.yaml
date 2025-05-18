@@ -51,6 +51,7 @@ resources:
   - ./windmill.yaml
   - ./qdrant.yaml
   - ./tailscale.yaml
+  - ./spark-operator.yaml
   - ./truecharts.yaml
   - ./nvidia-charts.yaml
   - ./seldonio.yaml

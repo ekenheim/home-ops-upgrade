@@ -34,7 +34,6 @@ spec:
             image:
               repository: docker.io/rancher/system-upgrade-controller
               tag: v0.15.2@sha256:3e899833afcea9a8788d384ce976df9a05be84636fe5c01ec2307b5bd8fe9810
-
             env:
               SYSTEM_UPGRADE_CONTROLLER_DEBUG: false
               SYSTEM_UPGRADE_CONTROLLER_THREADS: 2
@@ -78,17 +77,18 @@ spec:
               operator: Exists
               effect: NoSchedule
         serviceAccount:
-          identifier: *app
+          identifier: system-upgrade-controller
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 100
     serviceAccount:
-      system-upgrade-controller: {}
+      system-upgrade-controller:
+        staticToken: false
     service:
       app:
-        controller: *app
+        controller: system-upgrade-controller
         enabled: false
     persistence:
       tmp:

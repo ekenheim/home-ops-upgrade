@@ -1,0 +1,121 @@
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: spark-pi
+  namespace: datasci
+spec:
+  type: Scala
+  mode: cluster
+  image: "gcr.io/spark-operator/spark:v3.5.0"
+  imagePullPolicy: Always
+  mainClass: org.apache.spark.examples.SparkPi
+  mainApplicationFile: "local:///opt/spark/examples/jars/spark-examples_2.12-3.5.0.jar"
+  sparkVersion: "3.5.0"
+  restartPolicy:
+    type: OnFailure
+    onFailureRetries: 3
+    onFailureRetryInterval: 10
+    onSubmissionFailureRetries: 5
+    onSubmissionFailureRetryInterval: 20
+  driver:
+    cores: 1
+    coreLimit: "1200m"
+    memory: "512m"
+    labels:
+      version: 3.5.0
+    serviceAccount: spark-operator
+    env:
+      - name: SPARK_DRIVER_OPTS
+        value: "-Dspark.driver.extraJavaOptions=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8090 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false"
+    ports:
+      - name: jmx
+        port: 8090
+        protocol: TCP
+      - name: ui
+        port: 4040
+        protocol: TCP
+    volumeMounts:
+      - name: spark-local-dir-1
+        mountPath: /tmp
+      - name: spark-persistent-storage
+        mountPath: /opt/spark/work-dir
+    resources:
+      requests:
+        memory: "512m"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "1"
+  executor:
+    cores: 1
+    instances: 2
+    memory: "512m"
+    labels:
+      version: 3.5.0
+    env:
+      - name: SPARK_EXECUTOR_OPTS
+        value: "-Dspark.executor.extraJavaOptions=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8090 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false"
+    volumeMounts:
+      - name: spark-local-dir-1
+        mountPath: /tmp
+      - name: spark-persistent-storage
+        mountPath: /opt/spark/work-dir
+    resources:
+      requests:
+        memory: "512m"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "1"
+  volumes:
+    - name: spark-local-dir-1
+      emptyDir: {}
+    - name: spark-persistent-storage
+      persistentVolumeClaim:
+        claimName: spark
+  monitoring:
+    exposeDriverMetrics: true
+    exposeExecutorMetrics: true
+    prometheus:
+      jmxExporterJar: "/prometheus/jmx_prometheus_javaagent.jar"
+      port: 8090
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-ui
+  namespace: datasci
+spec:
+  type: ClusterIP
+  ports:
+    - name: ui
+      port: 4040
+      targetPort: 4040
+      protocol: TCP
+  selector:
+    spark-role: driver
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: spark-ui
+  namespace: datasci
+  annotations:
+    nginx.ingress.kubernetes.io/whitelist-source-range: |
+      10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+spec:
+  ingressClassName: internal
+  rules:
+    - host: spark.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: spark-ui
+                port:
+                  name: ui
+  tls:
+    - hosts:
+        - spark.${SECRET_DOMAIN}

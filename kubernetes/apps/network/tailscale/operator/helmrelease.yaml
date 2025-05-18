@@ -3,7 +3,6 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: tailscale-operator
-  namespace: network
 spec:
   interval: 30m
   chart:
@@ -13,7 +12,7 @@ spec:
       interval: 30m
       sourceRef:
         kind: HelmRepository
-        name: tailscale
+        name: tailscale-charts
         namespace: flux-system
   values:
     operatorConfig:
@@ -22,9 +21,6 @@ spec:
         - "tag:k8s"
     apiServerProxyConfig:
       mode: "true"
-    ingressConfig:
-      enabled: true
-      hostname: "tailscale-operator"
   valuesFrom:
     - kind: Secret
       name: tailscale-operator
@@ -34,7 +30,3 @@ spec:
       name: tailscale-operator
       valuesKey: client_secret
       targetPath: oauth.clientSecret
-    - kind: Secret
-      name: tailscale-operator
-      valuesKey: auth_key
-      targetPath: operatorConfig.authKey

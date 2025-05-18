@@ -7,8 +7,8 @@ spec:
   interval: 30m
   chart:
     spec:
-      chart: spark-operator
-      version: 1.1.27
+      chart: spark
+      version: 8.1.7
       sourceRef:
         kind: HelmRepository
         name: spark-operator
@@ -22,12 +22,11 @@ spec:
       strategy: rollback
       retries: 3
   values:
-    webhook:
-      enable: true
-    metrics:
-      serviceMonitor:
-        enabled: true
-        interval: 10s
+    serviceAccount:
+      create: true
+      name: spark-operator
+    rbac:
+      create: true
     resources:
       requests:
         cpu: 100m
@@ -35,11 +34,12 @@ spec:
       limits:
         cpu: 500m
         memory: 512Mi
-    serviceAccount:
-      create: true
-      name: spark-operator
-    rbac:
-      create: true
+    webhook:
+      enable: true
+    metrics:
+      serviceMonitor:
+        enabled: true
+        interval: 10s
     securityContext:
       runAsNonRoot: true
       runAsUser: 65534

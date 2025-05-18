@@ -31,3 +31,7 @@ spec:
       name: tailscale-operator
       valuesKey: client_secret
       targetPath: oauth.clientSecret
+    - kind: Secret
+      name: tailscale-operator
+      valuesKey: auth_key
+      targetPath: operatorConfig.authKey

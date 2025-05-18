@@ -1,0 +1,52 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: spark-operator
+  namespace: datasci
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: spark-operator
+      version: 1.1.27
+      sourceRef:
+        kind: HelmRepository
+        name: spark-operator
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    webhook:
+      enable: true
+    metrics:
+      serviceMonitor:
+        enabled: true
+        interval: 10s
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    serviceAccount:
+      create: true
+      name: spark-operator
+    rbac:
+      create: true
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      runAsGroup: 65534
+      fsGroup: 1000
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      runAsGroup: 65534
+      fsGroup: 1000

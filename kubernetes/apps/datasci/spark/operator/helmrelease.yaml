@@ -1,7 +1,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app spark-operator
+  name: &app spark
   namespace: datasci
 spec:
   interval: 30m
@@ -29,32 +29,11 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
-    serviceAccount:
-      create: true
-      name: spark-operator
-    rbac:
-      create: true
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
-    webhook:
-      enable: true
-    metrics:
-      serviceMonitor:
+    master:
+      service:
+        type: ClusterIP
+      ingress:
         enabled: true
-        interval: 10s
-    service:
-      app:
-        controller: *app
-        ports:
-          http:
-            port: 8080
-    ingress:
-      main:
         className: internal
         annotations:
           nginx.ingress.kubernetes.io/whitelist-source-range: |
@@ -64,9 +43,27 @@ spec:
             paths:
               - path: /
                 pathType: Prefix
-                service:
-                  identifier: app
-                  port: http
         tls:
           - hosts:
               - *host
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    worker:
+      replicas: 2
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+        interval: 10s

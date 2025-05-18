@@ -50,6 +50,7 @@ resources:
   - ./meilisearch.yaml
   - ./windmill.yaml
   - ./qdrant.yaml
+  - ./tailscale.yaml
   - ./truecharts.yaml
   - ./nvidia-charts.yaml
   - ./seldonio.yaml

@@ -22,6 +22,9 @@ spec:
         - "tag:k8s"
     apiServerProxyConfig:
       mode: "true"
+    ingressConfig:
+      enabled: true
+      hostname: "tailscale-operator"
   valuesFrom:
     - kind: Secret
       name: tailscale-operator

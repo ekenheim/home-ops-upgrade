@@ -73,14 +73,18 @@ spec:
                 memory: 500Mi
             securityContext:
               allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
+              readOnlyRootFilesystem: false
               capabilities: { drop: ["ALL"] }
+              runAsUser: 65534
+              runAsGroup: 65534
 
     defaultPodOptions:
       securityContext:
         runAsGroup: 65534
         runAsUser: 65534
         runAsNonRoot: true
+        fsGroup: 65534
+        fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
 
@@ -116,3 +120,9 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /tmp
+      prisma-engines:
+        enabled: true
+        type: emptyDir
+        globalMounts:
+          - path: /app/node_modules/.pnpm/@prisma+engines@6.7.0/node_modules/@prisma/engines
+            subPath: engines

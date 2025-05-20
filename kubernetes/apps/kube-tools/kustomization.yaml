@@ -1,9 +1,10 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
+
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 components:
-  - ../../templates/common/repos
+  - ../../templates/common
 resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
@@ -17,3 +18,10 @@ resources:
   - ./spegel/ks.yaml
   - ./fstrim/ks.yaml
   - ./system-upgrade-controller/ks.yaml
+  # App Template Resources
+  - ../../templates/common/repos/app-template/ocirepository.yaml
+configMapGenerator:
+  - name: versions
+    env: ./system-upgrade-controller/versions.env
+configurations:
+  - ./system-upgrade-controller/kustomizeconfig.yaml

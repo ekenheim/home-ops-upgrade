@@ -46,7 +46,10 @@ spec:
                 mkdir -p /app/node_modules/.pnpm/@prisma+engines@6.7.0/node_modules/@prisma/engines
                 chown -R 65534:65534 /app/node_modules
                 chmod -R 755 /app/node_modules
-                cd /app && npm install prisma@6.7.0
+                cd /app
+                npm install prisma@6.7.0
+                npx prisma generate
+                npx prisma migrate deploy
         containers:
           app:
             image:

@@ -35,6 +35,28 @@ spec:
         annotations:
           reloader.stakater.com/search: "true"
         strategy: Recreate
+        initContainers:
+          setup-prisma:
+            image:
+              repository: ghcr.io/umami-software/umami
+              tag: postgresql-v2.18.1
+            env:
+              DATABASE_TYPE: postgresql
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: &db_secret umami-secret
+                    key: DATABASE_URL
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                mkdir -p /app/node_modules/.pnpm/@prisma+engines@6.7.0/node_modules/@prisma/engines
+                chown -R 65534:65534 /app/node_modules
+                chmod -R 755 /app/node_modules
+                cd /app
+                npm install prisma@6.7.0
+                npx prisma generate
+                npx prisma migrate deploy
         containers:
           app:
             image:

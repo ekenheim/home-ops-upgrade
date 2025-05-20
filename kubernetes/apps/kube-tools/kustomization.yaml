@@ -23,6 +23,6 @@ resources:
   - ../../templates/common/repos/app-template/ocirepository.yaml
 configMapGenerator:
   - name: versions
-    env: ../../kube-tools/system-upgrade-controller/versions.env
+    env: ./system-upgrade-controller/versions.env
 configurations:
-  - ../../kube-tools/system-upgrade-controller/kustomizeconfig.yaml
+  - ./system-upgrade-controller/kustomizeconfig.yaml

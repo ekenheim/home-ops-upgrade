@@ -23,9 +23,13 @@ spec:
       retries: 3
   values:
     controllers:
-      server:
-        annotations:
-          reloader.stakater.com/auto: "true"
+      your-spotify:
+        strategy: RollingUpdate
+        rollingUpdate:
+          unavailable: 0
+        pod:
+          annotations:
+            reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
@@ -41,14 +45,14 @@ spec:
             envFrom:
               - secretRef:
                   name: your-spotify-secret
-            probes: &probes
+            probes:
               liveness:
                 enabled: true
               readiness:
                 enabled: true
               startup:
                 enabled: true
-            securityContext: &securityContext
+            securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
               capabilities: { drop: ["ALL"] }
@@ -77,12 +81,12 @@ spec:
               tag: 6.0.4-focal
             probes: *probes
     service:
-      server:
-        controller: server
+      app:
+        controller: your-spotify
         primary: true
         ports:
           http:
-            port: *port
+            port: 8080
       web:
         controller: web
         ports:
@@ -112,18 +116,18 @@ spec:
                     type: ReplacePrefixMatch
                     replacePrefixMatch: "/"
             backendRefs:
-              - identifier: server
-                port: *port
+              - name: server
+                port: 8080
           - matches:
               - path:
                   type: PathPrefix
                   value: "/"
             backendRefs:
-              - identifier: web
-                port: *webport
+              - name: web
+                port: 3000
     persistence:
       configs:
-        existingClaim: *app
+        existingClaim: your-spotify
         advancedMounts:
           mongodb:
             app:

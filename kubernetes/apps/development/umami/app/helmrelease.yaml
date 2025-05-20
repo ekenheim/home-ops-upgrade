@@ -142,9 +142,8 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /tmp
-      prisma-engines:
+      node-modules:
         enabled: true
         type: emptyDir
         globalMounts:
-          - path: /app/node_modules/.pnpm/@prisma+engines@6.7.0/node_modules/@prisma/engines
-            subPath: engines
+          - path: /app/node_modules

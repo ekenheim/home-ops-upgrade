@@ -11,7 +11,7 @@ resources:
   - ./docat/ks.yaml
   #- ./dify/ks.yaml
   - ./mlflow/ks.yaml
-  #- ./prefect/ks.yaml
+  - ./prefect/ks.yaml
   #- ./windmill/ks.yaml
   #- ./whisper/ks.yaml
   - ./dask/ks.yaml

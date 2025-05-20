@@ -5,3 +5,6 @@ nameReference:
     fieldSpecs:
       - path: spec/postBuild/substituteFrom/name
         kind: Kustomization
+      - path: spec/postBuild/substituteFrom/namespace
+        kind: Kustomization
+        create: true

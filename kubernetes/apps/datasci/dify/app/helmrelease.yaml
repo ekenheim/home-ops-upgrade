@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: dify
-      version: 0.24.0 # Check for the latest version, 0.24.0 was latest noted
+      version: 0.25.0 # Check for the latest version, 0.24.0 was latest noted
       sourceRef:
         kind: HelmRepository
         name: dify

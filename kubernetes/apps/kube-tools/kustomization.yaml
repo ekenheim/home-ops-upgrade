@@ -19,8 +19,6 @@ resources:
   - ./reloader/ks.yaml
   - ./spegel/ks.yaml
   - ./system-upgrade-controller/ks.yaml
-  # App Template Resources
-  - ../../templates/common/repos/app-template/ocirepository.yaml
 configMapGenerator:
   - name: versions
     env: ./system-upgrade-controller/versions.env

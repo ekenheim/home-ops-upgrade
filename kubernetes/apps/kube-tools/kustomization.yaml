@@ -8,6 +8,7 @@ components:
   - ../../templates/common
 resources:
   # Pre Flux-Kustomizations
+  - ./namespace.yaml
   - ./notifications.yaml
   # Flux-Kustomizations
   - ./descheduler/ks.yaml

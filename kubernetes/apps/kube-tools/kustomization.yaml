@@ -1,6 +1,5 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
-
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -9,15 +8,10 @@ resources:
   - ./notifications.yaml
   # Flux-Kustomizations
   - ./descheduler/ks.yaml
-  - ./fstrim/ks.yaml
-  - ./intel-device-plugins/ks.yaml
   - ./node-feature-discovery/ks.yaml
   - ./nvidia-device-plugin/ks.yaml
+  - ./intel-device-plugins/ks.yaml
   - ./reloader/ks.yaml
   - ./spegel/ks.yaml
+  - ./fstrim/ks.yaml
   - ./system-upgrade-controller/ks.yaml
-configMapGenerator:
-  - name: versions
-    env: ./system-upgrade-controller/versions.env
-configurations:
-  - ./system-upgrade-controller/kustomizeconfig.yaml

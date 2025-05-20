@@ -38,14 +38,15 @@ spec:
         initContainers:
           setup-permissions:
             image:
-              repository: busybox
-              tag: latest
+              repository: ghcr.io/umami-software/umami
+              tag: postgresql-v2.18.1
             command: ["/bin/sh", "-c"]
             args:
               - |
                 mkdir -p /app/node_modules/.pnpm/@prisma+engines@6.7.0/node_modules/@prisma/engines
                 chown -R 65534:65534 /app/node_modules
                 chmod -R 755 /app/node_modules
+                cd /app && npm install prisma@6.7.0
         containers:
           app:
             image:

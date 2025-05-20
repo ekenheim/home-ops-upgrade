@@ -76,6 +76,10 @@ spec:
               readOnlyRootFilesystem: false
               capabilities: { drop: ["ALL"] }
               fsGroup: 65534
+            volumeMounts:
+              - name: node-modules
+                mountPath: /app/node_modules
+                subPath: node_modules
 
     defaultPodOptions:
       securityContext:
@@ -85,6 +89,9 @@ spec:
         fsGroup: 65534
         seccompProfile:
           type: RuntimeDefault
+      volumes:
+        - name: node-modules
+          emptyDir: {}
 
     service:
       app:

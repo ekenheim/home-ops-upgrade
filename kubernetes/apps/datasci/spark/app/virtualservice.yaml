@@ -1,0 +1,35 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: spark
+  namespace: datasci
+spec:
+  hosts:
+  - "spark.istio.local"
+  gateways:
+  - istio-system/ekenhome-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: spark-master-external
+        port:
+          number: 8080
+      weight: 100
+  tcp:
+  - match:
+    - port: 7077
+    route:
+    - destination:
+        host: spark-master-external
+        port:
+          number: 7077
+  - match:
+    - port: 6066
+    route:
+    - destination:
+        host: spark-master-external
+        port:
+          number: 6066

@@ -6,7 +6,7 @@ metadata:
   annotations:
     io.cilium/lb-ipam-ips: "${SVC_SPARK_ADDR}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - name: master
       port: 7077

@@ -10,5 +10,5 @@ spec:
     sectionName: spark-master # Must match the listener name in Gateway
   rules:
   - backendRefs:
-    - name: spark-master-external
+    - name: spark-master-svc
       port: 7077

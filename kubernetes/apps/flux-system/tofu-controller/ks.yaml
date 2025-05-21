@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/flux-system/tofu-controller/app
+  path: ./kubernetes/apps/flux-system/tofu-controller/controller
   prune: true
   sourceRef:
     kind: GitRepository

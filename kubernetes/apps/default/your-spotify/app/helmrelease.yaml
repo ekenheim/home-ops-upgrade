@@ -29,6 +29,10 @@ spec:
         enabled: true
       startup:
         enabled: true
+    securityContext: &securityContext
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: false
+      capabilities: { drop: ["ALL"] }
     controllers:
       your-spotify:
         strategy: RollingUpdate
@@ -53,14 +57,11 @@ spec:
               - secretRef:
                   name: your-spotify-secret
             probes: *probes
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: false
-              capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 10m
                 memory: 500Mi
+            securityContext: *securityContext
       web:
         containers:
           app:

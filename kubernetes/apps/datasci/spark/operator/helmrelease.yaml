@@ -34,6 +34,8 @@ spec:
         type: LoadBalancer
         annotations:
           io.cilium/lb-ipam-ips: "${SVC_SPARK_ADDR}"
+        ports:
+          cluster: 7077
       resources:
         requests:
           cpu: 100m

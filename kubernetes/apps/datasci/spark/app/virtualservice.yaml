@@ -7,7 +7,7 @@ spec:
   hosts:
   - "spark.istio.local"
   gateways:
-  - istio-system/ekenhome-gateway
+  - istio-system/cluster-gateway
   http:
   - match:
     - uri:

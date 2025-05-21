@@ -8,12 +8,18 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - name: cluster
+    - name: master
       port: 7077
       targetPort: 7077
-    - name: ui
+      protocol: TCP
+    - name: webui
       port: 8080
       targetPort: 8080
+      protocol: TCP
+    - name: rest
+      port: 6066
+      targetPort: 6066
+      protocol: TCP
   selector:
     app.kubernetes.io/name: spark
     app.kubernetes.io/component: master

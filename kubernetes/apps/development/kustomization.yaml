@@ -6,7 +6,7 @@ resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
   # Flux-Kustomizations
-  - ./umami/ks.yaml
+  #- ./umami/ks.yaml
   - ./meilisearch/ks.yaml
   - ./harbor/ks.yaml
   #- ./gitlab/ks.yaml

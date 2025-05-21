@@ -48,14 +48,14 @@ spec:
           cpu: 500m
           memory: 512Mi
     worker:
-      replicas: 2
+      replicas: 3
       resources:
         requests:
-          cpu: 100m
-          memory: 256Mi
+          cpu: 2
+          memory: 1Gi
         limits:
-          cpu: 500m
-          memory: 512Mi
+          cpu: 8
+          memory: 16Gi
     metrics:
       enabled: true
       serviceMonitor:

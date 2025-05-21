@@ -1,63 +1,45 @@
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
-  name: spark
+  name: spark-ui
   namespace: datasci
 spec:
-  hosts:
+  parentRefs:
+  - name: cluster-gateway
+    namespace: istio-system
+  hostnames:
   - "spark.istio.local"
-  gateways:
-  - istio-system/cluster-gateway
-  http:
-  - match:
-    - uri:
-        prefix: /
-    route:
-    - destination:
-        host: spark-master-svc.datasci.svc.cluster.local
-        port:
-          number: 8080
-      weight: 100
-  tcp:
-  - match:
-    - port: 7077
-    route:
-    - destination:
-        host: spark-master-svc.datasci.svc.cluster.local
-        port:
-          number: 7077
-  - match:
-    - port: 6066
-    route:
-    - destination:
-        host: spark-master-svc.datasci.svc.cluster.local
-        port:
-          number: 6066
+  rules:
+  - backendRefs:
+    - name: spark-master-svc
+      port: 8080
 ---
-apiVersion: networking.istio.io/v1alpha3
-kind: Gateway
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
 metadata:
-  name: spark-gateway
+  name: spark-master-tcp
   namespace: datasci
 spec:
-  selector:
-    istio: ingressgateway
-  servers:
-  - port:
-      number: 80
-      name: http
-      protocol: HTTP
-    hosts:
-    - "spark.istio.local"
-  - port:
-      number: 7077
-      name: tcp-spark
-      protocol: TCP
-    hosts:
-    - "spark.istio.local"
-  - port:
-      number: 6066
-      name: tcp-rest
-      protocol: TCP
-    hosts:
-    - "spark.istio.local"
+  parentRefs:
+  - name: cluster-gateway
+    namespace: istio-system
+    sectionName: spark-master
+  rules:
+  - backendRefs:
+    - name: spark-master-svc
+      port: 7077
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: spark-rest-tcp
+  namespace: datasci
+spec:
+  parentRefs:
+  - name: cluster-gateway
+    namespace: istio-system
+    sectionName: spark-rest
+  rules:
+  - backendRefs:
+    - name: spark-master-svc
+      port: 6066

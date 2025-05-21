@@ -3,8 +3,6 @@ kind: Service
 metadata:
   name: spark-master-external
   namespace: datasci
-  annotations:
-    io.cilium/lb-ipam-ips: "${SVC_SPARK_ADDR}"
 spec:
   type: ClusterIP
   ports:

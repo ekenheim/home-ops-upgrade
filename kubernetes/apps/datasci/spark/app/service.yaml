@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-master-external
+  namespace: datasci
+  annotations:
+    io.cilium/lb-ipam-ips: "${SVC_SPARK_ADDR}"
+spec:
+  type: LoadBalancer
+  ports:
+    - name: cluster
+      port: 7077
+      targetPort: 7077
+    - name: ui
+      port: 8080
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: spark
+    app.kubernetes.io/component: master

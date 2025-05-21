@@ -4,3 +4,4 @@ resources:
   - pvc.yaml
   - service.yaml
   - virtualservice.yaml
+  - tcproute.yaml

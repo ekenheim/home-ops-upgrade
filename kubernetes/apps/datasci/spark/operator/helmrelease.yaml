@@ -31,7 +31,9 @@ spec:
           type: RuntimeDefault
     master:
       service:
-        type: ClusterIP
+        type: LoadBalancer
+        annotations:
+          io.cilium/lb-ipam-ips: "${SVC_SPARK_ADDR}"
       resources:
         requests:
           cpu: 100m

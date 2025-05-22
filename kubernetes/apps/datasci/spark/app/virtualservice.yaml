@@ -47,13 +47,13 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TCPRoute
 metadata:
-  name: spark-driver-tcp
+  name: spark-driver-range-tcp
   namespace: datasci
 spec:
   parentRefs:
   - name: cluster-gateway
     namespace: istio-system
-    sectionName: spark-driver
+    sectionName: spark-driver-range
   rules:
   - backendRefs:
     - name: spark-master-svc
@@ -62,13 +62,13 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TCPRoute
 metadata:
-  name: spark-blockmanager-tcp
+  name: spark-blockmanager-range-tcp
   namespace: datasci
 spec:
   parentRefs:
   - name: cluster-gateway
     namespace: istio-system
-    sectionName: spark-blockmanager
+    sectionName: spark-blockmanager-range
   rules:
   - backendRefs:
     - name: spark-master-svc

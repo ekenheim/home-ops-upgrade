@@ -44,11 +44,11 @@ spec:
       port: 6066
       targetPort: 6066
       protocol: TCP
-    - name: driver
+    - name: driver-range
       port: 55286
       targetPort: 55286
       protocol: TCP
-    - name: blockmanager
+    - name: blockmanager-range
       port: 55300
       targetPort: 55300
       protocol: TCP

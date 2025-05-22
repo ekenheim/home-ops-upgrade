@@ -43,3 +43,33 @@ spec:
   - backendRefs:
     - name: spark-master-svc
       port: 6066
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: spark-driver-tcp
+  namespace: datasci
+spec:
+  parentRefs:
+  - name: cluster-gateway
+    namespace: istio-system
+    sectionName: spark-driver
+  rules:
+  - backendRefs:
+    - name: spark-master-svc
+      port: 55286
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: spark-blockmanager-tcp
+  namespace: datasci
+spec:
+  parentRefs:
+  - name: cluster-gateway
+    namespace: istio-system
+    sectionName: spark-blockmanager
+  rules:
+  - backendRefs:
+    - name: spark-master-svc
+      port: 55300

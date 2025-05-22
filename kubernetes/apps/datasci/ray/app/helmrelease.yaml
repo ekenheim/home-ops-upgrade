@@ -98,20 +98,10 @@ spec:
       port: 10001
 
     ingress:
-      enabled: true
-      ingressClassName: internal
-      hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-      tls:
-          - hosts: [*host]
+      enabled: false  # Disable the default ingress since we're using Istio
 
     service:
-      type: ClusterIP
+      type: ClusterIP  # Keep as ClusterIP since we're using ray-external for external access
       port: 8265
 
   dependsOn:

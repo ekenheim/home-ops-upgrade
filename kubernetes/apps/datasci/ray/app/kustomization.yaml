@@ -6,5 +6,6 @@ resources:
   # - ./backup/  # nothing to back up currently
   - ./operator-helmrelease.yaml
   - ./helmrelease.yaml
+  - ./virtualservice.yaml
   - ../../../../templates/volsync
   - ../../../../templates/gatus/guarded

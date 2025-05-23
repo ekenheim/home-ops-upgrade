@@ -43,6 +43,9 @@ spec:
             env:
               TZ: "${TIMEZONE}"
               BAZARR__INSTANCE_NAME: bazarr
+              BAZARR__GENERAL__EMBEDDED_SUBTITLES_PARSER: "mediainfo"
+              BAZARR__GENERAL__SKIP_HASHING: "true"
+              BAZARR__GENERAL__USE_FFPROBE_CACHE: "true"
             envFrom:
             - secretRef:
                 name: bazarr-secret

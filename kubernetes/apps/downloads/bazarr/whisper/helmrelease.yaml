@@ -60,3 +60,13 @@ spec:
         existingClaim: *app
         globalMounts:
           - path: /root/.cache/whisper
+      data:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        globalMounts:
+        - path: /data
+      add-ons:
+        type: emptyDir
+      tmp:
+        type: emptyDir

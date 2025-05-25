@@ -50,15 +50,18 @@ spec:
         accessMode: ReadWriteOnce
         size: 10Gi
         storageClass: ceph-block
+        volumeMode: Filesystem
       assets:
         accessMode: ReadWriteOnce
         size: 5Gi
         storageClass: ceph-block
+        volumeMode: Filesystem
       pluginDaemon:
         enabled: true
         accessMode: ReadWriteOnce
         size: 1Gi
         storageClass: ceph-block
+        volumeMode: Filesystem
 
     dify:
       pluginDaemon:

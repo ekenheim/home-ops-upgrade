@@ -37,7 +37,7 @@ spec:
           app:
             image:
               repository: ghcr.io/joryirving/radarr
-              tag: 5.23.3.9987@sha256:e483df909a80ed5931228c87eb92bde5a3680c4a43d86d5051e9323aecdd502d
+              tag: 5.24.0.10006@sha256:1b37f726ea87a609f20cb6fd6bdb3b91dc7dc68a53cd5de467ccd16eef3a1e5d
             env:
               TZ: ${TIMEZONE}
               RADARR__APP__INSTANCENAME: Radarr4k

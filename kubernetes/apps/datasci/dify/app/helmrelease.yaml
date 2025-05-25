@@ -50,18 +50,15 @@ spec:
         accessMode: ReadWriteOnce
         size: 10Gi
         storageClass: ceph-block
-        existingClaim: "dify-data"
       assets:
         accessMode: ReadWriteOnce
         size: 5Gi
         storageClass: ceph-block
-        existingClaim: "dify-assets"
       pluginDaemon:
         enabled: true
         accessMode: ReadWriteOnce
         size: 1Gi
         storageClass: ceph-block
-        existingClaim: "dify-plugin-daemon"
 
     dify:
       pluginDaemon:

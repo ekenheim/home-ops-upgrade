@@ -9,7 +9,7 @@ resources:
   #- ./postgres/
   # Flux-Kustomizations
   - ./docat/ks.yaml
-  - ./dify/ks.yaml
+  #- ./dify/ks.yaml
   - ./mlflow/ks.yaml
   - ./prefect/ks.yaml
   #- ./windmill/ks.yaml

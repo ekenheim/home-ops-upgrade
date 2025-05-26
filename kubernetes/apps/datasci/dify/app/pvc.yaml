@@ -32,20 +32,37 @@
 #     requests:
 #       storage: 5Gi
 #   storageClassName: ceph-block
-# ---
-# apiVersion: v1
-# kind: PersistentVolumeClaim
-# metadata:
-#   name: dify-plugin-daemon
-#   namespace: datasci
-#   labels:
-#     app.kubernetes.io/name: dify
-#     app.kubernetes.io/instance: dify
-#     app.kubernetes.io/component: plugin-daemon
-# spec:
-#   accessModes:
-#     - ReadWriteOnce
-#   resources:
-#     requests:
-#       storage: 1Gi
-#   storageClassName: ceph-block
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dify
+  namespace: datasci
+  labels:
+    app.kubernetes.io/name: dify
+    app.kubernetes.io/instance: dify
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: ceph-block
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dify-plugin-daemon
+  namespace: datasci
+  labels:
+    app.kubernetes.io/name: dify
+    app.kubernetes.io/instance: dify
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ceph-block
+  volumeMode: Filesystem

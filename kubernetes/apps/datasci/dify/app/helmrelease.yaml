@@ -65,6 +65,19 @@ spec:
 
     dify:
       pluginDaemon:
+        secret:
+          enabled: true
+          data:
+            DB_USERNAME: "${DB_USERNAME}"
+            DB_PASSWORD: "${DB_PASSWORD}"
+            DB_HOST: "${DB_HOST}"
+            DB_PORT: "${DB_PORT}"
+            DB_DATABASE: "${DB_DATABASE}"
+            REDIS_HOST: "${REDIS_HOST}"
+            REDIS_PORT: "${REDIS_PORT}"
+            REDIS_USERNAME: "${REDIS_USERNAME}"
+            REDIS_PASSWORD: "${REDIS_PASSWORD}"
+            REDIS_DB: "${REDIS_DB}"
         extraVolumeMounts: |-
           - name: plugin-daemon
             mountPath: /data
@@ -176,12 +189,50 @@ spec:
       # Mount these volumes into the respective components
       # API component
       api:
+        secret:
+          enabled: true
+          data:
+            DB_USERNAME: "${DB_USERNAME}"
+            DB_PASSWORD: "${DB_PASSWORD}"
+            DB_HOST: "${DB_HOST}"
+            DB_PORT: "${DB_PORT}"
+            DB_DATABASE: "${DB_DATABASE}"
+            REDIS_HOST: "${REDIS_HOST}"
+            REDIS_PORT: "${REDIS_PORT}"
+            REDIS_USERNAME: "${REDIS_USERNAME}"
+            REDIS_PASSWORD: "${REDIS_PASSWORD}"
+            REDIS_DB: "${REDIS_DB}"
         extraVolumeMounts: |-
           - name: data
             mountPath: /app/api/storage
           - name: assets
             mountPath: /app/api/assets
         extraEnv: |-
+          - name: REDIS_HOST
+            valueFrom:
+              secretKeyRef:
+                name: dify-secret
+                key: REDIS_HOST
+          - name: REDIS_PORT
+            valueFrom:
+              secretKeyRef:
+                name: dify-secret
+                key: REDIS_PORT
+          - name: REDIS_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: dify-secret
+                key: REDIS_USERNAME
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: dify-secret
+                key: REDIS_PASSWORD
+          - name: REDIS_DB
+            valueFrom:
+              secretKeyRef:
+                name: dify-secret
+                key: REDIS_DB
           - name: EDITION
             value: "SELF_HOSTED"
           - name: CONSOLE_URL
@@ -217,31 +268,6 @@ spec:
                 key: DB_DATABASE
           - name: DB_CHARSET
             value: "utf8mb4"
-          - name: REDIS_HOST
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: REDIS_HOST
-          - name: REDIS_PORT
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: REDIS_PORT
-          - name: REDIS_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: REDIS_USERNAME
-          - name: REDIS_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: REDIS_PASSWORD
-          - name: REDIS_DB
-            valueFrom:
-              secretKeyRef:
-                name: dify-secret
-                key: REDIS_DB
           - name: STORAGE_TYPE
             value: "s3"
           - name: S3_ENDPOINT
@@ -283,12 +309,26 @@ spec:
 
       # Worker component
       worker:
-        extraVolumeMounts: |-
+        secret:
+          enabled: true
+          data:
+            DB_USERNAME: "${DB_USERNAME}"
+            DB_PASSWORD: "${DB_PASSWORD}"
+            DB_HOST: "${DB_HOST}"
+            DB_PORT: "${DB_PORT}"
+            DB_DATABASE: "${DB_DATABASE}"
+            REDIS_HOST: "${REDIS_HOST}"
+            REDIS_PORT: "${REDIS_PORT}"
+            REDIS_USERNAME: "${REDIS_USERNAME}"
+            REDIS_PASSWORD: "${REDIS_PASSWORD}"
+            REDIS_DB: "${REDIS_DB}"
+            CELERY_BROKER_URL: "${CELERY_BROKER_URL}"
+        extraVolumeMounts:
           - name: data
             mountPath: /app/api/storage
           - name: assets
             mountPath: /app/api/assets
-        extraEnv: |-
+        extraEnv:
           - name: EDITION
             value: "SELF_HOSTED"
           - name: CONSOLE_URL
@@ -367,7 +407,7 @@ spec:
         gethomepage.dev/enabled: "true"
         gethomepage.dev/group: AI
         gethomepage.dev/name: Dify
-        gethomepage.dev/icon: "brain-circuit.svg" # Ensure this icon exists or use another
+        gethomepage.dev/icon: "brain-circuit.svg"
         gethomepage.dev/description: "LLM App Platform"
         external-dns.alpha.kubernetes.io/target: "internal.${SECRET_DOMAIN}"
       hosts:
@@ -378,7 +418,6 @@ spec:
       tls:
         - hosts:
             - *host
-          secretName: "dify-tls" # Assumes you have a cert-manager Issuer for this or provide cert manually
 
     # Disable components managed externally or not needed
     postgresql:
@@ -421,3 +460,18 @@ spec:
       #   secretKey: populated-by-secret
       #   region: populated-by-secret
       #   useSSL: true
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dify
+  namespace: datasci
+spec:
+  selector:
+    app.kubernetes.io/name: dify
+    component: web
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000

@@ -1,0 +1,54 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: cluster-gateway
+  namespace: istio-system
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: gw.istio.local,*.istio.local
+    io.cilium/lb-ipam-ips: 192.168.50.187
+spec:
+  gatewayClassName: istio
+  listeners:
+  - name: http
+    hostname: "*.istio.local"
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: All
+  - name: https
+    hostname: "*.istio.local"
+    port: 443
+    protocol: HTTPS
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: istio-gateway-local-certs
+        namespace: istio-system
+    allowedRoutes:
+      namespaces:
+        from: All
+  - name: spark-master
+    port: 7077
+    protocol: TCP
+    allowedRoutes:
+      namespaces:
+        from: All
+  - name: spark-driver
+    port: 7078
+    protocol: TCP
+    allowedRoutes:
+      namespaces:
+        from: All
+  - name: spark-blockmanager
+    port: 7079
+    protocol: TCP
+    allowedRoutes:
+      namespaces:
+        from: All
+  - name: dask-scheduler
+    port: 8786
+    protocol: TCP
+    allowedRoutes:
+      namespaces:
+        from: All

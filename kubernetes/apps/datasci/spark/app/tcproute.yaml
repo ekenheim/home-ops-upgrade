@@ -7,7 +7,7 @@ spec:
   parentRefs:
   - name: cluster-gateway
     namespace: istio-system
-    sectionName: spark-master # Must match the listener name in Gateway
+    sectionName: tcp-spark
   rules:
   - backendRefs:
     - name: spark-master-external

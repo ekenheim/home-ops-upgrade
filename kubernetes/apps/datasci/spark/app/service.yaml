@@ -3,30 +3,6 @@ kind: Service
 metadata:
   name: spark-master-svc
   namespace: datasci
-spec:
-  type: ClusterIP
-  ports:
-    - name: master
-      port: 7077
-      targetPort: 7077
-      protocol: TCP
-    - name: webui
-      port: 8080
-      targetPort: 8080
-      protocol: TCP
-    - name: rest
-      port: 6066
-      targetPort: 6066
-      protocol: TCP
-  selector:
-    app.kubernetes.io/name: spark
-    app.kubernetes.io/component: master
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: spark-external
-  namespace: datasci
   annotations:
     io.cilium/lb-ipam-ips: "${SVC_SPARK_ADDR}"
 spec:

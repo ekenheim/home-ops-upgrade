@@ -42,20 +42,26 @@ spec:
           ui: 8080
       resources:
         requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
           cpu: 500m
           memory: 512Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+      extraEnv:
+        - name: SPARK_MASTER_OPTS
+          value: "-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=spark-zookeeper:2181 -Dspark.deploy.zookeeper.dir=/spark"
     worker:
-      replicas: 3
+      replicas: 2
       resources:
         requests:
-          cpu: 2
-          memory: 1Gi
+          cpu: 500m
+          memory: 512Mi
         limits:
-          cpu: 8
-          memory: 16Gi
+          cpu: 1000m
+          memory: 1Gi
+      extraEnv:
+        - name: SPARK_WORKER_OPTS
+          value: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=1800 -Dspark.worker.cleanup.appDataTtl=7d"
     metrics:
       enabled: true
       serviceMonitor:

@@ -3,6 +3,10 @@ kind: Service
 metadata:
   name: spark-master-svc
   namespace: datasci
+  labels:
+    app.kubernetes.io/name: spark
+    app.kubernetes.io/instance: spark
+    app.kubernetes.io/component: master
   annotations:
     io.cilium/lb-ipam-ips: "${SVC_SPARK_ADDR}"
 spec:
@@ -13,7 +17,7 @@ spec:
       targetPort: 7077
       protocol: TCP
     - name: webui
-      port: 8080
+      port: 80
       targetPort: 8080
       protocol: TCP
     - name: rest
@@ -24,10 +28,11 @@ spec:
       port: 55286
       targetPort: 55286
       protocol: TCP
-    - name: blockmanager-range
+    - name: block-manager-range
       port: 55300
       targetPort: 55300
       protocol: TCP
   selector:
     app.kubernetes.io/name: spark
+    app.kubernetes.io/instance: spark
     app.kubernetes.io/component: master

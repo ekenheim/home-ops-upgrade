@@ -1,38 +1,23 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: spark-master-svc
+  name: spark-master-external
   namespace: datasci
-  labels:
-    app.kubernetes.io/name: spark
-    app.kubernetes.io/instance: spark
-    app.kubernetes.io/component: master
-  annotations:
-    io.cilium/lb-ipam-ips: "${SVC_SPARK_ADDR}"
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - name: master
       port: 7077
       targetPort: 7077
       protocol: TCP
     - name: webui
-      port: 80
+      port: 8080
       targetPort: 8080
       protocol: TCP
     - name: rest
       port: 6066
       targetPort: 6066
       protocol: TCP
-    - name: driver-range
-      port: 55286
-      targetPort: 55286
-      protocol: TCP
-    - name: block-manager-range
-      port: 55300
-      targetPort: 55300
-      protocol: TCP
   selector:
     app.kubernetes.io/name: spark
-    app.kubernetes.io/instance: spark
     app.kubernetes.io/component: master

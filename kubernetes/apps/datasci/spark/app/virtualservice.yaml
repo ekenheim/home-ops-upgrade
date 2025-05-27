@@ -1,0 +1,63 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: spark
+  namespace: datasci
+spec:
+  hosts:
+  - "spark.istio.local"
+  gateways:
+  - istio-system/cluster-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: spark-master-external
+        port:
+          number: 8080
+      weight: 100
+  tcp:
+  - match:
+    - port: 7077
+    route:
+    - destination:
+        host: spark-master-external
+        port:
+          number: 7077
+  - match:
+    - port: 6066
+    route:
+    - destination:
+        host: spark-master-external
+        port:
+          number: 6066
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: spark-gateway
+  namespace: datasci
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "spark.istio.local"
+  - port:
+      number: 7077
+      name: tcp-spark
+      protocol: TCP
+    hosts:
+    - "spark.istio.local"
+  - port:
+      number: 6066
+      name: tcp-rest
+      protocol: TCP
+    hosts:
+    - "spark.istio.local"

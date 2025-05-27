@@ -33,13 +33,13 @@ spec:
       type: ClusterIP
       ports:
         cluster: 7077
-        ui: 8080
+        ui: 80
     master:
       service:
         type: ClusterIP
         ports:
           cluster: 7077
-          ui: 8080
+          ui: 80
       resources:
         requests:
           cpu: 500m

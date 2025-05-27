@@ -7,8 +7,8 @@ spec:
   parentRefs:
   - name: cluster-gateway
     namespace: istio-system
-    sectionName: tcp-spark
+    sectionName: spark-master
   rules:
   - backendRefs:
-    - name: spark-master-external
+    - name: spark-master-svc
       port: 7077

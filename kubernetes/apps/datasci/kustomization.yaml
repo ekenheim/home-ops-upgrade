@@ -17,7 +17,7 @@ resources:
   - ./dask/ks.yaml
   - ./ray/ks.yaml
   #- ./ollama/ks.yaml
-  #- ./spark/ks.yaml
+  - ./spark/ks.yaml
   - ./jupyter-lab/ks.yaml
   - ./qdrant/ks.yaml
   - ./flyte/ks.yaml

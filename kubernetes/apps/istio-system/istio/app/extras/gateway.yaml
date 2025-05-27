@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/gateway_v1beta1.json
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: cluster-gateway
+  namespace: istio-system
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "gw.istio.local,*.istio.local"
+    io.cilium/lb-ipam-ips: "${SVC_GATEWAY_ADDR}"
+spec:
+  gatewayClassName: istio
+  listeners:
+    - name: http
+      hostname: "*.istio.local"
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: dask-scheduler
+      port: 8786
+      protocol: TCP
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: spark-master
+      port: 7077
+      protocol: TCP
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      hostname: "*.istio.local"
+      port: 443
+      protocol: HTTPS
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: istio-gateway-local-certs
+            kind: Secret
+            group: ""
+            namespace: istio-system
+        # certificateRefs:
+        #   - name: "${SECRET_DOMAIN/./-}-tls"
+        #     kind: Secret
+        #     namespace: cert-manager

@@ -7,7 +7,7 @@ resources:
   - ./home-assistant/ks.yaml
   - ./homepage/ks.yaml
   - ./misc-gatus/ks.yaml
-  - ./misc-ingress/ks.yaml
+  #- ./misc-ingress/ks.yaml
   - ./mosquitto/ks.yaml
   #- ./your-spotify/ks.yaml
   #- ./memos/ks.yaml

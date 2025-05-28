@@ -46,7 +46,7 @@ spec:
           memory: 512Mi
         limits:
           cpu: 1000m
-          memory: 30Gi
+          memory: 1Gi
       extraEnv:
         - name: SPARK_MASTER_OPTS
           value: "-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=spark-zookeeper:2181 -Dspark.deploy.zookeeper.dir=/spark"
@@ -58,7 +58,7 @@ spec:
           memory: 512Mi
         limits:
           cpu: 1000m
-          memory: 1Gi
+          memory: 30Gi
       extraEnv:
         - name: SPARK_WORKER_OPTS
           value: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=1800 -Dspark.worker.cleanup.appDataTtl=7d"

@@ -5,6 +5,8 @@ metadata:
   namespace: kube-tools
 spec:
   concurrency: 1
+  channel: stable
+  version: ${TALOS_VERSION}
   nodeSelector:
     matchLabels: {}
   serviceAccountName: system-upgrade
@@ -18,4 +20,4 @@ spec:
       - /bin/sh
       - -c
       - |
-        talosctl upgrade --nodes ${NODE_NAME} --image ghcr.io/siderolabs/installer:${TALOS_VERSION} --preserve --reboot --extensions siderolabs/i915
+        talosctl upgrade --nodes ${NODE_NAME} --image ghcr.io/siderolabs/installer:v1.10.2 --preserve --reboot --extensions siderolabs/i915

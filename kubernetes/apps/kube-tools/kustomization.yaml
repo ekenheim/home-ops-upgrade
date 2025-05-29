@@ -14,4 +14,4 @@ resources:
   - ./reloader/ks.yaml
   - ./spegel/ks.yaml
   - ./fstrim/ks.yaml
-  #- ./system-upgrade-controller/ks.yaml
+  - ./system-upgrade-controller/ks.yaml

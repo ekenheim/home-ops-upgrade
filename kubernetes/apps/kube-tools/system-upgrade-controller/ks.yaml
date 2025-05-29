@@ -45,6 +45,10 @@ spec:
     substituteFrom:
       - kind: ConfigMap
         name: versions
+        optional: true
+    substitute:
+      KUBERNETES_VERSION: "v1.33.1"
+      TALOS_VERSION: "v1.10.2"
   prune: true
   retryInterval: 2m
   sourceRef:

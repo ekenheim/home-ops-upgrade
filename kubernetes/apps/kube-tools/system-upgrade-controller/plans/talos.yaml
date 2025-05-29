@@ -38,7 +38,6 @@ spec:
       - health
       - --server=false
       - --wait-timeout=10m
-      - --mode=node
   upgrade:
     <<: *prepare
     args:

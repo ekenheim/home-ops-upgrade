@@ -4,8 +4,10 @@ apiVersion: upgrade.cattle.io/v1
 kind: Plan
 metadata:
   name: talos
+  annotations:
+    upgrade.cattle.io/force: "true"
 spec:
-  version: ${TALOS_VERSION}
+  version: v1.10.2
   serviceAccountName: system-upgrade
   secrets:
     - name: talos
@@ -43,3 +45,6 @@ spec:
       - --nodes=$(NODE_IP)
       - upgrade
       - --image=ghcr.io/siderolabs/installer:$(SYSTEM_UPGRADE_PLAN_LATEST_VERSION)
+      - --preserve
+      - --reboot-mode=powercycle
+      - --extensions=ghcr.io/siderolabs/i915:20250509-v1.10.3@sha256:ec3a95fa2e73e3f11b44282fdaabf0846c33fd0496c081ecee702095be3c04b1

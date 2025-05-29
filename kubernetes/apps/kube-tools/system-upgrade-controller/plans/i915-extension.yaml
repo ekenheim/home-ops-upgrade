@@ -1,0 +1,21 @@
+apiVersion: upgrade.cattle.io/v1
+kind: Plan
+metadata:
+  name: i915-extension
+  namespace: kube-tools
+spec:
+  concurrency: 1
+  nodeSelector:
+    matchLabels: {}
+  serviceAccountName: system-upgrade
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  upgrade:
+    image: ghcr.io/siderolabs/installer:${TALOS_VERSION}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        talosctl upgrade --nodes ${NODE_NAME} --image ghcr.io/siderolabs/installer:${TALOS_VERSION} --preserve --reboot --extensions siderolabs/i915

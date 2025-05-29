@@ -44,6 +44,6 @@ spec:
     args:
       - --nodes=$(NODE_IP)
       - upgrade
-      - --image=factory.talos.dev/metal-installer/e0b8fa3ae9d1c34d1cca4a94deafffc6c13b293bce113a14a222b9e6e9f09738:v1.10.2
+      - --image=factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de:v1.10.2
       - --preserve
       - --reboot-mode=powercycle

@@ -1,60 +1,52 @@
 ---
-# yaml-language-server: $schema=https://kube-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app system-upgrade-controller
   namespace: flux-system
 spec:
+  targetNamespace: system-upgrade
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  interval: 1h
+  dependsOn:
+    - name: node-feature-discovery-rules
   path: ./kubernetes/apps/kube-tools/system-upgrade-controller/app
-  postBuild:
-    substitute:
-      REPLICAS: "2"
   prune: true
-  retryInterval: 2m
   sourceRef:
     kind: GitRepository
     name: home-kubernetes
-    namespace: flux-system
-  targetNamespace: kube-tools
-  timeout: 5m
   wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
 ---
-# yaml-language-server: $schema=https://kube-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app system-upgrade-controller-plans
   namespace: flux-system
-  labels:
-    substitution.flux/enabled: false
 spec:
+  targetNamespace: system-upgrade
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: system-upgrade-controller
-      namespace: flux-system
-  interval: 1h
   path: ./kubernetes/apps/kube-tools/system-upgrade-controller/plans
-  postBuild:
-    substituteFrom:
-      - kind: ConfigMap
-        name: versions
-        optional: true
-    substitute:
-      KUBERNETES_VERSION: "v1.33.1"
-      TALOS_VERSION: "v1.10.2"
   prune: true
-  retryInterval: 2m
   sourceRef:
     kind: GitRepository
     name: home-kubernetes
-    namespace: flux-system
-  targetNamespace: kube-tools
-  timeout: 5m
   wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
+      TALOS_VERSION: v1.10.2
+      # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
+      KUBERNETES_VERSION: v1.33.1

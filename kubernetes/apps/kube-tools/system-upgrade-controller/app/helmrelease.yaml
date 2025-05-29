@@ -56,6 +56,11 @@ spec:
         runAsUser: 1000
         runAsGroup: 100
     additionalResources:
+      - apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: system-upgrade-controller
+          namespace: kube-tools
       - apiVersion: talos.dev/v1alpha1
         kind: ServiceAccount
         metadata:

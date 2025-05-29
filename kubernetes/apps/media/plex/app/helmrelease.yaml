@@ -81,9 +81,7 @@ spec:
                       - key: kubernetes.io/hostname
                         operator: NotIn
                         values:
-                          - master1
                           - worker1
-                          - worker2
           securityContext:
             runAsUser: 568
             runAsGroup: 568

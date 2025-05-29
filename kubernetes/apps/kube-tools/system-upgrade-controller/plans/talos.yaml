@@ -3,9 +3,9 @@
 apiVersion: upgrade.cattle.io/v1
 kind: Plan
 metadata:
-  name: kubernetes
+  name: talos
 spec:
-  version: ${KUBERNETES_VERSION}
+  version: ${TALOS_VERSION}
   serviceAccountName: system-upgrade
   secrets:
     - name: talos
@@ -37,10 +37,9 @@ spec:
       - --nodes=$(NODE_IP)
       - health
       - --server=false
-      - --timeout=10m
   upgrade:
     <<: *prepare
     args:
       - --nodes=$(NODE_IP)
-      - upgrade-k8s
+      - upgrade
       - --to=$(SYSTEM_UPGRADE_PLAN_LATEST_VERSION)

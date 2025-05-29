@@ -42,4 +42,4 @@ spec:
     args:
       - --nodes=$(NODE_IP)
       - upgrade
-      - --to=$(SYSTEM_UPGRADE_PLAN_LATEST_VERSION)
+      - --image=ghcr.io/siderolabs/installer:$(SYSTEM_UPGRADE_PLAN_LATEST_VERSION)

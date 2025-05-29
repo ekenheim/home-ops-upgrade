@@ -37,7 +37,7 @@ spec:
       - --nodes=$(NODE_IP)
       - health
       - --server=false
-      - --timeout=10m
+      - --wait-timeout=10m
   upgrade:
     <<: *prepare
     args:

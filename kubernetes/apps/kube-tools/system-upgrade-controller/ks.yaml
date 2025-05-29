@@ -50,4 +50,4 @@ spec:
       TALOS_VERSION: v1.10.2
       # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
       KUBERNETES_VERSION: v1.33.1
-      TALOS_SCHEMATIC: talos-schematic
+      TALOS_SCHEMATIC: 68168ce1cf6fbb0e961fbf0ffa7aaa889e85015c434b3cfc96ab23ef3a4453e3

@@ -27,7 +27,7 @@ spec:
       operator: Exists
       effect: NoSchedule
   prepare: &prepare
-    image: factory.talos.dev/installer/${TALOS_SCHEMATIC}:${TALOS_VERSION}
+    image: ghcr.io/siderolabs/talosctl:${TALOS_VERSION}
     envs:
       - name: NODE_IP
         valueFrom:
@@ -43,6 +43,6 @@ spec:
     args:
       - --nodes=$(NODE_IP)
       - upgrade
-      - --image=factory.talos.dev/installer/${TALOS_SCHEMATIC}:${TALOS_VERSION}
+      - --image=factory.talos.dev/metal-installer/e0b8fa3ae9d1c34d1cca4a94deafffc6c13b293bce113a14a222b9e6e9f09738:v1.10.2
       - --preserve
       - --reboot-mode=powercycle

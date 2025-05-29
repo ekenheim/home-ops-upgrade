@@ -14,4 +14,4 @@ resources:
   - ./maintainerr/ks.yaml
   - ./wizarr/ks.yaml
   - ./xteve/ks.yaml
-  - ./ersatztv/ks.yaml
+  #- ./ersatztv/ks.yaml

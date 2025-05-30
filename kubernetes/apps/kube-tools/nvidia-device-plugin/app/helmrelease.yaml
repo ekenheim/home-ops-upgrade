@@ -1,11 +1,11 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: nvidia-device-plugin
   namespace: kube-tools
 spec:
-  interval: 15m
+  interval: 5m
   chart:
     spec:
       # renovate: registryUrl=https://nvidia.github.io/k8s-device-plugin
@@ -15,7 +15,6 @@ spec:
         kind: HelmRepository
         name: nvidia-charts
         namespace: flux-system
-      interval: 15m
   # https://github.com/NVIDIA/k8s-device-plugin/blob/main/deployments/helm/nvidia-device-plugin/values.yaml
   install:
     crds: CreateReplace
@@ -32,17 +31,26 @@ spec:
       tag: v0.17.2
     runtimeClassName: ""
     nodeSelector:
-      feature.node.kubernetes.io/pci-10de.present: "true"
+      extensions.talos.dev/nonfree-kmod-nvidia-lts: ""
+      extensions.talos.dev/nvidia-container-toolkit-lts: ""
+    tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+    securityContext:
+      privileged: true
+    resources:
+      limits:
+        cpu: 100m
+        memory: 100Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
     config:
-      map:
-        default: |-
-          version: v1
-          flags:
-            migStrategy: none
-          sharing:
-            timeSlicing:
-              renameByDefault: false
-              failRequestsGreaterThanOne: false
-              resources:
-                - name: nvidia.com/gpu
-                  replicas: 6
+      version: v1
+      sharing:
+        mps:
+          renameByDefault: false
+          resources:
+            - name: nvidia.com/gpu
+              replicas: 4

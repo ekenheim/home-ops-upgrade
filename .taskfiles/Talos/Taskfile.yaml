@@ -79,7 +79,14 @@ tasks:
 
   upgrade-talos:
     desc: Upgrade talos on a node
-    cmd: talosctl --nodes {{.node}} upgrade --image ghcr.io/siderolabs/installer:{{.TALOS_VERSION}} --preserve=true --reboot-mode=default
+    cmd: |
+      SCHEMA=$({{.ROOT_DIR}}/.taskfiles/Talos/scripts/get-schematic.sh {{.node}})
+      if [ $? -eq 0 ]; then
+        talosctl --nodes {{.node}} upgrade --image factory.talos.dev/metal-installer/$SCHEMA:{{.TALOS_VERSION}} --preserve=true --reboot-mode=default
+      else
+        echo "Failed to get schematic ID for node {{.node}}"
+        exit 1
+      fi
     requires:
       vars: ["node"]
     preconditions:

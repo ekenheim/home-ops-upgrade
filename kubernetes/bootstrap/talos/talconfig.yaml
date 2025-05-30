@@ -22,7 +22,7 @@ nodes:
   - hostname: "worker2"
     ipAddress: "192.168.50.32"
     installDisk: "/dev/sdb"
-    talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
+    talosImageURL: factory.talos.dev/metal-installer/4b3cd373a192c8469e859b7a0cfbed3ecc3577c4a2d346a37b0aeff9cd17cdb0:v1.10.3
     controlPlane: false
     networkInterfaces:
       - deviceSelector:
@@ -35,7 +35,7 @@ nodes:
   - hostname: "master1"
     ipAddress: "192.168.50.31"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
+    talosImageURL: factory.talos.dev/metal-installer/4b3cd373a192c8469e859b7a0cfbed3ecc3577c4a2d346a37b0aeff9cd17cdb0:v1.10.3
     controlPlane: true
     networkInterfaces:
       - deviceSelector:
@@ -50,7 +50,7 @@ nodes:
   - hostname: "master2"
     ipAddress: "192.168.50.33"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
+    talosImageURL: factory.talos.dev/metal-installer/4b3cd373a192c8469e859b7a0cfbed3ecc3577c4a2d346a37b0aeff9cd17cdb0:v1.10.3
     controlPlane: true
     networkInterfaces:
       - deviceSelector:
@@ -65,7 +65,7 @@ nodes:
   - hostname: "worker1"
     ipAddress: "192.168.50.30"
     installDisk: "/dev/sdb"
-    talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
+    talosImageURL: factory.talos.dev/metal-installer/4b3cd373a192c8469e859b7a0cfbed3ecc3577c4a2d346a37b0aeff9cd17cdb0:v1.10.3
     controlPlane: false
     networkInterfaces:
       - deviceSelector:
@@ -78,7 +78,7 @@ nodes:
   - hostname: "master3"
     ipAddress: "192.168.50.34"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/installer/5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
+    talosImageURL: factory.talos.dev/metal-installer/4b3cd373a192c8469e859b7a0cfbed3ecc3577c4a2d346a37b0aeff9cd17cdb0:v1.10.3
     controlPlane: true
     networkInterfaces:
       # 2.5G Internal Port
@@ -106,7 +106,7 @@ nodes:
   - hostname: "worker3"
     ipAddress: "192.168.50.155"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/installer/ecd0d866ae091dff599a16632cad94b1f68be82e5a064ed875cd064474532246
+    talosImageURL: factory.talos.dev/metal-installer/af8eb82417d3deaa94d2ef19c3b590b0dac1b2549d0b9b35b3da2bc325de75f7
     controlPlane: false
     networkInterfaces:
       - deviceSelector:
@@ -117,57 +117,6 @@ nodes:
         routes:
           - network: 0.0.0.0/0
             gateway: "192.168.50.1"
-    schematic:
-      customization:
-        extraKernelArgs:
-          - net.ifnames=0
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/intel-ucode
-            - siderolabs/nvidia-container-toolkit-lts
-    patches:
-      - |-
-        - op: add
-          path: /machine/kernel
-          value:
-            modules:
-              - name: nvidia
-              - name: nvidia_uvm
-              - name: nvidia_drm
-              - name: nvidia_modeset
-              - name: nvidia_peermem
-      - |-
-        - op: add
-          path: /machine/sysctls
-          value:
-            net.core.bpf_jit_harden: 1
-      - |-
-        - op: add
-          path: /machine/files
-          value:
-            - op: create
-              path: /var/etc/nvidia-container-runtime/config.toml
-              content: |-
-                disable-require = false
-                accept-nvidia-visible-devices-envvar-when-unprivileged = true
-                accept-nvidia-visible-devices-as-volume-mounts = true
-
-                [nvidia-container-cli]
-                root = "/run/nvidia/driver"
-                path = "/usr/bin/nvidia-container-cli"
-                environment = []
-                debug = "/var/log/nvidia-container-toolkit.log"
-                ldcache = "/etc/ld.so.cache"
-                load-kmods = true
-                no-cgroups = false
-                user = "root:video"
-                ldconfig = "@/sbin/ldconfig.real"
-
-                [nvidia-container-runtime]
-                debug = "/var/log/nvidia-container-runtime.log"
-
-                [nvidia-container-runtime.runtimes]
-                containerd = "/run/containerd/containerd.sock"
 
 patches:
   # Configure containerd
@@ -184,7 +133,6 @@ patches:
               discard_unpacked_layers = false
             [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
               discard_unpacked_layers = false
-
     # Configure NFS Mounts
   - |-
     machine:
@@ -272,6 +220,16 @@ patches:
   #    install:
   #      extraKernelArgs:
   #        - net.ifnames=0
+
+  # Add kernel modules
+  - |-
+    machine:
+      kernel:
+        modules:
+          - name: nvidia
+          - name: nvidia_uvm
+          - name: nvidia_drm
+          - name: nvidia_modeset
 
 controlPlane:
   patches:

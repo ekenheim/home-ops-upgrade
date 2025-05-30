@@ -31,8 +31,8 @@ spec:
       tag: v0.17.2
     runtimeClassName: ""
     nodeSelector:
-      extensions.talos.dev/nonfree-kmod-nvidia-lts: ""
-      extensions.talos.dev/nvidia-container-toolkit-lts: ""
+      extensions.talos.dev/nonfree-kmod-nvidia-lts: "535.247.01-v1.10.3"
+      extensions.talos.dev/nvidia-container-toolkit-lts: "535.247.01-v1.17.6"
     tolerations:
       - key: nvidia.com/gpu
         operator: Exists

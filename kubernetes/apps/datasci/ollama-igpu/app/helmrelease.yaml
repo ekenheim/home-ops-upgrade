@@ -42,6 +42,8 @@ spec:
                 memory: 16Gi
                 gpu.intel.com/i915: 1
         pod:
+          nodeSelector:
+            intel.feature.node.kubernetes.io/gpu: "true"
           affinity:
             podAntiAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:

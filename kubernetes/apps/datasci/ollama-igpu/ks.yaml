@@ -3,8 +3,10 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app ollama
+  name: &app ollama-igpu
+  namespace: flux-system
 spec:
+  targetNamespace: datasci
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app

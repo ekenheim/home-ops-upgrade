@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ollama
+  name: ollama-igpu
 spec:
   accessModes: ["ReadWriteMany"]
   resources:

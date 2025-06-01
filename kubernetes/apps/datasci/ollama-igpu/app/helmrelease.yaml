@@ -19,7 +19,7 @@ spec:
       namespace: kube-tools
   values:
     controllers:
-      ollama:
+      ollama-igpu:
         replicas: 3 # 1 per node
         annotations:
           reloader.stakater.com/auto: "true"

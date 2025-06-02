@@ -92,6 +92,6 @@ spec:
         type: persistentVolumeClaim
         accessMode: ReadWriteMany
         storageClass: ceph-filesystem
-        existingClaim: spark-checkpoint-pvc
+        size: 5Gi
         globalMounts:
           - path: /mnt/spark-checkpoints

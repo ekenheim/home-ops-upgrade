@@ -36,13 +36,6 @@ spec:
               JUPYTER_ENABLE_LAB: "yes"
               PASSWORD: "test"
               #NVIDIA_VISIBLE_DEVICES: "1"
-            volumeMounts:
-              - name: workspace
-                mountPath: /home/jovyan/Notebooks
-              - name: shm
-                mountPath: /dev/shm
-              - name: spark-checkpoint
-                mountPath: /mnt/spark-checkpoints
     service:
       main:
         controller: main

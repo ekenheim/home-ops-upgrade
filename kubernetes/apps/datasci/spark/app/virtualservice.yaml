@@ -7,10 +7,10 @@ spec:
   parentRefs:
   - name: cluster-gateway
     namespace: istio-system
-    sectionName: http
+    sectionName: https
   hostnames:
   - "spark.istio.local"
   rules:
   - backendRefs:
     - name: spark-master-svc
-      port: 80
+      port: 8080

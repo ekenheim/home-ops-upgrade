@@ -80,3 +80,11 @@ spec:
         sizeLimit: 8Gi
         globalMounts:
           - path: /dev/shm
+      spark-checkpoint:
+        enabled: true
+        type: persistentVolumeClaim
+        accessMode: ReadWriteMany
+        storageClass: ceph-filesystem
+        existingClaim: spark-checkpoint-pvc
+        globalMounts:
+          - path: /mnt/spark-checkpoints

@@ -11,3 +11,17 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: nfs-client
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: spark-checkpoint-pvc
+  namespace: datasci
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: ceph-filesystem

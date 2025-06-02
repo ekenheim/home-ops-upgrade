@@ -36,6 +36,13 @@ spec:
               JUPYTER_ENABLE_LAB: "yes"
               PASSWORD: "test"
               #NVIDIA_VISIBLE_DEVICES: "1"
+            volumeMounts:
+              - name: workspace
+                mountPath: /home/jovyan/Notebooks
+              - name: shm
+                mountPath: /dev/shm
+              - name: spark-checkpoint
+                mountPath: /mnt/spark-checkpoints
     service:
       main:
         controller: main
@@ -63,28 +70,17 @@ spec:
         tls:
           - hosts:
               - *host
-    persistence:
-      workspace:
-        enabled: true
-        type: persistentVolumeClaim
-        accessMode: ReadWriteMany
-        storageClass: ceph-filesystem
-        size: 50Gi
-        retain: true
-        globalMounts:
-          - path: /home/jovyan/Notebooks
-      shm:
-        enabled: true
-        type: emptyDir
-        medium: Memory
-        sizeLimit: 8Gi
-        globalMounts:
-          - path: /dev/shm
-      spark-checkpoint:
-        enabled: true
-        type: persistentVolumeClaim
-        accessMode: ReadWriteMany
-        storageClass: ceph-filesystem
-        existingClaim: spark-checkpoint-pvc
-        globalMounts:
-          - path: /mnt/spark-checkpoints
+    volumes:
+      - name: workspace
+        persistentVolumeClaim:
+          claimName: jupyter-workspace
+          accessMode: ReadWriteMany
+          storageClass: ceph-filesystem
+          size: 50Gi
+      - name: shm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 8Gi
+      - name: spark-checkpoint
+        persistentVolumeClaim:
+          claimName: spark-checkpoint-pvc

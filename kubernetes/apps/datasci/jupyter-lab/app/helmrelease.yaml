@@ -70,17 +70,28 @@ spec:
         tls:
           - hosts:
               - *host
-    volumes:
-      - name: workspace
-        persistentVolumeClaim:
-          claimName: jupyter-workspace
-          accessMode: ReadWriteMany
-          storageClass: ceph-filesystem
-          size: 50Gi
-      - name: shm
-        emptyDir:
-          medium: Memory
-          sizeLimit: 8Gi
-      - name: spark-checkpoint
-        persistentVolumeClaim:
-          claimName: spark-checkpoint-pvc
+    persistence:
+      workspace:
+        enabled: true
+        type: persistentVolumeClaim
+        accessMode: ReadWriteMany
+        storageClass: ceph-filesystem
+        size: 50Gi
+        retain: true
+        globalMounts:
+          - path: /home/jovyan/Notebooks
+      shm:
+        enabled: true
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 8Gi
+        globalMounts:
+          - path: /dev/shm
+      spark-checkpoint:
+        enabled: true
+        type: persistentVolumeClaim
+        accessMode: ReadWriteMany
+        storageClass: ceph-filesystem
+        existingClaim: spark-checkpoint-pvc
+        globalMounts:
+          - path: /mnt/spark-checkpoints

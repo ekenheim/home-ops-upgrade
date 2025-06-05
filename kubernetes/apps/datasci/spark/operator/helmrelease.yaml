@@ -58,7 +58,7 @@ spec:
         - name: spark-checkpoint
           mountPath: /mnt/spark-checkpoints
     worker:
-      replicas: 3
+      replicas: 4
       resources:
         requests:
           cpu: 500m
@@ -66,17 +66,6 @@ spec:
         limits:
           cpu: 1000m
           memory: 30Gi
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - "master1"
-                      - "master2"
-                      - "master3"
       extraEnv:
         - name: SPARK_WORKER_OPTS
           value: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=1800 -Dspark.worker.cleanup.appDataTtl=7d"
@@ -106,6 +95,19 @@ spec:
                       operator: In
                       values:
                         - "worker3"
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - spark
+                    - key: app.kubernetes.io/component
+                      operator: In
+                      values:
+                        - worker
+                topologyKey: kubernetes.io/hostname
         extraEnv:
           - name: SPARK_WORKER_OPTS
             value: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=1800 -Dspark.worker.cleanup.appDataTtl=7d"

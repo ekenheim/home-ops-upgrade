@@ -58,7 +58,7 @@ spec:
         - name: spark-checkpoint
           mountPath: /mnt/spark-checkpoints
     worker:
-      replicas: 2
+      replicas: 3
       resources:
         requests:
           cpu: 500m

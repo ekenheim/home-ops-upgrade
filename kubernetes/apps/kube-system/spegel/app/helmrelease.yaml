@@ -22,9 +22,18 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  valuesFrom:
-    - kind: ConfigMap
-      name: spegel-helm-values
   values:
+    spegel:
+      containerdSock: /run/containerd/containerd.sock
+      containerdRegistryConfigPath: /etc/cri/conf.d/hosts
+      retryCount: 3
+      retryDelay: 5s
+      timeout: 30s
+    service:
+      registry:
+        hostPort: 29999
+      metrics:
+        enabled: true
+        port: 8080
     serviceMonitor:
       enabled: true

@@ -5,10 +5,3 @@ namespace: flux-system
 
 resources:
   - helmrelease.yaml
-  - kustomizeconfig.yaml
-
-configMapGenerator:
-  - name: spegel-helm-values
-    behavior: merge
-    files:
-      - helm-values.yaml

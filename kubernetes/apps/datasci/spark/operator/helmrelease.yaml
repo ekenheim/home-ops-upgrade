@@ -65,7 +65,7 @@ spec:
           memory: 512Mi
         limits:
           cpu: 1000m
-          memory: 30Gi
+          memory: 50Gi
       extraEnv:
         - name: SPARK_WORKER_OPTS
           value: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=1800 -Dspark.worker.cleanup.appDataTtl=7d"
@@ -76,48 +76,6 @@ spec:
       extraVolumeMounts:
         - name: spark-checkpoint
           mountPath: /mnt/spark-checkpoints
-    workerPools:
-      - name: high-resource
-        replicas: 1
-        resources:
-          requests:
-            cpu: 2000m
-            memory: 4Gi
-          limits:
-            cpu: 8000m
-            memory: 60Gi
-        affinity:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                    - key: kubernetes.io/hostname
-                      operator: In
-                      values:
-                        - "worker3"
-          podAntiAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchExpressions:
-                    - key: app.kubernetes.io/name
-                      operator: In
-                      values:
-                        - spark
-                    - key: app.kubernetes.io/component
-                      operator: In
-                      values:
-                        - worker
-                topologyKey: kubernetes.io/hostname
-        extraEnv:
-          - name: SPARK_WORKER_OPTS
-            value: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=1800 -Dspark.worker.cleanup.appDataTtl=7d"
-        extraVolumes:
-          - name: spark-checkpoint
-            persistentVolumeClaim:
-              claimName: spark-checkpoint-pvc
-        extraVolumeMounts:
-          - name: spark-checkpoint
-            mountPath: /mnt/spark-checkpoints
     metrics:
       enabled: true
       serviceMonitor:

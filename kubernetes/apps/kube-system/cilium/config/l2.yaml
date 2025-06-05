@@ -12,6 +12,9 @@ spec:
   nodeSelector:
     matchLabels:
       kubernetes.io/os: linux  # Apply to all Linux nodes
+  serviceSelector:
+    matchLabels:
+      gateway.istio.io/managed: istio.io-gateway-controller
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumloadbalancerippool_v2alpha1.json
 apiVersion: cilium.io/v2alpha1

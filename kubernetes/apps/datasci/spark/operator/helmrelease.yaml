@@ -58,7 +58,7 @@ spec:
         - name: spark-checkpoint
           mountPath: /mnt/spark-checkpoints
     worker:
-      replicas: 4
+      replicas: 3
       resources:
         requests:
           cpu: 500m
@@ -72,37 +72,11 @@ spec:
             nodeSelectorTerms:
               - matchExpressions:
                   - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values:
-                      - "worker3"
-      extraEnv:
-        - name: SPARK_WORKER_OPTS
-          value: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=1800 -Dspark.worker.cleanup.appDataTtl=7d"
-      extraVolumes:
-        - name: spark-checkpoint
-          persistentVolumeClaim:
-            claimName: spark-checkpoint-pvc
-      extraVolumeMounts:
-        - name: spark-checkpoint
-          mountPath: /mnt/spark-checkpoints
-    worker3:
-      replicas: 1
-      resources:
-        requests:
-          cpu: 2000m
-          memory: 4Gi
-        limits:
-          cpu: 8000m
-          memory: 60Gi
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - "worker3"
+                      - "master1"
+                      - "master2"
+                      - "master3"
       extraEnv:
         - name: SPARK_WORKER_OPTS
           value: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=1800 -Dspark.worker.cleanup.appDataTtl=7d"
@@ -113,6 +87,35 @@ spec:
       extraVolumeMounts:
         - name: spark-checkpoint
           mountPath: /mnt/spark-checkpoints
+    workerPools:
+      - name: high-resource
+        replicas: 1
+        resources:
+          requests:
+            cpu: 2000m
+            memory: 4Gi
+          limits:
+            cpu: 8000m
+            memory: 60Gi
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: In
+                      values:
+                        - "worker3"
+        extraEnv:
+          - name: SPARK_WORKER_OPTS
+            value: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=1800 -Dspark.worker.cleanup.appDataTtl=7d"
+        extraVolumes:
+          - name: spark-checkpoint
+            persistentVolumeClaim:
+              claimName: spark-checkpoint-pvc
+        extraVolumeMounts:
+          - name: spark-checkpoint
+            mountPath: /mnt/spark-checkpoints
     metrics:
       enabled: true
       serviceMonitor:

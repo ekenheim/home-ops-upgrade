@@ -5,6 +5,6 @@ metadata:
   name: datasci
   labels:
     goldilocks.fairwinds.com/enabled: "true"
-    istio-injection: enabled
+    #istio-injection: enabled
   annotations:
     volsync.backube/privileged-movers: "true"

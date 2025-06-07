@@ -31,3 +31,6 @@ spec:
     manageCRDs: true
     metrics:
       disableAuth: true
+    mover:
+      podAnnotations:
+        sidecar.istio.io/inject: "false"

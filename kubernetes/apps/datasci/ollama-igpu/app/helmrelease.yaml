@@ -29,10 +29,10 @@ spec:
               repository: ghcr.io/joryirving/ollama-intel-gpu
               tag: latest
               # tag: ipex-llm-v.0.0.1-2
-            command:
-              - /bin/sh
-              - -c
-              - mkdir -p /llm/ollama && cd /llm/ollama && exec ./ollama serve
+            #command:
+            #  - /bin/sh
+            #  - -c
+            #  - mkdir -p /llm/ollama && cd /llm/ollama && exec ./ollama serve
             securityContext:
               capabilities:
                 add:

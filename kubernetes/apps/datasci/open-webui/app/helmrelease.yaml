@@ -4,6 +4,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: &app open-webui
+  namespace: datasci
 spec:
   interval: 5m
   chart:
@@ -22,37 +23,35 @@ spec:
     remediation:
       retries: 3
   values:
-    controller:
-      enabled: true
-      name: open-webui
-      type: deployment
-    containers:
-      app:
-        image:
-          repository: ghcr.io/open-webui/open-webui
-          tag: 0.6.13@sha256:ddc64d14ec933e8c1caf017df8a0068bece3e35acbc59e4aa4971e5aa4176a72
-        env:
-          OLLAMA_BASE_URL: http://ollama:11434
-          ENABLE_RAG_WEB_SEARCH: true
-          ENABLE_SEARCH_QUERY: true
-          RAG_WEB_SEARCH_ENGINE: searxng
-          SEARXNG_QUERY_URL: http://searxng:8080/search?q=<query>
-          ENABLE_WEBSOCKET_SUPPORT: "true"
-          WEBSOCKET_MANAGER: "redis"
-          WEBSOCKET_REDIS_URL: redis://open-webui-dragonfly:6379
-          DATABASE_URL:
-            valueFrom:
-              secretKeyRef:
-                name: open-webui-pguser-open-webui
-                key: pgbouncer-uri
-        envFrom:
-          - secretRef:
-              name: open-webui
-        resources:
-          requests:
-            cpu: 500m
-          limits:
-            memory: 2Gi
+    controllers:
+      open-webui:
+        containers:
+          app:
+            image:
+              repository: ghcr.io/open-webui/open-webui
+              tag: 0.6.13@sha256:ddc64d14ec933e8c1caf017df8a0068bece3e35acbc59e4aa4971e5aa4176a72
+            env:
+              OLLAMA_BASE_URL: http://ollama:11434
+              ENABLE_RAG_WEB_SEARCH: true
+              ENABLE_SEARCH_QUERY: true
+              RAG_WEB_SEARCH_ENGINE: searxng
+              SEARXNG_QUERY_URL: http://searxng:8080/search?q=<query>
+              ENABLE_WEBSOCKET_SUPPORT: "true"
+              WEBSOCKET_MANAGER: "redis"
+              WEBSOCKET_REDIS_URL: redis://open-webui-dragonfly:6379
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: open-webui-pguser-open-webui
+                    key: pgbouncer-uri
+            envFrom:
+              - secretRef:
+                  name: open-webui
+            resources:
+              requests:
+                cpu: 500m
+              limits:
+                memory: 2Gi
     service:
       app:
         controller: open-webui

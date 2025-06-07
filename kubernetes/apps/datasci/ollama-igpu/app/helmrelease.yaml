@@ -29,10 +29,17 @@ spec:
               repository: ghcr.io/joryirving/ollama-intel-gpu
               tag: latest
               # tag: ipex-llm-v.0.0.1-2
+            command:
+              - /bin/sh
+              - -c
+              - mkdir -p /llm/ollama && cd /llm/ollama && init-ollama && exec ./ollama serve
             securityContext:
               privileged: true
             env:
+              no_proxy: localhost,127.0.0.1
+              OLLAMA_HOST: 0.0.0.0
               OLLAMA_MODELS: &modelPath /models
+              ZES_ENABLE_SYSMAN: 1
               ONEAPI_DEVICE_SELECTOR: level_zero:0
               IPEX_LLM_NUM_CTX: 16384
             resources:

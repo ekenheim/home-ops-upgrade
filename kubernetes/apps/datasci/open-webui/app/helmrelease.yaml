@@ -73,10 +73,6 @@ spec:
                 service:
                   identifier: app
                   port: http
-        rules:
-          - backendRefs:
-              - name: *app
-                port: *port
     persistence:
       config:
         enabled: true

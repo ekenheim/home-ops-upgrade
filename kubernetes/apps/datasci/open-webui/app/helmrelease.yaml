@@ -56,6 +56,7 @@ spec:
             memory: 2Gi
     service:
       app:
+        controller: open-webui
         ports:
           http:
             port: &port 8080

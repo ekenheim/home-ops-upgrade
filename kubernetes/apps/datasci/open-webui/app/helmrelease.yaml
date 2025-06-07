@@ -48,7 +48,7 @@ spec:
                 key: pgbouncer-uri
         envFrom:
           - secretRef:
-              name: *app
+              name: open-webui
         resources:
           requests:
             cpu: 500m
@@ -59,7 +59,7 @@ spec:
         controller: open-webui
         ports:
           http:
-            port: &port 8080
+            port: 8080
     ingress:
       app:
         className: internal
@@ -69,7 +69,7 @@ spec:
           tailscale.com/tags: "tag:k8s"
           tailscale.com/hostname: "chat.${SECRET_DOMAIN}"
         hosts:
-          - host: &host chat.${SECRET_DOMAIN}
+          - host: chat.${SECRET_DOMAIN}
             paths:
               - path: /
                 pathType: Prefix
@@ -79,6 +79,6 @@ spec:
     persistence:
       config:
         enabled: true
-        existingClaim: *app
+        existingClaim: open-webui
         globalMounts:
           - path: /app/backend/data

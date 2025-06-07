@@ -22,6 +22,9 @@ spec:
     remediation:
       retries: 3
   values:
+    controller:
+      enabled: true
+      name: open-webui
     annotations:
       reloader.stakater.com/auto: "true"
     containers:
@@ -53,7 +56,6 @@ spec:
             memory: 2Gi
     service:
       app:
-        controller: *app
         ports:
           http:
             port: &port 8080

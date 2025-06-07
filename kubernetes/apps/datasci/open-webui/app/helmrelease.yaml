@@ -58,13 +58,22 @@ spec:
         ports:
           http:
             port: &port 8080
-    route:
+    ingress:
       app:
-        hostnames: ["${GATUS_SUBDOMAIN:=${APP}}.jory.dev"]
-        parentRefs:
-          - name: external
-            namespace: kube-system
-            sectionName: https
+        className: internal
+        annotations:
+          nginx.ingress.kubernetes.io/whitelist-source-range: |
+            10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+          tailscale.com/tags: "tag:k8s"
+          tailscale.com/hostname: "chat.${SECRET_DOMAIN}"
+        hosts:
+          - host: &host chat.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: app
+                  port: http
         rules:
           - backendRefs:
               - name: *app

@@ -1,12 +1,12 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: &app open-webui
   namespace: datasci
 spec:
-  interval: 5m
+  interval: 30m
   chart:
     spec:
       chart: app-template
@@ -15,46 +15,53 @@ spec:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
+  maxHistory: 2
   install:
     remediation:
-      retries: -1
+      retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
+  uninstall:
+    keepHistory: false
   values:
     controllers:
       open-webui:
+        enabled: true
+        annotations:
+          reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
               repository: ghcr.io/open-webui/open-webui
               tag: 0.6.13@sha256:ddc64d14ec933e8c1caf017df8a0068bece3e35acbc59e4aa4971e5aa4176a72
             env:
-              OLLAMA_BASE_URL: http://ollama:11434
-              ENABLE_RAG_WEB_SEARCH: true
-              ENABLE_SEARCH_QUERY: true
-              RAG_WEB_SEARCH_ENGINE: searxng
-              SEARXNG_QUERY_URL: http://searxng:8080/search?q=<query>
+              TZ: ${TIME_ZONE}
+              ENABLE_OPENAI_API: False
+              ENABLE_OLLAMA_API: True
+              OLLAMA_BASE_URL: "http://ollama:11434"
+              ENABLE_RAG_WEB_SEARCH: "true"
+              ENABLE_SEARCH_QUERY: "true"
+              RAG_WEB_SEARCH_ENGINE: "searxng"
+              SEARXNG_QUERY_URL: "http://searxng:8080/search?q=<query>"
               ENABLE_WEBSOCKET_SUPPORT: "true"
               WEBSOCKET_MANAGER: "redis"
-              WEBSOCKET_REDIS_URL: redis://open-webui-dragonfly:6379
-              DATABASE_URL:
-                valueFrom:
-                  secretKeyRef:
-                    name: open-webui-pguser-open-webui
-                    key: pgbouncer-uri
-            envFrom:
-              - secretRef:
-                  name: open-webui
+              WEBSOCKET_REDIS_URL: "redis://open-webui-dragonfly:6379"
             resources:
               requests:
-                cpu: 500m
+                cpu: 200m
+                memory: 1000Mi
               limits:
-                memory: 2Gi
+                memory: 1500Mi
     service:
       app:
         controller: open-webui
+        annotations:
+          teleport.dev/name: *app
+        labels:
+          teleport: enabled
         ports:
           http:
             port: 8080
@@ -78,6 +85,6 @@ spec:
     persistence:
       config:
         enabled: true
-        existingClaim: open-webui
+        existingClaim: *app
         globalMounts:
           - path: /app/backend/data

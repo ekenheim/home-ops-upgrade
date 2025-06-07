@@ -26,8 +26,6 @@ spec:
       enabled: true
       name: open-webui
       type: deployment
-    annotations:
-      reloader.stakater.com/auto: "true"
     containers:
       app:
         image:
@@ -58,13 +56,10 @@ spec:
     service:
       app:
         controller: open-webui
-        name: open-webui
-        type: ClusterIP
         ports:
           http:
             port: 8080
             targetPort: 8080
-            protocol: TCP
     ingress:
       app:
         className: internal

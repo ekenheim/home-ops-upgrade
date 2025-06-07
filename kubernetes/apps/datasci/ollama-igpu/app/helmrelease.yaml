@@ -32,7 +32,11 @@ spec:
             command:
               - /bin/sh
               - -c
-              - mkdir -p /llm/ollama && cd /llm/ollama && ollama serve
+              - |
+                mkdir -p /llm/ollama
+                cd /llm/ollama
+                init-ollama
+                exec ./ollama serve
             securityContext:
               capabilities:
                 add:

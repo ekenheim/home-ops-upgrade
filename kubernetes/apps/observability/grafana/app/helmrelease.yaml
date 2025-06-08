@@ -33,6 +33,11 @@ spec:
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: natel-discrete-panel,pr0ps-trackmap-panel,panodata-map-panel
       GF_SECURITY_COOKIE_SAMESITE: *app
       GF_SERVER_ROOT_URL: https://grafana.${SECRET_DOMAIN}
+      GF_DATABASE_HOST: grafana-pgbouncer.observability.svc
+      GF_DATABASE_NAME: grafana
+      GF_DATABASE_SSL_MODE: require
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_USER: grafana
     envFrom:
       - secretRef:
           name: grafana-secret
@@ -48,13 +53,15 @@ spec:
         allow_embedding: true
       auth:
         signout_redirect_url: https://sso.${SECRET_DOMAIN}/application/o/grafana/end-session/
-        oauth_auto_login: false
+        oauth_auto_login: true
         oauth_allow_insecure_email_lookup: true
       auth.anonymous:
         enabled: true
         org_name: Main Org.
         org_role: Viewer
         hide_version: true
+      dataproxy:
+        max_idle_connections: 500
       auth.generic_oauth:
         name: authentik
         enabled: true
@@ -180,12 +187,6 @@ spec:
         crunchy-query-statistics:
           url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/main/kustomize/monitoring/grafana/dashboards/query_statistics.json
           datasource: Prometheus
-        dragonfly:
-          url: https://raw.githubusercontent.com/dragonflydb/dragonfly/refs/heads/main/tools/local/monitoring/grafana/provisioning/dashboards/dragonfly.json
-          datasource: Prometheus
-        external-secrets:
-          url: https://raw.githubusercontent.com/external-secrets/external-secrets/main/docs/snippets/dashboard.json
-          datasource: Prometheus
       games:
         palworld:
           # renovate: depName="Palworld"
@@ -241,11 +242,11 @@ spec:
           revision: 3
           datasource: Prometheus
         envoy:
-           # renovate: depName="Envoy Proxy Monitoring gRPC"
-           gnetId: 23239
-           revision: 1
-           datasource:
-             - { name: DS_AFRANET_PROMETHEUS, value: Prometheus }
+          # renovate: depName="Envoy Proxy Monitoring gRPC"
+          gnetId: 23239
+          revision: 1
+          datasource:
+            - { name: DS_AFRANET_PROMETHEUS, value: Prometheus }
         unifi-insights:
           # renovate: depName="UniFi-Poller: Client Insights - Prometheus"
           gnetId: 11315
@@ -273,7 +274,7 @@ spec:
           gnetId: 13665
           revision: 4
           datasource:
-            - { name: datasource, value: Prometheus }
+            - { name: DS_PROMETHEUS, value: Prometheus }
         unifi-network-sites:
           # renovate: depName="UniFi-Poller: Network Sites - Prometheus"
           gnetId: 11311
@@ -338,7 +339,7 @@ spec:
           revision: 3
           datasource:
             - { name: DS_PROMETHEUS, value: Prometheus }
-            - { name: VAR_REPLICATIONDESTNAME, value: '.*-bootstrap'}
+            - { name: VAR_REPLICATIONDESTNAME, value: ".*-dst" }
         zfs:
           # renovate: depName="ZFS"
           gnetId: 7845
@@ -349,16 +350,14 @@ spec:
           # renovate: depName="Node Exporter Full"
           gnetId: 1860
           revision: 40
-          datasource: Prometheus
+          datasource:
+            - { name: DS_PROMETHEUS, value: Prometheus }
         smartctl-exporter:
           # renovate: depName="SMARTctl Exporter Dashboard"
           gnetId: 22604
           revision: 2
           datasource:
             - { name: DS_PROMETHEUS, value: Prometheus }
-        node-feature-discovery:
-          url: https://raw.githubusercontent.com/kubernetes-sigs/node-feature-discovery/master/examples/grafana-dashboard.json
-          datasource: Prometheus
         spegel:
           # renovate: depName="Spegel"
           gnetId: 18089
@@ -368,8 +367,8 @@ spec:
     sidecar:
       image:
         registry: ghcr.io
-        repository: home-operations/k8s-sidecar
-        tag: 1.30.3@sha256:39cca7abcad8f1621b9462d95f7d0e60301b92fcb0ff4de0ad4561859011cddf
+        repository: joryirving/k8s-sidecar
+        tag: 1.30.3@sha256:a8c3ad3ce2084c3802039fe98f5de548cfad83de662674afd507884d7a05b5a5
       dashboards:
         enabled: true
         searchNamespace: ALL

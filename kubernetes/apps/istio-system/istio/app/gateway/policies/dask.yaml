@@ -2,7 +2,7 @@
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: authentik-policy
+  name: allow-dask-gateway
   namespace: istio-system
 spec:
   selector:
@@ -10,14 +10,7 @@ spec:
       istio: ingress
   action: ALLOW
   rules:
-    - from:
-        - source:
-            principals:
-              - cluster.local/ns/authentik/sa/authentik-outpost-proxy
-    - from:
-        - source:
-            remoteIpBlocks: ["0.0.0.0/0"]
-      to:
+    - to:
         - operation:
             paths: ["/*"]
             methods: ["*"]

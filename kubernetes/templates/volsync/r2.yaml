@@ -28,6 +28,8 @@ apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
   name: "${APP}-r2"
+  labels:
+    sidecar.istio.io/inject: "false"
 spec:
   sourcePVC: "${CLAIM:-${APP}}"
   trigger:

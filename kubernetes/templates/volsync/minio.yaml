@@ -29,6 +29,8 @@ apiVersion: volsync.backube/v1alpha1
 kind: ReplicationDestination
 metadata:
   name: "${APP}-bootstrap"
+  labels:
+    sidecar.istio.io/inject: "false"
 spec:
   trigger:
     manual: restore-once
@@ -51,6 +53,8 @@ apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
   name: "${APP}"
+  labels:
+    sidecar.istio.io/inject: "false"
 spec:
   sourcePVC: "${CLAIM:-${APP}}"
   trigger:

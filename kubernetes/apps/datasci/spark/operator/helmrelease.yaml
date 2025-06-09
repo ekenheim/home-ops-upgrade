@@ -22,6 +22,42 @@ spec:
       strategy: rollback
       retries: 3
   values:
+    networkPolicy:
+      enabled: true
+      master:
+        ingress:
+          - from:
+              - podSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: spark
+                    app.kubernetes.io/component: worker
+            ports:
+              - port: 7077
+                protocol: TCP
+              - port: 8080
+                protocol: TCP
+              - port: 6066
+                protocol: TCP
+        egress:
+          - {}
+      worker:
+        ingress:
+          - ports:
+              - port: 8080
+                protocol: TCP
+        egress:
+          - to:
+              - podSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: spark
+                    app.kubernetes.io/component: master
+            ports:
+              - port: 7077
+                protocol: TCP
+              - port: 8080
+                protocol: TCP
+              - port: 6066
+                protocol: TCP
     defaultPodOptions:
       securityContext:
         runAsGroup: 65534

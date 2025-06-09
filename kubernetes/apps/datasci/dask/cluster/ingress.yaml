@@ -10,7 +10,7 @@ spec:
   parentRefs:
     - name: cluster-gateway
       namespace: istio-system
-      sectionName: https  # must match the listener name in your Gateway
+      sectionName: http  # Changed from https to http
   rules:
     - backendRefs:
         - name: dask-cluster-scheduler

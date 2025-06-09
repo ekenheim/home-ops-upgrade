@@ -26,6 +26,11 @@ spec:
     nameOverride: "dask"
     fullnameOverride: "dask"
     nodeSelector: {}
+    rbac:
+      create: true
+      cluster: true
+    serviceAccount:
+      create: true
     metrics:
       scheduler:
         enabled: true

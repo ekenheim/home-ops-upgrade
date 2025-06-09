@@ -1,0 +1,19 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: spark-master
+  namespace: datasci
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spark
+      app.kubernetes.io/component: master
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/datasci/sa/spark"]
+    to:
+    - operation:
+        ports: ["7077", "8080", "6066"]
+        methods: ["*"]

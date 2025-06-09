@@ -6,3 +6,4 @@ resources:
   - virtualservice.yaml
   - tcproute.yaml
   - destinationrule.yaml
+  - authorizationpolicy.yaml

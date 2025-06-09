@@ -8,8 +8,8 @@ spec:
   trafficPolicy:
     connectionPool:
       tcp:
-        maxConnections: 1000
-        connectTimeout: 120s
+        maxConnections: 10000
+        connectTimeout: 300s
         tcpKeepalive:
           time: 7200s
           interval: 75s
@@ -18,3 +18,6 @@ spec:
       consecutive5xxErrors: 10
       interval: 300s
       baseEjectionTime: 300s
+      maxEjectionPercent: 100
+    tls:
+      mode: ISTIO_MUTUAL

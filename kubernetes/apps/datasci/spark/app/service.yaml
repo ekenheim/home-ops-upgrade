@@ -10,15 +10,15 @@ spec:
   ports:
     - name: cluster
       port: 7077
-      targetPort: cluster
+      targetPort: 7077
       protocol: TCP
-    - name: ui
+    - name: http
       port: 8080
-      targetPort: http
+      targetPort: 8080
       protocol: TCP
     - name: rest
       port: 6066
-      targetPort: rest
+      targetPort: 6066
       protocol: TCP
   selector:
     app.kubernetes.io/name: spark

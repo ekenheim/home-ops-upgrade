@@ -1,0 +1,16 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-dask-gateway
+  namespace: datasci
+spec:
+  selector:
+    matchLabels:
+      dask.org/component: scheduler
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            paths: ["*"]
+            methods: ["*"]
+            ports: ["8786", "8787"]

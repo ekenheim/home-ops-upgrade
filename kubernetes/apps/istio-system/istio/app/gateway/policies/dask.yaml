@@ -4,9 +4,13 @@ metadata:
   name: allow-dask-gateway
   namespace: istio-system
 spec:
-  action: ALLOW
-  rules:
-    - {}
   selector:
     matchLabels:
       istio: ingress
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            hosts: ["dask.istio.local"]
+            paths: ["/*"]
+            methods: ["*"]

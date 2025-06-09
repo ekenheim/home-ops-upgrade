@@ -10,8 +10,13 @@ spec:
   parentRefs:
     - name: cluster-gateway
       namespace: istio-system
-      sectionName: http  # Changed from https to http
+      sectionName: http
   rules:
-    - backendRefs:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
         - name: dask-cluster-scheduler
           port: 8787
+          weight: 1

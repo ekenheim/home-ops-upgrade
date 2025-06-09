@@ -1,12 +1,12 @@
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: allow-dask-gateway
-  namespace: istio-system
+  name: dask-scheduler-allow
+  namespace: datasci
 spec:
   selector:
     matchLabels:
-      istio: ingress
+      dask.org/component: scheduler
   action: ALLOW
   rules:
     - from:
@@ -14,6 +14,6 @@ spec:
             principals: ["cluster.local/ns/istio-system/sa/cluster-gateway-istio"]
       to:
         - operation:
-            hosts: ["dask.istio.local"]
-            paths: ["/*"]
             methods: ["*"]
+            paths: ["/*"]
+            ports: ["8786", "8787"]

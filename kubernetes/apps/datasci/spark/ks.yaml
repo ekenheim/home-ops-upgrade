@@ -33,7 +33,8 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: rook-ceph-cluster
-  path: ./kubernetes/apps/datasci/spark/operator
+    - name: spark-operator
+  path: ./kubernetes/apps/datasci/spark/app
   prune: true
   sourceRef:
     kind: GitRepository

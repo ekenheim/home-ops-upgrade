@@ -1,28 +1,12 @@
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/authorizationpolicy_v1beta1.json
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
   name: allow-dask-gateway
   namespace: istio-system
 spec:
-  selector:
-    matchLabels:
-      istio: ingress
   action: ALLOW
   rules:
-    - to:
-        - operation:
-            paths: ["/*"]
-            methods: ["*"]
-            ports: ["8786", "8787"]
-
-apiVersion: security.istio.io/v1
-kind: AuthorizationPolicy
-metadata:
-  name: gateway-default-allow
-  namespace: istio-system
-spec:
+    - {}
   selector:
     matchLabels:
       istio: ingress
-  action: ALLOW

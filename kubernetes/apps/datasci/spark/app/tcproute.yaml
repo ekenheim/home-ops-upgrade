@@ -1,4 +1,4 @@
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1beta1
 kind: TCPRoute
 metadata:
   name: spark-master-tcp
@@ -12,3 +12,4 @@ spec:
   - backendRefs:
     - name: spark-master-svc
       port: 7077
+      weight: 1

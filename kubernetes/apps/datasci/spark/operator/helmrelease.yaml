@@ -85,7 +85,11 @@ spec:
           memory: 1Gi
       extraEnv:
         - name: SPARK_MASTER_OPTS
-          value: "-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=spark-zookeeper:2181 -Dspark.deploy.zookeeper.dir=/spark"
+          value: "-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=spark-zookeeper:2181 -Dspark.deploy.zookeeper.dir=/spark -Dspark.master.rest.enabled=true"
+        - name: SPARK_LOCAL_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
       extraVolumes:
         - name: spark-checkpoint
           persistentVolumeClaim:
@@ -106,7 +110,11 @@ spec:
         - name: SPARK_WORKER_OPTS
           value: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=1800 -Dspark.worker.cleanup.appDataTtl=7d"
         - name: SPARK_MASTER_URL
-          value: "spark://spark-master-0.spark-headless.datasci.svc.cluster.local:7077"
+          value: "spark://spark-master-svc:7077"
+        - name: SPARK_LOCAL_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
       extraVolumes:
         - name: spark-checkpoint
           persistentVolumeClaim:

@@ -4,7 +4,7 @@ metadata:
   name: spark-master
   namespace: datasci
 spec:
-  host: spark-master-svc
+  host: spark-master-svc.datasci.svc.cluster.local
   trafficPolicy:
     connectionPool:
       tcp:
@@ -13,8 +13,7 @@ spec:
         tcpKeepalive:
           time: 7200s
           interval: 75s
-          probes: 9
     outlierDetection:
-      consecutive5xxErrors: 7
-      interval: 5m
-      baseEjectionTime: 15m
+      consecutive5xxErrors: 10
+      interval: 30s
+      baseEjectionTime: 30s

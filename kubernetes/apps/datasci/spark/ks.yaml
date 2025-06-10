@@ -42,6 +42,3 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
-  postBuild:
-    substitute:
-      SECRET_DOMAIN: ${SECRET_DOMAIN}

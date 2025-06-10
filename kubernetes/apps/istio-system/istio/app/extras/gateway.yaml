@@ -24,12 +24,6 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
-    - name: spark-master
-      port: 7077
-      protocol: TCP
-      allowedRoutes:
-        namespaces:
-          from: All
     - name: https
       hostname: "*.istio.local"
       port: 443

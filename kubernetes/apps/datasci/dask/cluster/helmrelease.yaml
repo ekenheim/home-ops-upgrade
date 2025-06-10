@@ -1,37 +1,63 @@
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
-apiVersion: helm.toolkit.fluxcd.io/v2
-kind: HelmRelease
+apiVersion: kubernetes.dask.org/v1
+kind: DaskCluster
 metadata:
   name: dask-cluster
-  namespace: datasci
+  # namespace: datasci # This CR is deployed into datasci by its Kustomization
 spec:
-  interval: 30m
-  chart:
+  worker:
+    replicas: 3
     spec:
-      chart: dask
-      version: 2024.1.1
-      sourceRef:
-        kind: HelmRepository
-        name: dask
-        namespace: flux-system
-  values:
-    scheduler:
-      name: scheduler
-      enabled: true
-      image:
-        repository: ghcr.io/dask/dask
-        tag: "2025.5.1-py3.10"
-      replicas: 1
-      podAnnotations:
-        sidecar.istio.io/inject: "true"
-    worker:
-      name: worker
-      enabled: true
-      replicas: 3
-      image:
-        repository: ghcr.io/dask/dask
-        tag: "2025.5.1-py3.10"
-      podAnnotations:
-        sidecar.istio.io/inject: "true"
-    defaultWorker:
-      enabled: false
+      containers:
+        - name: worker
+          image: ghcr.io/dask/dask:2025.5.1-py3.10@sha256:4645bc8aec479d613a558d19c456d4b1b1000468ed2d021128eacfa2c4f298b9
+          args:
+            - dask-worker
+            - --name
+            - $(DASK_WORKER_NAME)
+            - --dashboard
+            - --dashboard-address
+            - "8788"
+          ports:
+            - name: http-dashboard
+              containerPort: 8788
+              protocol: TCP
+  scheduler:
+    spec:
+      containers:
+        - name: scheduler
+          image: ghcr.io/dask/dask:2025.5.1-py3.10@sha256:4645bc8aec479d613a558d19c456d4b1b1000468ed2d021128eacfa2c4f298b9
+          args:
+            - dask-scheduler
+          ports:
+            - name: tcp-comm
+              containerPort: 8786
+              protocol: TCP
+            - name: http-dashboard
+              containerPort: 8787
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              port: http-dashboard
+              path: /health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              port: http-dashboard
+              path: /health
+            initialDelaySeconds: 15
+            periodSeconds: 20
+    service:
+      type: ClusterIP
+      selector:
+        dask.org/cluster-name: dask-cluster
+        dask.org/component: scheduler
+      ports:
+        - name: tcp-comm
+          protocol: TCP
+          port: 8786
+          targetPort: "tcp-comm"
+        - name: http-dashboard
+          protocol: TCP
+          port: 8787
+          targetPort: "http-dashboard"

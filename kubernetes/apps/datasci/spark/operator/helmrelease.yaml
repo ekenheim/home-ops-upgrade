@@ -22,24 +22,7 @@ spec:
       strategy: rollback
       retries: 3
   values:
-    networkPolicy:
-      enabled: true
-      master:
-        ingress:
-          - {}  # Allow all ingress to master
-        egress:
-          - {}  # Allow all egress from master
-      worker:
-        ingress:
-          - {}  # Allow all ingress to workers
-        egress:
-          - {}  # Allow all egress from workers
     defaultPodOptions:
-      podAnnotations:
-        sidecar.istio.io/inject: "true"
-        proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": true}'
-        traffic.sidecar.istio.io/includeInboundPorts: "7077,8080,6066"
-        traffic.sidecar.istio.io/excludeOutboundPorts: "7077"
       securityContext:
         runAsGroup: 65534
         runAsUser: 65534
@@ -66,11 +49,7 @@ spec:
           memory: 1Gi
       extraEnv:
         - name: SPARK_MASTER_OPTS
-          value: "-Dspark.deploy.recoveryMode=NONE -Dspark.master.rest.enabled=false -Dspark.master.host=spark-master-svc -Dspark.network.timeout=300s -Dspark.rpc.askTimeout=300s -Dspark.rpc.lookupTimeout=300s -Dspark.rpc.netty.dispatcher.numThreads=32 -Dspark.rpc.connect.timeout=300s"
-        - name: SPARK_LOCAL_HOSTNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
+          value: "-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=spark-zookeeper:2181 -Dspark.deploy.zookeeper.dir=/spark"
       extraVolumes:
         - name: spark-checkpoint
           persistentVolumeClaim:
@@ -89,13 +68,7 @@ spec:
           memory: 50Gi
       extraEnv:
         - name: SPARK_WORKER_OPTS
-          value: "-Dspark.worker.cleanup.enabled=false -Dspark.network.timeout=300s -Dspark.rpc.askTimeout=300s -Dspark.rpc.lookupTimeout=300s -Dspark.rpc.netty.dispatcher.numThreads=32 -Dspark.rpc.connect.timeout=300s"
-        - name: SPARK_MASTER_URL
-          value: "spark://spark-master-svc:7077"
-        - name: SPARK_LOCAL_HOSTNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
+          value: "-Dspark.worker.cleanup.enabled=true -Dspark.worker.cleanup.interval=1800 -Dspark.worker.cleanup.appDataTtl=7d"
       extraVolumes:
         - name: spark-checkpoint
           persistentVolumeClaim:

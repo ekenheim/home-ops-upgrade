@@ -10,30 +10,6 @@ spec:
   ports:
     - name: cluster
       port: 7077
-      targetPort: 7077
-      protocol: TCP
-    - name: http
-      port: 8080
-      targetPort: 8080
-      protocol: TCP
-    - name: rest
-      port: 6066
-      targetPort: 6066
-      protocol: TCP
-  selector:
-    app.kubernetes.io/name: spark
-    app.kubernetes.io/component: master
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: spark-headless
-  namespace: datasci
-spec:
-  clusterIP: None
-  ports:
-    - name: cluster
-      port: 7077
       targetPort: cluster
       protocol: TCP
     - name: ui
@@ -46,4 +22,4 @@ spec:
       protocol: TCP
   selector:
     app.kubernetes.io/name: spark
-  publishNotReadyAddresses: true
+    app.kubernetes.io/component: master

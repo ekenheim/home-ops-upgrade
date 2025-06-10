@@ -1,11 +1,11 @@
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: istio-system
-  labels:
-    goldilocks.fairwinds.com/enabled: "true"
-    istio-injection: enabled
-    secrets-injection: enabled
-  annotations:
-    volsync.backube/privileged-movers: "true"
+#apiVersion: v1
+#kind: Namespace
+#metadata:
+#  name: istio-system
+#  labels:#
+#    goldilocks.fairwinds.com/enabled: "true"
+#    istio-injection: enabled
+#    secrets-injection: enabled
+#  annotations:
+#    volsync.backube/privileged-movers: "true"

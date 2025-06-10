@@ -17,3 +17,11 @@ spec:
             methods: ["*"]
             paths: ["/*"]
             ports: ["8786", "8787"]
+    - from:
+        - source:
+            principals: ["cluster.local/ns/datasci/sa/dask-cluster-worker"]
+      to:
+        - operation:
+            methods: ["*"]
+            paths: ["/*"]
+            ports: ["8786", "8787"]

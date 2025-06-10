@@ -12,8 +12,11 @@ spec:
     - from:
         - source:
             principals: ["cluster.local/ns/istio-system/sa/cluster-gateway-istio"]
+        - source:
+            principals: ["cluster.local/ns/datasci/sa/*"]
       to:
         - operation:
             hosts: ["dask.istio.local"]
             paths: ["/*"]
             methods: ["*"]
+            ports: ["80", "443", "8786", "8787"]

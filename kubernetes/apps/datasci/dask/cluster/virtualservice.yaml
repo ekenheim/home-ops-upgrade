@@ -1,0 +1,35 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: dask
+  namespace: datasci
+spec:
+  hosts:
+  - "dask.istio.local"
+  gateways:
+  - istio-system/cluster-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /jupyter
+    route:
+    - destination:
+        host: dask-cluster-jupyter
+        port:
+          number: 8888
+  - match:
+    - uri:
+        prefix: /scheduler
+    route:
+    - destination:
+        host: dask-cluster-scheduler
+        port:
+          number: 8787
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: dask-cluster-scheduler
+        port:
+          number: 8786

@@ -40,6 +40,10 @@ spec:
         ports:
           cluster: 7077
           ui: 80
+      containerPorts:
+        cluster: 7077
+        ui: 8080
+        rest: 6066
       resources:
         requests:
           cpu: 500m

@@ -13,4 +13,4 @@ resources:
   - istio-extras-ks.yaml
 
 
-  - ./seldon-core/ks.yaml - disabled for now as it's not ready for use. and uncertain about istio integration.
+  #- ./seldon-core/ks.yaml - disabled for now as it's not ready for use. and uncertain about istio integration.

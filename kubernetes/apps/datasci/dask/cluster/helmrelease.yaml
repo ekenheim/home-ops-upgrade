@@ -24,3 +24,14 @@ spec:
       replicas: 1
       podAnnotations:
         sidecar.istio.io/inject: "true"
+    worker:
+      name: worker
+      enabled: true
+      replicas: 3
+      image:
+        repository: ghcr.io/dask/dask
+        tag: "2025.5.1-py3.10"
+      podAnnotations:
+        sidecar.istio.io/inject: "true"
+    defaultWorker:
+      enabled: false

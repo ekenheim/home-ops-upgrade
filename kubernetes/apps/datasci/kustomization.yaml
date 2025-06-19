@@ -10,7 +10,7 @@ resources:
   # Flux-Kustomizations
   - ./docat/ks.yaml
   #- ./dify/ks.yaml
-  - ./mlflow/ks.yaml
+  #- ./mlflow/ks.yaml
   #- ./prefect/ks.yaml
   #- ./windmill/ks.yaml
   #- ./whisper/ks.yaml

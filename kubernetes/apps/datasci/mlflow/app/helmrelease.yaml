@@ -49,19 +49,18 @@ spec:
           reloader.stakater.com/search: "true"
         strategy: Recreate
 
-        #initContainers:
-        #  db-upgrade:
-        #    image:
-        #      repository: ghcr.io/ninerealmlabs/mlflow-server
-        #      tag: 2.13.2@sha256:f08b069f217987deb042dcca1799c4abbf600c7bd659b0883e3ff82fcc5142ad
-        #    env:
-        #      MLFLOW_BACKEND_STORE_URI:
-        #        valueFrom:
-        #          secretKeyRef:
-        #            name: mlflow-secret
-        #            key: MLFLOW_BACKEND_STORE_URI
-        #    command: [/bin/bash, -c, mlflow db upgrade "$$MLFLOW_BACKEND_STORE_URI"]
-
+        initContainers:
+          db-upgrade:
+            image:
+              repository: ghcr.io/ninerealmlabs/mlflow-server
+              tag: 3.1.0@sha256:ce897a34eaad1436f3aae76c179e53c9dde6e096dd843c93028d820e5b024b59
+            env:
+              MLFLOW_BACKEND_STORE_URI:
+                valueFrom:
+                  secretKeyRef:
+                    name: mlflow-db-secret
+                    key: MLFLOW_BACKEND_STORE_URI
+            command: [/bin/bash, -c, mlflow db upgrade "$$MLFLOW_BACKEND_STORE_URI"]
 
         containers:
           app:

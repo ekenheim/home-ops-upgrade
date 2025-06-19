@@ -32,6 +32,7 @@ metadata:
   annotations:
     sidecar.istio.io/inject: "false"
     proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": false}'
+    istio.io/rev: ""
 spec:
   trigger:
     manual: restore-once
@@ -49,6 +50,20 @@ spec:
       runAsGroup: "${VOLSYNC_GID:-568}"
       fsGroup: "${VOLSYNC_GID:-568}"
     capacity: "${VOLSYNC_CAPACITY}"
+    podTemplate:
+      metadata:
+        annotations:
+          sidecar.istio.io/inject: "false"
+          proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": false}'
+          istio.io/rev: ""
+      spec:
+        containers:
+        - name: restic
+          env:
+          - name: ISTIO_META_WORKLOAD_NAME
+            value: volsync
+          - name: ISTIO_META_OWNER
+            value: kubernetes://apis/apps/v1/namespaces/datasci/deployments/volsync
 ---
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
@@ -57,6 +72,7 @@ metadata:
   annotations:
     sidecar.istio.io/inject: "false"
     proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": false}'
+    istio.io/rev: ""
 spec:
   sourcePVC: "${CLAIM:-${APP}}"
   trigger:
@@ -79,3 +95,17 @@ spec:
       hourly: 24
       daily: 10
       weekly: 5
+    podTemplate:
+      metadata:
+        annotations:
+          sidecar.istio.io/inject: "false"
+          proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": false}'
+          istio.io/rev: ""
+      spec:
+        containers:
+        - name: restic
+          env:
+          - name: ISTIO_META_WORKLOAD_NAME
+            value: volsync
+          - name: ISTIO_META_OWNER
+            value: kubernetes://apis/apps/v1/namespaces/datasci/deployments/volsync

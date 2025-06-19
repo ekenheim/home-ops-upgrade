@@ -31,6 +31,7 @@ metadata:
   name: "${APP}-bootstrap"
   annotations:
     sidecar.istio.io/inject: "false"
+    proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": false}'
 spec:
   trigger:
     manual: restore-once
@@ -55,6 +56,7 @@ metadata:
   name: "${APP}"
   annotations:
     sidecar.istio.io/inject: "false"
+    proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": false}'
 spec:
   sourcePVC: "${CLAIM:-${APP}}"
   trigger:

@@ -30,6 +30,7 @@ metadata:
   name: "${APP}-r2"
   annotations:
     sidecar.istio.io/inject: "false"
+    proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": false}'
 spec:
   sourcePVC: "${CLAIM:-${APP}}"
   trigger:

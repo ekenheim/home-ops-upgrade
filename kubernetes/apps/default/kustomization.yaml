@@ -9,7 +9,7 @@ resources:
   - ./misc-gatus/ks.yaml
   - ./misc-ingress/ks.yaml
   - ./mosquitto/ks.yaml
-  - ./music-assistant/ks.yaml
+  #- ./music-assistant/ks.yaml
   #- ./your-spotify/ks.yaml
   #- ./memos/ks.yaml
   - ./it-tools/ks.yaml

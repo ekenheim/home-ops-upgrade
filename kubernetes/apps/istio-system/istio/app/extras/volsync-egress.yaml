@@ -8,7 +8,6 @@ metadata:
 spec:
   hosts:
   - "s3.ekenhome.se"
-  - "*.s3.ekenhome.se"
   ports:
   - number: 443
     name: https-s3
@@ -35,7 +34,6 @@ spec:
     - operation:
         hosts:
         - "s3.ekenhome.se"
-        - "*.s3.ekenhome.se"
         ports:
         - "443"
         - "80"

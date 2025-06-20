@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
+  - ./volsync-authz.yaml
   # Flux-Kustomizations | Databases
   #- ./postgres/
   # Flux-Kustomizations

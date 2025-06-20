@@ -27,7 +27,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: volsync
+      app.kubernetes.io/created-by: volsync
   action: ALLOW
   rules:
   - to:

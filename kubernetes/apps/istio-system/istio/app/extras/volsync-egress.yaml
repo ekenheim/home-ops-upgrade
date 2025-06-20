@@ -25,9 +25,6 @@ metadata:
   name: volsync-s3-access
   namespace: datasci
 spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/created-by: volsync
   action: ALLOW
   rules:
   - to:

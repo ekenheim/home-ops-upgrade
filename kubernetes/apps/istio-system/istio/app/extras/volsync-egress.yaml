@@ -7,7 +7,7 @@ metadata:
   namespace: istio-system
 spec:
   hosts:
-  - "s3.ekenhome.se"
+  - "s3.${SECRET_DOMAIN}"
   ports:
   - number: 443
     name: https-s3

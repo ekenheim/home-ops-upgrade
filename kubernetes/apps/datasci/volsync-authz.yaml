@@ -1,0 +1,17 @@
+---
+# AuthorizationPolicy to allow VolSync pods to access S3
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: volsync-s3-access
+  namespace: datasci
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        hosts:
+        - "s3.${SECRET_DOMAIN}"
+        ports:
+        - "443"
+        - "80"

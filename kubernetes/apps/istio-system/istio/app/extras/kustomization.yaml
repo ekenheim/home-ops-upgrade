@@ -7,3 +7,4 @@ resources:
   - headscale-istio-envoyfilter.yaml
   - istio-gw-selfsigned-issuer.yaml
   - istio-gw-certificate.yaml
+  - volsync-egress.yaml

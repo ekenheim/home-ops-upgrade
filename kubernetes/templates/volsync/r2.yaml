@@ -28,10 +28,6 @@ apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
   name: "${APP}-r2"
-  annotations:
-    sidecar.istio.io/inject: "false"
-    proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": false}'
-    istio.io/rev: ""
 spec:
   sourcePVC: "${CLAIM:-${APP}}"
   trigger:
@@ -52,9 +48,3 @@ spec:
       fsGroup: "${VOLSYNC_GID:-568}"
     retain:
       daily: 7
-    podTemplate:
-      metadata:
-        annotations:
-          sidecar.istio.io/inject: "false"
-          proxy.istio.io/config: '{"holdApplicationUntilProxyStarts": false}'
-          istio.io/rev: ""

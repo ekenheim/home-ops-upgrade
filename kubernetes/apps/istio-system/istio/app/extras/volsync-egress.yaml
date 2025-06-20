@@ -1,0 +1,41 @@
+---
+# ServiceEntry for VolSync to access external S3 services
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: volsync-s3-egress
+  namespace: istio-system
+spec:
+  hosts:
+  - "s3.ekenhome.se"
+  - "*.s3.ekenhome.se"
+  ports:
+  - number: 443
+    name: https-s3
+    protocol: HTTPS
+  - number: 80
+    name: http-s3
+    protocol: HTTP
+  location: MESH_EXTERNAL
+  resolution: DNS
+---
+# AuthorizationPolicy to allow VolSync pods to access S3
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: volsync-s3-access
+  namespace: datasci
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: volsync
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        hosts:
+        - "s3.ekenhome.se"
+        - "*.s3.ekenhome.se"
+        ports:
+        - "443"
+        - "80"

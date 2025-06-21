@@ -19,6 +19,7 @@ resources:
  # - ./spark/ks.yaml
   #- ./ollama/ks.yaml
   - ./ollama-igpu/ks.yaml
+  - ./open-webui/ks.yaml
   - ./jupyter-lab/ks.yaml
   - ./qdrant/ks.yaml
   - ./flyte/ks.yaml

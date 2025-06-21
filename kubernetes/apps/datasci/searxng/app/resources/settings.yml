@@ -14,12 +14,12 @@ search:
     - all
     - en
     - en-US
-    - de
-    - nl-NL
-
+  formats:
+    - html
+    - json
 
 general:
-  instance_name: BJW-S Search
+  instance_name: LDS Search
 
 ui:
   default_theme: simple
@@ -39,7 +39,6 @@ categories_as_tabs:
 enabled_plugins:
   - Basic Calculator
   - Hash plugin
-  - Hostnames plugin
   - Open Access DOI rewrite
   - Self Informations
   - Tracker URL remover

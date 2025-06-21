@@ -20,6 +20,7 @@ resources:
   #- ./ollama/ks.yaml
   - ./ollama-igpu/ks.yaml
   - ./open-webui/ks.yaml
+  - ./searxng/ks.yaml
   - ./jupyter-lab/ks.yaml
   - ./qdrant/ks.yaml
   - ./flyte/ks.yaml

@@ -9,19 +9,19 @@ resources:
   # Flux-Kustomizations | Databases
   #- ./postgres/
   # Flux-Kustomizations
-  - ./docat/ks.yaml
+  #- ./docat/ks.yaml
   #- ./dify/ks.yaml
-  - ./mlflow/ks.yaml
+  #- ./mlflow/ks.yaml
   #- ./prefect/ks.yaml
   #- ./windmill/ks.yaml
   #- ./whisper/ks.yaml
-  - ./dask/ks.yaml
-  - ./ray/ks.yaml
-  - ./spark/ks.yaml
+  #- ./dask/ks.yaml
+ # - ./ray/ks.yaml
+ # - ./spark/ks.yaml
   #- ./ollama/ks.yaml
-  - ./ollama-igpu/ks.yaml
-  - ./jupyter-lab/ks.yaml
-  - ./qdrant/ks.yaml
-  - ./flyte/ks.yaml
-  - ./label-studio/ks.yaml
-  - ./seldon-core/ks.yaml
+  #- ./ollama-igpu/ks.yaml
+  #- ./jupyter-lab/ks.yaml
+  #- ./qdrant/ks.yaml
+  #- ./flyte/ks.yaml
+  #- ./label-studio/ks.yaml
+  #- ./seldon-core/ks.yaml

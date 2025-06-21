@@ -40,14 +40,11 @@ spec:
               ENABLE_WEBSOCKET_SUPPORT: "true"
               WEBSOCKET_MANAGER: "redis"
               WEBSOCKET_REDIS_URL: redis://open-webui-dragonfly:6379
-              DATABASE_URL:
-                valueFrom:
-                  secretKeyRef:
-                    name: open-webui-pguser-open-webui
-                    key: pgbouncer-uri
-            envFrom:
-              - secretRef:
-                  name: *app
+              #DATABASE_URL:
+              #  valueFrom:
+              #    secretKeyRef:
+              #      name: open-webui-pguser-open-webui
+              #      key: pgbouncer-uri
             resources:
               requests:
                 cpu: 500m

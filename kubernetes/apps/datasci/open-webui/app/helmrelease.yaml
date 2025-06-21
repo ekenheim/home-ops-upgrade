@@ -32,14 +32,14 @@ spec:
               repository: ghcr.io/open-webui/open-webui
               tag: v0.6.15@sha256:fda936056184035a71a9ad5ff3721530ff061f16bc3907efb33a3201ba87ccfe
             env:
-              OLLAMA_BASE_URL: http://ollama:11434
+              OLLAMA_BASE_URL: http://ollama-igpu:11434
               ENABLE_RAG_WEB_SEARCH: true
               ENABLE_SEARCH_QUERY: true
               #RAG_WEB_SEARCH_ENGINE: searxng
               #SEARXNG_QUERY_URL: http://searxng:8080/search?q=<query>
               ENABLE_WEBSOCKET_SUPPORT: "true"
               WEBSOCKET_MANAGER: "redis"
-              WEBSOCKET_REDIS_URL: redis://open-webui-dragonfly:6379
+              WEBSOCKET_REDIS_URL: redis://dragonfly.database.svc.cluster.local:6379
               #DATABASE_URL:
               #  valueFrom:
               #    secretKeyRef:

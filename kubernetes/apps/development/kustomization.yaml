@@ -13,7 +13,6 @@ resources:
   #- ./gitlab/runner-ks.yaml
   #- ./gitlab/agent-ks.yaml
   #- ./medusa/ks.yaml
-  #- ./resume/ks.yaml
   #- ./backstage/ks.yaml
   #- ./atlantis/ks.yaml
   #- ./code-server/ks.yaml

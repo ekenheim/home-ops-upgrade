@@ -13,11 +13,9 @@ resources:
   - ./mlflow/ks.yaml
   #- ./prefect/ks.yaml
   #- ./windmill/ks.yaml
-  #- ./whisper/ks.yaml
   #- ./dask/ks.yaml
   #- ./ray/ks.yaml
  # - ./spark/ks.yaml
-  #- ./ollama/ks.yaml
   - ./ollama-igpu/ks.yaml
   - ./open-webui/ks.yaml
   - ./searxng/ks.yaml

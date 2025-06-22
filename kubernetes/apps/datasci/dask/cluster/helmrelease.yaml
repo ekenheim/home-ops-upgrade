@@ -6,11 +6,10 @@ metadata:
 spec:
   worker:
     replicas: 3
+    metadata:
+      labels:
+        sidecar.istio.io/inject: "true"
     spec:
-      template:
-        metadata:
-          labels:
-            sidecar.istio.io/inject: "true"
       containers:
         - name: worker
           image: ghcr.io/dask/dask:2025.5.1-py3.10@sha256:4645bc8aec479d613a558d19c456d4b1b1000468ed2d021128eacfa2c4f298b9
@@ -26,11 +25,10 @@ spec:
               containerPort: 8788
               protocol: TCP
   scheduler:
+    metadata:
+      labels:
+        sidecar.istio.io/inject: "true"
     spec:
-      template:
-        metadata:
-          labels:
-            sidecar.istio.io/inject: "true"
       containers:
         - name: scheduler
           image: ghcr.io/dask/dask:2025.5.1-py3.10@sha256:4645bc8aec479d613a558d19c456d4b1b1000468ed2d021128eacfa2c4f298b9

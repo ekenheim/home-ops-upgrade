@@ -9,11 +9,10 @@ resources:
   #- ./postgres/
   # Flux-Kustomizations
   - ./docat/ks.yaml
-  #- ./dify/ks.yaml
   - ./mlflow/ks.yaml
   #- ./prefect/ks.yaml
   #- ./windmill/ks.yaml
-  #- ./dask/ks.yaml
+  - ./dask/ks.yaml
   #- ./ray/ks.yaml
  # - ./spark/ks.yaml
   - ./ollama-igpu/ks.yaml

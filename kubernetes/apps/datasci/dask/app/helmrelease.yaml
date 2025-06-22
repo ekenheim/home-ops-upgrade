@@ -26,6 +26,8 @@ spec:
     nameOverride: "dask"
     fullnameOverride: "dask"
     nodeSelector: {}
+    podLabels:
+      sidecar.istio.io/inject: "true"
     metrics:
       scheduler:
         enabled: true

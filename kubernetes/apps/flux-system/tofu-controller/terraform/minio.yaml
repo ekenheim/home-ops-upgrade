@@ -32,4 +32,4 @@ spec:
     namespace: flux-system
   varsFrom:
   - kind: Secret
-    name: terraform-secret
+    name: terraform-minio-secret

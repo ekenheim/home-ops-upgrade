@@ -1,4 +1,5 @@
-apiVersion: infra.contrib.fluxcd.io/v1alpha2
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/infra.contrib.fluxcd.io/terraform_v1alpha2.json
+apiVersion: infra.contrib.fluxcd.io/v1alpha1
 kind: Terraform
 metadata:
   name: minio
@@ -23,11 +24,12 @@ spec:
       }
   backendConfigsFrom:
   - kind: Secret
-    name: terraform-backend-secret
+    name: terraform-secret
   path: ./minio
   sourceRef:
     kind: OCIRepository
     name: terraform
+    namespace: flux-system
   varsFrom:
   - kind: Secret
     name: terraform-secret

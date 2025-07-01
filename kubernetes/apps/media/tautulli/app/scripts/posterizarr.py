@@ -12,8 +12,8 @@ def create_file(args):
         # Get current timestamp for file name uniqueness
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
-        # Create a file with unique name in the /posterizarr directory
-        filename = (f"/posterizarr/watcher/recently_added_"
+        # Create a file with unique name in the /config/watcher directory
+        filename = (f"/config/watcher/recently_added_"
                     f"{timestamp}.posterizarr")
 
         # Create the file with provided content
@@ -32,8 +32,8 @@ def create_file(args):
         # Get current timestamp for file name uniqueness
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
-        # Create a file with unique name in the /posterizarr directory
-        filename = (f"/posterizarr/watcher/recently_added_"
+        # Create a file with unique name in the /config/watcher directory
+        filename = (f"/config/watcher/recently_added_"
                     f"{timestamp}.posterizarr")
 
         # Create the file with provided content
@@ -54,8 +54,8 @@ def create_file(args):
         # Get current timestamp for file name uniqueness
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
-        # Create a file with unique name in the /posterizarr directory
-        filename = (f"/posterizarr/watcher/recently_added_"
+        # Create a file with unique name in the /config/watcher directory
+        filename = (f"/config/watcher/recently_added_"
                     f"{timestamp}.posterizarr")
 
         # Create the file with provided content

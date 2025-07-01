@@ -69,3 +69,34 @@ spec:
   serviceSelector:
     matchLabels:
       app.kubernetes.io/name: mosquitto
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: plex
+spec:
+  loadBalancerIPs: true
+  interfaces:
+    - ^(ens|enp).*
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/os: linux
+  serviceSelector:
+    matchLabels:
+      app.kubernetes.io/name: plex
+---
+# General policy for all LoadBalancer services
+# This will automatically announce any LoadBalancer service that doesn't match the specific policies above
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: general-loadbalancer
+spec:
+  loadBalancerIPs: true
+  interfaces:
+    - ^(ens|enp).*
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/os: linux
+  # No serviceSelector means it matches all LoadBalancer services
+  # that don't match other more specific policies

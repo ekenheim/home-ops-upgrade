@@ -62,10 +62,10 @@ spec:
               allowPrivilegeEscalation: false
             resources:
               limits:
-                memory: 200Mi
+                memory: 512Mi
               requests:
-                cpu: 10m
-                memory: 50Mi
+                cpu: 50m
+                memory: 128Mi
             probes:
               liveness:
                 enabled: true

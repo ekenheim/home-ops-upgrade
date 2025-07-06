@@ -9,6 +9,7 @@ resources:
   # Flux-Kustomizations
   - ./bazarr/ks.yaml
   - ./flaresolverr/ks.yaml
+  - ./huntarr/ks.yaml
   - ./prowlarr/ks.yaml
   - ./radarr/ks.yaml
   - ./radarr4k/ks.yaml

@@ -32,6 +32,9 @@ spec:
             image:
               repository: langflowai/langflow
               tag: v1.1.1
+            envFrom:
+              - secretRef:
+                  name: langflow-db-secret
             env:
               LANGFLOW_DATABASE_UR: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DATABASE}
               LANGFLOW_CONFIG_DIR: app/langflow

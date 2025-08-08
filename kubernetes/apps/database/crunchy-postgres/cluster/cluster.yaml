@@ -54,6 +54,10 @@ spec:
       password:
         type: AlphaNumeric
     # Applications
+    - name: "langflow"
+      databases: ["langflow"]
+      password:
+        type: AlphaNumeric
     - name: "prefect"
       databases: ["prefect"]
       password:

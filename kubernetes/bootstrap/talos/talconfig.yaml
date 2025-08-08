@@ -117,6 +117,32 @@ nodes:
         routes:
           - network: 0.0.0.0/0
             gateway: "192.168.50.1"
+  - hostname: "worker3"
+    ipAddress: "192.168.50.37"
+    installDisk: "/dev/nvme1n1"
+    talosImageURL: factory.talos.dev/metal-installer/96f8c146a67c80daad900d3fc1a6976fe11062321eee9ab6ae2a6aea88b2d26e
+    controlPlane: false
+    networkInterfaces:
+      # 10G Internal Port
+      - deviceSelector:
+          hardwareAddr: 58:47:ca:7e:9f:cf
+        dhcp: true
+        mtu: 9000
+        routes:
+          - network: 0.0.0.0/0
+            gateway: "192.168.50.1"
+        dhcpOptions:
+            routeMetric: 1024
+      # 10G Internal Port
+      - deviceSelector:
+          hardwareAddr: 58:47:ca:7e:9f:d0
+        dhcp: true
+        mtu: 9000
+        routes:
+          - network: 0.0.0.0/0
+            gateway: "192.168.50.1"
+        dhcpOptions:
+            routeMetric: 2048
 
 patches:
   # Configure containerd

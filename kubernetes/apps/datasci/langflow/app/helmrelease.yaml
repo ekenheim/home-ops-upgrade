@@ -66,4 +66,4 @@ spec:
                   port: 7860
         tls:
           - hosts:
-              - langflow.${SECRET_DOMAIN_TWO}
+              - langflow.${SECRET_DOMAIN}

@@ -18,6 +18,7 @@ resources:
  # - ./spark/ks.yaml
   - ./ollama-igpu/ks.yaml
   - ./open-webui/ks.yaml
+  - ./mcp-polygon/ks.yaml
   - ./searxng/ks.yaml
   - ./jupyter-lab/ks.yaml
   - ./qdrant/ks.yaml

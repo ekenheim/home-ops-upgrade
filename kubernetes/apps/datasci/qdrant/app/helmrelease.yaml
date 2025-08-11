@@ -28,7 +28,7 @@ spec:
 
     image:
       repository: qdrant/qdrant
-      tag: v1.15.1
+      tag: v1.15.2
       pullPolicy: IfNotPresent
 
     service:

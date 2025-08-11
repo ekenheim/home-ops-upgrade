@@ -32,9 +32,11 @@ spec:
               repository: ghcr.io/ekenheim/mcp-polygon
               tag: latest
             env:
-              POLYGON_API_KEY: "{{ .POLYGON_API_KEY }}"
               LOG_LEVEL: info
               PORT: 8000
+            envFrom:
+              - secretRef:
+                  name: mcp-polygon
             resources:
               requests:
                 cpu: 100m

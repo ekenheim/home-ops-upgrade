@@ -26,17 +26,25 @@ spec:
       mcp-polygon:
         annotations:
           reloader.stakater.com/auto: "true"
+
         containers:
           app:
             image:
               repository: ghcr.io/ekenheim/mcp-polygon
-              tag: 1.4.0
+              tag: 1.5.1
             env:
               LOG_LEVEL: info
               PORT: 8000
-            envFrom:
-              - secretRef:
-                  name: mcp-polygon
+              MCP_HTTP_TRANSPORT: "true"
+              POLYGON_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: mcp-polygon
+                    key: POLYGON_API_KEY
+            ports:
+              - name: http
+                containerPort: 8000
+                protocol: TCP
             resources:
               requests:
                 cpu: 100m
@@ -73,3 +81,4 @@ spec:
         existingClaim: *app
         globalMounts:
           - path: /app/data
+

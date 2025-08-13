@@ -36,7 +36,11 @@ spec:
               - secretRef:
                   name: langflow-db-secret
             env:
-              LANGFLOW_DATABASE_URL: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DATABASE}
+              LANGFLOW_DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: langflow-db-secret
+                    key: LANGFLOW_DATABASE_URL
               LANGFLOW_CONFIG_DIR: app/langflow
               LANGFLOW_MCP_ENABLED: "true"
               LANGFLOW_MCP_DEBUG: "true"

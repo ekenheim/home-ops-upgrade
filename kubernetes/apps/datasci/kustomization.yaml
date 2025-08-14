@@ -11,8 +11,7 @@ resources:
   - ./docat/ks.yaml
   - ./mlflow/ks.yaml
   - ./langflow/ks.yaml
-  #- ./prefect/ks.yaml
-  #- ./windmill/ks.yaml
+  - ./prefect/ks.yaml
   - ./dask/ks.yaml
   #- ./ray/ks.yaml
  # - ./spark/ks.yaml

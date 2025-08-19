@@ -12,8 +12,8 @@ resources:
   - ./mlflow/ks.yaml
   - ./langflow/ks.yaml
   - ./prefect/ks.yaml
-  #- ./dask/ks.yaml
-  #- ./ray/ks.yaml
+  - ./dask/ks.yaml
+  - ./ray/ks.yaml
   - ./spark/ks.yaml
   - ./ollama-igpu/ks.yaml
   - ./open-webui/ks.yaml

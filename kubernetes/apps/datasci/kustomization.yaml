@@ -13,8 +13,8 @@ resources:
   - ./langflow/ks.yaml
   - ./prefect/ks.yaml
   - ./dask/ks.yaml
-  #- ./ray/ks.yaml
- # - ./spark/ks.yaml
+  - ./ray/ks.yaml
+  - ./spark/ks.yaml
   - ./ollama-igpu/ks.yaml
   - ./open-webui/ks.yaml
   - ./mcp-polygon/ks.yaml

@@ -98,7 +98,21 @@ spec:
       port: 10001
 
     ingress:
-      enabled: false  # Disable the default ingress since we're using Istio
+      enabled: true
+      annotations:
+        hajimari.io/enable: "true"
+        hajimari.io/icon: mdi:ray
+      className: internal
+      hosts:
+        - host: ray.${SECRET_DOMAIN}
+          paths:
+            - path: /
+              service:
+                name: ray-external
+                port: 8265
+      tls:
+        - hosts:
+            - ray.${SECRET_DOMAIN}
 
     service:
       type: ClusterIP  # Keep as ClusterIP since we're using ray-external for external access

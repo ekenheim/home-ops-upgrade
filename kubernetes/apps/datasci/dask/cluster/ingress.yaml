@@ -1,17 +1,24 @@
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
   name: dask-gateway
   namespace: datasci
+  annotations:
+    hajimari.io/enable: "true"
+    hajimari.io/icon: mdi:database
 spec:
-  hostnames:
-    - dask.istio.local
-  parentRefs:
-    - name: cluster-gateway
-      namespace: istio-system
-      sectionName: https  # must match the listener name in your Gateway
+  ingressClassName: internal
   rules:
-    - backendRefs:
-        - name: dask-cluster-scheduler
-          port: 8787
+  - host: dask.ekenhome.se
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dask-cluster-scheduler
+            port:
+              number: 8787
+  tls:
+  - hosts:
+    - dask.ekenhome.se

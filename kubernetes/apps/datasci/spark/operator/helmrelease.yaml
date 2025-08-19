@@ -29,8 +29,7 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
-      podAnnotations:
-        sidecar.istio.io/inject: "true"
+      podAnnotations: {}
     service:
       type: ClusterIP
       ports:
@@ -88,7 +87,21 @@ spec:
         enabled: true
         interval: 10s
     ingress:
-      enabled: false
+      enabled: true
+      annotations:
+        hajimari.io/enable: "true"
+        hajimari.io/icon: mdi:database
+      className: internal
+      hosts:
+        - host: spark.${SECRET_DOMAIN}
+          paths:
+            - path: /
+              service:
+                name: spark-master-svc
+                port: 8080
+      tls:
+        - hosts:
+            - spark.${SECRET_DOMAIN}
     web:
       enabled: true
       service:

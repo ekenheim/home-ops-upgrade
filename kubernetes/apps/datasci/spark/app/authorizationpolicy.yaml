@@ -1,0 +1,51 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: spark-dashboard-allow
+  namespace: datasci
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - cluster.local/ns/istio-system/sa/istio-ingress
+    to:
+    - operation:
+        methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        paths:
+        - /*
+  - from:
+    - source:
+        principals:
+        - cluster.local/ns/datasci/sa/*
+    to:
+    - operation:
+        methods:
+        - '*'
+        paths:
+        - /*
+        ports:
+        - "8080"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spark
+      app.kubernetes.io/component: master
+      sidecar.istio.io/inject: "true"
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: spark-internal-allow
+  namespace: datasci
+spec:
+  action: ALLOW
+  rules:
+  - {}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spark

@@ -3,8 +3,6 @@ kind: Service
 metadata:
   name: spark-master-svc
   namespace: datasci
-  annotations:
-    networking.istio.io/exportTo: "*"
 spec:
   type: ClusterIP
   ports:

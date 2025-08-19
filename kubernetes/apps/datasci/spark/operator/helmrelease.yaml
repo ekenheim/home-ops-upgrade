@@ -98,7 +98,7 @@ spec:
             - path: /
               service:
                 name: spark-master-svc
-                port: 8080
+                port: 80
       tls:
         - hosts:
             - spark.${SECRET_DOMAIN}

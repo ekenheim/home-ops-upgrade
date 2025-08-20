@@ -4,4 +4,5 @@ kind: Kustomization
 resources:
   - pvc.yaml
   - service.yaml
+  - service-external.yaml
   - tcproute.yaml

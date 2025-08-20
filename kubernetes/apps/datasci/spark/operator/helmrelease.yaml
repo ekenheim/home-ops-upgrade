@@ -54,7 +54,9 @@ spec:
           memory: 1Gi
       extraEnv:
         - name: SPARK_MASTER_OPTS
-          value: "-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=spark-zookeeper:2181 -Dspark.deploy.zookeeper.dir=/spark"
+          value: "-Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=spark-zookeeper:2181 -Dspark.deploy.zookeeper.dir=/spark -Dspark.master.rest.enabled=true"
+        - name: SPARK_MASTER_HOST
+          value: "${SVC_SPARK_ADDR}"
       extraVolumes:
         - name: spark-checkpoint
           persistentVolumeClaim:
@@ -98,7 +100,7 @@ spec:
             - path: /
               service:
                 name: spark-master-svc
-                port: 80
+                port: 8080
       tls:
         - hosts:
             - spark.${SECRET_DOMAIN}

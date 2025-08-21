@@ -23,7 +23,7 @@ spec:
     localpv-provisioner:
       localpv:
         image:
-          registry: quay.io
+          registry: quay.io/
         basePath: &hostPath /var/mnt/local-hostpath
       hostpathClass:
         enabled: true
@@ -32,7 +32,7 @@ spec:
         basePath: *hostPath
       helperPod:
         image:
-          registry: quay.io
+          registry: quay.io/
     loki:
       enabled: false
     alloy:

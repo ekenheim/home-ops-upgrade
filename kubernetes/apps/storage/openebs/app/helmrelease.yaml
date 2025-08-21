@@ -6,14 +6,9 @@ metadata:
   name: openebs
 spec:
   interval: 30m
-  chart:
-    spec:
-      chart: openebs
-      version: 4.3.2
-      sourceRef:
-        kind: HelmRepository
-        name: openebs
-        namespace: flux-system
+  chartRef:
+    kind: OCIRepository
+    name: openebs
   install:
     remediation:
       retries: 3
@@ -28,8 +23,9 @@ spec:
     localpv-provisioner:
       localpv:
         image:
-          registry: quay.io/
-          repository: openebs/provisioner-localpv
+          registry: ghcr.io/
+          repository: home-operations/charts-mirror/provisioner-localpv
+          tag: "4.3.2"
       hostpathClass:
         name: local-hostpath
     openebs-crds:

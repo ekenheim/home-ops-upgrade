@@ -103,24 +103,11 @@ nodes:
             gateway: "192.168.50.1"
         dhcpOptions:
             routeMetric: 2048
-  - hostname: "worker3"
-    ipAddress: "192.168.50.155"
-    installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/metal-installer/af8eb82417d3deaa94d2ef19c3b590b0dac1b2549d0b9b35b3da2bc325de75f7
-    controlPlane: false
-    networkInterfaces:
-      - deviceSelector:
-          driver: e1000e
-          #hardwareAddr: BC:24:11:81:A1:DE
-        dhcp: true
-        mtu: 1500
-        routes:
-          - network: 0.0.0.0/0
-            gateway: "192.168.50.1"
+
   - hostname: "worker3"
     ipAddress: "192.168.50.37"
     installDisk: "/dev/nvme1n1"
-    talosImageURL: factory.talos.dev/metal-installer/96f8c146a67c80daad900d3fc1a6976fe11062321eee9ab6ae2a6aea88b2d26e
+    talosImageURL: factory.talos.dev/metal-installer/96f8c146a67c80daad900d3fc1a6976fe11062321eee9ab6ae2a6aea88b2d26e:v1.10.6
     controlPlane: false
     networkInterfaces:
       # 10G Internal Port

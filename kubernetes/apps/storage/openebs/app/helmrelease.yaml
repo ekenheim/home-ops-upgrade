@@ -24,7 +24,6 @@ spec:
       localpv:
         image:
           registry: quay.io/
-          tag: "4.3.2"
         basePath: &hostPath /var/mnt/local-hostpath
       hostpathClass:
         enabled: true
@@ -34,7 +33,6 @@ spec:
       helperPod:
         image:
           registry: quay.io/
-          tag: "4.2.0"
     loki:
       enabled: false
     alloy:

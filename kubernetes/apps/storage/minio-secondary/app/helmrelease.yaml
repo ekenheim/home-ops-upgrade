@@ -125,7 +125,7 @@ spec:
         enabled: true
         accessMode: ReadWriteMany
         size: 300Gi
-        storageClass: local-hostpath
+        storageClass: ceph-filesystem
         globalMounts:
           - path: /data
             subPath: data

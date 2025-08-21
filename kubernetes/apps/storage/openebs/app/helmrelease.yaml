@@ -26,7 +26,7 @@ spec:
         image:
           registry: ghcr.io/
           repository: home-operations/charts-mirror/provisioner-localpv
-          tag: "4.3.2"
+          tag: 4.3.2
       hostpathClass:
         name: local-hostpath
     openebs-crds:

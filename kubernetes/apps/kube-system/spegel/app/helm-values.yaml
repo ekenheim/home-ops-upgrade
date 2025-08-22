@@ -1,0 +1,39 @@
+# Spegel configuration for Talos Linux
+# This configuration uses writable paths compatible with Talos immutable filesystem
+
+spegel:
+  # Use writable path for containerd registry config in Talos
+  containerdRegistryConfigPath: /var/lib/spegel/containerd/certs.d
+  containerdSock: /run/containerd/containerd.sock
+  retryCount: 3
+  retryDelay: 5s
+  timeout: 30s
+
+service:
+  registry:
+    hostPort: 29999
+  metrics:
+    enabled: true
+    port: 8080
+
+serviceMonitor:
+  enabled: true
+
+# Resources
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Volume mounts for writable paths
+volumeMounts:
+  - name: spegel-config
+    mountPath: /var/lib/spegel/containerd/certs.d
+    subPath: certs.d
+
+volumes:
+  - name: spegel-config
+    emptyDir: {}

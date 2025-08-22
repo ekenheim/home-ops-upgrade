@@ -235,14 +235,14 @@ patches:
   #        - net.ifnames=0
 
   # Add kernel modules
-  - |-
-    machine:
-      kernel:
-        modules:
-          - name: nvidia
-          - name: nvidia_uvm
-          - name: nvidia_drm
-          - name: nvidia_modeset
+  #- |-
+  #  machine:
+  #    kernel:
+  #      modules:
+  #        - name: nvidia
+  #        - name: nvidia_uvm
+  #        - name: nvidia_drm
+  #        - name: nvidia_modeset
 
 controlPlane:
   patches:

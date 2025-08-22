@@ -27,6 +27,7 @@ tasks:
       - task: bootstrap-apply
       - task: bootstrap-install
       - task: fetch-kubeconfig
+      - task: approve-csrs
       - task: bootstrap-apps
       - talosctl health --server=false
 
@@ -63,16 +64,30 @@ tasks:
     cmds:
       - echo "Installing Talos... ignore the errors and be patient"
       - until talhelper gencommand bootstrap | bash; do sleep 10; done
-      - sleep 10
+      - echo "Waiting for cluster to stabilize..."
+      - sleep 30
+      - echo "Checking cluster health..."
+      - talosctl health --server=false || echo "Cluster health check failed, continuing..."
     preconditions:
       - { msg: "Missing talhelper config file", sh: "test -f {{.TALHELPER_CONFIG_FILE}}" }
+
+  approve-csrs:
+    desc: Approve pending Certificate Signing Requests
+    dir: "{{.TALOS_DIR}}"
+    cmds:
+      - echo "Approving pending CSRs..."
+      - kubectl --kubeconfig {{.KUBECONFIG_FILE}} get csr -o name | xargs kubectl --kubeconfig {{.KUBECONFIG_FILE}} certificate approve || true
+      - sleep 10
+    preconditions:
+      - { msg: "Missing kubeconfig", sh: "test -f {{.KUBECONFIG_FILE}}" }
 
   bootstrap-apps:
     desc: Bootstrap core apps needed for Talos
     dir: "{{.TALOS_DIR}}"
     cmds:
+      - task: approve-csrs
       - until kubectl --kubeconfig {{.KUBECONFIG_FILE}} wait --for=condition=Ready=False nodes --all --timeout=600s; do sleep 10; done
-      - helmfile --file ./apps/helmfile.yaml apply --skip-diff-on-install --suppress-diff
+      - helmfile --file ./apps/helmfile.yaml apply --skip-diff-on-install --suppress-diff || true
       - until kubectl --kubeconfig {{.KUBECONFIG_FILE}} wait --for=condition=Ready nodes --all --timeout=600s; do sleep 10; done
     preconditions:
       - { msg: "Missing kubeconfig", sh: "test -f {{.KUBECONFIG_FILE}}" }

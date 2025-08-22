@@ -66,11 +66,33 @@ spec:
         connections:
           requireMsgr2: true
       storage:
-        useAllNodes: true
-        useAllDevices: true
-        deviceFilter: nvme0n1
-        config:
-          osdsPerDevice: "1"
+        useAllNodes: false
+        nodes:
+          - name: "192.168.50.31"  # master1
+            devices:
+              - name: "nvme0n1"
+            config:
+              osdsPerDevice: "1"
+          - name: "192.168.50.33"  # master2
+            devices:
+              - name: "nvme0n1"
+            config:
+              osdsPerDevice: "1"
+          - name: "192.168.50.34"  # master3
+            devices:
+              - name: "nvme0n1"
+            config:
+              osdsPerDevice: "1"
+          - name: "192.168.50.32"  # worker2
+            devices:
+              - name: "nvme0n1"
+            config:
+              osdsPerDevice: "1"
+          - name: "192.168.50.37"  # worker3
+            devices:
+              - name: "nvme1n1"
+            config:
+              osdsPerDevice: "1"
       placement:
         mgr: &placement
           nodeAffinity:

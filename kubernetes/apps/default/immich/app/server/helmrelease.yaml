@@ -76,6 +76,10 @@ spec:
               LOG_LEVEL: log
               # IMMICH_CONFIG_FILE: /config/immich-config.json
               IMMICH_MEDIA_LOCATION: &mediaLocation /usr/src/app/upload
+              # Database connection settings to prevent lock issues
+              DB_CONNECTION_LIMIT: "5"
+              DB_POOL_TIMEOUT: "20"
+              DB_CONNECT_TIMEOUT: "10"
             resources:
               requests:
                 cpu: 10m

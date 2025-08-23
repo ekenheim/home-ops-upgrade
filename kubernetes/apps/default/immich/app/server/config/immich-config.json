@@ -83,6 +83,9 @@
   "reverseGeocoding": {
     "enabled": true
   },
+  "database": {
+    "url": "postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOSTNAME}:${DB_PORT}/${DB_DATABASE_NAME}?connection_limit=5&pool_timeout=20&connect_timeout=10"
+  },
   "metadata": {
     "faces": {
       "import": false

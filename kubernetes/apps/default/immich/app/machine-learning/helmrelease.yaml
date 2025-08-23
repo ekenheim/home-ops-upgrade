@@ -22,8 +22,8 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  dependsOn:
-    - name: immich-server
+  # dependsOn:
+  #   - name: immich-server
   values:
     defaultPodOptions:
       affinity:

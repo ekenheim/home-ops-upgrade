@@ -108,6 +108,11 @@ spec:
         className: external
         annotations:
           external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          nginx.ingress.kubernetes.io/proxy-body-size: "0"
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+          nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+          nginx.ingress.kubernetes.io/client-body-buffer-size: "100M"
+          nginx.ingress.kubernetes.io/client-body-timeout: "300"
         hosts:
           - host: &host photos.${SECRET_DOMAIN}
             paths:

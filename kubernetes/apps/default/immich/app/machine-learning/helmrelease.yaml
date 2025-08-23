@@ -56,6 +56,8 @@ spec:
               IMMICH_PORT: &port 3003
               MACHINE_LEARNING_CACHE_FOLDER: /cache
               TRANSFORMERS_CACHE: /cache
+              HF_HOME: /cache
+              HF_HUB_CACHE: /cache
             resources:
               requests:
                 cpu: 10m

@@ -14,7 +14,7 @@ spec:
       namespace: flux-system
     - name: dragonfly-cluster
   targetNamespace: default
-  path: ./kubernetes/main/apps/default/immich/app
+  path: ./kubernetes/apps/default/immich/app
   prune: true
   sourceRef:
     kind: GitRepository

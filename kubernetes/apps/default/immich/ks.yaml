@@ -27,6 +27,6 @@ spec:
     substitute:
       APP: *app
       GATUS_SUBDOMAIN: photos
-      SECRET_DOMAIN: ${SECRET_DOMAIN}
-      SECRET_NFS_DATA: ${SECRET_NFS_DATA}
-      NAS_IP: ${NAS_IP}
+    substituteFrom:
+      - kind: Secret
+        name: cluster-secrets

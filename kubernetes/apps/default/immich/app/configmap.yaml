@@ -14,5 +14,5 @@ data:
   PORT: "2283"
   REDIS_HOSTNAME: dragonfly.database.svc.cluster.local
   REDIS_PORT: "6379"
-  REDIS_DBINDEX: "3"
+  REDIS_DBINDEX: "0"
   TRANSFORMERS_CACHE: /usr/src/app/.transformers_cache

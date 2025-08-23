@@ -71,6 +71,8 @@ spec:
                   name: *secret
               - secretRef:
                   name: immich-db-secret
+              - secretRef:
+                  name: immich-super-secret
         containers:
           app:
             image:

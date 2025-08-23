@@ -26,7 +26,7 @@ spec:
   values:
     domainFilters:
       - ${SECRET_DOMAIN}
-      - ${SECRET_SECONDARY_DOMAIN}
+      #- ${SECRET_SECONDARY_DOMAIN}
       - istio.local
     extraArgs:
       - --ignore-ingress-tls-spec

@@ -4,7 +4,7 @@ kind: ConfigMap
 metadata:
   name: immich-configmap
 data:
-  TZ: Pacific/Auckland
+  TZ: ${TIMEZONE}
   NODE_ENV: production
   ENABLE_MAPBOX: "false"
   DISABLE_REVERSE_GEOCODING: "true"

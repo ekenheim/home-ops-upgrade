@@ -59,26 +59,19 @@ spec:
           reloader.stakater.com/auto: "true"
           configmap.reloader.stakater.com/reload: &configMap immich-configmap
           secret.reloader.stakater.com/reload: &secret immich-secret
-        initContainers:
-          init-db:
+
+        containers:
+          app:
             image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 17
-            envFrom: &envFrom
+              repository: ghcr.io/immich-app/immich-server
+              tag: v1.139.2@sha256:ccfca8a87a65914ab23164efa1f6392940629a2a54ed71bce87049713d926426
+            envFrom:
               - configMapRef:
                   name: *configMap
               - secretRef:
                   name: *secret
               - secretRef:
                   name: immich-db-secret
-              - secretRef:
-                  name: immich-super-secret
-        containers:
-          app:
-            image:
-              repository: ghcr.io/immich-app/immich-server
-              tag: v1.139.2@sha256:ccfca8a87a65914ab23164efa1f6392940629a2a54ed71bce87049713d926426
-            envFrom: *envFrom
             env:
               LOG_LEVEL: log
               # IMMICH_CONFIG_FILE: /config/immich-config.json

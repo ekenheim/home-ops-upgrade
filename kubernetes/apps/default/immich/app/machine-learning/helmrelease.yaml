@@ -40,6 +40,8 @@ spec:
     controllers:
       immichml:
         strategy: Recreate
+        labels:
+          nfsMount: "true"
         annotations:
           configmap.reloader.stakater.com/reload: immich-configmap
           secret.reloader.stakater.com/reload: immich-secret
@@ -98,9 +100,12 @@ spec:
             port: *port
     persistence:
       library:
-        existingClaim: immich-nfs
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
           - path: *mediaLocation
+            subPath: photos
       cache:
         type: persistentVolumeClaim
         existingClaim: immich-machine-learning-cache

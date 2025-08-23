@@ -142,6 +142,10 @@ spec:
       databases: ["dify"]
       password:
         type: AlphaNumeric
+    - name: "immich"
+      databases: ["immich"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

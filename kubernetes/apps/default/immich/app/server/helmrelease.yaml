@@ -53,6 +53,8 @@ spec:
     controllers:
       immich:
         strategy: RollingUpdate
+        labels:
+          nfsMount: "true"
         annotations:
           reloader.stakater.com/auto: "true"
           configmap.reloader.stakater.com/reload: &configMap immich-configmap
@@ -127,9 +129,12 @@ spec:
         globalMounts:
           - path: /config
       library:
-        existingClaim: immich-nfs
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
           - path: *mediaLocation
+            subPath: photos
       # geocoding-dump:
       #   type: emptyDir
       #   globalMounts:

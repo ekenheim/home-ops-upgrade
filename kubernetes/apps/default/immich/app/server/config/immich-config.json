@@ -89,6 +89,9 @@
   "metadata": {
     "faces": {
       "import": false
+    },
+    "motionPhotos": {
+      "enabled": false
     }
   },
   "storageTemplate": {
@@ -101,7 +104,7 @@
       "concurrency": 3
     },
     "metadataExtraction": {
-      "concurrency": 5
+      "concurrency": 2
     },
     "videoConversion": {
       "concurrency": 1

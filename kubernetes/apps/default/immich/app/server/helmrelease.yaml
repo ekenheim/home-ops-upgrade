@@ -80,6 +80,8 @@ spec:
               DB_CONNECTION_LIMIT: "5"
               DB_POOL_TIMEOUT: "20"
               DB_CONNECT_TIMEOUT: "10"
+              # Disable motion photo extraction to prevent errors
+              IMMICH_DISABLE_MOTION_PHOTOS: "true"
             resources:
               requests:
                 cpu: 10m

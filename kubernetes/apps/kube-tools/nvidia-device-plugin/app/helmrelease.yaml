@@ -28,7 +28,7 @@ spec:
   values:
     image:
       repository: nvcr.io/nvidia/k8s-device-plugin
-      tag: v0.17.3
+      tag: v0.17.4
     runtimeClassName: ""
     nodeSelector:
       extensions.talos.dev/nonfree-kmod-nvidia-lts: "535.247.01-v1.10.3"

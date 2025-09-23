@@ -40,7 +40,7 @@ spec:
           app:
             image:
               repository: ghcr.io/joryirving/plex
-              tag: 1.42.1.10060@sha256:24a3256be41fa87c07ca07ffcce2628815642b5d8eab498a2d6e49c24a60a1cf
+              tag: 1.42.2.10156@sha256:834e263ce1446406f9fe7dc7544718e9c5d0eb3d86eb0b7e60fc5140dfcbbfca
             env:
               TZ: ${TIMEZONE}
               PLEX_ADVERTISE_URL: https://plex.${SECRET_DOMAIN}:443,http://${SVC_PLEX_ADDR}:32400

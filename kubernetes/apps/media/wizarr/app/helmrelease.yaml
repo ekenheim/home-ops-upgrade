@@ -35,22 +35,26 @@ spec:
         containers:
           app:
             image:
-              repository:  ghcr.io/wizarrrr/wizarr
-              tag: 2025.10.1
+              repository: ghcr.io/wizarrrr/wizarr
+              tag: v2025.10.1
             env:
               TZ: ${TIMEZONE}
+              PUID: &uid 1000
+              PGID: &gid 100
             resources:
               requests:
                 cpu: 15m
                 memory: 180M
               limits:
                 memory: 300M
-    defaultPodOptions:
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
+    # defaultPodOptions:
+    #   securityContext:
+    #     runAsNonRoot: true
+    #     runAsUser: *uid
+    #     runAsGroup: *gid
+    #     fsGroup: *gid
+    #     fsGroupChangePolicy: OnRootMismatch
+    #     seccompProfile: { type: RuntimeDefault }
     service:
       app:
         controller: *app
@@ -82,3 +86,9 @@ spec:
         existingClaim: *app
         globalMounts:
           - path: /data/database
+      tmpfs:
+        type: emptyDir
+        advancedMounts:
+          wizarr:
+            app:
+              - path: /.cache

@@ -33,7 +33,7 @@ spec:
           app:
             image:
               repository: ghcr.io/tailscale/tailscale
-              tag: v1.88.3
+              tag: v1.88.4
             env:
               TZ: ${TIMEZONE}
               NO_AUTOUPDATE: true

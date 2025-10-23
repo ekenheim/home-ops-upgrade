@@ -57,7 +57,7 @@ spec:
                 spec:
                   httpGet:
                     path: /ping
-                    port: &port 7171
+                    port: 7171
                   initialDelaySeconds: 0
                   periodSeconds: 10
                   timeoutSeconds: 1
@@ -85,7 +85,7 @@ spec:
         controller: spotizerr
         ports:
           http:
-            port: &port 7171
+            port: 7171
     ingress:
       app:
         className: internal

@@ -109,7 +109,11 @@ spec:
               port: http
     persistence:
       config:
-        existingClaim: spotizerr
+        type: configMap
+        name: spotizerr-config
+        globalMounts:
+        - path: /app/data/config
+          subPath: main.json
       tmp:
         type: emptyDir
       data:

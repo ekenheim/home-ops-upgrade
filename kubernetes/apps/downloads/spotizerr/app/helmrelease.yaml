@@ -1,0 +1,98 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: spotizerr
+spec:
+  chart:
+    spec:
+      chart: app-template
+      version: 3.7.3
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+  - name: rook-ceph-cluster
+    namespace: rook-ceph
+  - name: volsync
+    namespace: storage
+  interval: 30m
+  values:
+    controllers:
+      spotizerr:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: lavaforge.org/spotizerr/spotizerr
+              tag: 4.0.0@sha256:80e7f932f7e67770dc715f434822459170a4682254bbc8e7bcf3fa4b35a9980c
+            env:
+              REDIS_HOST: "{{ .Release.Name }}-dragonfly"
+              REDIS_PORT: "6379"
+              REDIS_DB: "0"
+              PUID: 1000
+              PGID: 100
+              SSO_ENABLED: false
+              TZ: ${TIMEZONE}
+            envFrom:
+              - secretRef:
+                  name: spotizerr-secret
+            resources:
+              requests:
+                cpu: 100m
+              limits:
+                memory: 3Gi
+    service:
+      app:
+        ports:
+          http:
+            port: 7171
+    ingress:
+      app:
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: Downloads
+          gethomepage.dev/name: Spotizerr
+          gethomepage.dev/icon: spotizerr.png
+          gethomepage.dev/description: Spotify Downloader
+          gethomepage.dev/widget.type: spotizerr
+          gethomepage.dev/widget.url: http://spotizerr.downloads
+          gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_SPOTIZERR_TOKEN}}` }}"
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+        hosts:
+        - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
+    persistence:
+      config:
+        existingClaim: "{{ .Release.Name }}"
+      tmp:
+        type: emptyDir
+      data:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        globalMounts:
+        - path: /Downloads
+      media:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        globalMounts:
+        - path: /Media
+          subPath: Media

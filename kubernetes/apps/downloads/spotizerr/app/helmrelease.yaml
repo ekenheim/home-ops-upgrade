@@ -109,7 +109,7 @@ spec:
               port: http
     persistence:
       config:
-        existingClaim: "{{ .Release.Name }}"
+        existingClaim: spotizerr
       tmp:
         type: emptyDir
       data:

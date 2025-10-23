@@ -34,6 +34,17 @@ spec:
           nfsMount: "true"
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          init-config:
+            image: busybox:1.35
+            command: ['sh', '-c']
+            args:
+              - |
+                mkdir -p /config/data/config
+                echo '{"version": "3.3.0"}' > /config/data/config/main.json
+            volumeMounts:
+              - name: config
+                mountPath: /config
         containers:
           app:
             image:
@@ -47,6 +58,7 @@ spec:
               PGID: 100
               SSO_ENABLED: false
               TZ: ${TIMEZONE}
+              DATA_DIR: /config
             envFrom:
               - secretRef:
                   name: spotizerr-secret
@@ -109,11 +121,7 @@ spec:
               port: http
     persistence:
       config:
-        type: configMap
-        name: spotizerr-config
-        globalMounts:
-        - path: /app/data/config
-          subPath: main.json
+        existingClaim: spotizerr
       tmp:
         type: emptyDir
       data:

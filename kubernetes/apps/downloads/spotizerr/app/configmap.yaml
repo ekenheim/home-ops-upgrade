@@ -6,11 +6,5 @@ metadata:
 data:
   main.json: |
     {
-      "version": "3.3.0",
-      "settings": {
-        "default_quality": "320",
-        "default_format": "mp3",
-        "download_path": "/app/downloads",
-        "temp_path": "/tmp"
-      }
+      "version": "3.3.0"
     }

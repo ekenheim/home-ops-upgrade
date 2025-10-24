@@ -119,6 +119,7 @@ spec:
           nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
           nginx.ingress.kubernetes.io/client-body-buffer-size: "100M"
           nginx.ingress.kubernetes.io/client-body-timeout: "300"
+          nginx.ingress.kubernetes.io/client-max-body-size: "10G"
         hosts:
           - host: &host photos.${SECRET_DOMAIN}
             paths:

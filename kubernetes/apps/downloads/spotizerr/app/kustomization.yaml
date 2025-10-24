@@ -5,8 +5,6 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
-  - ./pvc.yaml
-  - ./configmap.yaml
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

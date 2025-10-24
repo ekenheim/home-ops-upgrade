@@ -146,6 +146,10 @@ spec:
       databases: ["immich"]
       password:
         type: AlphaNumeric
+    - name: "spotizerr"
+      databases: ["spotizerr"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

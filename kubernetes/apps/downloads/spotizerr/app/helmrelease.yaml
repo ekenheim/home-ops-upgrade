@@ -48,6 +48,40 @@ spec:
               SSO_ENABLED: false
               TZ: ${TIMEZONE}
               DATA_DIR: /config
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: spotizerr-db-secret
+                    key: DATABASE_URL
+              POSTGRES_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: spotizerr-db-secret
+                    key: POSTGRES_USER
+              POSTGRES_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: spotizerr-db-secret
+                    key: POSTGRES_PASSWORD
+              POSTGRES_DB:
+                valueFrom:
+                  secretKeyRef:
+                    name: spotizerr-db-secret
+                    key: POSTGRES_DB
+              POSTGRES_HOST:
+                valueFrom:
+                  secretKeyRef:
+                    name: spotizerr-db-secret
+                    key: POSTGRES_HOST
+              POSTGRES_PORT:
+                valueFrom:
+                  secretKeyRef:
+                    name: spotizerr-db-secret
+                    key: POSTGRES_PORT
+              # Disable application-level database backups
+              # Let PostgreSQL cluster handle backups via pgBackRest
+              DISABLE_DATABASE_BACKUP: "true"
+              BACKUP_ENABLED: "false"
             envFrom:
               - secretRef:
                   name: spotizerr-secret

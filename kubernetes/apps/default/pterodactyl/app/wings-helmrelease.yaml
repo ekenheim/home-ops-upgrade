@@ -81,11 +81,6 @@ spec:
     service:
       app:
         controller: *app
-        ports:
-          http:
-            port: 8080
-      wingslb:
-        controller: *app
         type: LoadBalancer
         annotations:
           io.cilium/lb-ipam-ips: "192.168.50.200"

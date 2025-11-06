@@ -65,7 +65,6 @@ spec:
                 valueFrom:
                   secretKeyRef:
                     name: mariadb-secret
-                    namespace: database
                     key: MYSQL_PASSWORD
             envFrom:
               - secretRef:

@@ -19,3 +19,4 @@ resources:
   #- ./zigbee2mqtt/ks.yaml
   - ./zwave-js-ui/ks.yaml
   - ./immich/ks.yaml
+  - ./pterodactyl/ks.yaml

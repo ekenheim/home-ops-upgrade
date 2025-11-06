@@ -1,0 +1,142 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app pterodactyl
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.7.3
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      pterodactyl:
+        replicas: ${REPLICAS:=1}
+        annotations:
+          reloader.stakater.com/auto: "true"
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/pterodactyl/panel
+              tag: v1.11.11@sha256:3ad185c83818944cfd4dba4dcefbca5ffb64655aaa63363f8f76ce41cd19873f
+            env:
+              DB_HOST: mariadb.database.svc.cluster.local
+              DB_PORT: 3306
+              DB_DATABASE: "pterodactyl"
+              DB_USERNAME: "pterodactyl"
+
+              REDIS_HOST: pterodactyl-redis.games.svc.cluster.local
+              CACHE_DRIVER: "redis"
+              SESSION_DRIVER: "redis"
+              QUEUE_DRIVER: "redis"
+
+              APP_SERVICE_AUTHOR: ${SECRET_SMTP_FROM_FULL}
+              MAIL_DRIVER: smtp
+              MAIL_HOST: smtp-relay.default.svc.cluster.local
+              MAIL_PORT: 25
+
+              APP_URL: "https://{{ .Release.Name }}.${SECRET_DOMAIN}"
+              #APP_ENV: "local" # production
+              APP_ENVIRONMENT_ONLY: "false"
+              APP_TIMEZONE: ${CLUSTER_TIMEZONE}
+              TRUSTED_PROXIES: "*"
+              PTERODACTYL_TELEMETRY_ENABLED: "false"
+              RECAPTCHA_ENABLED: "false"
+            envFrom:
+              - secretRef:
+                  name: pterodactyl-secret
+
+            resources:
+              requests:
+                cpu: 50m
+                memory: 300M
+              limits:
+                memory: 500M
+      redis:
+        containers:
+          redis:
+            image:
+              repository: docker.io/valkey/valkey
+              tag: 9.0.0-alpine
+            resources:
+              requests:
+                cpu: 5m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+    #serviceMonitor:
+    #  app:
+    #    serviceName: *app
+    #    endpoints:
+    #      - port: http
+    #        scheme: http
+    #        path: /metrics
+    #        interval: 1m
+    #        scrapeTimeout: 10s
+
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 80
+      redis:
+        controller: redis
+        ports:
+          http:
+            port: 6379
+    ingress:
+      app:
+        className: internal
+        annotations:
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/icon: pterodactyl.png
+          gethomepage.dev/name: Pterodactyl
+          gethomepage.dev/group: Infrastructure
+          gethomepage.dev/widget.type: pterodactyl
+          gethomepage.dev/widget.url: http://pterodactyl.default:80
+          gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_PTERODACTYL_KEY}}` }}"
+        hosts:
+          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+              - *host
+
+    persistence:
+      data:
+        enabled: true
+        type: persistentVolumeClaim
+        existingClaim: *app
+        #storageClass: "sc-standard"
+        #accessMode: ReadWriteMany
+        #size: 5Gi
+        advancedMounts:
+          pterodactyl:
+            app:
+              - subPath: "data"
+                path: "/app/var"
+              - subPath: "nginx"
+                path: "/etc/nginx/http.d"
+              - subPath: "logs"
+                path: "/app/storage/logs"
+

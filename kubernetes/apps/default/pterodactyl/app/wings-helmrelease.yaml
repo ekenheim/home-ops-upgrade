@@ -84,7 +84,7 @@ spec:
         ports:
           http:
             port: 8080
-      wings-lb:
+      wingslb:
         controller: *app
         type: LoadBalancer
         annotations:

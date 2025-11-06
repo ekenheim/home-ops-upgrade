@@ -16,11 +16,21 @@ metadata:
   namespace: default
 data:
   config.yml: |
-    # Replace this with the config.yml content from your Pterodactyl panel
-    # Go to: Nodes > Your Node > Configuration tab
-    # Copy the entire YAML content and paste it here
+    debug: false
+    uuid: 477bc2cb-571a-470e-bfd7-7bc124b449e8
+    token_id: w9CcMl0T1Af6Iidi
+    token: gAER0PJgderb3lHf6PfKircuKvwK8OrbhHch5Nv3eRVp4kec6ryjRHwjM2TjzCPE
+    api:
+      host: 0.0.0.0
+      port: 8080
+      ssl:
+        enabled: false
+      upload_limit: 100
     system:
-      data: /var/lib/pterodactyl
+      data: /var/lib/pterodactyl/volumes
       log: /var/log/pterodactyl
-    # ... rest of config from panel ...
+      sftp:
+        bind_port: 2022
+    allowed_mounts: []
+    remote: 'https://pterodactyl.ekenhome.se'
 

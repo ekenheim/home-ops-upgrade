@@ -46,8 +46,43 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/pterodactyl/wings
-              tag: v1.11.11@sha256:3ad185c83818944cfd4dba4dcefbca5ffb64655aaa63363f8f76ce41cd19873f
+              repository: alpine
+              tag: latest
+            command:
+              - /bin/sh
+              - -c
+              - |
+                apk add --no-cache curl ca-certificates
+                mkdir -p /etc/pterodactyl /var/lib/pterodactyl /var/log/pterodactyl
+                # Download Wings binary (detect architecture)
+                ARCH=$(uname -m)
+                if [ "$ARCH" = "x86_64" ]; then
+                  ARCH="amd64"
+                elif [ "$ARCH" = "aarch64" ]; then
+                  ARCH="arm64"
+                fi
+                curl -L "https://github.com/pterodactyl/wings/releases/download/v1.11.11/wings_linux_${ARCH}" -o /usr/local/bin/wings
+                chmod +x /usr/local/bin/wings
+                # Wait for config.yml to be available (will be created from panel config)
+                # For now, create a minimal config if it doesn't exist
+                if [ ! -f /etc/pterodactyl/config.yml ]; then
+                  cat > /etc/pterodactyl/config.yml <<EOF
+                system:
+                  data: /var/lib/pterodactyl
+                  log: /var/log/pterodactyl
+                remote: ${WINGS_PANEL_URL}
+                token: ${WINGS_TOKEN}
+                node: ${WINGS_NODE}
+                api:
+                  host: 0.0.0.0
+                  port: ${WINGS_LISTEN_PORT}
+                docker:
+                  network:
+                    name: pterodactyl_nw
+                    interface: ""
+                EOF
+                fi
+                exec /usr/local/bin/wings
             env:
               # Wings configuration
               WINGS_PANEL_URL: "https://pterodactyl.${SECRET_DOMAIN}"
@@ -97,12 +132,15 @@ spec:
                 path: "/var/lib/pterodactyl"
               - subPath: "logs"
                 path: "/var/log/pterodactyl"
-              # Docker socket mount (if using Docker)
-              # - path: "/var/run/docker.sock"
-              #   subPath: "docker.sock"
-              #   readOnly: false
-              # Containerd socket mount (if using containerd)
-              # - path: "/run/containerd/containerd.sock"
-              #   subPath: "containerd.sock"
-              #   readOnly: false
+              - subPath: "config"
+                path: "/etc/pterodactyl"
+              # Docker socket mount - Wings needs access to Docker/containerd
+              # Mount containerd socket (Kubernetes typically uses containerd)
+              - path: "/run/containerd/containerd.sock"
+                subPath: "containerd.sock"
+                readOnly: false
+              # Also try Docker socket as fallback
+              - path: "/var/run/docker.sock"
+                subPath: "docker.sock"
+                readOnly: false
 

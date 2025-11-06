@@ -80,7 +80,7 @@ spec:
             # This will be handled via advancedMounts in persistence section
     service:
       app:
-        controller: pterodactyl-wings
+        controller: *app
         type: LoadBalancer
         annotations:
           # You'll need to add SVC_PTERODACTYL_WINGS_ADDR to cluster-secrets

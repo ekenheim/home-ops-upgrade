@@ -57,10 +57,6 @@ spec:
               WINGS_LISTEN_PORT: "8080"
               # Timezone
               TZ: ${TIMEZONE}
-            envFrom:
-              - secretRef:
-                  name: pterodactyl-wings-secret
-                  optional: true
             # Wings needs access to Docker/containerd socket and host network capabilities
             # Note: This requires privileged mode or specific capabilities
             securityContext:

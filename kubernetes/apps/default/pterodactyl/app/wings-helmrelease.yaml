@@ -38,7 +38,7 @@ spec:
         runAsUser: 0
         runAsGroup: 0
     controllers:
-      pterodactyl-wings:
+      wings:
         replicas: 1
         annotations:
           reloader.stakater.com/auto: "true"
@@ -93,7 +93,7 @@ spec:
         type: persistentVolumeClaim
         existingClaim: pterodactyl-wings-data
         advancedMounts:
-          pterodactyl-wings:
+          wings:
             app:
               - subPath: "servers"
                 path: "/var/lib/pterodactyl"

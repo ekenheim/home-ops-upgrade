@@ -27,12 +27,29 @@ spec:
   - name: mariadb
     namespace: database
   values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
     controllers:
       pterodactyl:
         replicas: ${REPLICAS:=1}
         annotations:
           reloader.stakater.com/auto: "true"
         strategy: RollingUpdate
+        initContainers:
+          fix-permissions:
+            image:
+              repository: busybox
+              tag: latest
+            securityContext:
+              runAsUser: 0
+            command:
+              - /bin/sh
+              - -c
+              - |
+                chown -R 100:101 /app/storage/logs || true
+                chmod -R 775 /app/storage/logs || true
         containers:
           app:
             image:

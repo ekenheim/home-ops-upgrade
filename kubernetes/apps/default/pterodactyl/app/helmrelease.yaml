@@ -61,7 +61,7 @@ spec:
               DB_DATABASE: "pterodactyl"
               DB_USERNAME: "pterodactyl"
 
-              REDIS_HOST: pterodactyl-redis.games.svc.cluster.local
+              REDIS_HOST: pterodactyl-redis
               CACHE_DRIVER: "redis"
               SESSION_DRIVER: "redis"
               QUEUE_DRIVER: "redis"

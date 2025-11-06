@@ -33,7 +33,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
     controllers:
       pterodactyl:
-        replicas: ${REPLICAS:=1}
+        replicas: 1
         annotations:
           reloader.stakater.com/auto: "true"
         strategy: RollingUpdate

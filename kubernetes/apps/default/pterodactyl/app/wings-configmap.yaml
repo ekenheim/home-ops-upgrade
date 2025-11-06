@@ -1,0 +1,26 @@
+---
+# ConfigMap for Wings config.yml
+# After creating a node in the Pterodactyl panel, copy the config.yml
+# from the panel's Configuration tab and update this ConfigMap
+# 
+# To update:
+# 1. Create node in Pterodactyl panel
+# 2. Go to node Configuration tab
+# 3. Copy the entire config.yml content
+# 4. Update this ConfigMap with: kubectl edit configmap wings-config -n default
+# 5. Or replace the data below and apply
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wings-config
+  namespace: default
+data:
+  config.yml: |
+    # Replace this with the config.yml content from your Pterodactyl panel
+    # Go to: Nodes > Your Node > Configuration tab
+    # Copy the entire YAML content and paste it here
+    system:
+      data: /var/lib/pterodactyl
+      log: /var/log/pterodactyl
+    # ... rest of config from panel ...
+

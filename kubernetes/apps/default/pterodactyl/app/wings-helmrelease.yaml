@@ -92,10 +92,6 @@ spec:
         ports:
           http:
             port: 8080
-          # Note: With hostNetwork=true, game server ports are directly accessible
-          # on the LoadBalancer IP. Wings will allocate ports dynamically (e.g., 25565, 27015, etc.)
-          # and they'll be accessible via the same LoadBalancer IP on those ports.
-          # No additional service configuration needed for game server ports!
     persistence:
       data:
         enabled: true

@@ -80,7 +80,7 @@ spec:
             # This will be handled via advancedMounts in persistence section
     service:
       app:
-        controller: *app
+        controller: wings
         type: LoadBalancer
         annotations:
           io.cilium/lb-ipam-ips: "192.168.50.200"

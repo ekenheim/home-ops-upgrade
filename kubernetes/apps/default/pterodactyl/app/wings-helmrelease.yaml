@@ -101,7 +101,7 @@ spec:
         type: persistentVolumeClaim
         existingClaim: pterodactyl-wings-data
         advancedMounts:
-          wings:
+          pterodactyl-wings:
             app:
               - subPath: "servers"
                 path: "/var/lib/pterodactyl"

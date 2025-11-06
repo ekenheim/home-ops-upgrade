@@ -85,8 +85,6 @@ spec:
         annotations:
           # You'll need to add SVC_PTERODACTYL_WINGS_ADDR to cluster-secrets
           io.cilium/lb-ipam-ips: "${SVC_PTERODACTYL_WINGS_ADDR}"
-          # External-DNS will automatically create DNS record for this service
-          external-dns.alpha.kubernetes.io/hostname: "gameserver-node-01.${SECRET_DOMAIN}"
         ports:
           # Panel communication (HTTPS) - Wings listens on port 8080
           https:

@@ -81,12 +81,15 @@ spec:
     service:
       app:
         controller: *app
+        ports:
+          http:
+            port: 8080
+      wings-lb:
+        controller: *app
         type: LoadBalancer
         annotations:
-          # You'll need to add SVC_PTERODACTYL_WINGS_ADDR to cluster-secrets
           io.cilium/lb-ipam-ips: ${SVC_PTERODACTYL_WINGS_ADDR}
         ports:
-          # Panel communication (HTTPS) - Wings listens on port 8080
           http:
             port: 8080
           # Note: With hostNetwork=true, game server ports are directly accessible

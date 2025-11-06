@@ -81,6 +81,7 @@ spec:
         type: LoadBalancer
         annotations:
           io.cilium/lb-ipam-ips: ${SVC_PTERODACTYL_WINGS_ADDR}
+          external-dns.alpha.kubernetes.io/hostname: "gameserver-node-01.${SECRET_DOMAIN}"
         ports:
           http:
             port: 8080

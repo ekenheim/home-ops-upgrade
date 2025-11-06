@@ -60,6 +60,7 @@ spec:
             envFrom:
               - secretRef:
                   name: pterodactyl-wings-secret
+                  optional: true
             # Wings needs access to Docker/containerd socket and host network capabilities
             # Note: This requires privileged mode or specific capabilities
             securityContext:
@@ -83,7 +84,7 @@ spec:
         controller: wings
         type: LoadBalancer
         annotations:
-          io.cilium/lb-ipam-ips: "192.168.50.200"
+          io.cilium/lb-ipam-ips: ${SVC_PTERODACTYL_WINGS_ADDR}
         ports:
           http:
             port: 8080

@@ -6,5 +6,8 @@ resources:
   - ./externalsecret.yaml
   - ./mariadb-secret.yaml
   - ./helmrelease.yaml
+  - ./wings-externalsecret.yaml
+  - ./wings-helmrelease.yaml
   - ../../../../templates/volsync
+  # Note: DNS for Wings node is handled via LoadBalancer service annotation
 

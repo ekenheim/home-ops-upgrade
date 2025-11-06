@@ -1,0 +1,119 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app pterodactyl-wings
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.7.3
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+  - name: pterodactyl
+    namespace: default
+  values:
+    defaultPodOptions:
+      # Use hostNetwork so Wings can directly bind to host ports
+      # This allows game servers to use any port Wings allocates without
+      # needing to configure port mappings in Kubernetes services
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      securityContext:
+        # Wings needs privileged access for container management
+        # Consider using specific capabilities instead if possible
+        runAsUser: 0
+        runAsGroup: 0
+    controllers:
+      wings:
+        replicas: 1
+        annotations:
+          reloader.stakater.com/auto: "true"
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/pterodactyl/wings
+              tag: v1.11.11@sha256:3ad185c83818944cfd4dba4dcefbca5ffb64655aaa63363f8f76ce41cd19873f
+            env:
+              # Wings configuration
+              WINGS_PANEL_URL: "https://pterodactyl.${SECRET_DOMAIN}"
+              WINGS_TOKEN: "" # Will be set from secret after node creation
+              WINGS_NODE: "1" # Node ID from panel
+              # Wings listens on port 8080 for panel communication
+              WINGS_LISTEN_PORT: "8080"
+              # Timezone
+              TZ: ${TIMEZONE}
+            envFrom:
+              - secretRef:
+                  name: pterodactyl-wings-secret
+            # Wings needs access to Docker/containerd socket and host network capabilities
+            # Note: This requires privileged mode or specific capabilities
+            securityContext:
+              privileged: true
+              # Alternative: use specific capabilities instead of privileged
+              # capabilities:
+              #   add:
+              #     - SYS_ADMIN
+              #     - NET_ADMIN
+              #     - MKNOD
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+            # Mount Docker socket (if using Docker) or containerd socket
+            # This will be handled via advancedMounts in persistence section
+    service:
+      app:
+        controller: wings
+        type: LoadBalancer
+        annotations:
+          # You'll need to add SVC_PTERODACTYL_WINGS_ADDR to cluster-secrets
+          io.cilium/lb-ipam-ips: "${SVC_PTERODACTYL_WINGS_ADDR}"
+          # External-DNS will automatically create DNS record for this service
+          external-dns.alpha.kubernetes.io/hostname: "gameserver-node-01.${SECRET_DOMAIN}"
+        ports:
+          # Panel communication (HTTPS) - Wings listens on port 8080
+          https:
+            port: 8080
+            targetPort: 8080
+          # Note: With hostNetwork=true, game server ports are directly accessible
+          # on the LoadBalancer IP. Wings will allocate ports dynamically (e.g., 25565, 27015, etc.)
+          # and they'll be accessible via the same LoadBalancer IP on those ports.
+          # No additional service configuration needed for game server ports!
+    persistence:
+      data:
+        enabled: true
+        type: persistentVolumeClaim
+        existingClaim: pterodactyl-wings-data
+        advancedMounts:
+          wings:
+            app:
+              - subPath: "servers"
+                path: "/var/lib/pterodactyl"
+              - subPath: "logs"
+                path: "/var/log/pterodactyl"
+              # Docker socket mount (if using Docker)
+              # - path: "/var/run/docker.sock"
+              #   subPath: "docker.sock"
+              #   readOnly: false
+              # Containerd socket mount (if using containerd)
+              # - path: "/run/containerd/containerd.sock"
+              #   subPath: "containerd.sock"
+              #   readOnly: false
+

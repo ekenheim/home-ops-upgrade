@@ -57,7 +57,7 @@ spec:
               APP_URL: "https://{{ .Release.Name }}.${SECRET_DOMAIN}"
               #APP_ENV: "local" # production
               APP_ENVIRONMENT_ONLY: "false"
-              APP_TIMEZONE: ${CLUSTER_TIMEZONE}
+              APP_TIMEZONE: ${TIMEZONE}
               TRUSTED_PROXIES: "*"
               PTERODACTYL_TELEMETRY_ENABLED: "false"
               RECAPTCHA_ENABLED: "false"

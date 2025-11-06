@@ -38,7 +38,7 @@ spec:
         runAsUser: 0
         runAsGroup: 0
     controllers:
-      wings:
+      pterodactyl-wings:
         replicas: 1
         annotations:
           reloader.stakater.com/auto: "true"
@@ -80,7 +80,7 @@ spec:
             # This will be handled via advancedMounts in persistence section
     service:
       app:
-        controller: wings
+        controller: pterodactyl-wings
         type: LoadBalancer
         annotations:
           # You'll need to add SVC_PTERODACTYL_WINGS_ADDR to cluster-secrets

@@ -56,7 +56,7 @@ spec:
               - |
                 # Merge ConfigMap (non-sensitive) with Secret (sensitive) to create final config.yml
                 mkdir -p /etc/pterodactyl
-                # Start with base config, then inject sensitive values
+                # Start with base config from ConfigMap, then inject sensitive values
                 cp /config-base/config.yml /etc/pterodactyl/config.yml
                 # Use awk to inject/update sensitive fields at the top after 'debug:'
                 awk -v uuid="$WINGS_UUID" -v token_id="$WINGS_TOKEN_ID" -v token="$WINGS_TOKEN" '
@@ -66,6 +66,8 @@ spec:
                 ' /etc/pterodactyl/config.yml > /etc/pterodactyl/config.yml.tmp
                 mv /etc/pterodactyl/config.yml.tmp /etc/pterodactyl/config.yml
                 echo "Config merged successfully"
+                echo "--- Final config.yml ---"
+                cat /etc/pterodactyl/config.yml
             envFrom:
               - secretRef:
                   name: pterodactyl-wings-secret
@@ -120,7 +122,7 @@ spec:
                 path: "/var/lib/pterodactyl"
               - subPath: "logs"
                 path: "/var/log/pterodactyl"
-      # Mount ConfigMap (non-sensitive base config) for initContainer
+      # ConfigMap for base config - mount at /config-base for initContainer
       config-base:
         type: configMap
         name: wings-config
@@ -128,6 +130,8 @@ spec:
           - path: /config-base
             readOnly: true
       # EmptyDir for merged config.yml (created by initContainer, read by main container)
+      # This must be mounted at /etc/pterodactyl so Wings can find config.yml
+      # Note: This will override any ConfigMap mount at this path
       config-final:
         type: emptyDir
         globalMounts:

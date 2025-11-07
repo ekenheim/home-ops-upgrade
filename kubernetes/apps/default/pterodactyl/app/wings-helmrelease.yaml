@@ -64,17 +64,17 @@ spec:
                 echo "WINGS_UUID: ${WINGS_UUID:0:20}..."
                 echo "WINGS_TOKEN_ID: $WINGS_TOKEN_ID"
                 echo "WINGS_TOKEN: ${WINGS_TOKEN:0:20}..."
-                
+
                 echo "Checking source config..."
                 [ ! -f /config-base/config.yml ] && echo "ERROR: /config-base/config.yml not found" && exit 1
                 echo "Source config exists"
-                
+
                 echo "Creating target directory..."
                 mkdir -p /etc/pterodactyl
-                
+
                 echo "Copying base config..."
                 cp /config-base/config.yml /etc/pterodactyl/config.yml.tmp
-                
+
                 echo "Injecting sensitive values with awk..."
                 # Use awk to inject/update sensitive fields at the top after 'debug:'
                 awk -v uuid="$WINGS_UUID" -v token_id="$WINGS_TOKEN_ID" -v token="$WINGS_TOKEN" '
@@ -85,11 +85,11 @@ spec:
                   echo "ERROR: awk failed"
                   exit 1
                 }
-                
+
                 echo "Verifying output file..."
                 [ ! -f /etc/pterodactyl/config.yml ] && echo "ERROR: Output file not created" && exit 1
                 [ ! -s /etc/pterodactyl/config.yml ] && echo "ERROR: Output file is empty" && exit 1
-                
+
                 echo "=== Config merged successfully ==="
                 echo "File size: $(wc -c < /etc/pterodactyl/config.yml) bytes"
                 echo "First 20 lines:"

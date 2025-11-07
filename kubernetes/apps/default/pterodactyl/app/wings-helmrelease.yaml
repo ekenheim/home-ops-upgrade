@@ -106,15 +106,11 @@ spec:
             subPath: config.yml
             readOnly: true
       # Mount containerd socket from host (Kubernetes uses containerd)
+      # Wings is configured via docker_socket_path in config.yml to use containerd
       containerd:
         type: hostPath
         hostPath: /run/containerd/containerd.sock
         globalMounts:
           - path: /run/containerd/containerd.sock
-      # Also mount Docker socket as fallback
-      docker:
-        type: hostPath
-        hostPath: /var/run/docker.sock
-        globalMounts:
-          - path: /var/run/docker.sock
+      # Note: Docker socket is NOT mounted - Wings uses containerd via docker_socket_path config
 

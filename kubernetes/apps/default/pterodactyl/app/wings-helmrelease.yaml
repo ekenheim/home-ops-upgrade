@@ -48,25 +48,24 @@ spec:
         initContainers:
           merge-config:
             image:
-              repository: docker.io/mikefarah/yq
-              tag: 4.48.1@sha256:75b3a60dce1fa4641b0f02bdb4465eddc5da95e62028118a292239ca8e3921e5
-              pullPolicy: IfNotPresent
+              repository: busybox
+              tag: latest
             command:
               - /bin/sh
               - -c
               - |
                 # Merge ConfigMap (non-sensitive) with Secret (sensitive) to create final config.yml
                 mkdir -p /etc/pterodactyl
-                # Start with base config from ConfigMap
-                cat /config-base/config.yml > /etc/pterodactyl/config.yml.tmp
-                # Inject sensitive values from Secret using yq
-                yq eval -i ".uuid = strenv(WINGS_UUID)" /etc/pterodactyl/config.yml.tmp
-                yq eval -i ".token_id = strenv(WINGS_TOKEN_ID)" /etc/pterodactyl/config.yml.tmp
-                yq eval -i ".token = strenv(WINGS_TOKEN)" /etc/pterodactyl/config.yml.tmp
-                # Move to final location
+                # Start with base config, then inject sensitive values
+                cp /config-base/config.yml /etc/pterodactyl/config.yml
+                # Use awk to inject/update sensitive fields at the top after 'debug:'
+                awk -v uuid="$WINGS_UUID" -v token_id="$WINGS_TOKEN_ID" -v token="$WINGS_TOKEN" '
+                  /^debug:/ { print; print "uuid: " uuid; print "token_id: " token_id; print "token: " token; next }
+                  /^uuid:/ || /^token_id:/ || /^token:/ { next }
+                  { print }
+                ' /etc/pterodactyl/config.yml > /etc/pterodactyl/config.yml.tmp
                 mv /etc/pterodactyl/config.yml.tmp /etc/pterodactyl/config.yml
                 echo "Config merged successfully"
-                cat /etc/pterodactyl/config.yml
             envFrom:
               - secretRef:
                   name: pterodactyl-wings-secret

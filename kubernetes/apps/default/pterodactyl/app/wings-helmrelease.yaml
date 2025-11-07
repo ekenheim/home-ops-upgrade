@@ -105,12 +105,12 @@ spec:
           - path: /etc/pterodactyl/config.yml
             subPath: config.yml
             readOnly: true
-      # Mount containerd socket from host (Kubernetes uses containerd)
-      # Wings is configured via docker_socket_path in config.yml to use containerd
+      # Mount containerd socket at /var/run/docker.sock so Wings can use it
+      # Wings checks /var/run/docker.sock first, so we mount containerd there
+      # This is a common workaround since Wings expects Docker socket path
       containerd:
         type: hostPath
         hostPath: /run/containerd/containerd.sock
         globalMounts:
-          - path: /run/containerd/containerd.sock
-      # Note: Docker socket is NOT mounted - Wings uses containerd via docker_socket_path config
+          - path: /var/run/docker.sock
 

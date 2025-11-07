@@ -46,8 +46,8 @@ spec:
         initContainers:
           merge-config:
             image:
-              repository: bitnami/yq
-              tag: latest
+              repository: mikefarah/yq
+              tag: v4.40.5
             command:
               - /bin/sh
               - -c
@@ -56,12 +56,13 @@ spec:
                 mkdir -p /etc/pterodactyl
                 # Start with base config from ConfigMap
                 cat /config-base/config.yml > /etc/pterodactyl/config.yml.tmp
-                # Inject sensitive values from Secret
-                yq eval -i '.uuid = strenv(WINGS_UUID)' /etc/pterodactyl/config.yml.tmp
-                yq eval -i '.token_id = strenv(WINGS_TOKEN_ID)' /etc/pterodactyl/config.yml.tmp
-                yq eval -i '.token = strenv(WINGS_TOKEN)' /etc/pterodactyl/config.yml.tmp
+                # Inject sensitive values from Secret using yq
+                yq eval -i ".uuid = strenv(WINGS_UUID)" /etc/pterodactyl/config.yml.tmp
+                yq eval -i ".token_id = strenv(WINGS_TOKEN_ID)" /etc/pterodactyl/config.yml.tmp
+                yq eval -i ".token = strenv(WINGS_TOKEN)" /etc/pterodactyl/config.yml.tmp
                 # Move to final location
                 mv /etc/pterodactyl/config.yml.tmp /etc/pterodactyl/config.yml
+                echo "Config merged successfully"
                 cat /etc/pterodactyl/config.yml
             envFrom:
               - secretRef:

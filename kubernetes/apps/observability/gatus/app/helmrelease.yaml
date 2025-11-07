@@ -33,7 +33,7 @@ spec:
           init-config:
             image:
               repository: ghcr.io/kiwigrid/k8s-sidecar
-              tag: 2.1.1@sha256:d407aa928f1f29bb5c7796e2a746377530ce629acba70e5e322e5727aaba7685
+              tag: 2.1.1@sha256:ae6b9013616386648b3f88dfee7337e3c1b67232b33d8b2a255e30daae9b3ad8
             env:
               FOLDER: /config
               LABEL: gatus.io/enabled

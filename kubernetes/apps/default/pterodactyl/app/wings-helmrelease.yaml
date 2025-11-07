@@ -122,11 +122,10 @@ spec:
             subPath: config.yml
             readOnly: true
       # Shared volume for Docker socket from DinD sidecar
-      # DinD exposes its socket at /var/run/docker.sock, Wings connects to it
-      # Using emptyDir so both containers can access the socket
+      # DinD creates socket at /var/run/docker.sock, we mount /var/run so both containers share it
+      # This is the standard DinD pattern for sharing the Docker socket
       docker-socket:
         type: emptyDir
         globalMounts:
-          - path: /var/run/docker.sock
-            subPath: docker.sock
+          - path: /var/run
 

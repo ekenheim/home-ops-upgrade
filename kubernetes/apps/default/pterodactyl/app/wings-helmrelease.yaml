@@ -56,21 +56,21 @@ spec:
               - |
                 set -e
                 echo "=== Starting config generation ==="
-                
+
                 # Validate environment variables
                 [ -z "$WINGS_UUID" ] && echo "ERROR: WINGS_UUID is empty" && exit 1
                 [ -z "$WINGS_TOKEN_ID" ] && echo "ERROR: WINGS_TOKEN_ID is empty" && exit 1
                 [ -z "$WINGS_TOKEN" ] && echo "ERROR: WINGS_TOKEN is empty" && exit 1
                 echo "Environment variables validated"
-                
+
                 # Read base config from ConfigMap
                 [ ! -f /config-base/config.yml ] && echo "ERROR: /config-base/config.yml not found" && exit 1
                 BASE_CONFIG=$(cat /config-base/config.yml)
                 echo "Base config loaded"
-                
+
                 # Create target directory
                 mkdir -p /etc/pterodactyl
-                
+
                 # Generate complete config.yml with sensitive values injected
                 cat > /etc/pterodactyl/config.yml <<EOF
                 debug: false
@@ -79,11 +79,11 @@ spec:
                 token: ${WINGS_TOKEN}
                 $(echo "$BASE_CONFIG" | grep -v "^debug:" | grep -v "^uuid:" | grep -v "^token_id:" | grep -v "^token:")
                 EOF
-                
+
                 # Verify file was created and has content
                 [ ! -f /etc/pterodactyl/config.yml ] && echo "ERROR: config.yml not created" && exit 1
                 [ ! -s /etc/pterodactyl/config.yml ] && echo "ERROR: config.yml is empty" && exit 1
-                
+
                 echo "=== Config generated successfully ==="
                 echo "File size: $(wc -c < /etc/pterodactyl/config.yml) bytes"
                 echo "File exists and is readable: $(test -r /etc/pterodactyl/config.yml && echo YES || echo NO)"

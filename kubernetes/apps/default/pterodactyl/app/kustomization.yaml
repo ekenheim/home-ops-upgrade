@@ -8,7 +8,6 @@ resources:
   - ./helmrelease.yaml
   - ./wings-externalsecret.yaml
   - ./wings-pvc.yaml
-  - ./wings-configmap.yaml
   - ./wings-helmrelease.yaml
   - ../../../../templates/volsync
   # Note: DNS for Wings node is handled via LoadBalancer service annotation

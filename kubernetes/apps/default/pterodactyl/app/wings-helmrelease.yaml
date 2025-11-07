@@ -45,54 +45,6 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         strategy: RollingUpdate
-        initContainers:
-          merge-config:
-            image:
-              repository: busybox
-              tag: latest
-            command:
-              - /bin/sh
-              - -c
-              - |
-                set -e
-                echo "=== Starting config generation ==="
-
-                # Validate environment variables
-                [ -z "$WINGS_UUID" ] && echo "ERROR: WINGS_UUID is empty" && exit 1
-                [ -z "$WINGS_TOKEN_ID" ] && echo "ERROR: WINGS_TOKEN_ID is empty" && exit 1
-                [ -z "$WINGS_TOKEN" ] && echo "ERROR: WINGS_TOKEN is empty" && exit 1
-                echo "Environment variables validated"
-
-                # Read base config from ConfigMap
-                [ ! -f /config-base/config.yml ] && echo "ERROR: /config-base/config.yml not found" && exit 1
-                BASE_CONFIG=$(cat /config-base/config.yml)
-                echo "Base config loaded"
-
-                # Create target directory
-                mkdir -p /etc/pterodactyl
-
-                # Generate complete config.yml with sensitive values injected
-                cat > /etc/pterodactyl/config.yml <<EOF
-                debug: false
-                uuid: ${WINGS_UUID}
-                token_id: ${WINGS_TOKEN_ID}
-                token: ${WINGS_TOKEN}
-                $(echo "$BASE_CONFIG" | grep -v "^debug:" | grep -v "^uuid:" | grep -v "^token_id:" | grep -v "^token:")
-                EOF
-
-                # Verify file was created and has content
-                [ ! -f /etc/pterodactyl/config.yml ] && echo "ERROR: config.yml not created" && exit 1
-                [ ! -s /etc/pterodactyl/config.yml ] && echo "ERROR: config.yml is empty" && exit 1
-
-                echo "=== Config generated successfully ==="
-                echo "File size: $(wc -c < /etc/pterodactyl/config.yml) bytes"
-                echo "File exists and is readable: $(test -r /etc/pterodactyl/config.yml && echo YES || echo NO)"
-                ls -la /etc/pterodactyl/
-                echo "--- First 15 lines of config.yml ---"
-                head -15 /etc/pterodactyl/config.yml
-            envFrom:
-              - secretRef:
-                  name: pterodactyl-wings-secret
         containers:
           app:
             image:
@@ -100,7 +52,7 @@ spec:
               tag: v1.11.13@sha256:98a5b9622cd152c43f1795fbc443934a25828cb1b3f7b5979cd5efb58175e869
             # Wings official image has its own entrypoint
             # It expects config.yml at /etc/pterodactyl/config.yml
-            # The config.yml is created by the initContainer merging ConfigMap + Secret
+            # The config.yml is mounted directly from the Secret
             env:
               # Timezone
               TZ: ${TIMEZONE}
@@ -144,20 +96,15 @@ spec:
                 path: "/var/lib/pterodactyl"
               - subPath: "logs"
                 path: "/var/log/pterodactyl"
-      # ConfigMap for base config - mount at /config-base for initContainer
-      config-base:
-        type: configMap
-        name: wings-config
+      # Mount config.yml directly from Secret
+      # The complete config.yml is stored in the Secret (all sensitive anyway)
+      config:
+        type: secret
+        name: pterodactyl-wings-secret
         globalMounts:
-          - path: /config-base
+          - path: /etc/pterodactyl/config.yml
+            subPath: config.yml
             readOnly: true
-      # EmptyDir for merged config.yml (created by initContainer, read by main container)
-      # This must be mounted at /etc/pterodactyl so Wings can find config.yml
-      # Note: This will override any ConfigMap mount at this path
-      config-final:
-        type: emptyDir
-        globalMounts:
-          - path: /etc/pterodactyl
       # Mount containerd socket from host (Kubernetes uses containerd)
       containerd:
         type: hostPath

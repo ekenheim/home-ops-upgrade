@@ -1,14 +1,8 @@
 ---
-# ConfigMap for Wings config.yml
+# ConfigMap for Wings config.yml (non-sensitive parts only)
+# Sensitive data (token, token_id) should be stored in wings-secret via ExternalSecret
 # After creating a node in the Pterodactyl panel, copy the config.yml
-# from the panel's Configuration tab and update this ConfigMap
-# 
-# To update:
-# 1. Create node in Pterodactyl panel
-# 2. Go to node Configuration tab
-# 3. Copy the entire config.yml content
-# 4. Update this ConfigMap with: kubectl edit configmap wings-config -n default
-# 5. Or replace the data below and apply
+# from the panel's Configuration tab and update this ConfigMap with non-sensitive parts
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -17,9 +11,6 @@ metadata:
 data:
   config.yml: |
     debug: false
-    uuid: 477bc2cb-571a-470e-bfd7-7bc124b449e8
-    token_id: w9CcMl0T1Af6Iidi
-    token: gAER0PJgderb3lHf6PfKircuKvwK8OrbhHch5Nv3eRVp4kec6ryjRHwjM2TjzCPE
     api:
       host: 0.0.0.0
       port: 8080
@@ -33,4 +24,5 @@ data:
         bind_port: 2022
     allowed_mounts: []
     remote: 'https://pterodactyl.ekenhome.se'
+    # uuid, token_id, and token are injected from wings-secret via initContainer
 

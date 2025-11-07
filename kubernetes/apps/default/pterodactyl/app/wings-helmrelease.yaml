@@ -46,6 +46,22 @@ spec:
           reloader.stakater.com/auto: "true"
         strategy: RollingUpdate
         containers:
+          # Docker-in-Docker sidecar - provides Docker daemon for Wings
+          # Wings requires Docker and doesn't support containerd natively
+          docker:
+            image:
+              repository: docker
+              tag: 24-dind
+            securityContext:
+              privileged: true
+            env:
+              DOCKER_TLS_CERTDIR: ""
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
           app:
             image:
               repository: ghcr.io/pterodactyl/wings
@@ -105,12 +121,12 @@ spec:
           - path: /etc/pterodactyl/config.yml
             subPath: config.yml
             readOnly: true
-      # Mount containerd socket at /var/run/docker.sock so Wings can use it
-      # Wings checks /var/run/docker.sock first, so we mount containerd there
-      # This is a common workaround since Wings expects Docker socket path
-      containerd:
-        type: hostPath
-        hostPath: /run/containerd/containerd.sock
+      # Shared volume for Docker socket from DinD sidecar
+      # DinD exposes its socket at /var/run/docker.sock, Wings connects to it
+      # Using emptyDir so both containers can access the socket
+      docker-socket:
+        type: emptyDir
         globalMounts:
           - path: /var/run/docker.sock
+            subPath: docker.sock
 

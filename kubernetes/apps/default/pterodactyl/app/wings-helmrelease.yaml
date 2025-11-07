@@ -17,11 +17,13 @@ spec:
   install:
     remediation:
       retries: 3
+    timeout: 10m
   upgrade:
     cleanupOnFail: true
     remediation:
       strategy: rollback
       retries: 3
+    timeout: 10m
   dependsOn:
   - name: pterodactyl
     namespace: default
@@ -46,8 +48,9 @@ spec:
         initContainers:
           merge-config:
             image:
-              repository: mikefarah/yq
-              tag: v4.40.5
+              repository: docker.io/mikefarah/yq
+              tag: 4.48.1@sha256:75b3a60dce1fa4641b0f02bdb4465eddc5da95e62028118a292239ca8e3921e5
+              pullPolicy: IfNotPresent
             command:
               - /bin/sh
               - -c

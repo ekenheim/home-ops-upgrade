@@ -36,7 +36,7 @@ spec:
           app:
             image:
               repository: ghost
-              tag: 6.7.0
+              tag: 6.8.0
             env:
               TZ: "Stockholm/Europe"
               url: "https://blog.${SECRET_DOMAIN}"

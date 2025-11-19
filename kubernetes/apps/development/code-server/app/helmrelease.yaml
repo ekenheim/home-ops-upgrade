@@ -30,7 +30,7 @@ spec:
         reloader.stakater.com/auto: "true"
     image:
       repository: codercom/code-server
-      tag: 4.105.1
+      tag: 4.106.0
     ingress:
       enabled: true
       hosts:

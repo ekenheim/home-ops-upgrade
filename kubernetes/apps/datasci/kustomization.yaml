@@ -22,5 +22,6 @@ resources:
   - ./jupyter-lab/ks.yaml
   - ./qdrant/ks.yaml
   - ./flyte/ks.yaml
+  - ./kubeflow/ks.yaml
   - ./label-studio/ks.yaml
   - ./seldon-core/ks.yaml

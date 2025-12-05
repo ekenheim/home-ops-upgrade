@@ -12,6 +12,8 @@ spec:
   ignore: |
     # exclude all
     /*
+    # include common directory (required by example)
+    !/common
     # include example directory for deployment
     !/example
 

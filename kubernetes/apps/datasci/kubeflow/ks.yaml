@@ -12,11 +12,12 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: rook-ceph-cluster
-  path: ./kubernetes/apps/datasci/kubeflow/app
+    - name: kubeflow-manifests
+  path: ./example
   prune: true
   sourceRef:
     kind: GitRepository
-    name: home-kubernetes
+    name: kubeflow-manifests
   wait: true
   interval: 30m
   retryInterval: 1m

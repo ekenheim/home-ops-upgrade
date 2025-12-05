@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - ./local-path-provisioner.yaml
   #- ./ray.yaml
+  - ./kubeflow-manifests.yaml

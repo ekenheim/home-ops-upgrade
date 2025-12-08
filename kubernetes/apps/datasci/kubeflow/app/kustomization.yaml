@@ -57,6 +57,8 @@ resources:
   # Kubeflow Pipelines (single-user mode)
   # ============================================
   - https://github.com/kubeflow/manifests/applications/pipeline/upstream/env/platform-agnostic?ref=v1.10.2
+  # Add cert-manager certificates for pipeline cache webhook
+  - https://github.com/kubeflow/manifests/applications/pipeline/upstream/env/cert-manager/base?ref=v1.10.2
 
   # ============================================
   # Central Dashboard (with istio virtualservice, no oauth)

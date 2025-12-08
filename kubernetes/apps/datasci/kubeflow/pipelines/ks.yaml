@@ -92,9 +92,20 @@ spec:
         kind: Service
         name: minio-service
     # Configure ml-pipeline to use MySQL instead of Postgres
+    # Remove Postgres env vars and add MySQL ones
     - patch: |
         - op: remove
           path: /spec/template/spec/containers/0/env
+        - op: remove
+          path: /spec/template/spec/containers/0/env/-
+        - op: remove
+          path: /spec/template/spec/containers/0/env/-
+        - op: remove
+          path: /spec/template/spec/containers/0/env/-
+        - op: remove
+          path: /spec/template/spec/containers/0/env/-
+        - op: remove
+          path: /spec/template/spec/containers/0/env/-
         - op: add
           path: /spec/template/spec/containers/0/env
           value:

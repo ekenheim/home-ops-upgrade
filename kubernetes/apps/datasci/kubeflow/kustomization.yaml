@@ -1,0 +1,42 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Namespace for Kubeflow components
+  - ./namespace.yaml
+
+  # Foundation components (in order)
+  - ./cert-manager-issuer/ks.yaml
+  - ./kubeflow-namespace/ks.yaml
+  - ./kubeflow-roles/ks.yaml
+  - ./kubeflow-istio-resources/ks.yaml
+
+  # Knative for serverless (required by KServe)
+  - ./knative/ks.yaml
+
+  # Authentication
+  - ./dex/ks.yaml
+  - ./oidc-authservice/ks.yaml
+
+  # Core Kubeflow apps
+  - ./admission-webhook/ks.yaml
+  - ./central-dashboard/ks.yaml
+  - ./profile-controller/ks.yaml
+
+  # Jupyter notebooks
+  - ./notebook-controller/ks.yaml
+  - ./jupyter-web-app/ks.yaml
+
+  # Volumes management
+  - ./volumes-web-app/ks.yaml
+
+  # Tensorboard
+  - ./tensorboard/ks.yaml
+
+  # Training
+  - ./training-operator/ks.yaml
+
+  # User namespace (creates example user profile)
+  - ./user-namespace/ks.yaml
+

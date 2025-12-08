@@ -1,0 +1,48 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kubeflow-tensorboard-controller
+  namespace: flux-system
+spec:
+  targetNamespace: kubeflow
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: kubeflow-tensorboard-controller
+  dependsOn:
+    - name: kubeflow-profile-controller
+    - name: kubeflow-istio-resources
+  path: ./apps/tensorboard/tensorboard-controller/upstream/overlays/kubeflow
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: kubeflow-manifests
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kubeflow-tensorboards-web-app
+  namespace: flux-system
+spec:
+  targetNamespace: kubeflow
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: kubeflow-tensorboards-web-app
+  dependsOn:
+    - name: kubeflow-tensorboard-controller
+  path: ./apps/tensorboard/tensorboards-web-app/upstream/overlays/istio
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: kubeflow-manifests
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+

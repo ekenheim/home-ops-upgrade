@@ -40,7 +40,7 @@ spec:
     - name: kubeflow-pipelines-argo-crds
     - name: kubeflow-profile-controller
     - name: kubeflow-istio-resources
-  path: ./applications/pipeline/upstream/env/platform-agnostic-postgresql
+  path: ./applications/pipeline/upstream/env/platform-agnostic-multi-user
   prune: true
   sourceRef:
     kind: GitRepository
@@ -50,59 +50,25 @@ spec:
   retryInterval: 1m
   timeout: 15m
   patches:
-    # Point to external Crunchy Postgres
+    # Point to MySQL and external MinIO
     - patch: |
         apiVersion: v1
         kind: ConfigMap
         metadata:
           name: pipeline-install-config
         data:
-          postgresHost: postgres-pgbouncer.database.svc.cluster.local
-          postgresPort: "5432"
+          dbType: mysql
+          dbHost: mysql
+          dbPort: "3306"
+          mysqlHost: mysql
+          mysqlPort: "3306"
           pipelineDb: mlpipeline
           cacheDb: cachedb
           bucketName: kubeflow-pipelines
-          mysqlHost: mysql
-          mysqlPort: "3306"
       target:
         kind: ConfigMap
         name: pipeline-install-config
-    # Update metadata postgres params
-    - patch: |
-        apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: metadata-postgres-db-parameters
-        data:
-          POSTGRES_HOST: postgres-pgbouncer.database.svc.cluster.local
-          POSTGRES_PORT: "5432"
-          POSTGRES_DBNAME: metadb
-      target:
-        kind: ConfigMap
-        name: metadata-postgres-db-parameters
-    # Scale down built-in Postgres to 0 (we use external)
-    - patch: |
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: postgres
-        spec:
-          replicas: 0
-      target:
-        kind: Deployment
-        name: postgres
-    # Scale down metadata-postgres to 0 (we use external)
-    - patch: |
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: metadata-postgres-db
-        spec:
-          replicas: 0
-      target:
-        kind: Deployment
-        name: metadata-postgres-db
-    # Scale down built-in MinIO to 0
+    # Scale down built-in MinIO to 0 (we use external)
     - patch: |
         apiVersion: apps/v1
         kind: Deployment
@@ -113,67 +79,6 @@ spec:
       target:
         kind: Deployment
         name: minio
-    # Configure cache-server to use MySQL (doesn't support Postgres)
-    - patch: |
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: cache-server
-        spec:
-          template:
-            spec:
-              containers:
-                - name: server
-                  env:
-                    - name: DBCONFIG_DRIVER
-                      value: "mysql"
-                    - name: DBCONFIG_HOST_NAME
-                      valueFrom:
-                        configMapKeyRef:
-                          key: mysqlHost
-                          name: pipeline-install-config
-                    - name: DBCONFIG_PORT
-                      valueFrom:
-                        configMapKeyRef:
-                          key: mysqlPort
-                          name: pipeline-install-config
-                    - name: DBCONFIG_USER
-                      valueFrom:
-                        secretKeyRef:
-                          key: username
-                          name: mysql-secret
-                    - name: DBCONFIG_PASSWORD
-                      valueFrom:
-                        secretKeyRef:
-                          key: password
-                          name: mysql-secret
-      target:
-        kind: Deployment
-        name: cache-server
-    # Update postgres service to point to external Postgres
-    - patch: |
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: postgres
-        spec:
-          type: ExternalName
-          externalName: postgres-pgbouncer.database.svc.cluster.local
-      target:
-        kind: Service
-        name: postgres
-    # Update metadata-postgres service to point to external Postgres
-    - patch: |
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: metadata-postgres-db
-        spec:
-          type: ExternalName
-          externalName: postgres-pgbouncer.database.svc.cluster.local
-      target:
-        kind: Service
-        name: metadata-postgres-db
     # Update MinIO service to point to external MinIO
     - patch: |
         apiVersion: v1
@@ -186,7 +91,7 @@ spec:
       target:
         kind: Service
         name: minio-service
-    # Increase ml-pipeline startup probe timeout (DB migrations can take time)
+    # Configure ml-pipeline to use MySQL instead of Postgres
     - patch: |
         apiVersion: apps/v1
         kind: Deployment
@@ -197,6 +102,32 @@ spec:
             spec:
               containers:
                 - name: ml-pipeline-api-server
+                  env:
+                    - name: DBCONFIG_MYSQLCONFIG_HOST
+                      valueFrom:
+                        configMapKeyRef:
+                          key: mysqlHost
+                          name: pipeline-install-config
+                    - name: DBCONFIG_MYSQLCONFIG_PORT
+                      valueFrom:
+                        configMapKeyRef:
+                          key: mysqlPort
+                          name: pipeline-install-config
+                    - name: DBCONFIG_MYSQLCONFIG_DBNAME
+                      valueFrom:
+                        configMapKeyRef:
+                          key: pipelineDb
+                          name: pipeline-install-config
+                    - name: DBCONFIG_MYSQLCONFIG_USER
+                      valueFrom:
+                        secretKeyRef:
+                          key: username
+                          name: mysql-secret
+                    - name: DBCONFIG_MYSQLCONFIG_PASSWORD
+                      valueFrom:
+                        secretKeyRef:
+                          key: password
+                          name: mysql-secret
                   startupProbe:
                     failureThreshold: 30
                     initialDelaySeconds: 30

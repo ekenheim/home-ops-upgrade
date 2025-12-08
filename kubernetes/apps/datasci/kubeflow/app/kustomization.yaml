@@ -116,3 +116,8 @@ patches:
     target:
       kind: Gateway
       name: kubeflow-gateway
+  # Patch namespace to allow Istio sidecar injection (requires privileged PSS)
+  - path: patches/namespace-pss-patch.yaml
+    target:
+      kind: Namespace
+      name: kubeflow

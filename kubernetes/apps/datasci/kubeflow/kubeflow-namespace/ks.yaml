@@ -20,4 +20,16 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
+  patches:
+    # Ensure namespace has privileged PodSecurity for Istio sidecars
+    - patch: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: kubeflow
+          labels:
+            pod-security.kubernetes.io/enforce: privileged
+      target:
+        kind: Namespace
+        name: kubeflow
 

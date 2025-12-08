@@ -41,6 +41,7 @@ resources:
   - ./pipelines/argo-crds/ks.yaml
   - ./pipelines/viewer-crd/ks.yaml
   - ./pipelines/mysql/ks.yaml
+  - ./pipelines/metadata-authz/ks.yaml
   - ./pipelines/ks.yaml
 
   # User namespace (creates example user profile) - disabled, create profiles manually

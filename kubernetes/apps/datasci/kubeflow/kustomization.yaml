@@ -12,8 +12,8 @@ resources:
   - ./kubeflow-roles/ks.yaml
   - ./kubeflow-istio-resources/ks.yaml
 
-  # Knative for serverless (required by KServe)
-  - ./knative/ks.yaml
+  # Knative for serverless (required by KServe) - disabled due to PodSecurity conflicts
+  #- ./knative/ks.yaml
 
   # Authentication
   - ./dex/ks.yaml
@@ -37,6 +37,6 @@ resources:
   # Training
   - ./training-operator/ks.yaml
 
-  # User namespace (creates example user profile)
-  - ./user-namespace/ks.yaml
+  # User namespace (creates example user profile) - disabled, create profiles manually
+  #- ./user-namespace/ks.yaml
 

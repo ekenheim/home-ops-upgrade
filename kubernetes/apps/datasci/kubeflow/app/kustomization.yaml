@@ -157,3 +157,13 @@ patches:
     target:
       kind: NetworkPolicy
       name: metadata-writer
+  # Increase probe timeouts for ml-pipeline (MySQL connection takes time)
+  - path: patches/ml-pipeline-probe-timeout-patch.yaml
+    target:
+      kind: Deployment
+      name: ml-pipeline
+  # Increase probe timeouts for metadata-grpc (MySQL connection takes time)
+  - path: patches/metadata-grpc-probe-timeout-patch.yaml
+    target:
+      kind: Deployment
+      name: metadata-grpc-deployment

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metadata-grpc-deployment
+  namespace: kubeflow
+spec:
+  template:
+    spec:
+      containers:
+      - name: container
+        startupProbe:
+          tcpSocket:
+            port: grpc-api
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30  # Give up to 5 minutes for startup
+        livenessProbe:
+          tcpSocket:
+            port: grpc-api
+          initialDelaySeconds: 60  # Don't check liveness until after startup
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          tcpSocket:
+            port: grpc-api
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+

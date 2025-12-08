@@ -39,6 +39,7 @@ resources:
 
   # Kubeflow Pipelines
   - ./pipelines/argo-crds/ks.yaml
+  - ./pipelines/mysql/ks.yaml
   - ./pipelines/ks.yaml
 
   # User namespace (creates example user profile) - disabled, create profiles manually

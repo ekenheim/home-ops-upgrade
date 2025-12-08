@@ -36,6 +36,7 @@ spec:
       app.kubernetes.io/name: kubeflow-pipelines
   dependsOn:
     - name: kubeflow-pipelines-secrets
+    - name: kubeflow-pipelines-mysql
     - name: kubeflow-pipelines-argo-crds
     - name: kubeflow-profile-controller
     - name: kubeflow-istio-resources
@@ -61,6 +62,8 @@ spec:
           pipelineDb: mlpipeline
           cacheDb: cachedb
           bucketName: kubeflow-pipelines
+          mysqlHost: mysql
+          mysqlPort: "3306"
       target:
         kind: ConfigMap
         name: pipeline-install-config
@@ -110,28 +113,43 @@ spec:
       target:
         kind: Deployment
         name: minio
-    # Scale down cache-server (doesn't support Postgres, only MySQL)
+    # Configure cache-server to use MySQL (doesn't support Postgres)
     - patch: |
         apiVersion: apps/v1
         kind: Deployment
         metadata:
           name: cache-server
         spec:
-          replicas: 0
+          template:
+            spec:
+              containers:
+                - name: server
+                  env:
+                    - name: DBCONFIG_DRIVER
+                      value: "mysql"
+                    - name: DBCONFIG_HOST_NAME
+                      valueFrom:
+                        configMapKeyRef:
+                          key: mysqlHost
+                          name: pipeline-install-config
+                    - name: DBCONFIG_PORT
+                      valueFrom:
+                        configMapKeyRef:
+                          key: mysqlPort
+                          name: pipeline-install-config
+                    - name: DBCONFIG_USER
+                      valueFrom:
+                        secretKeyRef:
+                          key: username
+                          name: mysql-secret
+                    - name: DBCONFIG_PASSWORD
+                      valueFrom:
+                        secretKeyRef:
+                          key: password
+                          name: mysql-secret
       target:
         kind: Deployment
         name: cache-server
-    # Scale down cache-deployer (depends on cache-server)
-    - patch: |
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: cache-deployer-deployment
-        spec:
-          replicas: 0
-      target:
-        kind: Deployment
-        name: cache-deployer-deployment
     # Update postgres service to point to external Postgres
     - patch: |
         apiVersion: v1

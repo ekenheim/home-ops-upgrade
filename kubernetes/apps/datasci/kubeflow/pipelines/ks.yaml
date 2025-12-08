@@ -34,7 +34,6 @@ spec:
   # Removed commonMetadata to avoid immutable selector issues with cache-deployer
   dependsOn:
     - name: kubeflow-pipelines-secrets
-    - name: kubeflow-pipelines-mysql
     - name: kubeflow-pipelines-argo-crds
     - name: kubeflow-profile-controller
     - name: kubeflow-istio-resources

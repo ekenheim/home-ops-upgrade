@@ -40,7 +40,8 @@ resources:
   # Kubeflow Pipelines
   - ./pipelines/argo-crds/ks.yaml
   - ./pipelines/viewer-crd/ks.yaml
-  - ./pipelines/mysql/ks.yaml
+  # MySQL is included in platform-agnostic-multi-user overlay, no separate kustomization needed
+  #- ./pipelines/mysql/ks.yaml
   - ./pipelines/metadata-authz/ks.yaml
   - ./pipelines/ks.yaml
 

@@ -38,7 +38,7 @@ spec:
     - name: kubeflow-pipelines-secrets
     - name: kubeflow-profile-controller
     - name: kubeflow-istio-resources
-  path: ./applications/pipeline/upstream/env/platform-agnostic-multi-user
+  path: ./applications/pipeline/upstream/env/platform-agnostic-postgresql
   prune: true
   sourceRef:
     kind: GitRepository
@@ -48,44 +48,55 @@ spec:
   retryInterval: 1m
   timeout: 15m
   patches:
-    # Use Postgres instead of MySQL
+    # Point to external Crunchy Postgres
     - patch: |
         apiVersion: v1
         kind: ConfigMap
         metadata:
           name: pipeline-install-config
         data:
-          dbType: postgres
           postgresHost: postgres-pgbouncer.database.svc.cluster.local
           postgresPort: "5432"
           pipelineDb: mlpipeline
-          mlmdDb: metadb
           cacheDb: cachedb
-      target:
-        kind: ConfigMap
-        name: pipeline-install-config
-    # Point to external MinIO
-    - patch: |
-        apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: pipeline-install-config
-        data:
           bucketName: kubeflow-pipelines
       target:
         kind: ConfigMap
         name: pipeline-install-config
-    # Scale down built-in MySQL to 0
+    # Update metadata postgres params
+    - patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: metadata-postgres-db-parameters
+        data:
+          POSTGRES_PORT: "5432"
+          POSTGRES_DBNAME: metadb
+      target:
+        kind: ConfigMap
+        name: metadata-postgres-db-parameters
+    # Scale down built-in Postgres to 0 (we use external)
     - patch: |
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-          name: mysql
+          name: postgres
         spec:
           replicas: 0
       target:
         kind: Deployment
-        name: mysql
+        name: postgres
+    # Scale down metadata-postgres to 0 (we use external)
+    - patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: metadata-postgres-db
+        spec:
+          replicas: 0
+      target:
+        kind: Deployment
+        name: metadata-postgres-db
     # Scale down built-in MinIO to 0
     - patch: |
         apiVersion: apps/v1
@@ -97,6 +108,30 @@ spec:
       target:
         kind: Deployment
         name: minio
+    # Update postgres service to point to external Postgres
+    - patch: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: postgres
+        spec:
+          type: ExternalName
+          externalName: postgres-pgbouncer.database.svc.cluster.local
+      target:
+        kind: Service
+        name: postgres
+    # Update metadata-postgres service to point to external Postgres
+    - patch: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: metadata-postgres-db
+        spec:
+          type: ExternalName
+          externalName: postgres-pgbouncer.database.svc.cluster.local
+      target:
+        kind: Service
+        name: metadata-postgres-db
     # Update MinIO service to point to external MinIO
     - patch: |
         apiVersion: v1
@@ -106,9 +141,6 @@ spec:
         spec:
           type: ExternalName
           externalName: minio-secondary.storage.svc.cluster.local
-          ports:
-            - port: 9000
-              targetPort: 9000
       target:
         kind: Service
         name: minio-service

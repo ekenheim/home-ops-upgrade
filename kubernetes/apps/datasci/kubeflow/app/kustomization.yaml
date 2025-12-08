@@ -142,3 +142,13 @@ patches:
     target:
       kind: Service
       name: minio-service
+  # Add egress rules to ml-pipeline network policy (allow MySQL connections)
+  - path: patches/ml-pipeline-networkpolicy-egress-patch.yaml
+    target:
+      kind: NetworkPolicy
+      name: ml-pipeline
+  # Add egress rules to metadata-grpc network policy (allow MySQL connections)
+  - path: patches/metadata-grpc-networkpolicy-egress-patch.yaml
+    target:
+      kind: NetworkPolicy
+      name: metadata-grpc-server

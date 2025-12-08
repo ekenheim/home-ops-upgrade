@@ -71,6 +71,7 @@ spec:
         metadata:
           name: metadata-postgres-db-parameters
         data:
+          POSTGRES_HOST: postgres-pgbouncer.database.svc.cluster.local
           POSTGRES_PORT: "5432"
           POSTGRES_DBNAME: metadb
       target:
@@ -145,3 +146,19 @@ spec:
       target:
         kind: Service
         name: minio-service
+    # Fix cache-server webhook secret name
+    - patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: cache-server
+        spec:
+          template:
+            spec:
+              volumes:
+                - name: webhook-tls-certs
+                  secret:
+                    secretName: webhook-certs
+      target:
+        kind: Deployment
+        name: cache-server

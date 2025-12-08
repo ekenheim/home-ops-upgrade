@@ -36,6 +36,7 @@ spec:
       app.kubernetes.io/name: kubeflow-pipelines
   dependsOn:
     - name: kubeflow-pipelines-secrets
+    - name: kubeflow-pipelines-argo-crds
     - name: kubeflow-profile-controller
     - name: kubeflow-istio-resources
   path: ./applications/pipeline/upstream/env/platform-agnostic-postgresql

@@ -6,6 +6,7 @@ metadata:
   labels:
     goldilocks.fairwinds.com/enabled: "true"
     istio-injection: enabled
+    pod-security.kubernetes.io/enforce: privileged
   annotations:
     volsync.backube/privileged-movers: "true"
 

@@ -152,3 +152,8 @@ patches:
     target:
       kind: NetworkPolicy
       name: metadata-grpc-server
+  # Add network policy for metadata-writer (allow connections to metadata-grpc)
+  - path: patches/metadata-writer-networkpolicy.yaml
+    target:
+      kind: NetworkPolicy
+      name: metadata-writer

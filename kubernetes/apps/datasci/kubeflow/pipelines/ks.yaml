@@ -188,19 +188,22 @@ spec:
         name: minio-service
     # Increase ml-pipeline startup probe timeout (DB migrations can take time)
     - patch: |
-        - op: replace
-          path: /spec/template/spec/containers/0/startupProbe/failureThreshold
-          value: 30
-        - op: replace
-          path: /spec/template/spec/containers/0/startupProbe/initialDelaySeconds
-          value: 30
-        - op: replace
-          path: /spec/template/spec/containers/0/startupProbe/periodSeconds
-          value: 10
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: ml-pipeline
+        spec:
+          template:
+            spec:
+              containers:
+                - name: ml-pipeline-api-server
+                  startupProbe:
+                    failureThreshold: 30
+                    initialDelaySeconds: 30
+                    periodSeconds: 10
       target:
         kind: Deployment
         name: ml-pipeline
-        patchType: strategic
     # Disable RBAC for metadata-grpc (allows metadata-writer to connect)
     - patch: |
         apiVersion: apps/v1

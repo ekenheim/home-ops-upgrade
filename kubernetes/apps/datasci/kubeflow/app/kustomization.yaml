@@ -105,6 +105,12 @@ resources:
   # ============================================
   - https://github.com/kubeflow/manifests/common/user-namespace/base?ref=v1.10.2
 
+  # ============================================
+  # Local resources - integration with existing infrastructure
+  # ============================================
+  # ExternalSecret for MinIO credentials (uses existing minio-secondary)
+  - externalsecret.yaml
+
 namespace: kubeflow
 
 # ============================================
@@ -121,3 +127,13 @@ patches:
     target:
       kind: Namespace
       name: kubeflow
+  # Disable bundled minio - using existing minio-secondary
+  - path: patches/minio-disable-patch.yaml
+    target:
+      kind: Deployment
+      name: minio
+  # Patch minio-service to redirect to existing minio-secondary
+  - path: patches/minio-service-patch.yaml
+    target:
+      kind: Service
+      name: minio-service

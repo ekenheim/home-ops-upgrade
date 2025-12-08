@@ -31,9 +31,7 @@ metadata:
   namespace: flux-system
 spec:
   targetNamespace: kubeflow
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: kubeflow-pipelines
+  # Removed commonMetadata to avoid immutable selector issues with cache-deployer
   dependsOn:
     - name: kubeflow-pipelines-secrets
     - name: kubeflow-pipelines-mysql

@@ -13,7 +13,7 @@ spec:
   dependsOn:
     - name: kubeflow-cert-manager-issuer
     - name: kubeflow-namespace
-  path: ./apps/admission-webhook/upstream/overlays/cert-manager
+  path: ./applications/admission-webhook/upstream/overlays/cert-manager
   prune: true
   sourceRef:
     kind: GitRepository

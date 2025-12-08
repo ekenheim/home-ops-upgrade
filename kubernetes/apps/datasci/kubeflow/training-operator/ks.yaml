@@ -13,7 +13,7 @@ spec:
   dependsOn:
     - name: kubeflow-admission-webhook
     - name: kubeflow-namespace
-  path: ./apps/training-operator/upstream/overlays/kubeflow
+  path: ./applications/training-operator/upstream/overlays/kubeflow
   prune: true
   sourceRef:
     kind: GitRepository

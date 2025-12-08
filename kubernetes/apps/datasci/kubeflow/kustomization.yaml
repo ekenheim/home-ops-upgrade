@@ -17,7 +17,7 @@ resources:
 
   # Authentication
   - ./dex/ks.yaml
-  - ./oidc-authservice/ks.yaml
+  - ./oauth2-proxy/ks.yaml
 
   # Core Kubeflow apps
   - ./admission-webhook/ks.yaml

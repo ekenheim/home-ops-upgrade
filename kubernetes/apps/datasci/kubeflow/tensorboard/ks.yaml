@@ -13,7 +13,7 @@ spec:
   dependsOn:
     - name: kubeflow-profile-controller
     - name: kubeflow-istio-resources
-  path: ./apps/tensorboard/tensorboard-controller/upstream/overlays/kubeflow
+  path: ./applications/tensorboard/tensorboard-controller/upstream/overlays/kubeflow
   prune: true
   sourceRef:
     kind: GitRepository
@@ -36,7 +36,7 @@ spec:
       app.kubernetes.io/name: kubeflow-tensorboards-web-app
   dependsOn:
     - name: kubeflow-tensorboard-controller
-  path: ./apps/tensorboard/tensorboards-web-app/upstream/overlays/istio
+  path: ./applications/tensorboard/tensorboards-web-app/upstream/overlays/istio
   prune: true
   sourceRef:
     kind: GitRepository

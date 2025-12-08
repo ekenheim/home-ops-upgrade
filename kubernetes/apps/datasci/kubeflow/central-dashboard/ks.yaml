@@ -11,9 +11,9 @@ spec:
     labels:
       app.kubernetes.io/name: kubeflow-central-dashboard
   dependsOn:
-    - name: kubeflow-oidc-authservice
+    - name: kubeflow-oauth2-proxy
     - name: kubeflow-istio-resources
-  path: ./apps/centraldashboard/upstream/overlays/kserve
+  path: ./applications/centraldashboard/upstream/overlays/kserve
   prune: true
   sourceRef:
     kind: GitRepository

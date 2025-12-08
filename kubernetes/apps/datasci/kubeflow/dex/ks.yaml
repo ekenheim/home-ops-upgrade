@@ -13,7 +13,7 @@ spec:
   dependsOn:
     - name: kubeflow-cert-manager-issuer
     - name: istio-istiod
-  path: ./common/dex/overlays/istio
+  path: ./common/dex/overlays/oauth2-proxy
   prune: true
   sourceRef:
     kind: GitRepository

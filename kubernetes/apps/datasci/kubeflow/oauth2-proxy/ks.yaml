@@ -3,17 +3,17 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: kubeflow-oidc-authservice
+  name: kubeflow-oauth2-proxy
   namespace: flux-system
 spec:
-  targetNamespace: istio-system
+  targetNamespace: oauth2-proxy
   commonMetadata:
     labels:
-      app.kubernetes.io/name: kubeflow-oidc-authservice
+      app.kubernetes.io/name: kubeflow-oauth2-proxy
   dependsOn:
     - name: kubeflow-dex
     - name: istio-gateway
-  path: ./common/oidc-client/oidc-authservice/overlays/ibm-storage-secret
+  path: ./common/oauth2-proxy/overlays/m2m-dex-only
   prune: true
   sourceRef:
     kind: GitRepository
@@ -22,4 +22,3 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
-

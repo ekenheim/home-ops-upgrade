@@ -13,7 +13,7 @@ spec:
   dependsOn:
     - name: kubeflow-admission-webhook
     - name: kubeflow-istio-resources
-  path: ./apps/profiles/upstream/overlays/kubeflow
+  path: ./applications/profiles/upstream/overlays/kubeflow
   prune: true
   sourceRef:
     kind: GitRepository

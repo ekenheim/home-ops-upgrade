@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: kubeflow-jupyter-web-app
   dependsOn:
     - name: kubeflow-notebook-controller
-  path: ./apps/jupyter/jupyter-web-app/upstream/overlays/istio
+  path: ./applications/jupyter/jupyter-web-app/upstream/overlays/istio
   prune: true
   sourceRef:
     kind: GitRepository

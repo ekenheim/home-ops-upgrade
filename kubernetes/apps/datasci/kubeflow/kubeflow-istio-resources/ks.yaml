@@ -12,7 +12,7 @@ spec:
   dependsOn:
     - name: kubeflow-roles
     - name: istio-gateway
-  path: ./common/istio-1-23/kubeflow-istio-resources/base
+  path: ./common/istio/kubeflow-istio-resources/base
   prune: true
   sourceRef:
     kind: GitRepository

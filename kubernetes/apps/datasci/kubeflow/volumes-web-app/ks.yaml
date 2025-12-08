@@ -13,7 +13,7 @@ spec:
   dependsOn:
     - name: kubeflow-profile-controller
     - name: kubeflow-istio-resources
-  path: ./apps/volumes-web-app/upstream/overlays/istio
+  path: ./applications/volumes-web-app/upstream/overlays/istio
   prune: true
   sourceRef:
     kind: GitRepository

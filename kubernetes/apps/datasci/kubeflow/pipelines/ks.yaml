@@ -92,20 +92,10 @@ spec:
         kind: Service
         name: minio-service
     # Configure ml-pipeline to use MySQL instead of Postgres
-    # Remove Postgres env vars and add MySQL ones
+    # Remove Postgres env vars individually and add MySQL ones
     - patch: |
         - op: remove
           path: /spec/template/spec/containers/0/env
-        - op: remove
-          path: /spec/template/spec/containers/0/env/-
-        - op: remove
-          path: /spec/template/spec/containers/0/env/-
-        - op: remove
-          path: /spec/template/spec/containers/0/env/-
-        - op: remove
-          path: /spec/template/spec/containers/0/env/-
-        - op: remove
-          path: /spec/template/spec/containers/0/env/-
         - op: add
           path: /spec/template/spec/containers/0/env
           value:
@@ -161,6 +151,16 @@ spec:
                 secretKeyRef:
                   key: password
                   name: mysql-secret
+            - name: OBJECTSTORECONFIG_ACCESSKEY
+              valueFrom:
+                secretKeyRef:
+                  key: accesskey
+                  name: mlpipeline-minio-artifact
+            - name: OBJECTSTORECONFIG_SECRETACCESSKEY
+              valueFrom:
+                secretKeyRef:
+                  key: secretkey
+                  name: mlpipeline-minio-artifact
       target:
         kind: Deployment
         name: ml-pipeline

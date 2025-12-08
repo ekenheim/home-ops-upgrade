@@ -16,4 +16,6 @@ spec:
     !/common
     # include example directory for deployment
     !/example
+    # include applications directory for kubeflow components
+    !/applications
 

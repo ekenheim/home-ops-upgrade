@@ -1,0 +1,118 @@
+# Kubeflow Custom Installation
+# Uses existing cert-manager and Istio installations
+# Single-user mode (no Dex/oauth2-proxy)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+sortOptions:
+  order: legacy
+  legacySortOptions:
+    orderFirst:
+      - Namespace
+      - ResourceQuota
+      - StorageClass
+      - CustomResourceDefinition
+      - MutatingWebhookConfiguration
+      - ServiceAccount
+      - PodSecurityPolicy
+      - NetworkPolicy
+      - Role
+      - ClusterRole
+      - RoleBinding
+      - ClusterRoleBinding
+      - ConfigMap
+      - Secret
+      - Endpoints
+      - Service
+      - LimitRange
+      - PriorityClass
+      - PersistentVolume
+      - PersistentVolumeClaim
+      - Deployment
+      - StatefulSet
+      - CronJob
+      - PodDisruptionBudget
+    orderLast:
+      - ValidatingWebhookConfiguration
+
+resources:
+  # ============================================
+  # Common/Infrastructure Components
+  # (Skip cert-manager and istio installation - using existing)
+  # ============================================
+
+  # Kubeflow namespace
+  - https://github.com/kubeflow/manifests/common/kubeflow-namespace/base?ref=v1.10.2
+
+  # Kubeflow Roles
+  - https://github.com/kubeflow/manifests/common/kubeflow-roles/base?ref=v1.10.2
+
+  # Kubeflow Istio Resources (Gateway, VirtualServices base config)
+  - https://github.com/kubeflow/manifests/common/istio/kubeflow-istio-resources/base?ref=v1.10.2
+
+  # Network Policies
+  - https://github.com/kubeflow/manifests/common/networkpolicies/base?ref=v1.10.2
+
+  # ============================================
+  # Kubeflow Pipelines (single-user mode)
+  # ============================================
+  - https://github.com/kubeflow/manifests/applications/pipeline/upstream/env/platform-agnostic?ref=v1.10.2
+
+  # ============================================
+  # Central Dashboard (with istio virtualservice, no oauth)
+  # ============================================
+  - https://github.com/kubeflow/manifests/applications/centraldashboard/upstream/overlays/istio?ref=v1.10.2
+
+  # ============================================
+  # Jupyter Notebooks
+  # ============================================
+  - https://github.com/kubeflow/manifests/applications/jupyter/jupyter-web-app/upstream/overlays/istio?ref=v1.10.2
+  - https://github.com/kubeflow/manifests/applications/jupyter/notebook-controller/upstream/overlays/kubeflow?ref=v1.10.2
+
+  # ============================================
+  # Volumes Web App
+  # ============================================
+  - https://github.com/kubeflow/manifests/applications/volumes-web-app/upstream/overlays/istio?ref=v1.10.2
+
+  # ============================================
+  # Profiles and KFAM
+  # ============================================
+  - https://github.com/kubeflow/manifests/applications/profiles/upstream/overlays/kubeflow?ref=v1.10.2
+
+  # ============================================
+  # PVC Viewer
+  # ============================================
+  - https://github.com/kubeflow/manifests/applications/pvcviewer-controller/upstream/base?ref=v1.10.2
+
+  # ============================================
+  # Training Operator
+  # ============================================
+  - https://github.com/kubeflow/manifests/applications/training-operator/upstream/overlays/kubeflow?ref=v1.10.2
+
+  # ============================================
+  # Admission Webhook
+  # ============================================
+  - https://github.com/kubeflow/manifests/applications/admission-webhook/upstream/overlays/cert-manager?ref=v1.10.2
+
+  # ============================================
+  # Tensorboard
+  # ============================================
+  - https://github.com/kubeflow/manifests/applications/tensorboard/tensorboard-controller/upstream/overlays/kubeflow?ref=v1.10.2
+  - https://github.com/kubeflow/manifests/applications/tensorboard/tensorboards-web-app/upstream/overlays/istio?ref=v1.10.2
+
+  # ============================================
+  # User namespace (default profile)
+  # ============================================
+  - https://github.com/kubeflow/manifests/common/user-namespace/base?ref=v1.10.2
+
+namespace: kubeflow
+
+# ============================================
+# Patches for integration with existing infrastructure
+# ============================================
+patches:
+  # Patch Gateway to use existing istio-ingress selector
+  - path: patches/gateway-selector-patch.yaml
+    target:
+      kind: Gateway
+      name: kubeflow-gateway

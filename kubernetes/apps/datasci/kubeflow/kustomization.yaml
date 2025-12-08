@@ -37,6 +37,9 @@ resources:
   # Training
   - ./training-operator/ks.yaml
 
+  # Kubeflow Pipelines
+  - ./pipelines/ks.yaml
+
   # User namespace (creates example user profile) - disabled, create profiles manually
   #- ./user-namespace/ks.yaml
 

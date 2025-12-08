@@ -56,6 +56,9 @@ resources:
   # ============================================
   # Kubeflow Pipelines (single-user mode)
   # ============================================
+  # Argo Workflows CRDs (cluster-scoped, must be installed first)
+  - https://github.com/kubeflow/manifests/applications/pipeline/upstream/third-party/argo/upstream/manifests/base/crds?ref=v1.10.2
+  # Pipeline components
   - https://github.com/kubeflow/manifests/applications/pipeline/upstream/env/platform-agnostic?ref=v1.10.2
   # Add cert-manager certificates for pipeline cache webhook
   - https://github.com/kubeflow/manifests/applications/pipeline/upstream/env/cert-manager/base?ref=v1.10.2

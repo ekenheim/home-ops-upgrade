@@ -110,6 +110,28 @@ spec:
       target:
         kind: Deployment
         name: minio
+    # Scale down cache-server (doesn't support Postgres, only MySQL)
+    - patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: cache-server
+        spec:
+          replicas: 0
+      target:
+        kind: Deployment
+        name: cache-server
+    # Scale down cache-deployer (depends on cache-server)
+    - patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: cache-deployer-deployment
+        spec:
+          replicas: 0
+      target:
+        kind: Deployment
+        name: cache-deployer-deployment
     # Update postgres service to point to external Postgres
     - patch: |
         apiVersion: v1

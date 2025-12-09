@@ -199,6 +199,17 @@ spec:
       target:
         kind: Deployment
         name: cache-server
+    # Disable cache-deployer (CSR denied path conflicts with cert-manager-issued webhook)
+    - patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: cache-deployer-deployment
+        spec:
+          replicas: 0
+      target:
+        kind: Deployment
+        name: cache-deployer-deployment
     # Resource and probe tuning for ml-pipeline API server
     - patch: |
         apiVersion: apps/v1

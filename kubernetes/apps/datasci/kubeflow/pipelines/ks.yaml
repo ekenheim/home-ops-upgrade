@@ -221,6 +221,14 @@ spec:
             spec:
               containers:
                 - name: ml-pipeline-api-server
+                  command:
+                    - /bin/apiserver
+                  args:
+                    - --config=/config
+                    - --sampleconfig=/config/sample_config.json
+                    - --logtostderr=true
+                    - --logLevel=debug
+                    - --stderrthreshold=0
                   resources:
                     requests:
                       cpu: 500m
@@ -254,6 +262,20 @@ spec:
             spec:
               containers:
                 - name: container
+                  command:
+                    - /bin/metadata_store_server
+                  args:
+                    - --grpc_port=8080
+                    - --mysql_config_database=$(MYSQL_DATABASE)
+                    - --mysql_config_host=$(MYSQL_HOST)
+                    - --mysql_config_port=$(MYSQL_PORT)
+                    - --mysql_config_user=$(DBCONFIG_USER)
+                    - --mysql_config_password=$(DBCONFIG_PASSWORD)
+                    - --enable_database_upgrade=true
+                    - --logtostderr
+                    - --alsologtostderr
+                    - --stderrthreshold=0
+                    - --v=2
                   env:
                     - name: GLOG_logtostderr
                       value: "1"

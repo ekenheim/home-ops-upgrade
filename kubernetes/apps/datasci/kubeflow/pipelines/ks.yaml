@@ -272,10 +272,6 @@ spec:
                     - --mysql_config_user=$(DBCONFIG_USER)
                     - --mysql_config_password=$(DBCONFIG_PASSWORD)
                     - --enable_database_upgrade=true
-                    - --logtostderr
-                    - --alsologtostderr
-                    - --stderrthreshold=0
-                    - --v=2
                   env:
                     - name: GLOG_logtostderr
                       value: "1"

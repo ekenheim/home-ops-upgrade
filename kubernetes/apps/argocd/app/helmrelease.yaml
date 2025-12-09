@@ -178,7 +178,7 @@ spec:
     repoServer:
       initContainers:
         - name: deploykf-plugin-setup--kubectl
-          image: docker.io/bitnami/kubectl:1.26.10
+          image: registry.k8s.io/kubectl:v1.30.3
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -188,7 +188,7 @@ spec:
             - name: deploykf-plugin-tools
               mountPath: /tools
         - name: deploykf-plugin-setup--helm
-          image: docker.io/alpine/helm:3.12.3
+          image: docker.io/alpine/helm:3.14.4
           command: ["/bin/sh", "-c"]
           args:
             - |

@@ -24,3 +24,4 @@ resources:
   - ./flyte/ks.yaml
   - ./label-studio/ks.yaml
   - ./seldon-core/ks.yaml
+  - ./deploykf/ks.yaml

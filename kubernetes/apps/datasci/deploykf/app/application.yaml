@@ -1,0 +1,95 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: deploykf-app-of-apps
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: deploykf-app-of-apps
+    app.kubernetes.io/part-of: deploykf
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/deployKF/deployKF.git
+    targetRevision: v0.1.4
+    path: .
+    plugin:
+      name: deploykf
+      parameters:
+        - name: source_version
+          string: "0.1.4"
+        - name: values_files
+          array:
+            - "./sample-values.yaml"
+        - name: values
+          string: |
+            argocd:
+              namespace: argocd
+              project: default
+
+            deploykf_dependencies:
+              cert_manager:
+                enabled: false
+                clusterIssuer:
+                  enabled: false
+                  issuerName: letsencrypt-production
+              istio:
+                enabled: false
+              kyverno:
+                enabled: true
+
+            deploykf_core:
+              deploykf_auth:
+                dex:
+                  connectors:
+                    - type: oidc
+                      id: authentik
+                      name: Authentik
+                      configExistingSecret: deploykf-oidc
+                      configExistingSecretKey: config
+              deploykf_istio_gateway:
+                gateway:
+                  hostname: kf.kubeflow.com
+                  selectorLabels:
+                    app: istio-ingress
+                    istio: ingressgateway
+                gatewayService:
+                  type: LoadBalancer
+
+            deploykf_opt:
+              deploykf_minio:
+                enabled: false
+              deploykf_mysql:
+                enabled: true
+
+            kubeflow_tools:
+              pipelines:
+                bucket:
+                  name: deploykf-artifacts
+                  region: ""
+                objectStore:
+                  useExternal: true
+                  host: minio-secondary.storage.svc.cluster.local
+                  port: 9000
+                  useSSL: false
+                  auth:
+                    fromEnv: false
+                    existingSecret: deploykf-minio-creds
+                    existingSecretNamespace: kubeflow
+                    existingSecretAccessKeyKey: AWS_ACCESS_KEY_ID
+                    existingSecretSecretKeyKey: AWS_SECRET_ACCESS_KEY
+                mysql:
+                  useExternal: false
+                kfpV2:
+                  defaultPipelineRoot: "s3://deploykf-artifacts/v2/artifacts/{profile_name}?region=unspecified&endpoint=minio-secondary.storage.svc.cluster.local:9000&disableSSL=true&s3ForcePathStyle=true"
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+

@@ -251,6 +251,9 @@ spec:
                   volumeMounts:
                     - name: kfp-logs
                       mountPath: /var/log/kfp
+              volumes:
+                - name: kfp-logs
+                  emptyDir: {}
       target:
         kind: Deployment
         name: ml-pipeline

@@ -173,6 +173,9 @@ spec:
           name: ml-pipeline
         spec:
           template:
+            metadata:
+              annotations:
+                sidecar.istio.io/inject: "false"
             spec:
               containers:
                 - name: ml-pipeline-api-server
@@ -265,24 +268,32 @@ spec:
           name: metadata-grpc-deployment
         spec:
           template:
+            metadata:
+              annotations:
+                sidecar.istio.io/inject: "false"
             spec:
               containers:
                 - name: container
                   command:
-                    - /bin/metadata_store_server
+                    - /bin/sh
+                    - -c
                   args:
-                    - --grpc_port=8080
-                    - --mysql_config_database=$(MYSQL_DATABASE)
-                    - --mysql_config_host=$(MYSQL_HOST)
-                    - --mysql_config_port=$(MYSQL_PORT)
-                    - --mysql_config_user=$(DBCONFIG_USER)
-                    - --mysql_config_password=$(DBCONFIG_PASSWORD)
-                    - --enable_database_upgrade=true
+                    - >-
+                      exec /bin/metadata_store_server
+                      --grpc_port=8080
+                      --mysql_config_database=$MYSQL_DATABASE
+                      --mysql_config_host=$MYSQL_HOST
+                      --mysql_config_port=$MYSQL_PORT
+                      --mysql_config_user=$DBCONFIG_USER
+                      --mysql_config_password=$DBCONFIG_PASSWORD
+                      --enable_database_upgrade=true
                   env:
                     - name: GLOG_logtostderr
                       value: "1"
                     - name: GLOG_log_dir
                       value: /var/log/mlmd
+                    - name: GLOG_v
+                      value: "2"
                   volumeMounts:
                     - name: mlmd-logs
                       mountPath: /var/log/mlmd

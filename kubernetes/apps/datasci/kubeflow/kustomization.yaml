@@ -44,6 +44,7 @@ resources:
   #- ./pipelines/mysql/ks.yaml
   - ./pipelines/metadata-authz/ks.yaml
   - ./pipelines/ks.yaml
+  - ./pipelines/cache-webhook/kustomization.yaml
 
   # User namespace (creates example user profile) - disabled, create profiles manually
   #- ./user-namespace/ks.yaml

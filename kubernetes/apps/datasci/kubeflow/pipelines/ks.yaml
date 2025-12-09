@@ -113,6 +113,10 @@ spec:
                 configMapKeyRef:
                   key: bucketName
                   name: pipeline-install-config
+            - name: OBJECTSTORECONFIG_HOST
+              value: minio-service
+            - name: OBJECTSTORECONFIG_PORT
+              value: "9000"
             - name: DBCONFIG_CONMAXLIFETIME
               valueFrom:
                 configMapKeyRef:

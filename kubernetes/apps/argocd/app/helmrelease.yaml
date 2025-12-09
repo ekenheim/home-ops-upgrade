@@ -81,8 +81,8 @@ spec:
                       DKF_ARGS+=("--source-path" "$PARAM_SOURCE_PATH")
                   fi
                   
-                  for env_var in ${!PARAM_VALUES_FILES_@}; do
-                      VALUES_FILE_PATH="${!env_var}"
+                  for env_var in $(env | awk -F= '/^PARAM_VALUES_FILES_/ {print $1}'); do
+                      VALUES_FILE_PATH="$(printenv "$env_var")"
                       if [[ ! -f "$VALUES_FILE_PATH" ]]; then
                           echo "ERROR: values file '$VALUES_FILE_PATH' does not exist" >&2
                           exit 1
@@ -153,8 +153,8 @@ spec:
                       if [[ -n "$KUBE_VERSION" ]]; then
                           HELM_ARGS+=("--kube-version" "$KUBE_VERSION")
                       fi
-                      for env_var in ${!PARAM_OUTPUT_HELM_VALUES_FILES_@}; do
-                          HELM_VALUES_FILE_PATH=$(realpath "$OUTPUT_HELM_PATH/${!env_var}")
+                  for env_var in $(env | awk -F= '/^PARAM_OUTPUT_HELM_VALUES_FILES_/ {print $1}'); do
+                      HELM_VALUES_FILE_PATH=$(realpath "$OUTPUT_HELM_PATH/$(printenv "$env_var")")
                           if [[ -f "$HELM_VALUES_FILE_PATH" ]]; then
                               HELM_ARGS+=("--values" "$HELM_VALUES_FILE_PATH")
                           fi

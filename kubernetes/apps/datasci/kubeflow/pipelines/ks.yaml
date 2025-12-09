@@ -248,6 +248,9 @@ spec:
                     initialDelaySeconds: 30
                     periodSeconds: 10
                     failureThreshold: 60
+                  volumeMounts:
+                    - name: kfp-logs
+                      mountPath: /var/log/kfp
       target:
         kind: Deployment
         name: ml-pipeline
@@ -275,6 +278,11 @@ spec:
                   env:
                     - name: GLOG_logtostderr
                       value: "1"
+                    - name: GLOG_log_dir
+                      value: /var/log/mlmd
+                  volumeMounts:
+                    - name: mlmd-logs
+                      mountPath: /var/log/mlmd
                   resources:
                     requests:
                       cpu: 500m
@@ -300,6 +308,11 @@ spec:
                     initialDelaySeconds: 30
                     periodSeconds: 10
                     failureThreshold: 6
+              volumes:
+                - name: mlmd-logs
+                  emptyDir: {}
+                - name: kfp-logs
+                  emptyDir: {}
       target:
         kind: Deployment
         name: metadata-grpc-deployment

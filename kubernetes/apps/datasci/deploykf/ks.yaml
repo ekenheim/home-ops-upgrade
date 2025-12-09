@@ -6,7 +6,6 @@ metadata:
   name: deploykf
   namespace: flux-system
 spec:
-  targetNamespace: argocd
   path: ./kubernetes/apps/datasci/deploykf/app
   prune: true
   sourceRef:

@@ -183,6 +183,59 @@ spec:
       target:
         kind: Deployment
         name: ml-pipeline
+    # Give ml-pipeline API server more headroom and time to start
+    - patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: ml-pipeline
+        spec:
+          template:
+            spec:
+              containers:
+                - name: ml-pipeline-api-server
+                  resources:
+                    requests:
+                      cpu: 500m
+                      memory: 1Gi
+                    limits:
+                      cpu: 500m
+                      memory: 1536Mi
+                  startupProbe:
+                    initialDelaySeconds: 30
+                    periodSeconds: 10
+                    failureThreshold: 60
+      target:
+        kind: Deployment
+        name: ml-pipeline
+    # Give metadata-grpc more headroom, logging, and probe grace
+    - patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: metadata-grpc-deployment
+        spec:
+          template:
+            spec:
+              containers:
+                - name: container
+                  env:
+                    - name: GLOG_logtostderr
+                      value: "1"
+                  resources:
+                    requests:
+                      cpu: 500m
+                      memory: 768Mi
+                    limits:
+                      cpu: 500m
+                      memory: 1024Mi
+                  startupProbe:
+                    initialDelaySeconds: 20
+                    periodSeconds: 10
+                    failureThreshold: 60
+      target:
+        kind: Deployment
+        name: metadata-grpc-deployment
     # Fix cache-server webhook secret name
     - patch: |
         apiVersion: apps/v1

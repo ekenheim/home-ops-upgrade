@@ -117,7 +117,7 @@ spec:
                   echo "$REQUIRED_VALUES" > "$REQUIRED_VALUES_FILE_PATH"
                   DKF_ARGS+=("--values" "$REQUIRED_VALUES_FILE_PATH")
 
-                  deploykf generate "${DKF_ARGS[@]}"
+                  deploykf generate "\${DKF_ARGS[@]}"
 
                   if [[ -n "$PARAM_OUTPUT_KUSTOMIZE_PATH" ]]; then
                     OUTPUT_KUSTOMIZE_PATH=$(realpath "$OUTPUT_DIR/$PARAM_OUTPUT_KUSTOMIZE_PATH")
@@ -171,12 +171,12 @@ spec:
                     done < <(env | awk -F= '/^PARAM_OUTPUT_HELM_VALUES_FILES_/')
                     if [[ -n "$KUBE_API_VERSIONS" ]]; then
                       IFS=',' read -ra KUBE_API_VERSIONS_ARRAY <<< "$KUBE_API_VERSIONS"
-                      for KUBE_API_VERSION in "${KUBE_API_VERSIONS_ARRAY[@]}"; do
+                      for KUBE_API_VERSION in "\${KUBE_API_VERSIONS_ARRAY[@]}"; do
                         HELM_ARGS+=("--api-versions" "$KUBE_API_VERSION")
                       done
                     fi
                     HELM_ARGS+=("--include-crds")
-                    helm template "$OUTPUT_HELM_PATH" "${HELM_ARGS[@]}"
+                    helm template "$OUTPUT_HELM_PATH" "\${HELM_ARGS[@]}"
                   fi
     server:
       service:

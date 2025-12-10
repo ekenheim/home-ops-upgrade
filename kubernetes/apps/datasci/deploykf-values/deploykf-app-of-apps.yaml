@@ -1,0 +1,241 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: deploykf-app-of-apps
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: deploykf-app-of-apps
+    app.kubernetes.io/part-of: deploykf
+spec:
+  project: "default"
+
+  source:
+    ## Use the deployKF repo to get sample-values.yaml as base
+    ## This makes upgrades easier - just change targetRevision and source_version
+    repoURL: "https://github.com/deployKF/deployKF.git"
+    targetRevision: "v0.1.5"
+    path: "."
+
+    ## Plugin configuration
+    plugin:
+      name: "deploykf"
+      parameters:
+        ## deployKF generator version
+        - name: "source_version"
+          string: "0.1.5"
+
+        ## Use sample-values.yaml as base
+        - name: "values_files"
+          array:
+            - "./sample-values.yaml"
+
+        ## Your custom overrides (merged on top of sample-values.yaml)
+        - name: "values"
+          string: |
+            ##
+            ## Custom overrides for home-ops-upgrade cluster
+            ##
+
+            ## --------------------------------------------------------------------------------
+            ##                                      argocd
+            ## --------------------------------------------------------------------------------
+            argocd:
+              namespace: argocd
+              project: default
+              source:
+                repo:
+                  url: "https://github.com/ekenheim/home-ops-upgrade.git"
+                  revision: "main"
+                  path: "./kubernetes/apps/datasci/deploykf-values/"
+
+            ## --------------------------------------------------------------------------------
+            ##                              deploykf-dependencies
+            ## --------------------------------------------------------------------------------
+            deploykf_dependencies:
+              ## Reuse existing cert-manager
+              cert_manager:
+                enabled: false
+                namespace: cert-manager
+                clusterIssuer:
+                  enabled: false
+                  issuerName: "selfsigned-deploykf"
+
+              ## Reuse existing Istio
+              istio:
+                enabled: false
+                namespace: istio-system
+
+              ## Deploy Kyverno (required by deployKF)
+              kyverno:
+                enabled: true
+                namespace: kyverno
+
+            ## --------------------------------------------------------------------------------
+            ##                                  deploykf-core
+            ## --------------------------------------------------------------------------------
+            deploykf_core:
+              deploykf_auth:
+                namespace: deploykf-auth
+                dex:
+                  staticPasswords:
+                    - email: "admin@admin.com"
+                      password:
+                        value: "password"
+                  connectors: []
+                  clients:
+                    oauth2Proxy:
+                      clientId: "oauth2-proxy"
+                      clientSecret:
+                        existingSecret: "generated--dex-oauth2-proxy-client"
+                        existingSecretKey: "client_secret"
+                        generateSecret: true
+                    minioConsole:
+                      clientId: "minio-console"
+                      clientSecret:
+                        existingSecret: "generated--dex-minio-console-client"
+                        existingSecretKey: "client_secret"
+                        generateSecret: true
+                    argoServer:
+                      clientId: "argo-server"
+                      clientSecret:
+                        existingSecret: "generated--dex-argo-server-client"
+                        existingSecretKey: "client_secret"
+                        generateSecret: true
+                oauth2Proxy:
+                  cookie:
+                    secret:
+                      existingSecret: "generated--oauth2-proxy-cookie-secret"
+                      existingSecretKey: "cookie_secret"
+                      generateSecret: true
+
+              deploykf_dashboard:
+                namespace: deploykf-dashboard
+
+              deploykf_istio_gateway:
+                namespace: deploykf-istio-gateway
+                gateway:
+                  hostname: gw.istio.local
+                  ports:
+                    http: 8080
+                    https: 8443
+                  tls:
+                    existingSecret: istio-gateway-local-certs
+                  selectorLabels:
+                    app: deploykf-gateway
+                    istio: deploykf-gateway
+                gatewayDeployment:
+                  serviceAccount:
+                    name: deploykf-gateway
+                    annotations: {}
+                gatewayService:
+                  name: deploykf-gateway
+                  annotations: {}
+                  type: LoadBalancer
+
+              deploykf_profiles_generator:
+                profileDefaults:
+                  memberAccess:
+                    role: view
+                    notebooksAccess: false
+                  plugins: []
+                  resourceQuotaSpec: {}
+                  tools:
+                    kubeflowPipelines:
+                      objectStoreAuth:
+                        existingSecret: "kubeflow-pipelines--profile-object-store-auth--{profile_name}"
+                        existingSecretNamespace: ""
+                        existingSecretAccessKeyKey: "access_key"
+                        existingSecretSecretKeyKey: "secret_key"
+
+            ## --------------------------------------------------------------------------------
+            ##                                   deploykf-opt
+            ## --------------------------------------------------------------------------------
+            deploykf_opt:
+              ## Disable embedded MinIO - use external
+              deploykf_minio:
+                enabled: false
+                namespace: deploykf-minio
+
+              ## Enable embedded MySQL
+              deploykf_mysql:
+                enabled: true
+                namespace: deploykf-mysql
+                rootUser:
+                  existingSecret: "generated--deploykf-mysql-root-user"
+                  existingSecretPasswordKey: "password"
+                  generateSecret: true
+                kubeflowUser:
+                  existingSecret: "generated--deploykf-mysql-kubeflow-user"
+                  existingSecretUsernameKey: "username"
+                  existingSecretPasswordKey: "password"
+                  generateSecret: true
+
+            ## --------------------------------------------------------------------------------
+            ##                              kubeflow-dependencies
+            ## --------------------------------------------------------------------------------
+            kubeflow_dependencies:
+              kubeflow_argo_workflows:
+                enabled: true
+                namespace: kubeflow-argo-workflows
+
+            ## --------------------------------------------------------------------------------
+            ##                                  kubeflow-tools
+            ## --------------------------------------------------------------------------------
+            kubeflow_tools:
+              katib:
+                enabled: true
+                mysql:
+                  useExternal: false
+                mysqlDatabase: katib
+
+              notebooks:
+                enabled: true
+                spawnerFormDefaults: {}
+
+              pipelines:
+                enabled: true
+                bucket:
+                  name: kubeflow-pipelines
+                  region: ""
+                objectStore:
+                  useExternal: true
+                  host: minio-secondary.storage.svc.cluster.local
+                  port: 443
+                  useSSL: true
+                  auth:
+                    fromEnv: false
+                    accessKey: ""
+                    secretKey: ""
+                    existingSecret: "mlflow-minio-creds"
+                    existingSecretAccessKeyKey: "AWS_ACCESS_KEY_ID"
+                    existingSecretSecretKeyKey: "AWS_SECRET_ACCESS_KEY"
+                mysql:
+                  useExternal: false
+                mysqlDatabases:
+                  cacheDatabase: kfp_cache
+                  metadataDatabase: kfp_metadata
+                  pipelinesDatabase: kfp_pipelines
+                profileResourceGeneration:
+                  kfpApiTokenPodDefault: false
+
+              poddefaults_webhook:
+                enabled: true
+
+              tensorboards:
+                enabled: true
+
+              training_operator:
+                enabled: true
+
+              volumes:
+                enabled: true
+
+  destination:
+    server: "https://kubernetes.default.svc"
+
+  syncPolicy:
+    ## Start with manual sync - enable automated once stable
+    automated:
+      prune: false
+      selfHeal: false

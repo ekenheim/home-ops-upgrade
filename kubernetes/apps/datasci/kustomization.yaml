@@ -24,4 +24,4 @@ resources:
   - ./flyte/ks.yaml
   - ./label-studio/ks.yaml
   - ./seldon-core/ks.yaml
-  - ./deploykf-values/selfsigned-clusterissuer.yaml
+  - ./deploykf-values/ks.yaml

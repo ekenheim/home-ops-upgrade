@@ -51,18 +51,18 @@ argocd:
       ##  - for example, if you are using a GitHub repo named 'deployKF/examples', you might set this value
       ##    to "https://github.com/deployKF/examples" or "git@github.com:deployKF/examples.git"
       ##
-      url: ""
+      url: "https://github.com/ekenheim/home-ops-upgrade.git"
 
       ## the git revision which contains your generated manifests
       ##  - for example, if you are using the 'main' branch of your repo, you might set this value to "main"
       ##
-      revision: ""
+      revision: "main"
 
       ## the path within your repo where the generated manifests are stored
       ##  - for example, if you are using a folder named 'GENERATOR_OUTPUT' at the root of your repo,
       ##    you might set this value to "./GENERATOR_OUTPUT/"
       ##
-      path: ""
+      path: "./kubernetes/apps/datasci/deploykf-values/"
 
   ## the destination used for deployKF argocd applications
   ##  - the value of `destination.name` takes precedence over `destination.server`

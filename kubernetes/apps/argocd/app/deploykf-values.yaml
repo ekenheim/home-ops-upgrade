@@ -4,6 +4,8 @@ metadata:
   name: argocd-deploykf-values
   labels:
     substitution.flux.home.arpa/disabled: "true"
+  annotations:
+    substitution.flux.home.arpa/disabled: "true"
 data:
   values-deploykf.yaml: |
     global:

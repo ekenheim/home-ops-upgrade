@@ -41,7 +41,7 @@ spec:
           - "{{ .Release.Name }}.${SECRET_DOMAIN}"
         paths:
           - /
-        pathType: Prefix
+        https: true
         tls:
           - hosts:
               - "{{ .Release.Name }}.${SECRET_DOMAIN}"

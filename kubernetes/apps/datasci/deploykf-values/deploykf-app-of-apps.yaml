@@ -70,6 +70,21 @@ spec:
               kyverno:
                 enabled: true
                 namespace: kyverno
+                ## Increase memory limits to prevent OOMKilled
+                values:
+                  admissionController:
+                    replicas: 2
+                    resources:
+                      limits:
+                        memory: 1Gi
+                      requests:
+                        memory: 256Mi
+                  backgroundController:
+                    resources:
+                      limits:
+                        memory: 512Mi
+                      requests:
+                        memory: 128Mi
 
             ## --------------------------------------------------------------------------------
             ##                                  deploykf-core

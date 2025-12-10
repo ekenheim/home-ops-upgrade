@@ -64,7 +64,7 @@ controller:
   ##
   image:
     repository: "quay.io/argoproj/workflow-controller"
-    tag: "v3.3.10"
+    tag: "v3.7.6"
     pullPolicy: "IfNotPresent"
     pullSecret: ""
     uid: 8737

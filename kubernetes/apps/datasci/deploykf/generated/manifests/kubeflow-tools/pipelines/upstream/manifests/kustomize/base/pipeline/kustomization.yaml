@@ -13,7 +13,7 @@ images:
 - name: gcr.io/ml-pipeline/viewer-crd-controller
   newTag: 2.1.0
 - name: gcr.io/ml-pipeline/visualization-server
-  newTag: 2.1.0
+  newTag: 2.3.0
 kind: Kustomization
 resources:
 - ml-pipeline-apiserver-deployment.yaml

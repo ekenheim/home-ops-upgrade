@@ -31,7 +31,18 @@ spec:
       service:
         type: ClusterIP
       ingress:
-        enabled: false
+        enabled: true
+        ingressClassName: internal
+        annotations:
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+          nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+          nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        hosts:
+          - &host argocd.${SECRET_DOMAIN}
+        tls:
+          - hosts:
+              - *host
     dex:
       enabled: false
 

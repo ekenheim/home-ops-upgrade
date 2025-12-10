@@ -99,7 +99,7 @@ deploykf_dependencies:
     ##
     clusterIssuer:
       enabled: false  # do not create; point to your existing issuer name below if needed
-      issuerName: "letsencrypt-production"  # existing ClusterIssuer
+      issuerName: "selfsigned-deploykf"  # using self-signed issuer you will create
 
 
   ## --------------------------------------

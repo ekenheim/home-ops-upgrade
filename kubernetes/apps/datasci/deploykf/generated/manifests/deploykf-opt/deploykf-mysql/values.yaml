@@ -34,7 +34,7 @@ generate:
 mysql:
   image:
     repository: "docker.io/mysql"
-    tag: "8.0.37"
+    tag: "9.5.0"
     pullPolicy: "IfNotPresent"
     pullSecret: ""
     uid: 999

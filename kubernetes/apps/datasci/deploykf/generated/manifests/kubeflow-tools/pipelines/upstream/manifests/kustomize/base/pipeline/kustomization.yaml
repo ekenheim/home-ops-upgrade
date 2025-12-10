@@ -5,7 +5,7 @@ images:
 - name: gcr.io/ml-pipeline/api-server
   newTag: 2.1.0
 - name: gcr.io/ml-pipeline/persistenceagent
-  newTag: 2.1.0
+  newTag: 2.3.0
 - name: gcr.io/ml-pipeline/scheduledworkflow
   newTag: 2.1.0
 - name: gcr.io/ml-pipeline/frontend

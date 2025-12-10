@@ -38,13 +38,13 @@ spec:
           nginx.ingress.kubernetes.io/whitelist-source-range: |
             10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
         hosts:
-          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                pathType: Prefix
+          - "argocd.${SECRET_DOMAIN}"
+        paths:
+          - /
+        https: true
         tls:
           - hosts:
-              - "{{ .Release.Name }}.${SECRET_DOMAIN}"
+              - "argocd.${SECRET_DOMAIN}"
             secretName: argocd-secret
     dex:
       enabled: false

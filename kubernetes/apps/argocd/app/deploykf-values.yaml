@@ -6,6 +6,7 @@ metadata:
     substitution.flux.home.arpa/disabled: "true"
   annotations:
     substitution.flux.home.arpa/disabled: "true"
+    kustomize.toolkit.fluxcd.io/substitute: disabled
 data:
   values-deploykf.yaml: |
     global:

@@ -5,8 +5,6 @@ kind: Kustomization
 metadata:
   name: argocd
   namespace: flux-system
-  labels:
-    substitution.flux.home.arpa/disabled: "true"
 spec:
   targetNamespace: argocd
   path: ./kubernetes/apps/argocd/app

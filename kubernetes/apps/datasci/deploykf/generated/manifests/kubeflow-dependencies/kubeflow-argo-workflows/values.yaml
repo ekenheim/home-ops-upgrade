@@ -117,7 +117,7 @@ server:
   ##
   image:
     repository: "quay.io/argoproj/argocli"
-    tag: "v3.4.8"
+    tag: "v3.7.6"
     pullPolicy: "IfNotPresent"
     pullSecret: ""
     uid: 8737

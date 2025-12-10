@@ -12,7 +12,7 @@ configMapGenerator:
 images:
 - name: docker.io/kubeflownotebookswg/jupyter-web-app
   newName: docker.io/kubeflownotebookswg/jupyter-web-app
-  newTag: v1.7.0
+  newTag: v1.9.2
 kind: Kustomization
 namePrefix: jupyter-web-app-
 namespace: kubeflow

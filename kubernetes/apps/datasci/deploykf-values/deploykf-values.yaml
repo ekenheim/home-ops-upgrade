@@ -234,7 +234,7 @@ deploykf_core:
       ## the hostname that the gateway will listen on
       ##  - subdomains of this hostname may also be used, depending on which apps are enabled
       ##
-      hostname: deploykf.istio.local
+      hostname: gw.istio.local
 
       ## the ports that the gateway will listen on
       ##  - these are the "internal" ports which the gateway use, and can be different
@@ -243,6 +243,10 @@ deploykf_core:
       ports:
         http: 8080
         https: 8443
+
+      ## TLS secret (reuse existing Istio cert)
+      tls:
+        existingSecret: istio-gateway-local-certs
 
       ## the pod labels used by the gateway to find the ingress gateway deployment
       ##
@@ -565,8 +569,8 @@ kubeflow_tools:
     objectStore:
       useExternal: true
       host: minio-secondary.storage.svc.cluster.local
-      port: 9000
-      useSSL: false
+      port: 443
+      useSSL: true
 
       ## object store auth configs
       ##  - https://www.deploykf.org/guides/external/object-store/#connect-an-external-object-store

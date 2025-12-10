@@ -26,6 +26,8 @@ spec:
   values:
     global:
       revisionHistoryLimit: 2
+      securityContext:
+        fsGroup: 999
     configs:
       cm:
         admin.enabled: "true"

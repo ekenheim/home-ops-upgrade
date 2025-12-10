@@ -1,0 +1,24 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kf-tools--tensorboards--tensorboard-controller
+  namespace: "argocd"
+  annotations:
+    ## applications in 'kubeflow-tools' come after 'kubeflow-dependencies'
+    argocd.argoproj.io/sync-wave: "60"
+  labels:
+    app.kubernetes.io/name: tensorboard-controller
+    app.kubernetes.io/component: kubeflow-tools
+    app.kubernetes.io/part-of: "deploykf"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: "default"
+  source:
+    repoURL: "https://github.com/ekenheim/home-ops-upgrade"
+    targetRevision: "main"
+    path: "kubernetes/apps/datasci/deploykf/generated/manifests/kubeflow-tools/tensorboards/tensorboard-controller"
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: kubeflow

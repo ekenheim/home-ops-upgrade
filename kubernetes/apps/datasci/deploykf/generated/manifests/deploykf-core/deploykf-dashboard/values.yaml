@@ -1,0 +1,198 @@
+########################################
+## SHARED | deploykf
+########################################
+deployKF:
+  extraManifests:
+
+  clusterDomain: cluster.local
+
+  kubeflow:
+    namespace: kubeflow
+    useridHeader: kubeflow-userid
+    notebooks:
+      controller:
+        serviceAccount: notebook-controller-service-account
+    pipelines:
+      frontend:
+        serviceAccount: ml-pipeline-ui
+
+  gateway:
+    namespace: "deploykf-istio-gateway"
+    serviceAccount: "deploykf-gateway"
+    name: "deploykf-gateway"
+    hostname: "kf.kubeflow.com"
+
+
+########################################
+## COMPONENT | central-dashboard
+########################################
+centralDashboard:
+  image:
+    repository: "ghcr.io/deploykf/dashboard"
+    tag: "0.1.1"
+    pullPolicy: "IfNotPresent"
+    pullSecret: ""
+    uid: 1000
+    gid: 1000
+
+  ## resource requests/limits for the central-dashboard Pods
+  ## - spec for ResourceRequirements:
+  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#resourcerequirements-v1-core
+  ##
+  resources: {}
+
+  ## the value of `REGISTRATION_FLOW` environment variable for central-dashboard
+  ##
+  registrationFlow: false
+
+  ## configs central-dashboard navigation
+  ##
+  navigation:
+
+    ## menu links that appear in the sidebar
+    ##
+    menuLinks:
+      - type: item
+        text: Notebooks
+        icon: book
+        link: "/jupyter/"
+      - type: item
+        text: TensorBoards
+        icon: assessment
+        link: "/tensorboards/"
+      - type: item
+        text: Volumes
+        icon: device:storage
+        link: "/volumes/"
+      - type: item
+        text: Katib
+        icon: kubeflow:katib
+        link: "/katib/"
+      - type: section
+        text: Pipelines
+        icon: kubeflow:pipeline-centered
+        items:
+          - type: item
+            text: Pipelines
+            link: "/pipeline/#/pipelines"
+          - type: item
+            text: Experiments
+            link: "/pipeline/#/experiments"
+          - type: item
+            text: Runs
+            link: "/pipeline/#/runs"
+          - type: item
+            text: Recurring Runs
+            link: "/pipeline/#/recurringruns"
+          - type: item
+            text: Artifacts
+            link: "/pipeline/#/artifacts"
+          - type: item
+            text: Executions
+            link: "/pipeline/#/executions"
+
+    ## external links that appear in the sidebar
+    ##
+    externalLinks:
+      - type: item
+        iframe: false
+        text: Argo Server
+        icon: settings-input-composite
+        link: "https://argo-server.kf.kubeflow.com:8443/workflows/{ns}"
+
+    ## quick action links that appear in the home page
+    ##
+    quickLinks:
+      - text: Create a new Notebook
+        desc: Kubeflow Notebooks
+        link: "/jupyter/new"
+      - text: Upload a Pipeline
+        desc: Kubeflow Pipelines
+        link: "/pipeline/#/pipelines"
+
+    ## documentation links that appear in the home page
+    ##
+    documentationItems:
+      - text: "deployKF Website"
+        desc: "The tool that deployed your ML platform!"
+        link: "https://github.com/deployKF/deployKF"
+      - text: Kubeflow Pipelines Documentation
+        desc: Documentation for Kubeflow Pipelines
+        link: https://www.kubeflow.org/docs/components/pipelines/
+      - text: Kubeflow Notebooks Documentation
+        desc: Documentation for Kubeflow Notebooks
+        link: https://www.kubeflow.org/docs/components/notebooks/
+      - text: Kubeflow Training Operator Documentation
+        desc: Documentation for Kubeflow Training Operator
+        link: https://www.kubeflow.org/docs/components/training/
+      - text: Katib Documentation
+        desc: Documentation for Katib
+        link: https://www.kubeflow.org/docs/components/katib/
+
+
+########################################
+## COMPONENT | profile-controller
+########################################
+profileController:
+  image:
+    repository: "kubeflownotebookswg/profile-controller"
+    tag: "v1.8.0"
+    pullPolicy: "IfNotPresent"
+    pullSecret: ""
+    ## https://github.com/GoogleContainerTools/distroless/blob/761e3d2e151f080ed5c80cd1f26c12d68bd89ad9/common/variables.bzl#L18
+    uid: 65532
+    gid: 65532
+
+  ## resource requests/limits for the profile-controller Pods
+  ## - spec for ResourceRequirements:
+  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#resourcerequirements-v1-core
+  ##
+  resources: {}
+
+  ## the value of `-workload-identity` start argument for profile-controller
+  ##
+  workloadIdentity: ""
+
+  ## a list of labels to set on Profile Namespaces
+  ##
+  ## FORMAT:
+  ## - ADD a Namespace label:    `key: "value"`
+  ## - REMOVE a Namespace label: `key: ""`
+  ##
+  ## WARNING:
+  ## - The controller will NOT overwrite a label if one with same key already exists.
+  ## - To override the value of a previously applied label:
+  ##    1. REMOVE the label: `key: ""`
+  ##    2. Apply new ConfigMap
+  ##    3. RE-ADD the label: `key: "value"`
+  ##    4. Apply new ConfigMap
+  ##
+  namespaceLabels:
+    app.kubernetes.io/part-of: "kubeflow-profile"
+    katib.kubeflow.org/metrics-collector-injection: "enabled"
+    pipelines.kubeflow.org/enabled: "true"
+    serving.kubeflow.org/inferenceservice: "enabled"
+
+
+########################################
+## COMPONENT | kfam-api
+########################################
+kfamAPI:
+  image:
+    repository: "kubeflownotebookswg/kfam"
+    tag: "v1.8.0"
+    pullPolicy: "IfNotPresent"
+    pullSecret: ""
+    ## https://github.com/GoogleContainerTools/distroless/blob/761e3d2e151f080ed5c80cd1f26c12d68bd89ad9/common/variables.bzl#L18
+    uid: 65532
+    gid: 65532
+
+  ## resource requests/limits for the kfam-api Pods
+  ## - spec for ResourceRequirements:
+  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#resourcerequirements-v1-core
+  ##
+  resources: {}
+
+  ## the value of `-cluster-admin` start argument for kfam-api
+  ##
+  adminEmail: ""

@@ -1,0 +1,43 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dkf-core--deploykf-profiles-generator
+  namespace: "argocd"
+  annotations:
+    ## applications in 'deploykf-core' come after 'deploykf-dependencies'
+    ## NOTE: 'deploykf-profiles-generator' must come AFTER 'deploykf-dashboard', because the latter contains the profile controller
+    argocd.argoproj.io/sync-wave: "23"
+  labels:
+    app.kubernetes.io/name: deploykf-profiles-generator
+    app.kubernetes.io/component: deploykf-core
+    app.kubernetes.io/part-of: "deploykf"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: "default"
+  source:
+    repoURL: "https://github.com/ekenheim/home-ops-upgrade"
+    targetRevision: "main"
+    path: "kubernetes/apps/datasci/deploykf/generated/manifests/deploykf-core/deploykf-profiles-generator"
+    helm:
+      ignoreMissingValueFiles: true
+      valueFiles:
+        - values-overrides.yaml
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: kubeflow
+  syncPolicy:
+    ## retry is needed because the profile controller takes a few seconds to provision the namespaces
+    retry:
+      limit: 4
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    ## `rules` are aggregated when `aggregationRule.clusterRoleSelectors` is set
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      jqPathExpressions:
+        - "select(.aggregationRule.clusterRoleSelectors | length > 0) | .rules"

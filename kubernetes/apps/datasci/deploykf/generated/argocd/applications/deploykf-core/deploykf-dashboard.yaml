@@ -1,0 +1,28 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dkf-core--deploykf-dashboard
+  namespace: "argocd"
+  annotations:
+    ## applications in 'deploykf-core' come after 'deploykf-dependencies'
+    argocd.argoproj.io/sync-wave: "21"
+  labels:
+    app.kubernetes.io/name: deploykf-dashboard
+    app.kubernetes.io/component: deploykf-core
+    app.kubernetes.io/part-of: "deploykf"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: "default"
+  source:
+    repoURL: "https://github.com/ekenheim/home-ops-upgrade"
+    targetRevision: "main"
+    path: "kubernetes/apps/datasci/deploykf/generated/manifests/deploykf-core/deploykf-dashboard"
+    helm:
+      ignoreMissingValueFiles: true
+      valueFiles:
+        - values-overrides.yaml
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: "deploykf-dashboard"

@@ -1,0 +1,29 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dkf-dep--kyverno
+  namespace: "argocd"
+  annotations:
+    ## applications in 'deploykf-dependencies' come first
+    ## NOTE: kyverno is last to ensure it starts after the CRDs from other applications are applied, for RBAC aggregation
+    argocd.argoproj.io/sync-wave: "19"
+  labels:
+    app.kubernetes.io/name: kyverno
+    app.kubernetes.io/component: deploykf-dependencies
+    app.kubernetes.io/part-of: "deploykf"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: "default"
+  source:
+    repoURL: "https://github.com/ekenheim/home-ops-upgrade"
+    targetRevision: "main"
+    path: "kubernetes/apps/datasci/deploykf/generated/manifests/deploykf-dependencies/kyverno"
+    helm:
+      ignoreMissingValueFiles: true
+      valueFiles:
+        - values-overrides.yaml
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: "kyverno"

@@ -9,7 +9,7 @@ configMapGenerator:
 images:
 - name: docker.io/kubeflownotebookswg/tensorboards-web-app
   newName: docker.io/kubeflownotebookswg/tensorboards-web-app
-  newTag: v1.7.0
+  newTag: v1.9.2
 kind: Kustomization
 namePrefix: tensorboards-web-app-
 namespace: kubeflow

@@ -136,7 +136,7 @@ centralDashboard:
 profileController:
   image:
     repository: "kubeflownotebookswg/profile-controller"
-    tag: "v1.8.0"
+    tag: "v1.9.2"
     pullPolicy: "IfNotPresent"
     pullSecret: ""
     ## https://github.com/GoogleContainerTools/distroless/blob/761e3d2e151f080ed5c80cd1f26c12d68bd89ad9/common/variables.bzl#L18

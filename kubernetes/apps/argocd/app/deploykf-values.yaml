@@ -248,8 +248,6 @@ data:
         - name: deploykf-plugin-assets
           persistentVolumeClaim:
             claimName: argocd-deploykf-plugin-assets
-        - name: helm-working-dir
-          emptyDir: {}
 
     extraObjects:
       - |

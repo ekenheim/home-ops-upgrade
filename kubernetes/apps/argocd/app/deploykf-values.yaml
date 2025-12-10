@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: argocd-deploykf-values
-  annotations:
+  labels:
     substitution.flux.home.arpa/disabled: "true"
 data:
   values-deploykf.yaml: |

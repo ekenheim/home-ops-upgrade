@@ -45,7 +45,7 @@ spec:
             10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
     dex:
       enabled: false
-  #valuesFrom:
-  #  - kind: ConfigMap
-  #    name: argocd-deploykf-values
-  #    valuesKey: values-deploykf.yaml
+  valuesFrom:
+    - kind: ConfigMap
+      name: argocd-deploykf-values
+      valuesKey: values-deploykf.yaml

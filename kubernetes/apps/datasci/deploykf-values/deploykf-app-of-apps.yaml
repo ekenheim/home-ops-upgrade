@@ -66,25 +66,11 @@ spec:
                 enabled: false
                 namespace: istio-system
 
-              ## Deploy Kyverno (required by deployKF)
+              ## Kyverno disabled temporarily due to v1.10.0 bugs
+              ## TODO: Re-enable when deployKF updates to a newer Kyverno version
               kyverno:
-                enabled: true
+                enabled: false
                 namespace: kyverno
-                ## Increase memory limits to prevent OOMKilled
-                values:
-                  admissionController:
-                    replicas: 2
-                    resources:
-                      limits:
-                        memory: 1Gi
-                      requests:
-                        memory: 256Mi
-                  backgroundController:
-                    resources:
-                      limits:
-                        memory: 512Mi
-                      requests:
-                        memory: 128Mi
 
             ## --------------------------------------------------------------------------------
             ##                                  deploykf-core

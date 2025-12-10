@@ -8,7 +8,7 @@ configMapGenerator:
 images:
 - name: docker.io/kubeflownotebookswg/tensorboard-controller
   newName: docker.io/kubeflownotebookswg/tensorboard-controller
-  newTag: v1.7.0
+  newTag: v1.9.2
 kind: Kustomization
 patchesStrategicMerge:
 - patches/add_controller_config.yaml

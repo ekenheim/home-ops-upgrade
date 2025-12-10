@@ -3,7 +3,7 @@ commonLabels:
   app: cache-deployer
 images:
 - name: gcr.io/ml-pipeline/cache-deployer
-  newTag: 2.1.0
+  newTag: 2.3.0
 kind: Kustomization
 resources:
 - cache-deployer-role.yaml

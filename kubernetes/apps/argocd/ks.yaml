@@ -18,10 +18,4 @@ spec:
   retryInterval: 1m
   timeout: 5m
   wait: true
-  postBuild:
-    substituteFrom:
-      - kind: ConfigMap
-        name: cluster-settings
-      - kind: Secret
-        name: cluster-secrets
 

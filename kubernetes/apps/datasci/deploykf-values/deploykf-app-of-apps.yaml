@@ -52,11 +52,12 @@ spec:
             ## --------------------------------------------------------------------------------
             ##                                    kubernetes
             ## --------------------------------------------------------------------------------
-            ## Override kubectl image globally - bitnami removed old 1.26.x images from Docker Hub
+            ## Override kubectl image globally - bitnami removed old images from Docker Hub
+            ## Using official Kubernetes kubectl image instead
             kubernetes:
               kubectlImage:
-                repository: docker.io/bitnami/kubectl
-                tag: "1.31"
+                repository: registry.k8s.io/kubectl
+                tag: "v1.31.0"
 
             ## --------------------------------------------------------------------------------
             ##                              deploykf-dependencies
@@ -126,11 +127,11 @@ spec:
             deploykf_core:
               deploykf_auth:
                 namespace: deploykf-auth
-                ## Override kubectl image - bitnami removed old 1.26.x images from Docker Hub
+                ## Override kubectl image - bitnami removed old images from Docker Hub
                 images:
                   kubectl:
-                    repository: docker.io/bitnami/kubectl
-                    tag: "1.31"
+                    repository: registry.k8s.io/kubectl
+                    tag: "v1.31.0"
                 dex:
                   staticPasswords:
                     - email: "admin@admin.com"

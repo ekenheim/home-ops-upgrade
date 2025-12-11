@@ -72,6 +72,19 @@ spec:
               ##   - Increased memory (1Gi) to prevent OOMKilled
               ##   - Disabled readiness probe (returns HTTP 500 due to bugs)
               ##   - Disabled cleanup jobs (use non-existent kubectl image)
+              ## 
+              ## If Kyverno fails with TLS errors, manually create this Certificate:
+              ##   kubectl apply -f - <<EOF
+              ##   apiVersion: cert-manager.io/v1
+              ##   kind: Certificate
+              ##   metadata:
+              ##     name: kyverno-svc-tls
+              ##     namespace: kyverno
+              ##   spec:
+              ##     secretName: kyverno-svc.kyverno.svc.kyverno-tls-pair
+              ##     issuerRef: {name: selfsigned-deploykf, kind: ClusterIssuer}
+              ##     dnsNames: [kyverno-svc, kyverno-svc.kyverno, kyverno-svc.kyverno.svc, kyverno-svc.kyverno.svc.cluster.local]
+              ##   EOF
               kyverno:
                 enabled: true
                 namespace: kyverno

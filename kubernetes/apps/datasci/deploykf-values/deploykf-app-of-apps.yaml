@@ -50,6 +50,15 @@ spec:
                   path: "./kubernetes/apps/datasci/deploykf-values/"
 
             ## --------------------------------------------------------------------------------
+            ##                                    kubernetes
+            ## --------------------------------------------------------------------------------
+            ## Override kubectl image globally - bitnami removed old 1.26.x images from Docker Hub
+            kubernetes:
+              kubectlImage:
+                repository: docker.io/bitnami/kubectl
+                tag: "1.31"
+
+            ## --------------------------------------------------------------------------------
             ##                              deploykf-dependencies
             ## --------------------------------------------------------------------------------
             deploykf_dependencies:
@@ -72,7 +81,7 @@ spec:
               ##   - Increased memory (1Gi) to prevent OOMKilled
               ##   - Disabled readiness probe (returns HTTP 500 due to bugs)
               ##   - Disabled cleanup jobs (use non-existent kubectl image)
-              ## 
+              ##
               ## If Kyverno fails with TLS errors, manually create this Certificate:
               ##   kubectl apply -f - <<EOF
               ##   apiVersion: cert-manager.io/v1
@@ -117,6 +126,11 @@ spec:
             deploykf_core:
               deploykf_auth:
                 namespace: deploykf-auth
+                ## Override kubectl image - bitnami removed old 1.26.x images from Docker Hub
+                images:
+                  kubectl:
+                    repository: docker.io/bitnami/kubectl
+                    tag: "1.31"
                 dex:
                   staticPasswords:
                     - email: "admin@admin.com"

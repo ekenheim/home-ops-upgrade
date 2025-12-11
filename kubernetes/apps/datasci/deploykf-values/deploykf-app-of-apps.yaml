@@ -67,18 +67,25 @@ spec:
                 namespace: istio-system
 
               ## Deploy Kyverno (required by deployKF)
+              ## NOTE: Kyverno v1.10.0 has bugs - these workarounds are needed:
+              ##   - Single replica to avoid leader election race conditions
+              ##   - Increased memory (1Gi) to prevent OOMKilled
+              ##   - Disabled readiness probe (returns HTTP 500 due to bugs)
+              ##   - Disabled cleanup jobs (use non-existent kubectl image)
               kyverno:
                 enabled: true
                 namespace: kyverno
-                ## Increase memory limits to prevent OOMKilled
                 values:
                   admissionController:
                     replicas: 1
-                    resources:
-                      limits:
-                        memory: 1Gi
-                      requests:
-                        memory: 256Mi
+                    container:
+                      resources:
+                        limits:
+                          memory: 1Gi
+                        requests:
+                          memory: 256Mi
+                      ## Disable readiness probe - v1.10.0 has a bug where it returns HTTP 500
+                      readinessProbe: null
                   backgroundController:
                     resources:
                       limits:

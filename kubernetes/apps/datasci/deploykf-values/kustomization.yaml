@@ -5,4 +5,5 @@ kind: Kustomization
 resources:
   - ./selfsigned-clusterissuer.yaml
   - ./deploykf-app-of-apps.yaml
+  - ./oauth2-proxy-config-secret.yaml
 

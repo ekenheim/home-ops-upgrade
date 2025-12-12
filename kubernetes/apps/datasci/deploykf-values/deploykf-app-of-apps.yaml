@@ -52,12 +52,13 @@ spec:
             ## --------------------------------------------------------------------------------
             ##                                    kubernetes
             ## --------------------------------------------------------------------------------
-            ## Override kubectl image globally - bitnami removed old images from Docker Hub
-            ## Using official Kubernetes kubectl image instead
+            ## Override kubectl image globally
+            ## NOTE: `registry.k8s.io/kubectl` is too minimal for deployKF's "generate secrets" jobs
+            ##       (it lacks a shell needed to run `/job-scripts/*.sh`), so we use Bitnami's image.
             kubernetes:
               kubectlImage:
-                repository: registry.k8s.io/kubectl
-                tag: "v1.31.0"
+                repository: docker.io/bitnami/kubectl
+                tag: "latest"
 
             ## --------------------------------------------------------------------------------
             ##                              deploykf-dependencies
@@ -127,11 +128,11 @@ spec:
             deploykf_core:
               deploykf_auth:
                 namespace: deploykf-auth
-                ## Override kubectl image - bitnami removed old images from Docker Hub
+                ## Override kubectl image used by deploykf-auth jobs (needs a shell to run scripts)
                 images:
                   kubectl:
-                    repository: registry.k8s.io/kubectl
-                    tag: "v1.31.0"
+                    repository: docker.io/bitnami/kubectl
+                    tag: "latest"
                 dex:
                   staticPasswords:
                     - email: "admin@admin.com"

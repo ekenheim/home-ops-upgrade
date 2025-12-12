@@ -8,18 +8,3 @@ spec:
   ca:
     # Kyverno installs this CA secret (CA:TRUE). Argo/Kubernetes API trusts it via webhook caBundle.
     secretName: kyverno-svc.kyverno.svc.kyverno-tls-ca
-
----
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: kyverno-webhook-ca
-  namespace: kyverno
-spec:
-  ca:
-    # Kyverno installs this self-signed CA secret (CN=*.kyverno.svc).
-    # We use it to sign the kyverno-svc serving cert so the apiserver trusts it
-    # (because the webhook caBundle is already set to this CA).
-    secretName: kyverno-svc.kyverno.svc.kyverno-tls-ca
-
-

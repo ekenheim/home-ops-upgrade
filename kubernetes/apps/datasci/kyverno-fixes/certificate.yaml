@@ -9,6 +9,12 @@ metadata:
 spec:
   # This is the Secret Kyverno uses for its webhook server TLS cert.
   secretName: kyverno-svc.kyverno.svc.kyverno-tls-pair
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    # Ensure a PKCS#1 key with correct PEM header ("BEGIN RSA PRIVATE KEY"),
+    # because Kyverno's own generated CA key is PKCS#1.
+    encoding: PKCS1
   issuerRef:
     name: kyverno-webhook-ca
     kind: Issuer
@@ -18,24 +24,3 @@ spec:
     - kyverno-svc.kyverno
     - kyverno-svc.kyverno.svc
     - kyverno-svc.kyverno.svc.cluster.local
-
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: kyverno-svc-serving-cert
-  namespace: kyverno
-spec:
-  # This is the Secret Kyverno uses for its webhook server cert.
-  secretName: kyverno-svc.kyverno.svc.kyverno-tls-pair
-  issuerRef:
-    name: kyverno-webhook-ca
-    kind: Issuer
-  commonName: kyverno-svc.kyverno.svc
-  dnsNames:
-    - kyverno-svc
-    - kyverno-svc.kyverno
-    - kyverno-svc.kyverno.svc
-    - kyverno-svc.kyverno.svc.cluster.local
-
-

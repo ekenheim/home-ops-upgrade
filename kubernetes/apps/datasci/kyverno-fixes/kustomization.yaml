@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./issuer.yaml
   - ./certificate.yaml
+  - ./ca-key-header-fix-cronjob.yaml
 
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization

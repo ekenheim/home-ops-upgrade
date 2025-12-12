@@ -1,0 +1,46 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kyverno-ca-key-header-fix
+  namespace: kyverno
+spec:
+  # Run periodically to ensure Kyverno's CA secret key has the correct PEM header.
+  # Kyverno generates a PKCS#1 RSA key but (in this cluster) stores it with PEM type "PRIVATE KEY",
+  # which breaks cert-manager CA Issuers that expect PKCS#8 for that PEM type.
+  schedule: "*/30 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          serviceAccountName: kyverno-admission-controller
+          restartPolicy: OnFailure
+          containers:
+            - name: fix
+              image: docker.io/bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -ec
+                - |
+                  set -euo pipefail
+
+                  NS="kyverno"
+                  SECRET="kyverno-svc.kyverno.svc.kyverno-tls-ca"
+
+                  # Read current key (do not print it).
+                  KEY_PEM="$(kubectl get secret -n "${NS}" "${SECRET}" -o jsonpath='{.data.tls\.key}' | base64 -d)"
+
+                  # Only fix when Kyverno stored a PKCS#1 key under the PKCS#8 PEM type.
+                  if printf '%s' "${KEY_PEM}" | head -n1 | grep -q 'BEGIN PRIVATE KEY'; then
+                    FIXED_PEM="$(printf '%s' "${KEY_PEM}" | sed 's/BEGIN PRIVATE KEY/BEGIN RSA PRIVATE KEY/; s/END PRIVATE KEY/END RSA PRIVATE KEY/')"
+                    FIXED_B64="$(printf '%s' "${FIXED_PEM}" | base64 | tr -d '\n')"
+
+                    kubectl patch secret -n "${NS}" "${SECRET}" --type merge -p "{\"data\":{\"tls.key\":\"${FIXED_B64}\"}}"
+                  fi
+
+

@@ -2,7 +2,9 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: kyverno-svc-serving-cert
+  # This Certificate is created by our earlier manual workaround as `kyverno-svc-tls`.
+  # We keep the same name so cert-manager manages it consistently.
+  name: kyverno-svc-tls
   namespace: kyverno
 spec:
   # This is the Secret Kyverno uses for its webhook server TLS cert.

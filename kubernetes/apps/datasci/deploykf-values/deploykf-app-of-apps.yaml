@@ -217,6 +217,12 @@ spec:
               deploykf_mysql:
                 enabled: true
                 namespace: deploykf-mysql
+                ## Override kubectl image used by deploykf-mysql "generate secrets" jobs
+                ## (deployKF 0.1.5 references old Bitnami kubectl tags that were removed)
+                images:
+                  kubectl:
+                    repository: docker.io/bitnami/kubectl
+                    tag: "latest"
                 rootUser:
                   existingSecret: "generated--deploykf-mysql-root-user"
                   existingSecretPasswordKey: "password"

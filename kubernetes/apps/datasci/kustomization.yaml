@@ -26,3 +26,4 @@ resources:
   - ./seldon-core/ks.yaml
   - ./deploykf-values/ks.yaml
   - ./kyverno-fixes/ks.yaml
+  - ./kubeflow-secrets/ks.yaml

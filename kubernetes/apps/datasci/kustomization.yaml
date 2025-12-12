@@ -25,3 +25,4 @@ resources:
   - ./label-studio/ks.yaml
   - ./seldon-core/ks.yaml
   - ./deploykf-values/ks.yaml
+  - ./kyverno-fixes/ks.yaml

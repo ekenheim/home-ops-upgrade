@@ -70,7 +70,9 @@ spec:
                 namespace: cert-manager
                 clusterIssuer:
                   enabled: false
-                  issuerName: "selfsigned-deploykf"
+                  ## Use an existing publicly trusted issuer for the deployKF gateway cert
+                  ## NOTE: deployKF uses a wildcard cert (`*.{gateway.hostname}`), which typically requires DNS-01.
+                  issuerName: "letsencrypt-production"
 
               ## Reuse existing Istio
               istio:
@@ -171,12 +173,13 @@ spec:
               deploykf_istio_gateway:
                 namespace: deploykf-istio-gateway
                 gateway:
-                  hostname: gw.istio.local
+                  ## Use a real domain so oauth2-proxy can verify TLS to Dex during OIDC discovery
+                  hostname: "ml.${SECRET_DOMAIN}"
                   ports:
                     http: 8080
                     https: 8443
-                  tls:
-                    existingSecret: istio-gateway-local-certs
+                  ## Let deployKF manage the gateway certificate Secret (deploykf-istio-gateway-cert)
+                  ## using the ClusterIssuer configured above.
                   selectorLabels:
                     app: deploykf-gateway
                     istio: deploykf-gateway

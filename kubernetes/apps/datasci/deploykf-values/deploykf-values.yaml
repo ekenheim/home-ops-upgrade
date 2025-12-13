@@ -274,15 +274,17 @@ deploykf_core:
       ## the pod labels used by the gateway to find the ingress gateway deployment
       ##
       selectorLabels:
-        # Select the existing Gateway API-managed gateway deployment pods
-        gateway.networking.k8s.io/gateway-name: cluster-gateway
+        # Select the existing "istio-ingress" gateway deployment pods (traditional Istio gateway),
+        # which supports `credentialName` secrets used by deployKF.
+        app: istio-ingress
+        istio: ingress
 
     ## istio gateway deployment configs
     ##
     gatewayDeployment:
       serviceAccount:
         # Must match the ServiceAccount used by the existing gateway deployment pods
-        name: cluster-gateway-istio
+        name: istio-ingress
         annotations: {}
 
     ## istio gateway service configs

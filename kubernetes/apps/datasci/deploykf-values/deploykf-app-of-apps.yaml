@@ -191,10 +191,11 @@ spec:
                   tls:
                     existingSecret: istio-gateway-local-certs
                   selectorLabels:
-                    gateway.networking.k8s.io/gateway-name: cluster-gateway
+                    app: istio-ingress
+                    istio: ingress
                 gatewayDeployment:
                   serviceAccount:
-                    name: cluster-gateway-istio
+                    name: istio-ingress
                     annotations: {}
                 gatewayService:
                   ports:

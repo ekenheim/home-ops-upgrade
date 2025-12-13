@@ -1,0 +1,33 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ml-pipeline-ui-deploykf
+  namespace: kubeflow
+spec:
+  gateways:
+    - istio-system/deploykf-gateway
+  hosts:
+    - deploykf.istio.local
+  http:
+    - match:
+        - uri:
+            prefix: /pipeline/artifacts/
+      name: ml-pipeline-ui-artifacts-route
+      route:
+        - destination:
+            host: ml-pipeline-ui.kubeflow.svc.cluster.local
+            port:
+              number: 80
+    - match:
+        - uri:
+            prefix: /pipeline
+      name: ml-pipeline-ui-route
+      route:
+        - destination:
+            host: ml-pipeline-ui.kubeflow.svc.cluster.local
+            port:
+              number: 80
+      timeout: 300s
+
+

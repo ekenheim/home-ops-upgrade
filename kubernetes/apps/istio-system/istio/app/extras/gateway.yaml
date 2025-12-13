@@ -6,7 +6,12 @@ metadata:
   name: cluster-gateway
   namespace: istio-system
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: "gw.istio.local,*.istio.local"
+    # NOTE: external-dns is configured with sources [service, ingress], and the Istio Gateway controller
+    # propagates this annotation onto the generated `Service/cluster-gateway-istio`.
+    #
+    # We include `deploykf.istio.local` explicitly to override any stale A record that may have been
+    # created when deployKF previously used its own LoadBalancer gateway.
+    external-dns.alpha.kubernetes.io/hostname: "gw.istio.local,*.istio.local,deploykf.istio.local,*.deploykf.istio.local"
     io.cilium/lb-ipam-ips: "${SVC_GATEWAY_ADDR}"
 spec:
   gatewayClassName: istio

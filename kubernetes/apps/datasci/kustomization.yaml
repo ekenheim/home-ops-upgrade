@@ -27,5 +27,6 @@ resources:
   - ./kyverno-fixes
   - ./deploykf-values/ks.yaml
   - ./deploykf-auth-overrides/ks.yaml
+  - ./deploykf-dashboard-overrides/ks.yaml
   - ./kyverno-fixes/ks.yaml
   - ./kubeflow-secrets/ks.yaml

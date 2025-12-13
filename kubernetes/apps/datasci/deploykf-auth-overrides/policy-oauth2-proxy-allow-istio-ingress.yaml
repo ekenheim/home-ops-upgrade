@@ -1,0 +1,24 @@
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: oauth2-proxy-allow-istio-ingress
+  namespace: deploykf-auth
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: oauth2-proxy
+      app.kubernetes.io/instance: dkf-core--deploykf-auth
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: deploykf-auth
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-system/sa/istio-ingress
+      to:
+        - operation:
+            ports: ["4180"]
+
+

@@ -9,13 +9,8 @@ spec:
   selector:
     matchLabels:
       app: volumes-web-app
+  # Allow requests to reach the volumes web app; auth is enforced at the deployKF gateway (oauth2-proxy ext_authz).
   rules:
-    - from:
-        - source:
-            principals:
-              - cluster.local/ns/istio-system/sa/istio-ingress
-      to:
-        - operation:
-            ports: ["5000"]
+    - {}
 
 

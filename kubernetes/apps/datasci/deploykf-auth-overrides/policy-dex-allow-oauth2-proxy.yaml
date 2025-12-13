@@ -1,0 +1,26 @@
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: dex-allow-oauth2-proxy
+  namespace: deploykf-auth
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: dex
+      app.kubernetes.io/instance: dkf-core--deploykf-auth
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: deploykf-auth
+  rules:
+    - from:
+        - source:
+            principals:
+              # Allow oauth2-proxy (in deploykf-auth ns) to call Dex directly over mTLS.
+              # This avoids hairpinning to the external gateway VIP for OIDC discovery/JWKS/token endpoints.
+              - cluster.local/ns/deploykf-auth/sa/oauth2-proxy
+      to:
+        - operation:
+            ports: ["5556"]
+
+

@@ -1,0 +1,20 @@
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-istio-ingress-any-user
+  namespace: team-1
+spec:
+  action: ALLOW
+  # No selector: applies to all workloads in the profile namespace.
+  # This relaxes the strict per-user allow-listing so new notebooks don't break with "RBAC: access denied".
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-system/sa/istio-ingress
+      when:
+        - key: request.headers[kubeflow-userid]
+          values: ["*"]
+
+

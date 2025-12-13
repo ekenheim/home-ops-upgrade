@@ -30,5 +30,6 @@ resources:
   - ./deploykf-dashboard-overrides/ks.yaml
   - ./kubeflow-authz-overrides/ks.yaml
   - ./kubeflow-routing-overrides/ks.yaml
+  - ./kubeflow-profile-authz-relax/ks.yaml
   - ./kyverno-fixes/ks.yaml
   - ./kubeflow-secrets/ks.yaml

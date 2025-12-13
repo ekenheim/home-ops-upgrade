@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kubeflow-profile-authz-relax
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/name: kubeflow-profile-authz-relax
+spec:
+  path: ./kubernetes/apps/datasci/kubeflow-profile-authz-relax
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  dependsOn:
+    - name: deploykf
+    - name: istio-istiod
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+

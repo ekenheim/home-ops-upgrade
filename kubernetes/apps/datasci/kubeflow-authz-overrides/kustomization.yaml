@@ -1,0 +1,11 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./policy-jupyter-web-app-allow-istio-ingress.yaml
+  - ./policy-tensorboards-web-app-allow-istio-ingress.yaml
+  - ./policy-volumes-web-app-allow-istio-ingress.yaml
+  - ./policy-ml-pipeline-ui-allow-istio-ingress.yaml
+
+

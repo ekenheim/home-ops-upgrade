@@ -1,0 +1,22 @@
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: ml-pipeline-ui-allow-istio-ingress
+  namespace: kubeflow
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: ml-pipeline-ui
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-system/sa/istio-ingress
+      to:
+        - operation:
+            # KFP UI container listens on 3000 (service is 80 -> targetPort 3000)
+            ports: ["3000"]
+
+

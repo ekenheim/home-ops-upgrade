@@ -1,0 +1,16 @@
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: katib-ui-allow-istio-ingress
+  namespace: kubeflow
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      katib.kubeflow.org/component: ui
+  # Allow requests to reach Katib UI; auth is enforced at the deployKF gateway (oauth2-proxy ext_authz).
+  rules:
+    - {}
+
+

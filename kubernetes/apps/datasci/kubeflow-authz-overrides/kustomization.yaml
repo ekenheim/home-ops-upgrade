@@ -7,5 +7,6 @@ resources:
   - ./policy-tensorboards-web-app-allow-istio-ingress.yaml
   - ./policy-volumes-web-app-allow-istio-ingress.yaml
   - ./policy-ml-pipeline-ui-allow-istio-ingress.yaml
+  - ./policy-katib-ui-allow-istio-ingress.yaml
 
 

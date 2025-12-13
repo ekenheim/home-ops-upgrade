@@ -10,6 +10,30 @@ spec:
   hosts:
     - deploykf.istio.local
   http:
+    # Some dashboards link via the "proxy" style path `/_/pipeline/`
+    - match:
+        - uri:
+            prefix: /_/pipeline/artifacts/
+      name: ml-pipeline-ui-artifacts-route-proxy
+      rewrite:
+        uri: /pipeline/artifacts/
+      route:
+        - destination:
+            host: ml-pipeline-ui.kubeflow.svc.cluster.local
+            port:
+              number: 80
+    - match:
+        - uri:
+            prefix: /_/pipeline
+      name: ml-pipeline-ui-route-proxy
+      rewrite:
+        uri: /pipeline
+      route:
+        - destination:
+            host: ml-pipeline-ui.kubeflow.svc.cluster.local
+            port:
+              number: 80
+      timeout: 300s
     - match:
         - uri:
             prefix: /pipeline/artifacts/

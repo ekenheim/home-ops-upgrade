@@ -6,6 +6,9 @@ resources:
   - ./issuer.yaml
   - ./certificate.yaml
   - ./ca-key-header-fix-cronjob.yaml
+  - ./externalsecret-minio-creds.yaml
+  - ./externalsecret-profile-object-store-auth-team-1.yaml
+  - ./externalsecret-profile-object-store-auth-team-1-prod.yaml
 
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
@@ -14,5 +17,8 @@ kind: Kustomization
 resources:
   - ./issuer.yaml
   - ./certificate.yaml
+  - ./externalsecret-minio-creds.yaml
+  - ./externalsecret-profile-object-store-auth-team-1.yaml
+  - ./externalsecret-profile-object-store-auth-team-1-prod.yaml
 
 

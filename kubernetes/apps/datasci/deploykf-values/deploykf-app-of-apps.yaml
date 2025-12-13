@@ -102,20 +102,19 @@ spec:
                 values:
                   admissionController:
                     replicas: 1
-                    container:
-                      resources:
-                        limits:
-                          memory: 1Gi
-                        requests:
-                          memory: 256Mi
-                      ## Disable readiness probe - v1.10.0 has a bug where it returns HTTP 500
-                      readinessProbe: null
+                    resources:
+                      limits:
+                        memory: 1Gi
+                      requests:
+                        memory: 256Mi
+                    ## Disable readiness probe - v1.10.0 has a bug where it returns HTTP 500
+                    readinessProbe: null
                   backgroundController:
                     resources:
                       limits:
-                        memory: 512Mi
+                        memory: 1Gi
                       requests:
-                        memory: 128Mi
+                        memory: 256Mi
                   cleanupJobs:
                     admissionReports:
                       enabled: false

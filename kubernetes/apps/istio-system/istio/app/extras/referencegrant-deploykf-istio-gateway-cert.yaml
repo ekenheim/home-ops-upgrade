@@ -1,0 +1,19 @@
+---
+# Allow the Gateway API controller / Istio to reference the deployKF TLS secret from the `cluster-gateway`.
+# Without this, Istio may refuse to serve the certificate and TLS handshakes for `deploykf.istio.local` fail.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-cluster-gateway-to-use-deploykf-cert
+  namespace: istio-system
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: istio-system
+  to:
+    - group: ""
+      kind: Secret
+      name: deploykf-istio-gateway-cert
+
+

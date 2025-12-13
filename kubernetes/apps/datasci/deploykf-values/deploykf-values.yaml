@@ -116,6 +116,25 @@ deploykf_dependencies:
   kyverno:
     enabled: true
     namespace: kyverno
+    values:
+      admissionController:
+        resources:
+          limits:
+            memory: 1Gi
+          requests:
+            memory: 256Mi
+        readinessProbe: null
+      backgroundController:
+        resources:
+          limits:
+            memory: 1Gi
+          requests:
+            memory: 256Mi
+      cleanupJobs:
+        admissionReports:
+          enabled: false
+        clusterAdmissionReports:
+          enabled: false
 
 
 ## --------------------------------------------------------------------------------

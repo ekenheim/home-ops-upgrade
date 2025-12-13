@@ -171,7 +171,8 @@ spec:
               deploykf_istio_gateway:
                 namespace: deploykf-istio-gateway
                 gateway:
-                  hostname: gw.istio.local
+                  # IMPORTANT: avoid colliding with the cluster's existing `gw.istio.local` Istio gateway
+                  hostname: deploykf.istio.local
                   ports:
                     http: 8080
                     https: 8443
@@ -186,7 +187,8 @@ spec:
                     annotations: {}
                 gatewayService:
                   name: deploykf-gateway
-                  annotations: {}
+                  annotations:
+                    external-dns.alpha.kubernetes.io/hostname: "deploykf.istio.local,*.deploykf.istio.local"
                   type: LoadBalancer
 
               deploykf_profiles_generator:

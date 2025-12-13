@@ -234,7 +234,10 @@ deploykf_core:
       ## the hostname that the gateway will listen on
       ##  - subdomains of this hostname may also be used, depending on which apps are enabled
       ##
-      hostname: gw.istio.local
+      # IMPORTANT:
+      # - this cluster already has another Istio gateway using `gw.istio.local`
+      # - deployKF creates its own gateway LoadBalancer, so sharing the same hostname causes traffic to hit the wrong gateway
+      hostname: deploykf.istio.local
 
       ## the ports that the gateway will listen on
       ##  - these are the "internal" ports which the gateway use, and can be different
@@ -265,7 +268,10 @@ deploykf_core:
     ##
     gatewayService:
       name: deploykf-gateway
-      annotations: {}
+      annotations:
+        # Publish a dedicated DNS record for deployKF's gateway LoadBalancer IP.
+        # This avoids collisions with the existing `gw.istio.local` gateway / wildcard records.
+        external-dns.alpha.kubernetes.io/hostname: "deploykf.istio.local,*.deploykf.istio.local"
       type: LoadBalancer
 
 

@@ -9,6 +9,8 @@ resources:
   - ./externalsecret-minio-creds.yaml
   - ./externalsecret-profile-object-store-auth-team-1.yaml
   - ./externalsecret-profile-object-store-auth-team-1-prod.yaml
+patchesStrategicMerge:
+  - ./patch-background-resources.yaml
 
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
@@ -20,5 +22,7 @@ resources:
   - ./externalsecret-minio-creds.yaml
   - ./externalsecret-profile-object-store-auth-team-1.yaml
   - ./externalsecret-profile-object-store-auth-team-1-prod.yaml
+patchesStrategicMerge:
+  - ./patch-background-resources.yaml
 
 

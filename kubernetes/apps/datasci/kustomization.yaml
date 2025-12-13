@@ -24,6 +24,7 @@ resources:
   - ./flyte/ks.yaml
   - ./label-studio/ks.yaml
   - ./seldon-core/ks.yaml
+  - ./kyverno-fixes
   - ./deploykf-values/ks.yaml
   - ./kyverno-fixes/ks.yaml
   - ./kubeflow-secrets/ks.yaml

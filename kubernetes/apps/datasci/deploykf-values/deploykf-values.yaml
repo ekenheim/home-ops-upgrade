@@ -569,8 +569,8 @@ kubeflow_tools:
     objectStore:
       useExternal: true
       host: minio-secondary.storage.svc.cluster.local
-      port: 443
-      useSSL: true
+      port: 9000
+      useSSL: false
 
       ## object store auth configs
       ##  - https://www.deploykf.org/guides/external/object-store/#connect-an-external-object-store

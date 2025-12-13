@@ -219,7 +219,9 @@ deploykf_core:
   ##        deploykf-istio-gateway
   ## --------------------------------------
   deploykf_istio_gateway:
-    namespace: deploykf-istio-gateway
+    # Reuse the existing Istio gateway deployment + Service that already exposes `*.istio.local` on 80/443.
+    # See: https://www.deploykf.org/guides/dependencies/istio/
+    namespace: istio-system
 
     ## extra manifests
     ##  - a list of strings containing extra Kubernetes resource manifests
@@ -234,9 +236,6 @@ deploykf_core:
       ## the hostname that the gateway will listen on
       ##  - subdomains of this hostname may also be used, depending on which apps are enabled
       ##
-      # IMPORTANT:
-      # - this cluster already has another Istio gateway using `gw.istio.local`
-      # - deployKF creates its own gateway LoadBalancer, so sharing the same hostname causes traffic to hit the wrong gateway
       hostname: deploykf.istio.local
 
       ## the ports that the gateway will listen on
@@ -244,35 +243,37 @@ deploykf_core:
       ##    to the user-facing ports which the service listens on, see `gatewayService.ports`
       ##
       ports:
-        http: 8080
-        https: 8443
+        # Use standard ports on the existing gateway deployment
+        http: 80
+        https: 443
 
       ## TLS secret (reuse existing Istio cert)
       tls:
+        # This secret already exists in `istio-system` and contains `*.istio.local`
         existingSecret: istio-gateway-local-certs
 
       ## the pod labels used by the gateway to find the ingress gateway deployment
       ##
       selectorLabels:
-        app: deploykf-gateway
-        istio: deploykf-gateway
+        # Select the existing Gateway API-managed gateway deployment pods
+        gateway.networking.k8s.io/gateway-name: cluster-gateway
 
     ## istio gateway deployment configs
     ##
     gatewayDeployment:
       serviceAccount:
-        name: deploykf-gateway
+        # Must match the ServiceAccount used by the existing gateway deployment pods
+        name: cluster-gateway-istio
         annotations: {}
 
     ## istio gateway service configs
     ##
     gatewayService:
-      name: deploykf-gateway
-      annotations:
-        # Publish a dedicated DNS record for deployKF's gateway LoadBalancer IP.
-        # This avoids collisions with the existing `gw.istio.local` gateway / wildcard records.
-        external-dns.alpha.kubernetes.io/hostname: "deploykf.istio.local,*.deploykf.istio.local"
-      type: LoadBalancer
+      # When reusing an existing gateway deployment/service, these values are only used for user-facing links.
+      # (deployKF will NOT create a new LoadBalancer Service once the embedded gateway chart is disabled)
+      ports:
+        http: 80
+        https: 443
 
 
   ## --------------------------------------
@@ -351,6 +352,13 @@ deploykf_core:
     #    email: "user1@example.com"
     #  - id: user-2
     #    email: "user2@example.com"
+    users:
+      - id: admin
+        email: "admin@admin.com"
+      - id: user-1
+        email: "user1@example.com"
+      - id: user-2
+        email: "user2@example.com"
 
     ## group entities
     ##  - a list of groups that can be referenced when defining profile members
@@ -363,6 +371,12 @@ deploykf_core:
     #    users:
     #      - user-1
     #      - user-2
+    groups:
+      - id: team-1
+        users:
+          - admin
+          - user-1
+          - user-2
 
     ## profile definitions
     ##  - a list of profile definitions to be generated
@@ -401,6 +415,19 @@ deploykf_core:
     #        access:
     #          role: view
     #          notebooksAccess: false
+    profiles:
+      - name: team-1
+        members:
+          - group: team-1
+            access:
+              role: edit
+              notebooksAccess: true
+      - name: team-1-prod
+        members:
+          - group: team-1
+            access:
+              role: view
+              notebooksAccess: false
 
 
 ## --------------------------------------------------------------------------------

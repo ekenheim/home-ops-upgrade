@@ -135,9 +135,17 @@ spec:
                     tag: "latest"
                 dex:
                   staticPasswords:
+                    # NOTE: deployKF's default Profiles/RBAC examples assume these users exist.
+                    # If you remove them, you must also update deploykf_profiles_generator users/groups/profiles accordingly.
                     - email: "admin@admin.com"
                       password:
                         value: "password"
+                    - email: "user1@example.com"
+                      password:
+                        value: "user1"
+                    - email: "user2@example.com"
+                      password:
+                        value: "user2"
                   connectors: []
                   clients:
                     oauth2Proxy:
@@ -169,27 +177,30 @@ spec:
                 namespace: deploykf-dashboard
 
               deploykf_istio_gateway:
-                namespace: deploykf-istio-gateway
+                # Reuse existing Istio gateway deployment + Service (istio-system/cluster-gateway-istio)
+                # See: https://www.deploykf.org/guides/dependencies/istio/
+                namespace: istio-system
+                charts:
+                  # Disable deployKF's embedded gateway deployment/service (we are reusing an existing one)
+                  istioGateway:
+                    enabled: false
                 gateway:
-                  # IMPORTANT: avoid colliding with the cluster's existing `gw.istio.local` Istio gateway
                   hostname: deploykf.istio.local
                   ports:
-                    http: 8080
-                    https: 8443
+                    http: 80
+                    https: 443
                   tls:
                     existingSecret: istio-gateway-local-certs
                   selectorLabels:
-                    app: deploykf-gateway
-                    istio: deploykf-gateway
+                    gateway.networking.k8s.io/gateway-name: cluster-gateway
                 gatewayDeployment:
                   serviceAccount:
-                    name: deploykf-gateway
+                    name: cluster-gateway-istio
                     annotations: {}
                 gatewayService:
-                  name: deploykf-gateway
-                  annotations:
-                    external-dns.alpha.kubernetes.io/hostname: "deploykf.istio.local,*.deploykf.istio.local"
-                  type: LoadBalancer
+                  ports:
+                    http: 80
+                    https: 443
 
               deploykf_profiles_generator:
                 profileDefaults:
@@ -205,6 +216,31 @@ spec:
                         existingSecretNamespace: ""
                         existingSecretAccessKeyKey: "access_key"
                         existingSecretSecretKeyKey: "secret_key"
+                # Explicit profile/user mapping so RBAC is deterministic.
+                # IMPORTANT: user emails MUST exactly match the email claim from Dex (or your IdP).
+                users:
+                  - id: admin
+                    email: "admin@admin.com"
+                  - id: user-1
+                    email: "user1@example.com"
+                  - id: user-2
+                    email: "user2@example.com"
+                groups:
+                  - id: team-1
+                    users: ["admin", "user-1", "user-2"]
+                profiles:
+                  - name: team-1
+                    members:
+                      - group: team-1
+                        access:
+                          role: edit
+                          notebooksAccess: true
+                  - name: team-1-prod
+                    members:
+                      - group: team-1
+                        access:
+                          role: view
+                          notebooksAccess: false
 
             ## --------------------------------------------------------------------------------
             ##                                   deploykf-opt

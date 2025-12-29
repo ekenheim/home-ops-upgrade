@@ -31,7 +31,7 @@ spec:
         secret.reloader.stakater.com/reload: &secret atlantis-secret
     image:
       repository: ghcr.io/runatlantis/atlantis
-      tag: v0.38-alpine
+      tag: v0.39-alpine
     atlantisUrl: https://atlantis.mapanare.net
     orgAllowlist: gitlab.com/mapanare.labs/*
     enableDiffMarkdownFormat: true

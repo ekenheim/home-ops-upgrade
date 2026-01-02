@@ -139,10 +139,4 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /tmp
-      data:
-        enabled: true
-        type: pvc
-        size: 10Gi
-        globalMounts:
-          - path: /metabase-data
 

@@ -17,3 +17,4 @@ resources:
   #- ./atlantis/ks.yaml
   #- ./code-server/ks.yaml
   #- ./coder/ks.yaml
+  #- ./metabase/ks.yaml

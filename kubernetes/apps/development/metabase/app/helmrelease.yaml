@@ -73,9 +73,6 @@ spec:
                   secretKeyRef:
                     name: metabase-db-secret
                     key: MB_DB_PASS
-            envFrom:
-            - secretRef:
-                name: metabase-secret
             probes:
               liveness: &probes
                 enabled: true

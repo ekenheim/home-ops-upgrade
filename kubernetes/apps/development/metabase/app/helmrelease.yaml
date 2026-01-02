@@ -39,7 +39,7 @@ spec:
           app:
             image:
               repository: metabase/metabase
-              tag: latest
+              tag: v0.57.7.x
               pullPolicy: IfNotPresent
             env:
               TZ: ${TIMEZONE}

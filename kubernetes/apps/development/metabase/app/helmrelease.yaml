@@ -39,7 +39,7 @@ spec:
           app:
             image:
               repository: metabase/metabase
-              tag: v0.52.0
+              tag: v0.57.7
             env:
               TZ: ${TIMEZONE}
               MB_DB_TYPE:

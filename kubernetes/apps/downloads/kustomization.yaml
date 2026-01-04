@@ -18,4 +18,3 @@ resources:
   #- ./recommendarr/ks.yaml
   - ./sabnzbd/ks.yaml
   - ./sonarr/ks.yaml
-  - ./spotizerr/ks.yaml

@@ -184,7 +184,7 @@ data:
             - name: deploykf-plugin-tools
               mountPath: /tools
         - name: deploykf-plugin-setup--helm
-          image: docker.io/alpine/helm:4.0.4
+          image: docker.io/alpine/helm:4.0.5
           command:
             - "/bin/sh"
             - "-c"

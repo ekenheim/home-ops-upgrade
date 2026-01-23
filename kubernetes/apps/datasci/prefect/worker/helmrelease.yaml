@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: prefect-worker
-      version: 2026.1.20181753
+      version: 2026.1.23034724
       sourceRef:
         kind: HelmRepository
         name: prefect

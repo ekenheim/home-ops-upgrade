@@ -1,0 +1,24 @@
+---
+# Allow KFP components in the same namespace (persistenceagent, scheduledworkflow, etc.)
+# to reach ml-pipeline:8888. Upstream only allows kubeflow-profile and istio-system;
+# those run in kubeflow, so they get "connect: operation not permitted" without this.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ml-pipeline
+spec:
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/part-of
+                operator: In
+                values:
+                  - kubeflow-profile
+        - namespaceSelector:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values:
+                  - istio-system
+        - podSelector: {}  # same namespace (kubeflow): persistenceagent, scheduledworkflow, etc.

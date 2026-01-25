@@ -58,3 +58,9 @@ patches:
     target:
       kind: NetworkPolicy
       name: trainer-webhook
+  # Patch ml-pipeline NetworkPolicy to allow in-namespace KFP components (persistenceagent, scheduledworkflow, etc.)
+  - path: patches/ml-pipeline-networkpolicy.yaml
+    target:
+      kind: NetworkPolicy
+      name: ml-pipeline
+      namespace: kubeflow

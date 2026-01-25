@@ -5,6 +5,7 @@ resources:
   # Local resources
   - namespace.yaml
   - authz-policies.yaml
+  - patches/envoyfilter-kubeflow-userid-default.yaml
   # Dex - OAuth2 Proxy overlay
   - https://github.com/kubeflow/manifests/common/dex/overlays/oauth2-proxy?ref=v1.11.0
   # OAuth2 Proxy - m2m-dex-only overlay (works on most clusters)
@@ -70,3 +71,9 @@ patches:
       kind: NetworkPolicy
       name: metadata-grpc-server
       namespace: kubeflow
+  # RequestAuthentication issuer must match Dex (https://kubeflow.istio.local/dex) or JWT validation fails → 401
+  - path: patches/requestauthentication-dex-jwt-issuer.yaml
+    target:
+      kind: RequestAuthentication
+      name: dex-jwt
+      namespace: istio-system

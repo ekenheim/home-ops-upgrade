@@ -1,0 +1,24 @@
+# Dex is configured with issuer: https://kubeflow.istio.local/dex (dex-config patch).
+# The JWT iss claim will match that. RequestAuthentication must use the same issuer
+# or JWT validation fails and kubeflow-userid is never set from the token → 401 "No user detected".
+---
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: dex-jwt
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      app: istio-ingressgateway
+  jwtRules:
+    - issuer: https://kubeflow.istio.local/dex
+      forwardOriginalToken: true
+      outputClaimToHeaders:
+        - header: kubeflow-userid
+          claim: email
+        - header: kubeflow-groups
+          claim: groups
+      fromHeaders:
+        - name: Authorization
+          prefix: "Bearer "

@@ -1,0 +1,41 @@
+# When kubeflow-userid is missing, backends return 401 "No user detected".
+# - Prefer x-auth-request-user (set by oauth2-proxy when authenticated).
+# - Fallback to admin@admin.com so the dashboard and sub-apps load; remove fallback for production.
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: kubeflow-userid-default
+  namespace: istio-system
+spec:
+  workloadSelector:
+    labels:
+      app: istio-ingressgateway
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.lua
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+            default_source_code:
+              inline_string: |
+                function envoy_on_request(request_handle)
+                  if request_handle:headers():get("kubeflow-userid") == nil or request_handle:headers():get("kubeflow-userid") == "" then
+                    local u = request_handle:headers():get("x-auth-request-user")
+                    if u and u ~= "" then
+                      request_handle:headers():add("kubeflow-userid", u)
+                    else
+                      request_handle:headers():add("kubeflow-userid", "admin@admin.com")
+                    end
+                  end
+                end

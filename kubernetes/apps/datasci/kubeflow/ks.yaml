@@ -6,7 +6,6 @@ metadata:
   name: kubeflow-common
   namespace: flux-system
 spec:
-  targetNamespace: kubeflow
   commonMetadata:
     labels:
       app.kubernetes.io/name: kubeflow
@@ -37,7 +36,6 @@ metadata:
   name: kubeflow-apps
   namespace: flux-system
 spec:
-  targetNamespace: kubeflow
   commonMetadata:
     labels:
       app.kubernetes.io/name: kubeflow

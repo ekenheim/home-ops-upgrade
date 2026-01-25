@@ -11,3 +11,8 @@ spec:
           env:
             - name: KUBEFLOW_INGRESS_URL
               value: "https://kubeflow.istio.local"
+            # Pass X-Auth-Request-User etc. to backends; apps may also need kubeflow-userid
+            # (from USERID_HEADER). m2m-dex-only may not do browser OAuth—ensure Dex login
+            # is reachable and users complete auth to avoid "No user detected" 401.
+            - name: OAUTH2_PROXY_PASS_USER_HEADERS
+              value: "true"

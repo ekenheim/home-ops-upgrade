@@ -1,0 +1,23 @@
+# Explicitly allow same-namespace (kubeflow) pods to reach metadata-grpc.
+# Upstream allows kubeflow-profile and podSelector: {} (same ns); explicit
+# namespaceSelector mirrors ml-pipeline patch in case CNI treats podSelector
+# differently. metadata-writer, ml-pipeline, etc. need to reach metadata-grpc:8080.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metadata-grpc-server
+  namespace: kubeflow
+spec:
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/part-of
+                operator: In
+                values:
+                  - kubeflow-profile
+        - podSelector: {}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kubeflow

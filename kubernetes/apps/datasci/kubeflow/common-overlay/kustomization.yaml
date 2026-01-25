@@ -64,3 +64,9 @@ patches:
       kind: NetworkPolicy
       name: ml-pipeline
       namespace: kubeflow
+  # Patch metadata-grpc-server NetworkPolicy to explicitly allow same-namespace (kubeflow) ingress
+  - path: patches/metadata-grpc-server-networkpolicy.yaml
+    target:
+      kind: NetworkPolicy
+      name: metadata-grpc-server
+      namespace: kubeflow

@@ -28,7 +28,7 @@ resources:
   # Tensorboards Web App
   - https://github.com/kubeflow/manifests/applications/tensorboard/tensorboards-web-app/upstream/overlays/istio?ref=v1.11.0
   # Trainer (Training Operator v2)
-  - https://github.com/kubeflow/manifests/applications/trainer/upstream/overlays?ref=v1.11.0
+  - https://github.com/kubeflow/manifests/applications/trainer/upstream/overlays/kubeflow-platform?ref=v1.11.0
   # User namespace
   - https://github.com/kubeflow/manifests/common/user-namespace/base?ref=v1.11.0
   # KServe

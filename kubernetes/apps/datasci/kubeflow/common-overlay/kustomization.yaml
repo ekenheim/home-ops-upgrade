@@ -25,6 +25,16 @@ patches:
     target:
       kind: Namespace
       name: kubeflow
+  # Patch knative-serving namespace for pod security
+  - path: patches/knative-namespace.yaml
+    target:
+      kind: Namespace
+      name: knative-serving
+  # Patch auth namespace for pod security
+  - path: patches/auth-namespace.yaml
+    target:
+      kind: Namespace
+      name: auth
   # Patch Dex ConfigMap for issuer URL and static users
   - path: patches/dex-config.yaml
     target:

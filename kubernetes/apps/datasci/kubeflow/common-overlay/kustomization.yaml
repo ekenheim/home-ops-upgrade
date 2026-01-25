@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   # Local resources
+  - namespace.yaml
   - authz-policies.yaml
   # Dex - OAuth2 Proxy overlay
   - https://github.com/kubeflow/manifests/common/dex/overlays/oauth2-proxy?ref=v1.11.0
@@ -11,8 +12,6 @@ resources:
   # Knative Serving (for KServe)
   - https://github.com/kubeflow/manifests/common/knative/knative-serving/overlays/gateways?ref=v1.11.0
   - https://github.com/kubeflow/manifests/common/istio/cluster-local-gateway/base?ref=v1.11.0
-  # Kubeflow namespace
-  - https://github.com/kubeflow/manifests/common/kubeflow-namespace/base?ref=v1.11.0
   # Network policies
   - https://github.com/kubeflow/manifests/common/networkpolicies/base?ref=v1.11.0
   # Kubeflow roles
@@ -21,6 +20,11 @@ resources:
   - https://github.com/kubeflow/manifests/common/istio/kubeflow-istio-resources/base?ref=v1.11.0
 
 patches:
+  # Patch kubeflow namespace to merge all labels
+  - path: patches/namespace.yaml
+    target:
+      kind: Namespace
+      name: kubeflow
   # Patch Dex ConfigMap for issuer URL and static users
   - path: patches/dex-config.yaml
     target:

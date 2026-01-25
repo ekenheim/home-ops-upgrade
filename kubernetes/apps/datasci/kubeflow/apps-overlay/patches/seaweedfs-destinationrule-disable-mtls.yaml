@@ -1,0 +1,13 @@
+# Disable mTLS for SeaweedFS connections. Same reason as MySQL - some clients
+# may not have Istio sidecars (init containers, external jobs, etc.).
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: ml-pipeline-seaweedfs
+  namespace: kubeflow
+spec:
+  host: seaweedfs.kubeflow.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: DISABLE

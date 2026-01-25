@@ -1,0 +1,15 @@
+# Disable mTLS for MySQL connections. The upstream manifests set ISTIO_MUTUAL
+# which requires clients to have Istio sidecar. However, metadata-grpc-deployment
+# has sidecar.istio.io/inject: false, and init containers run before sidecars,
+# so they cannot establish mTLS. This patch allows plain TCP connections to MySQL.
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: ml-pipeline-mysql
+  namespace: kubeflow
+spec:
+  host: mysql.kubeflow.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: DISABLE

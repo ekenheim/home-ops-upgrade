@@ -58,6 +58,17 @@ patches:
     target:
       kind: Deployment
       name: metadata-grpc-deployment
+  # Disable mTLS for MySQL and SeaweedFS (init containers can't do mTLS, some pods have no sidecar)
+  - path: patches/mysql-destinationrule-disable-mtls.yaml
+    target:
+      kind: DestinationRule
+      name: ml-pipeline-mysql
+      namespace: kubeflow
+  - path: patches/seaweedfs-destinationrule-disable-mtls.yaml
+    target:
+      kind: DestinationRule
+      name: ml-pipeline-seaweedfs
+      namespace: kubeflow
   # Note: Custom patches for KFP (Postgres, MinIO) and Katib (Postgres) are disabled
   # until the base deployment is working. The default configs use MySQL/MariaDB.
   # TODO: Re-enable patches after verifying basic deployment works

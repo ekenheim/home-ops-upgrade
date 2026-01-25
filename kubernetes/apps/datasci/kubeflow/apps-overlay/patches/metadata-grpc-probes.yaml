@@ -16,9 +16,11 @@ spec:
             initialDelaySeconds: 45
             periodSeconds: 10
             failureThreshold: 6
+            timeoutSeconds: 2
           readinessProbe:
             tcpSocket:
               port: grpc-api
             initialDelaySeconds: 45
             periodSeconds: 10
             failureThreshold: 6
+            timeoutSeconds: 2

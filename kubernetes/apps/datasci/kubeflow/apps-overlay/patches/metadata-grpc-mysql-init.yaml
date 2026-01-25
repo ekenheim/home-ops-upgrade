@@ -27,9 +27,9 @@ spec:
               done
               mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u "${DBCONFIG_USER}" \
                 --password="${DBCONFIG_PASSWORD}" -e "
-                CREATE DATABASE IF NOT EXISTS metadb;
-                CREATE DATABASE IF NOT EXISTS mlpipeline;
-                CREATE DATABASE IF NOT EXISTS cachedb;
+                CREATE DATABASE IF NOT EXISTS ${MYSQL_MLMD_DB};
+                CREATE DATABASE IF NOT EXISTS ${MYSQL_PIPELINE_DB};
+                CREATE DATABASE IF NOT EXISTS ${MYSQL_CACHE_DB};
               "
           env:
             - name: DBCONFIG_USER
@@ -52,3 +52,18 @@ spec:
                 configMapKeyRef:
                   name: pipeline-install-config
                   key: dbPort
+            - name: MYSQL_MLMD_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: pipeline-install-config
+                  key: mlmdDb
+            - name: MYSQL_PIPELINE_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: pipeline-install-config
+                  key: pipelineDb
+            - name: MYSQL_CACHE_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: pipeline-install-config
+                  key: cacheDb

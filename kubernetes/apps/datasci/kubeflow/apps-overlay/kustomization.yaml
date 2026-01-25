@@ -55,8 +55,3 @@ patches:
       kind: Deployment
       name: katib-db-manager
       namespace: kubeflow
-  # Patch user namespace to create team-1 and team-1-prod (if needed)
-  - path: patches/user-namespaces.yaml
-    target:
-      kind: Namespace
-      name: kubeflow-user-example-com

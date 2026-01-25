@@ -1,5 +1,7 @@
 # Relax probes so MLMD can finish DB connect and schema upgrade before liveness kills it.
-# Upstream uses initialDelaySeconds: 3; on first run enable_database_upgrade can take longer.
+# Disable Istio sidecar: the gRPC-only server has no HTTP health; Istio's probe rewrite
+# turns tcpSocket into HTTP to the sidecar, which returns 500 when probing the app.
+# See https://istio.io/latest/docs/ops/configuration/mesh/app-health-check/
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -7,6 +9,9 @@ metadata:
   name: metadata-grpc-deployment
 spec:
   template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
     spec:
       containers:
         - name: container

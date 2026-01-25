@@ -3,12 +3,13 @@
 # requests with kubeflow-userid: admin@admin.com get "RBAC: access denied" on
 # /_/kserve-endpoints/?ns=kubeflow-user-example-com. kubeflow-view aggregates
 # kubeflow-kserve-view (get/list InferenceServices, etc.).
-# Namespace is overridden to kubeflow-user-example-com via rolebinding-admin-view-namespace patch.
+# Applied by kubeflow-namespace-rbac (runs after kubeflow-apps so the namespace exists).
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: admin-view
+  namespace: kubeflow-user-example-com
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

@@ -1,0 +1,6 @@
+# No default namespace; RoleBinding has metadata.namespace: kubeflow-user-example-com.
+# Applied after kubeflow-apps (dependsOn) so the Profile/namespace exists.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - rolebinding-admin-view.yaml

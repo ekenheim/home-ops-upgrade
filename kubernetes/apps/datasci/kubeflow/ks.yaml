@@ -54,3 +54,23 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 10m
+---
+# RoleBindings for profile namespaces (e.g. admin@admin.com in kubeflow-user-example-com
+# for /_/kserve-endpoints RBAC). Runs after kubeflow-apps so the Profile/namespace exist.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kubeflow-namespace-rbac
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: kubeflow-apps
+  path: ./kubernetes/apps/datasci/kubeflow/namespace-rbac
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m

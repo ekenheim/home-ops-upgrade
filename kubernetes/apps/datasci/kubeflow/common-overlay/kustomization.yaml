@@ -53,3 +53,8 @@ patches:
       kind: Gateway
       name: kubeflow-gateway
       namespace: kubeflow
+  # Patch trainer-webhook NetworkPolicy to match when Istio sidecar is disabled
+  - path: patches/trainer-webhook-networkpolicy.yaml
+    target:
+      kind: NetworkPolicy
+      name: trainer-webhook

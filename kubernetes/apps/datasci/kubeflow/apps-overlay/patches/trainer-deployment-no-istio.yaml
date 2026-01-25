@@ -1,0 +1,15 @@
+---
+# Disable Istio sidecar injection for the Trainer controller-manager.
+# The admission webhook server (port 9443) conflicts with Istio mTLS when the
+# sidecar is present (TLS handshake errors, timeouts). See:
+# - https://istio.io/latest/docs/ops/configuration/mesh/webhook
+# - https://datastrophic.io/kubeflow-training-operators-and-istio-solving-the-proxy-sidecar-lifecycle-problem-for-aiml-workloads/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubeflow-trainer-controller-manager
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"

@@ -39,6 +39,16 @@ resources:
   # KServe Models Web App
   - https://github.com/kubeflow/manifests/applications/kserve/models-web-app/overlays/kubeflow?ref=v1.11.0
 
-# Note: Custom patches for KFP (Postgres, MinIO) and Katib (Postgres) are disabled
-# until the base deployment is working. The default configs use MySQL/MariaDB.
-# TODO: Re-enable patches after verifying basic deployment works
+patches:
+  # Trainer: fail-open webhooks and no Istio sidecar (avoids webhook TLS/timeouts)
+  - path: patches/trainer-webhook-failure-policy.yaml
+    target:
+      kind: ValidatingWebhookConfiguration
+      name: validator.trainer.kubeflow.org
+  - path: patches/trainer-deployment-no-istio.yaml
+    target:
+      kind: Deployment
+      name: kubeflow-trainer-controller-manager
+  # Note: Custom patches for KFP (Postgres, MinIO) and Katib (Postgres) are disabled
+  # until the base deployment is working. The default configs use MySQL/MariaDB.
+  # TODO: Re-enable patches after verifying basic deployment works

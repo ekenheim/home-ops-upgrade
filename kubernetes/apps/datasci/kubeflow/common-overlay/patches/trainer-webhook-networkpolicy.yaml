@@ -1,0 +1,12 @@
+---
+# Use app.kubernetes.io/name: trainer so the policy applies when Istio
+# sidecar injection is disabled. Upstream uses service.istio.io/canonical-name,
+# which is only set when the pod has an Istio proxy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: trainer-webhook
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: trainer

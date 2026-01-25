@@ -1,2 +1,14 @@
-# Kubeflow Profile CRs. team-1 and team-1-prod removed (were from DeployKF).
-# Add Profile resources here when needed.
+# At least one Profile is required so the Central Dashboard shows namespaces and the
+# side panel (Notebooks, Pipelines, Katib, etc.). Without any Profile, the dashboard
+# shows "no namespaces" and hides the menu. team-1 and team-1-prod (DeployKF) were
+# removed; this default profile provides a working namespace for the dashboard.
+---
+apiVersion: kubeflow.org/v1
+kind: Profile
+metadata:
+  name: default
+spec:
+  owner:
+    kind: User
+    name: admin@admin.com
+  resourceQuotaSpec: {}

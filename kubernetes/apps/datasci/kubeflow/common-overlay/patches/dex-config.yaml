@@ -19,21 +19,22 @@ data:
       skipApprovalScreen: true
     enablePasswordDB: true
     staticPasswords:
+      # Password: password (bcrypt hash)
       - email: admin@admin.com
-        hashFromEnv: DEX_USER_PASSWORD
+        hash: "$2y$12$4K/VkmDd1q1Orber3bT9ZOV0.5mXU7LqnODIz6Lz3XRnZKqbvI7a."
         username: admin
         userID: "15841185641784"
       - email: user1@example.com
-        hashFromEnv: DEX_USER1_PASSWORD
+        hash: "$2y$12$4K/VkmDd1q1Orber3bT9ZOV0.5mXU7LqnODIz6Lz3XRnZKqbvI7a."
         username: user1
         userID: "15841185641785"
       - email: user2@example.com
-        hashFromEnv: DEX_USER2_PASSWORD
+        hash: "$2y$12$4K/VkmDd1q1Orber3bT9ZOV0.5mXU7LqnODIz6Lz3XRnZKqbvI7a."
         username: user2
         userID: "15841185641786"
     staticClients:
-      - idEnv: OIDC_CLIENT_ID
+      - id: kubeflow-oidc-authservice
         redirectURIs: ["/oauth2/callback"]
         name: 'Dex Login Application'
-        secretEnv: OIDC_CLIENT_SECRET
+        secret: pUBnBOY80SnXgjibTYM9ZWNzY2xreNGQok
     connectors: []

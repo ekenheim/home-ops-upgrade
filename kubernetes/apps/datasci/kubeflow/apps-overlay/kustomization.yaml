@@ -39,22 +39,6 @@ resources:
   # KServe Models Web App
   - https://github.com/kubeflow/manifests/applications/kserve/models-web-app/overlays/kubeflow?ref=v1.11.0
 
-patches:
-  # Patch KFP backend for Postgres connection
-  - path: patches/kfp-postgres.yaml
-    target:
-      kind: Deployment
-      name: ml-pipeline
-      namespace: kubeflow
-  # Patch KFP backend for MinIO object store
-  - path: patches/kfp-minio.yaml
-    target:
-      kind: Deployment
-      name: ml-pipeline
-      namespace: kubeflow
-  # Patch Katib DB Manager for Postgres connection
-  - path: patches/katib-postgres.yaml
-    target:
-      kind: Deployment
-      name: katib-db-manager
-      namespace: kubeflow
+# Note: Custom patches for KFP (Postgres, MinIO) and Katib (Postgres) are disabled
+# until the base deployment is working. The default configs use MySQL/MariaDB.
+# TODO: Re-enable patches after verifying basic deployment works

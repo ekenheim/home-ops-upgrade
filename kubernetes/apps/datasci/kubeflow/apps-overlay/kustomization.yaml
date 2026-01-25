@@ -63,6 +63,8 @@ patches:
     target:
       kind: RoleBinding
       name: admin-view
+    options:
+      allowNameChange: false
   # Note: Custom patches for KFP (Postgres, MinIO) and Katib (Postgres) are disabled
   # until the base deployment is working. The default configs use MySQL/MariaDB.
   # TODO: Re-enable patches after verifying basic deployment works

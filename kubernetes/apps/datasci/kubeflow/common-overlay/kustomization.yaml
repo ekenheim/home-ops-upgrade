@@ -1,0 +1,41 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Local resources
+  - authz-policies.yaml
+  # Dex - OAuth2 Proxy overlay
+  - https://github.com/kubeflow/manifests/common/dex/overlays/oauth2-proxy?ref=v1.11.0
+  # OAuth2 Proxy - m2m-dex-only overlay (works on most clusters)
+  - https://github.com/kubeflow/manifests/common/oauth2-proxy/overlays/m2m-dex-only?ref=v1.11.0
+  # Knative Serving (for KServe)
+  - https://github.com/kubeflow/manifests/common/knative/knative-serving/overlays/gateways?ref=v1.11.0
+  - https://github.com/kubeflow/manifests/common/istio/cluster-local-gateway/base?ref=v1.11.0
+  # Kubeflow namespace
+  - https://github.com/kubeflow/manifests/common/kubeflow-namespace/base?ref=v1.11.0
+  # Network policies
+  - https://github.com/kubeflow/manifests/common/networkpolicies/base?ref=v1.11.0
+  # Kubeflow roles
+  - https://github.com/kubeflow/manifests/common/kubeflow-roles/base?ref=v1.11.0
+  # Kubeflow Istio resources (Gateway, VirtualServices)
+  - https://github.com/kubeflow/manifests/common/istio/kubeflow-istio-resources/base?ref=v1.11.0
+
+patches:
+  # Patch Dex ConfigMap for issuer URL and static users
+  - path: patches/dex-config.yaml
+    target:
+      kind: ConfigMap
+      name: dex
+      namespace: auth
+  # Patch OAuth2 Proxy for kubeflow.istio.local hostname
+  - path: patches/oauth2-proxy-env.yaml
+    target:
+      kind: Deployment
+      name: oauth2-proxy
+      namespace: oauth2-proxy
+  # Patch kubeflow-gateway to use existing Istio ingress
+  - path: patches/kubeflow-gateway.yaml
+    target:
+      kind: Gateway
+      name: kubeflow-gateway
+      namespace: kubeflow

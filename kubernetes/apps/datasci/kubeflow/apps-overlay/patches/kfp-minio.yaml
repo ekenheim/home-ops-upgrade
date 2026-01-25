@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-pipeline
+  namespace: kubeflow
+spec:
+  template:
+    spec:
+      containers:
+        - name: ml-pipeline
+          env:
+            # MinIO object store configuration
+            - name: OBJECT_STORE_CONFIG_HOST
+              value: minio-secondary.storage.svc.cluster.local
+            - name: OBJECT_STORE_CONFIG_PORT
+              value: "9000"
+            - name: OBJECT_STORE_CONFIG_SECURE
+              value: "false"
+            - name: OBJECT_STORE_CONFIG_BUCKET_NAME
+              value: kubeflow-pipelines
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: cloned--kubeflow-pipelines--backend-object-store-auth
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cloned--kubeflow-pipelines--backend-object-store-auth
+                  key: AWS_SECRET_ACCESS_KEY
+          volumeMounts:
+            - name: object-store-secret
+              mountPath: /etc/secrets/object-store
+              readOnly: true
+      volumes:
+        - name: object-store-secret
+          secret:
+            secretName: cloned--kubeflow-pipelines--backend-object-store-auth

@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: katib-db-manager
+  namespace: kubeflow
+spec:
+  template:
+    spec:
+      containers:
+        - name: katib-db-manager
+          env:
+            # Postgres connection - using Crunchy Postgres
+            - name: DB_NAME
+              value: "postgres"
+            - name: KATIB_POSTGRESQL_DB_HOST
+              value: postgres-pgbouncer.database.svc.cluster.local
+            - name: KATIB_POSTGRESQL_DB_PORT
+              value: "5432"
+            - name: KATIB_POSTGRESQL_DB_DATABASE
+              value: katib
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-pguser-katib
+                  key: user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-pguser-katib
+                  key: password
+            - name: KATIB_POSTGRESQL_SSL_MODE
+              value: "disable"
+          volumeMounts:
+            - name: postgres-secret
+              mountPath: /etc/secrets/postgres
+              readOnly: true
+      volumes:
+        - name: postgres-secret
+          secret:
+            secretName: postgres-pguser-katib

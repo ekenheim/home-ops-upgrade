@@ -25,11 +25,14 @@ resources:
   - ./label-studio/ks.yaml
   - ./seldon-core/ks.yaml
   - ./kyverno-fixes
-  - ./deploykf-values/ks.yaml
-  - ./deploykf-auth-overrides/ks.yaml
-  - ./deploykf-dashboard-overrides/ks.yaml
-  - ./kubeflow-authz-overrides/ks.yaml
-  - ./kubeflow-routing-overrides/ks.yaml
-  - ./kubeflow-profile-authz-relax/ks.yaml
+  - ./kubeflow/ks.yaml
+  # DeployKF (unmaintained) - DISABLED: Remove after new Kubeflow is verified
+  # See Section 8 of kubeflow_native_deployment plan for removal steps
+  # - ./deploykf-values/ks.yaml
+  # - ./deploykf-auth-overrides/ks.yaml
+  # - ./deploykf-dashboard-overrides/ks.yaml
+  # - ./kubeflow-authz-overrides/ks.yaml
+  # - ./kubeflow-routing-overrides/ks.yaml
+  # - ./kubeflow-profile-authz-relax/ks.yaml
   - ./kyverno-fixes/ks.yaml
   - ./kubeflow-secrets/ks.yaml

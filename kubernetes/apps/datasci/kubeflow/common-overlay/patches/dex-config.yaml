@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dex
+  namespace: auth
+data:
+  config.yaml: |
+    issuer: https://kubeflow.istio.local/dex
+    storage:
+      type: kubernetes
+      config:
+        inCluster: true
+    web:
+      http: 0.0.0.0:5556
+    logger:
+      level: "debug"
+      format: text
+    oauth2:
+      skipApprovalScreen: true
+    enablePasswordDB: true
+    staticPasswords:
+      - email: admin@admin.com
+        hashFromEnv: DEX_USER_PASSWORD
+        username: admin
+        userID: "15841185641784"
+      - email: user1@example.com
+        hashFromEnv: DEX_USER1_PASSWORD
+        username: user1
+        userID: "15841185641785"
+      - email: user2@example.com
+        hashFromEnv: DEX_USER2_PASSWORD
+        username: user2
+        userID: "15841185641786"
+    staticClients:
+      - idEnv: OIDC_CLIENT_ID
+        redirectURIs: ["/oauth2/callback"]
+        name: 'Dex Login Application'
+        secretEnv: OIDC_CLIENT_SECRET
+    connectors: []

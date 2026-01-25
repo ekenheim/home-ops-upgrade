@@ -154,6 +154,10 @@ spec:
       databases: ["mlpipeline", "metadb", "cachedb"]
       password:
         type: AlphaNumeric
+    - name: "katib"
+      databases: ["katib"]
+      password:
+        type: AlphaNumeric
     - name: "metabase"
       databases: ["metabase"]
       password:

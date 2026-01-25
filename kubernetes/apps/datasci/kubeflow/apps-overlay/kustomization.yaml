@@ -1,0 +1,62 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Local resources
+  - katib-postgres-secret.yaml
+  - profiles.yaml
+  # Kubeflow Pipelines - multi-user with cert-manager
+  - https://github.com/kubeflow/manifests/applications/pipeline/upstream/env/cert-manager/platform-agnostic-multi-user?ref=v1.11.0
+  # Katib - standalone Postgres
+  - https://github.com/kubeflow/manifests/applications/katib/upstream/installs/katib-standalone-postgres?ref=v1.11.0
+  # Central Dashboard
+  - https://github.com/kubeflow/manifests/applications/centraldashboard/overlays/oauth2-proxy?ref=v1.11.0
+  # Admission Webhook
+  - https://github.com/kubeflow/manifests/applications/admission-webhook/upstream/overlays/cert-manager?ref=v1.11.0
+  # Jupyter Web App
+  - https://github.com/kubeflow/manifests/applications/jupyter/jupyter-web-app/upstream/overlays/istio?ref=v1.11.0
+  # Notebook Controller
+  - https://github.com/kubeflow/manifests/applications/jupyter/notebook-controller/upstream/overlays/kubeflow?ref=v1.11.0
+  # Profiles + KFAM
+  - https://github.com/kubeflow/manifests/applications/profiles/upstream/overlays/kubeflow?ref=v1.11.0
+  # PVC Viewer Controller
+  - https://github.com/kubeflow/manifests/applications/pvcviewer-controller/upstream/base?ref=v1.11.0
+  # Volumes Web App
+  - https://github.com/kubeflow/manifests/applications/volumes-web-app/upstream/overlays/istio?ref=v1.11.0
+  # Tensorboard Controller
+  - https://github.com/kubeflow/manifests/applications/tensorboard/tensorboard-controller/upstream/overlays/kubeflow?ref=v1.11.0
+  # Tensorboards Web App
+  - https://github.com/kubeflow/manifests/applications/tensorboard/tensorboards-web-app/upstream/overlays/istio?ref=v1.11.0
+  # Trainer (Training Operator v2)
+  - https://github.com/kubeflow/manifests/applications/trainer/upstream/overlays?ref=v1.11.0
+  # User namespace
+  - https://github.com/kubeflow/manifests/common/user-namespace/base?ref=v1.11.0
+  # KServe
+  - https://github.com/kubeflow/manifests/applications/kserve/kserve?ref=v1.11.0
+  # KServe Models Web App
+  - https://github.com/kubeflow/manifests/applications/kserve/models-web-app/overlays/kubeflow?ref=v1.11.0
+
+patches:
+  # Patch KFP backend for Postgres connection
+  - path: patches/kfp-postgres.yaml
+    target:
+      kind: Deployment
+      name: ml-pipeline
+      namespace: kubeflow
+  # Patch KFP backend for MinIO object store
+  - path: patches/kfp-minio.yaml
+    target:
+      kind: Deployment
+      name: ml-pipeline
+      namespace: kubeflow
+  # Patch Katib DB Manager for Postgres connection
+  - path: patches/katib-postgres.yaml
+    target:
+      kind: Deployment
+      name: katib-db-manager
+      namespace: kubeflow
+  # Patch user namespace to create team-1 and team-1-prod (if needed)
+  - path: patches/user-namespaces.yaml
+    target:
+      kind: Namespace
+      name: kubeflow-user-example-com

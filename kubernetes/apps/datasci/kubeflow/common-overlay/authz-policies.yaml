@@ -1,0 +1,121 @@
+---
+# AuthorizationPolicy for Dex - allow Istio ingress
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: dex-allow-istio-ingress
+  namespace: auth
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: dex
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-system/sa/istio-ingress
+      to:
+        - operation:
+            ports: ["5556"]
+---
+# AuthorizationPolicy for OAuth2 Proxy - allow Istio ingress
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: oauth2-proxy-allow-istio-ingress
+  namespace: oauth2-proxy
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oauth2-proxy
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-system/sa/istio-ingress
+---
+# AuthorizationPolicy for Central Dashboard - allow all (auth at gateway)
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: central-dashboard-allow-istio-ingress
+  namespace: kubeflow
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: centraldashboard
+  rules:
+    - {}
+---
+# AuthorizationPolicy for Jupyter Web App - allow all (auth at gateway)
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: jupyter-web-app-allow-istio-ingress
+  namespace: kubeflow
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: jupyter-web-app
+  rules:
+    - {}
+---
+# AuthorizationPolicy for ML Pipeline UI - allow all (auth at gateway)
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: ml-pipeline-ui-allow-istio-ingress
+  namespace: kubeflow
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: ml-pipeline-ui
+  rules:
+    - {}
+---
+# AuthorizationPolicy for Katib UI - allow all (auth at gateway)
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: katib-ui-allow-istio-ingress
+  namespace: kubeflow
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      katib.kubeflow.org/component: ui
+  rules:
+    - {}
+---
+# AuthorizationPolicy for Tensorboards Web App - allow all (auth at gateway)
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: tensorboards-web-app-allow-istio-ingress
+  namespace: kubeflow
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: tensorboards-web-app
+  rules:
+    - {}
+---
+# AuthorizationPolicy for Volumes Web App - allow all (auth at gateway)
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: volumes-web-app-allow-istio-ingress
+  namespace: kubeflow
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: volumes-web-app
+  rules:
+    - {}

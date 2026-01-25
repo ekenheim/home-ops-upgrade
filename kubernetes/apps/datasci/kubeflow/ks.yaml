@@ -35,6 +35,9 @@ kind: Kustomization
 metadata:
   name: kubeflow-apps
   namespace: flux-system
+  labels:
+    # Disable postBuild substitution to avoid conflicts with Katib trial templates
+    substitution.flux.home.arpa/disabled: "true"
 spec:
   commonMetadata:
     labels:

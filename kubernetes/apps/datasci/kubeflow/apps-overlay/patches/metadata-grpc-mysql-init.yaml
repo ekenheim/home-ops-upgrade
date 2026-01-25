@@ -1,0 +1,54 @@
+# Add initContainer to create KFP/MLMD DBs (metadb, mlpipeline, cachedb) before the
+# metadata store server starts. Upstream MySQL does not create them; without this,
+# metadata-grpc fails and metadata-writer/ml-pipeline cannot connect.
+# Idempotent: CREATE DATABASE IF NOT EXISTS. Pod restarts until MySQL is ready.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metadata-grpc-deployment
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: create-mysql-dbs
+          image: mysql:8.0
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              for i in $(seq 1 60); do
+                if mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u "${DBCONFIG_USER}" \
+                  --password="${DBCONFIG_PASSWORD}" -e "SELECT 1" 2>/dev/null; then
+                  break
+                fi
+                echo "Waiting for MySQL (attempt $i/60)..."
+                sleep 2
+              done
+              mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u "${DBCONFIG_USER}" \
+                --password="${DBCONFIG_PASSWORD}" -e "
+                CREATE DATABASE IF NOT EXISTS metadb;
+                CREATE DATABASE IF NOT EXISTS mlpipeline;
+                CREATE DATABASE IF NOT EXISTS cachedb;
+              "
+          env:
+            - name: DBCONFIG_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: username
+            - name: DBCONFIG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: password
+            - name: MYSQL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: pipeline-install-config
+                  key: dbHost
+            - name: MYSQL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: pipeline-install-config
+                  key: dbPort

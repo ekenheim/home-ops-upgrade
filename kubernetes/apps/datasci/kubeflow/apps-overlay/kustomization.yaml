@@ -49,6 +49,15 @@ patches:
     target:
       kind: Deployment
       name: kubeflow-trainer-controller-manager
+  # KFP: create metadb/mlpipeline/cachedb before metadata-grpc starts; relax MLMD probes
+  - path: patches/metadata-grpc-mysql-init.yaml
+    target:
+      kind: Deployment
+      name: metadata-grpc-deployment
+  - path: patches/metadata-grpc-probes.yaml
+    target:
+      kind: Deployment
+      name: metadata-grpc-deployment
   # Note: Custom patches for KFP (Postgres, MinIO) and Katib (Postgres) are disabled
   # until the base deployment is working. The default configs use MySQL/MariaDB.
   # TODO: Re-enable patches after verifying basic deployment works

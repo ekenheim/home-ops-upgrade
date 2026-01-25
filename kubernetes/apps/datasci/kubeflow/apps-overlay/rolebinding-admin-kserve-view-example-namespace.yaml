@@ -1,0 +1,19 @@
+# Grant admin@admin.com (EnvoyFilter default when not logged in) kubeflow-view in
+# kubeflow-user-example-com. That Profile's owner is user@example.com; without this,
+# requests with kubeflow-userid: admin@admin.com get "RBAC: access denied" on
+# /_/kserve-endpoints/?ns=kubeflow-user-example-com. kubeflow-view aggregates
+# kubeflow-kserve-view (get/list InferenceServices, etc.).
+# Namespace is overridden to kubeflow-user-example-com via rolebinding-admin-view-namespace patch.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: admin-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubeflow-view
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: admin@admin.com

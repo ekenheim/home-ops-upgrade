@@ -1,0 +1,6 @@
+# Override namespace to kubeflow-user-example-com (apps-overlay default is kubeflow).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: admin-view
+  namespace: kubeflow-user-example-com

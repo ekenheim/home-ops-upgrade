@@ -8,6 +8,7 @@ resources:
   # Local resources
   - katib-postgres-secret.yaml
   - profiles.yaml
+  - rolebinding-admin-kserve-view-example-namespace.yaml
   # Kubeflow Pipelines - multi-user with cert-manager
   - https://github.com/kubeflow/manifests/applications/pipeline/upstream/env/cert-manager/platform-agnostic-multi-user?ref=v1.11.0
   # Katib - standalone Postgres
@@ -58,6 +59,10 @@ patches:
     target:
       kind: Deployment
       name: metadata-grpc-deployment
+  - path: patches/rolebinding-admin-view-namespace.yaml
+    target:
+      kind: RoleBinding
+      name: admin-view
   # Note: Custom patches for KFP (Postgres, MinIO) and Katib (Postgres) are disabled
   # until the base deployment is working. The default configs use MySQL/MariaDB.
   # TODO: Re-enable patches after verifying basic deployment works

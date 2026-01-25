@@ -17,14 +17,19 @@ spec:
             - /bin/sh
             - -ec
             - |
-              for i in $(seq 1 60); do
+              for i in $(seq 1 90); do
                 if mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u "${DBCONFIG_USER}" \
                   --password="${DBCONFIG_PASSWORD}" -e "SELECT 1" 2>/dev/null; then
                   break
                 fi
-                echo "Waiting for MySQL (attempt $i/60)..."
+                echo "Waiting for MySQL (attempt $i/90)..."
                 sleep 2
               done
+              if ! mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u "${DBCONFIG_USER}" \
+                --password="${DBCONFIG_PASSWORD}" -e "SELECT 1" 2>/dev/null; then
+                echo "FATAL: MySQL never became ready"
+                exit 1
+              fi
               mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u "${DBCONFIG_USER}" \
                 --password="${DBCONFIG_PASSWORD}" -e "
                 CREATE DATABASE IF NOT EXISTS ${MYSQL_MLMD_DB};

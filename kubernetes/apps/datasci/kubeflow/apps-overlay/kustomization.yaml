@@ -7,7 +7,7 @@ namespace: kubeflow
 resources:
   # Local resources
   - katib-postgres-secret.yaml
-  - profiles.yaml
+  # profiles.yaml removed (team-1, team-1-prod were DeployKF; add back when needed)
   # Kubeflow Pipelines - multi-user with cert-manager
   - https://github.com/kubeflow/manifests/applications/pipeline/upstream/env/cert-manager/platform-agnostic-multi-user?ref=v1.11.0
   # Katib - standalone Postgres

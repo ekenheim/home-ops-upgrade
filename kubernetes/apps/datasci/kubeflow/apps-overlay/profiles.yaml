@@ -1,20 +1,2 @@
----
-apiVersion: kubeflow.org/v1
-kind: Profile
-metadata:
-  name: team-1
-spec:
-  owner:
-    kind: User
-    name: admin@admin.com
-  resourceQuotaSpec: {}
----
-apiVersion: kubeflow.org/v1
-kind: Profile
-metadata:
-  name: team-1-prod
-spec:
-  owner:
-    kind: User
-    name: admin@admin.com
-  resourceQuotaSpec: {}
+# Kubeflow Profile CRs. team-1 and team-1-prod removed (were from DeployKF).
+# Add Profile resources here when needed.

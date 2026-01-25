@@ -7,7 +7,6 @@ resources:
   - ./certificate.yaml
   - ./ca-key-header-fix-cronjob.yaml
   - ./externalsecret-minio-creds.yaml
-  - ./externalsecret-profile-object-store-auth-team-1.yaml
-  - ./externalsecret-profile-object-store-auth-team-1-prod.yaml
+  # externalsecret-profile-object-store-auth-team-1{,}-prod removed (DeployKF)
 
 

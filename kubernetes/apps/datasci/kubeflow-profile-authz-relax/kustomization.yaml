@@ -1,9 +1,8 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
+# team-1 and team-1-prod removed (were from DeployKF)
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources:
-  - ./team-1/allow-istio-ingress-any-user.yaml
-  - ./team-1-prod/allow-istio-ingress-any-user.yaml
+resources: []
 
 

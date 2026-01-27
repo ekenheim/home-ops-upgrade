@@ -58,6 +58,12 @@ patches:
     target:
       kind: Deployment
       name: metadata-grpc-deployment
+  # Disable Istio sidecar for MySQL (allows non-mTLS connections from init containers)
+  - path: patches/mysql-no-istio-sidecar.yaml
+    target:
+      kind: Deployment
+      name: mysql
+      namespace: kubeflow
   # Disable mTLS for MySQL and SeaweedFS (init containers can't do mTLS, some pods have no sidecar)
   - path: patches/mysql-destinationrule-disable-mtls.yaml
     target:

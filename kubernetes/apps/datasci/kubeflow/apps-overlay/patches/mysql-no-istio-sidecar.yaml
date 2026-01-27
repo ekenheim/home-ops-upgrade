@@ -1,0 +1,16 @@
+# Disable Istio sidecar injection for MySQL. The kubeflow namespace has
+# istio-injection: enabled, so pods get sidecars by default. However, MySQL
+# clients (like init containers) don't have sidecars and can't do mTLS.
+# Disabling sidecar allows plain TCP connections from init containers and
+# non-mesh pods (simpler than PeerAuthentication workarounds).
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: kubeflow
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"

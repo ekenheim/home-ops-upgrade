@@ -8,13 +8,5 @@ resources:
   # Flux-Kustomizations
   #- ./umami/ks.yaml
   - ./meilisearch/ks.yaml
-  #- ./harbor/ks.yaml
-  #- ./gitlab/ks.yaml
-  #- ./gitlab/runner-ks.yaml
-  #- ./gitlab/agent-ks.yaml
-  #- ./medusa/ks.yaml
-  #- ./backstage/ks.yaml
-  #- ./atlantis/ks.yaml
-  #- ./code-server/ks.yaml
-  #- ./coder/ks.yaml
+  - ./airbyte/ks.yaml
   - ./metabase/ks.yaml

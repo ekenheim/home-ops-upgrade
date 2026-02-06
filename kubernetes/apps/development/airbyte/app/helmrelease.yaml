@@ -1,0 +1,46 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: airbyte
+  namespace: airbyte
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: airbyte
+      version: 1.5.1
+      sourceRef:
+        kind: HelmRepository
+        name: airbyte
+        namespace: flux-system
+  install:
+    timeout: 30m
+  values:
+    # https://artifacthub.io/packages/helm/airbyte/airbyte
+    # https://github.com/airbytehq/airbyte-platform/blob/main/charts/airbyte/values.yaml
+    global:
+      airbyteUrl: https://airbyte.${SECRET_DOMAIN}
+    ingress:
+      enabled: true
+      className: internal
+      annotations:
+        external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/name: Airbyte
+        gethomepage.dev/group: Development
+        gethomepage.dev/icon: airbyte.png
+        # Avoid 504 on long-running operations (sources/destinations)
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      hosts:
+        - host: airbyte.${SECRET_DOMAIN}
+          paths:
+            - path: /
+              pathType: Prefix
+              backend: server
+            - path: /connector-builder
+              pathType: Prefix
+              backend: connector-builder-server
+      tls:
+        - hosts:
+            - airbyte.${SECRET_DOMAIN}

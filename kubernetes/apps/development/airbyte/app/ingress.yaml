@@ -1,6 +1,6 @@
 ---
-# Standalone Ingress for Airbyte (chart ingress not created by Airbyte Helm in this setup)
-# Run: kubectl get svc -n development | grep airbyte  to confirm service names
+# Single entry point: server handles UI + API; connector-builder has its own path.
+# Docs: https://docs.airbyte.com/deploying-airbyte/integrations/ingress
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -16,13 +16,15 @@ metadata:
     gethomepage.dev/icon: airbyte.png
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
 spec:
   ingressClassName: internal
   rules:
     - host: airbyte.${SECRET_DOMAIN}
       http:
         paths:
-          # Connector builder first (more specific)
+          # Connector builder (more specific paths first)
           - path: /api/v1/connector_builder
             pathType: Prefix
             backend:
@@ -37,29 +39,14 @@ spec:
                 name: airbyte-airbyte-connector-builder-server-svc
                 port:
                   number: 80
-          # API -> server (8001)
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: airbyte-airbyte-server-svc
-                port:
-                  number: 8001
-          - path: /v1
-            pathType: Prefix
-            backend:
-              service:
-                name: airbyte-airbyte-server-svc
-                port:
-                  number: 8001
-          # Web UI -> webapp (8000); must be last so / catches everything else
+          # UI + API: single backend (server proxies to webapp internally)
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: airbyte-airbyte-webapp-svc
+                name: airbyte-airbyte-server-svc
                 port:
-                  number: 8000
+                  number: 8001
   tls:
     - hosts:
         - airbyte.${SECRET_DOMAIN}

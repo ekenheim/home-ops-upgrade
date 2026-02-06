@@ -1,6 +1,6 @@
 ---
 # Standalone Ingress for Airbyte (chart ingress not created by Airbyte Helm in this setup)
-# Service names follow Airbyte chart: <release>-airbyte-<component>-svc
+# Run: kubectl get svc -n development | grep airbyte  to confirm service names
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -37,14 +37,29 @@ spec:
                 name: airbyte-airbyte-connector-builder-server-svc
                 port:
                   number: 80
-          # Main UI and API
-          - path: /
+          # API -> server (8001)
+          - path: /api
             pathType: Prefix
             backend:
               service:
                 name: airbyte-airbyte-server-svc
                 port:
                   number: 8001
+          - path: /v1
+            pathType: Prefix
+            backend:
+              service:
+                name: airbyte-airbyte-server-svc
+                port:
+                  number: 8001
+          # Web UI -> webapp (8000); must be last so / catches everything else
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: airbyte-airbyte-webapp-svc
+                port:
+                  number: 8000
   tls:
     - hosts:
         - airbyte.${SECRET_DOMAIN}

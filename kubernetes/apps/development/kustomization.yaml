@@ -10,3 +10,4 @@ resources:
   - ./meilisearch/ks.yaml
   - ./airbyte/ks.yaml
   - ./metabase/ks.yaml
+  - ./lightdash/ks.yaml

@@ -162,6 +162,10 @@ spec:
       databases: ["metabase"]
       password:
         type: AlphaNumeric
+    - name: "lightdash"
+      databases: ["lightdash"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

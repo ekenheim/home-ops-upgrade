@@ -1,0 +1,54 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: lightdash
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: lightdash
+      version: 1.5.1
+      sourceRef:
+        kind: HelmRepository
+        name: lightdash
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    # https://github.com/lightdash/helm-charts/blob/main/charts/lightdash/values.yaml
+    configMap:
+      SITE_URL: https://lightdash.${SECRET_DOMAIN}
+      SECURE_COOKIES: "true"
+      TRUST_PROXY: "true"
+    # Session/encryption secret from lightdash-secret (Bitwarden)
+    extraEnv:
+      - name: LIGHTDASH_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: lightdash-secret
+            key: LIGHTDASH_SECRET
+    # Use Crunchy Postgres; DB credentials from lightdash-db-secret
+    postgresql:
+      enabled: false
+    externalDatabase:
+      host: postgres-pgbouncer.database.svc.cluster.local
+      port: 5432
+      user: lightdash
+      database: lightdash
+      existingSecret: lightdash-db-secret
+      secretKeys:
+        passwordKey: postgresql-password
+    ingress:
+      enabled: false
+    # Optional: reduce resources for browserless-chrome if needed
+    browserless-chrome:
+      enabled: true
+      replicaCount: 1

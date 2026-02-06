@@ -1,0 +1,30 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lightdash
+  namespace: development
+  labels:
+    app.kubernetes.io/name: lightdash
+  annotations:
+    external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Lightdash
+    gethomepage.dev/group: Development
+    gethomepage.dev/icon: lightdash.png
+spec:
+  ingressClassName: internal
+  rules:
+    - host: lightdash.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lightdash
+                port:
+                  number: 8080
+  tls:
+    - hosts:
+        - lightdash.${SECRET_DOMAIN}

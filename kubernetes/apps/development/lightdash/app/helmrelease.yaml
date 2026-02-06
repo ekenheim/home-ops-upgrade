@@ -24,6 +24,10 @@ spec:
       retries: 3
   values:
     # https://github.com/lightdash/helm-charts/blob/main/charts/lightdash/values.yaml
+    # Chart 1.5.1 appVersion 0.1121.0 no longer exists on Docker Hub; pin to a valid tag
+    image:
+      repository: lightdash/lightdash
+      tag: "0.2248.0"
     configMap:
       SITE_URL: https://lightdash.${SECRET_DOMAIN}
       SECURE_COOKIES: "true"

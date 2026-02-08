@@ -40,11 +40,15 @@ spec:
     # Skip DB-ready init container (uses postgres image → ImagePullBackOff); we use Crunchy external DB
     dagsterWebserver:
       checkDbReadyInitContainer: false
+      # Empty workspace so daemon/webserver get -w workspace.yaml; no code locations until we add deployments.
+      workspace:
+        enabled: true
+        servers: []
     dagsterDaemon:
       checkDbReadyInitContainer: false
-    # User code: disabled until you add your own repo(s). Re-enable and set deployments: [...] when ready.
+    # User code: subchart disabled (no pods). Workspace still created via dagsterWebserver.workspace above.
     dagster-user-deployments:
-      enabled: false
+      enabled: true
       enableSubchart: false
     # Expose webserver at dagster.${SECRET_DOMAIN} (like mlflow / prefect)
     ingress:

@@ -42,20 +42,9 @@ spec:
       checkDbReadyInitContainer: false
     dagsterDaemon:
       checkDbReadyInitContainer: false
-    # User code deployment (must match dagsterWebserver.workspace.servers host name).
+    # User code: disabled until you add your own repo(s). Re-enable and set deployments: [...] when ready.
     dagster-user-deployments:
-      enabled: true
-      enableSubchart: true
-      deployments:
-        - name: k8s-example-user-code-1
-          image:
-            repository: docker.io/dagster/user-code-example
-            tag: "1.12.14"
-            pullPolicy: Always
-          dagsterApiGrpcArgs:
-            - "--python-file"
-            - "/example_project/example_repo/repo.py"
-          port: 3030
+      enabled: false
     # Expose webserver at dagster.${SECRET_DOMAIN} (like mlflow / prefect)
     ingress:
       enabled: true

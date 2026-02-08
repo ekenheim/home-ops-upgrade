@@ -37,10 +37,10 @@ spec:
       service:
         port: 5432
     generatePostgresqlPasswordSecret: false
-    # Skip DB-ready init container to avoid ImagePullBackOff on docker.io/library/postgres (external DB already known reachable)
+    # Skip DB-ready init container (uses postgres image → ImagePullBackOff); we use Crunchy external DB
     dagsterWebserver:
       checkDbReadyInitContainer: false
-    daemon:
+    dagsterDaemon:
       checkDbReadyInitContainer: false
     # User code deployment (must match dagsterWebserver.workspace.servers host name).
     dagster-user-deployments:

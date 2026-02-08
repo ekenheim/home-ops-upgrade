@@ -29,6 +29,14 @@ spec:
     postgresql:
       enabled: false
       postgresqlHost: postgres-pgbouncer.database.svc.cluster.local
+      # Required by chart schema (used by init container when checking DB); credentials from valuesFrom
+      image:
+        repository: docker.io/library/postgres
+        tag: "14.6"
+        pullPolicy: IfNotPresent
+      postgresqlParams: {}
+      service:
+        port: 5432
     generatePostgresqlPasswordSecret: false
     # User code deployment (must match dagsterWebserver.workspace.servers host name).
     dagster-user-deployments:

@@ -56,15 +56,41 @@ spec:
             - "--python-file"
             - "/example_project/example_repo/repo.py"
           port: 3030
-    # Optional: expose webserver via ingress (uncomment and set SECRET_DOMAIN if needed)
-    # ingress:
-    #   enabled: true
-    #   className: internal
-    #   hosts:
-    #     - host: dagster.${SECRET_DOMAIN}
-    #       paths:
-    #         - path: /
-    #           pathType: Prefix
+    # Expose webserver at dagster.${SECRET_DOMAIN} (like mlflow / prefect)
+    ingress:
+      enabled: true
+      ingressClassName: internal
+      labels: {}
+      annotations:
+        nginx.ingress.kubernetes.io/whitelist-source-range: |
+          10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+      dagsterWebserver:
+        host: dagster.${SECRET_DOMAIN}
+        path: /
+        pathType: Prefix
+        tls:
+          enabled: true
+          secretName: ""
+        precedingPaths: []
+        succeedingPaths: []
+      readOnlyDagsterWebserver:
+        host: dagster-ro.${SECRET_DOMAIN}
+        path: /
+        pathType: Prefix
+        tls:
+          enabled: true
+          secretName: ""
+        precedingPaths: []
+        succeedingPaths: []
+      flower:
+        host: dagster-flower.${SECRET_DOMAIN}
+        path: /
+        pathType: Prefix
+        tls:
+          enabled: true
+          secretName: ""
+        precedingPaths: []
+        succeedingPaths: []
   valuesFrom:
     - kind: Secret
       name: dagster-postgresql-secret

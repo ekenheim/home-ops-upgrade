@@ -45,6 +45,7 @@ spec:
     # User code: disabled until you add your own repo(s). Re-enable and set deployments: [...] when ready.
     dagster-user-deployments:
       enabled: false
+      enableSubchart: false
     # Expose webserver at dagster.${SECRET_DOMAIN} (like mlflow / prefect)
     ingress:
       enabled: true

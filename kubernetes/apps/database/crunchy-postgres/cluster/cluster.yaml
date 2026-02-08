@@ -166,6 +166,10 @@ spec:
       databases: ["lightdash"]
       password:
         type: AlphaNumeric
+    - name: "dagster"
+      databases: ["dagster"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

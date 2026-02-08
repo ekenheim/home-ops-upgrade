@@ -13,6 +13,7 @@ resources:
   - ./cloudnative-pg.yaml
   - ./coredns.yaml
   - ./crunchydata.yaml
+  - ./dagster.yaml
   - ./dask.yaml
   - ./descheduler.yaml
   - ./dragonfly.yaml

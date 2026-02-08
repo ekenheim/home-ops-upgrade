@@ -1,0 +1,67 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# https://artifacthub.io/packages/helm/dagster/dagster
+# https://github.com/dagster-io/dagster/tree/master/helm/dagster
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: dagster
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: dagster
+      version: "1.12.13"
+      sourceRef:
+        kind: HelmRepository
+        name: dagster
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    # Crunchy Postgres (database namespace); credentials from dagster-db-secret via valuesFrom
+    postgresql:
+      enabled: false
+      postgresqlHost: postgres-pgbouncer.database.svc.cluster.local
+    generatePostgresqlPasswordSecret: false
+    # User code deployment (must match dagsterWebserver.workspace.servers host name).
+    dagster-user-deployments:
+      enabled: true
+      enableSubchart: true
+      deployments:
+        - name: k8s-example-user-code-1
+          image:
+            repository: docker.io/dagster/user-code-example
+            tag: "1.12.13"
+          dagsterApiGrpcArgs:
+            - "--python-file"
+            - "/example_project/example_repo/repo.py"
+          port: 3030
+    # Optional: expose webserver via ingress (uncomment and set SECRET_DOMAIN if needed)
+    # ingress:
+    #   enabled: true
+    #   className: internal
+    #   hosts:
+    #     - host: dagster.${SECRET_DOMAIN}
+    #       paths:
+    #         - path: /
+    #           pathType: Prefix
+  valuesFrom:
+    - kind: Secret
+      name: dagster-db-secret
+      valuesKey: postgresql-username
+      targetPath: postgresql.postgresqlUsername
+    - kind: Secret
+      name: dagster-db-secret
+      valuesKey: postgresql-password
+      targetPath: postgresql.postgresqlPassword
+    - kind: Secret
+      name: dagster-db-secret
+      valuesKey: postgresql-database
+      targetPath: postgresql.postgresqlDatabase

@@ -47,6 +47,7 @@ spec:
           image:
             repository: docker.io/dagster/user-code-example
             tag: "1.12.13"
+            pullPolicy: Always
           dagsterApiGrpcArgs:
             - "--python-file"
             - "/example_project/example_repo/repo.py"

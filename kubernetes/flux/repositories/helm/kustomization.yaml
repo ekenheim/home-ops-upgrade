@@ -55,6 +55,7 @@ resources:
   - ./qdrant.yaml
   - ./tailscale.yaml
   - ./lightdash.yaml
+  - ./redpanda.yaml
   - ./spark-operator.yaml
   - ./truecharts.yaml
   - ./nvidia-charts.yaml

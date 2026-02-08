@@ -28,4 +28,5 @@ spec:
     # https://artifacthub.io/packages/helm/redpanda-data/operator
     # https://github.com/redpanda-data/helm-charts/blob/main/charts/operator/values.yaml
     rbac:
-      createRPKBundleCRs: true
+      create: true
+      createAdditionalControllerCRs: true

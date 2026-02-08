@@ -25,11 +25,11 @@ spec:
       strategy: rollback
       retries: 3
   values:
-    # Crunchy Postgres (database namespace); credentials from dagster-db-secret via valuesFrom
+    # Crunchy Postgres: PgBouncer in database namespace; credentials from dagster-db-secret (ExternalSecret → crunchy-pgo-secrets / postgres-pguser-dagster)
     postgresql:
       enabled: false
-      postgresqlHost: postgres-pgbouncer.database.svc.cluster.local
-      # Required by chart schema (used by init container when checking DB); credentials from valuesFrom
+      postgresqlHost: postgres-pgbouncer.database.svc.cluster.local  # Crunchy PgBouncer
+      # Chart schema requires image for init container that checks DB reachability (not the DB server)
       image:
         repository: docker.io/library/postgres
         tag: "14.6"

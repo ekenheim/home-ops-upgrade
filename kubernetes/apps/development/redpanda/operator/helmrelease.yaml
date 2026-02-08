@@ -27,6 +27,8 @@ spec:
   values:
     # https://artifacthub.io/packages/helm/redpanda-data/operator
     # https://github.com/redpanda-data/helm-charts/blob/main/charts/operator/values.yaml
+    crds:
+      enabled: true
     rbac:
       create: true
       createAdditionalControllerCRs: true

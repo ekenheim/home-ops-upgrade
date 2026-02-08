@@ -46,7 +46,7 @@ spec:
         - name: k8s-example-user-code-1
           image:
             repository: docker.io/dagster/user-code-example
-            tag: "1.12.13"
+            tag: "1.12.14"
             pullPolicy: Always
           dagsterApiGrpcArgs:
             - "--python-file"

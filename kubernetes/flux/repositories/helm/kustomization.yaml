@@ -9,6 +9,7 @@ resources:
   - ./bitnami.yaml
   - ./backube.yaml
   - ./bjw-s.yaml
+  - ./bytewax.yaml
   - ./cilium.yaml
   - ./cloudnative-pg.yaml
   - ./coredns.yaml

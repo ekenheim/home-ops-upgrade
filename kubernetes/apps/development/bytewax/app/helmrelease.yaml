@@ -1,0 +1,44 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# https://github.com/bytewax/helm-charts/tree/main/charts/bytewax
+# https://docs.bytewax.io/stable/guide/deployment/helm-chart.html
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: bytewax
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: bytewax
+      version: "0.9.0"
+      sourceRef:
+        kind: HelmRepository
+        name: bytewax
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    # Chart runs a StatefulSet (dataflow) + optional API deployment. Default uses simple.py from chart examples.
+    configuration:
+      pythonFileName: "simple.py"
+      processesCount: 1
+      workersPerProcess: 1
+      keepAlive: true
+      jobMode: false
+      configMap:
+        create: true
+        files:
+          pattern: "examples/*"
+    api:
+      enabled: true
+      port: 3030
+    # Optional: enable recovery with a small PVC for state (default off)
+    # configuration.recovery.enabled: true
+    # configuration.recovery.persistence.size: 5Gi

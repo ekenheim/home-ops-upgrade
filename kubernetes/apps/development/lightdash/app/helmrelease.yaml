@@ -27,7 +27,7 @@ spec:
     # Chart 1.5.1 appVersion 0.1121.0 no longer exists on Docker Hub; pin to a valid tag
     image:
       repository: lightdash/lightdash
-      tag: "0.2440.1"
+      tag: "0.2441.1"
     configMap:
       SITE_URL: https://lightdash.${SECRET_DOMAIN}
       SECURE_COOKIES: "true"

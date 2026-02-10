@@ -175,9 +175,6 @@ spec:
         dragonfly:
           url: https://raw.githubusercontent.com/dragonflydb/dragonfly/refs/heads/main/tools/local/monitoring/grafana/provisioning/dashboards/dragonfly.json
           datasource: Prometheus
-        external-secrets:
-          url: https://raw.githubusercontent.com/external-secrets/external-secrets/main/docs/snippets/dashboard.json
-          datasource: Prometheus
       kubernetes:
         kubernetes-api-server:
           # renovate: depName="Kubernetes / System / API Server"
@@ -225,12 +222,6 @@ spec:
           gnetId: 20842
           revision: 3
           datasource: Prometheus
-        envoy:
-           # renovate: depName="Envoy Proxy Monitoring gRPC"
-           gnetId: 23239
-           revision: 1
-           datasource:
-             - { name: DS_AFRANET_PROMETHEUS, value: Prometheus }
         unifi-insights:
           # renovate: depName="UniFi-Poller: Client Insights - Prometheus"
           gnetId: 11315
@@ -324,11 +315,6 @@ spec:
           datasource:
             - { name: DS_PROMETHEUS, value: Prometheus }
             - { name: VAR_REPLICATIONDESTNAME, value: '.*-bootstrap'}
-        zfs:
-          # renovate: depName="ZFS"
-          gnetId: 7845
-          revision: 4
-          datasource: Prometheus
       system:
         node-exporter-full:
           # renovate: depName="Node Exporter Full"

@@ -1,0 +1,80 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-grafana-dashboard
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: System
+data:
+  alertmanager_dashboard.json: |
+    {
+      "title": "Alertmanager Overview",
+      "uid": "alertmanagerOverview",
+      "schemaVersion": 39,
+      "version": 1,
+      "editable": true,
+      "time": { "from": "now-6h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "refresh": 1,
+            "hide": 2
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Firing Alerts",
+          "datasource": "${datasource}",
+          "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+          "targets": [
+            { "refId": "A", "expr": "sum(ALERTS{alertstate=\"firing\"})" }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Pending Alerts",
+          "datasource": "${datasource}",
+          "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+          "targets": [
+            { "refId": "A", "expr": "sum(ALERTS{alertstate=\"pending\"})" }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "Notifications Sent (5m rate)",
+          "datasource": "${datasource}",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(alertmanager_notifications_total[5m])) by (integration)",
+              "legendFormat": "{{integration}}"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "Notification Failures (5m rate)",
+          "datasource": "${datasource}",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(alertmanager_notifications_failed_total[5m])) by (integration)",
+              "legendFormat": "{{integration}}"
+            }
+          ]
+        }
+      ]
+    }

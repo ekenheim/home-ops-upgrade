@@ -22,12 +22,19 @@ spec:
             - |
               python - <<'PY'
               import ray
-              import ray.data
 
               ray.init(address="ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001")
-              ds = ray.data.range(50000).map_batches(lambda b: {"id": [x * 2 for x in b["id"]]})
-              total = ds.count()
-              total_sum = ds.sum("id")
+
+              @ray.remote
+              def run_data_pipeline():
+                  import ray
+                  import ray.data
+                  ds = ray.data.range(50000).map_batches(
+                      lambda b: {"id": [x * 2 for x in b["id"]]}
+                  )
+                  return ds.count(), ds.sum("id")
+
+              total, total_sum = ray.get(run_data_pipeline.remote())
               print("data_count", total, "data_sum", total_sum)
               ray.shutdown()
               PY

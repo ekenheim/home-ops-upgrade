@@ -29,13 +29,13 @@ spec:
               ray.init(address="ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001")
               serve.start(detached=False, http_options={"host": "0.0.0.0", "port": 8000})
 
-              @serve.deployment(route_prefix="/smoke")
+              @serve.deployment
               class Smoke:
                   def __call__(self, request):
                       return {"ok": True}
 
               app = Smoke.bind()
-              handle = serve.run(app, name="serve-smoke-app")
+              handle = serve.run(app, name="serve-smoke-app", route_prefix="/smoke")
               print("serve_handle", handle)
 
               # Give route a moment to become ready and generate some traffic.

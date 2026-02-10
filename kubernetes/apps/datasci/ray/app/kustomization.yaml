@@ -8,5 +8,9 @@ resources:
   - ./helmrelease.yaml
   - ./ingress.yaml
   - ./podmonitors.yaml
+  - ./prometheusrule.yaml
+  # Optional example workloads (opt-in):
+  # - ../examples/cpu
+  # - ../examples/gpu
   - ../../../../templates/volsync
   - ../../../../templates/gatus/guarded

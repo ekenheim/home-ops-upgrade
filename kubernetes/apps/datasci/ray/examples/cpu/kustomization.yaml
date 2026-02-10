@@ -1,0 +1,12 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: datasci
+resources:
+  - ./ray-core-smoke.yaml
+  - ./ray-data-smoke.yaml
+  - ./ray-train-smoke.yaml
+  - ./ray-tune-smoke.yaml
+  - ./ray-serve-smoke.yaml
+  - ./ray-rllib-smoke.yaml

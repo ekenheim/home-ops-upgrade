@@ -1,0 +1,41 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ray-train-gpu-smoke
+  labels:
+    app.kubernetes.io/name: ray-examples
+    ray.example/subsystem: train
+    ray.example/profile: gpu
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ray-train-gpu-smoke
+          image: rayproject/ray:2.53.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - -lc
+            - |
+              python - <<'PY'
+              import ray
+              ray.init(address="ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001")
+              @ray.remote(num_gpus=1)
+              def gpu_task():
+                  return "gpu_ok"
+              print("train_gpu_result", ray.get(gpu_task.remote()))
+              ray.shutdown()
+              PY
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "2"
+              memory: 2Gi
+              nvidia.com/gpu: "1"

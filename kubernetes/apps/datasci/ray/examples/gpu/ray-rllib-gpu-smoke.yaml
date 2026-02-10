@@ -1,0 +1,41 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ray-rllib-gpu-smoke
+  labels:
+    app.kubernetes.io/name: ray-examples
+    ray.example/subsystem: rllib
+    ray.example/profile: gpu
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ray-rllib-gpu-smoke
+          image: rayproject/ray:2.53.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - -lc
+            - |
+              python - <<'PY'
+              import ray
+              ray.init(address="ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001")
+              @ray.remote(num_gpus=1)
+              def rllib_gpu_task():
+                  return "rllib_gpu_ok"
+              print("rllib_gpu_result", ray.get(rllib_gpu_task.remote()))
+              ray.shutdown()
+              PY
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "2"
+              memory: 2Gi
+              nvidia.com/gpu: "1"

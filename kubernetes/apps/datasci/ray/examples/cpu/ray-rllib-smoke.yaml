@@ -1,0 +1,39 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ray-rllib-smoke
+  labels:
+    app.kubernetes.io/name: ray-examples
+    ray.example/subsystem: rllib
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ray-rllib-smoke
+          image: rayproject/ray:2.53.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - -lc
+            - |
+              python - <<'PY'
+              import ray
+              from ray.rllib.algorithms.ppo import PPOConfig
+
+              ray.init(address="ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001")
+              # Keep this as a lightweight API smoke test for the base image.
+              cfg = PPOConfig().environment("CartPole-v1")
+              print("rllib_config_ready", bool(cfg))
+              ray.shutdown()
+              PY
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi

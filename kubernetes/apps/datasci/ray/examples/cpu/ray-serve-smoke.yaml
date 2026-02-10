@@ -1,0 +1,57 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ray-serve-smoke
+  labels:
+    app.kubernetes.io/name: ray-examples
+    ray.example/subsystem: serve
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ray-serve-smoke
+          image: rayproject/ray:2.53.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - -lc
+            - |
+              python - <<'PY'
+              import time
+              from urllib.request import urlopen
+              import ray
+              from ray import serve
+
+              ray.init(address="ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001")
+              serve.start(detached=False, http_options={"host": "0.0.0.0", "port": 8000})
+
+              @serve.deployment(route_prefix="/smoke")
+              class Smoke:
+                  def __call__(self, request):
+                      return {"ok": True}
+
+              app = Smoke.bind()
+              handle = serve.run(app, name="serve-smoke-app")
+              print("serve_handle", handle)
+
+              # Give route a moment to become ready and generate some traffic.
+              time.sleep(5)
+              for _ in range(10):
+                  body = urlopen("http://ray-kuberay-head-svc.datasci.svc.cluster.local:8000/smoke", timeout=5).read().decode()
+                  print("serve_response", body)
+
+              serve.delete("serve-smoke-app")
+              serve.shutdown()
+              ray.shutdown()
+              PY
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi

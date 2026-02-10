@@ -1,0 +1,51 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ray-core-smoke
+  labels:
+    app.kubernetes.io/name: ray-examples
+    ray.example/subsystem: core
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ray-core-smoke
+          image: rayproject/ray:2.53.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - -lc
+            - |
+              python - <<'PY'
+              import ray
+              ray.init(address="ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001")
+
+              @ray.remote
+              def square(x):
+                  return x * x
+
+              @ray.remote
+              class Counter:
+                  def __init__(self):
+                      self.n = 0
+                  def inc(self):
+                      self.n += 1
+                      return self.n
+
+              results = ray.get([square.remote(i) for i in range(8)])
+              c = Counter.remote()
+              ticks = ray.get([c.inc.remote() for _ in range(5)])
+              print("core_results", results, "counter", ticks)
+              ray.shutdown()
+              PY
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi

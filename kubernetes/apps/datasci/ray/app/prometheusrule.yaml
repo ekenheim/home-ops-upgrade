@@ -1,0 +1,39 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ray-platform-alerts
+  namespace: datasci
+spec:
+  groups:
+    - name: ray-platform
+      rules:
+        - alert: RayHeadMetricsMissing
+          expr: sum(up{job="datasci/ray-head-monitor"}) < 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Ray head metrics missing
+            description: The Ray head PodMonitor target has been unavailable for at least 10 minutes.
+        - alert: RayWorkerMetricsMissing
+          expr: sum(up{job="datasci/ray-workers-monitor"}) < 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Ray worker metrics missing
+            description: Ray worker PodMonitor targets have been unavailable for at least 10 minutes.
+        - alert: RayServeErrorRateHigh
+          expr: |
+            (
+              sum(rate(ray_serve_deployment_error_counter_total{ray_io_cluster=~".+"}[10m]))
+              /
+              clamp_min(sum(rate(ray_serve_deployment_request_counter_total{ray_io_cluster=~".+"}[10m])), 1)
+            ) > 0.10
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Ray Serve error rate is high
+            description: Ray Serve error rate has been above 10% for 15 minutes.

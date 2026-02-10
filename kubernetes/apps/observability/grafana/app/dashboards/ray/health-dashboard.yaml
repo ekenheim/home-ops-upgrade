@@ -1,0 +1,108 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/configmap-v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ray-health-grafana-dashboard
+  labels:
+    grafana_dashboard: "1"
+data:
+  health_grafana_dashboard.json: |
+    {
+      "title": "Ray Subsystem Health",
+      "uid": "raySubsystemHealthDashboard",
+      "schemaVersion": 27,
+      "version": 1,
+      "editable": true,
+      "timezone": "",
+      "style": "dark",
+      "time": {
+        "from": "now-30m",
+        "to": "now"
+      },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "refresh": 1,
+            "hide": 2
+          },
+          {
+            "name": "Cluster",
+            "type": "query",
+            "datasource": "${datasource}",
+            "includeAll": true,
+            "multi": false,
+            "refresh": 2,
+            "query": {
+              "query": "label_values(ray_node_network_receive_speed{}, ray_io_cluster)",
+              "refId": "ClusterQuery"
+            }
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Core Active Nodes",
+          "datasource": "${datasource}",
+          "gridPos": {"h": 6, "w": 4, "x": 0, "y": 0},
+          "targets": [
+            {"refId": "A", "expr": "sum(ray_node_cpu_count{ray_io_cluster=~\"$Cluster\"}) > 0"}
+          ]
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Data Metrics Present",
+          "datasource": "${datasource}",
+          "gridPos": {"h": 6, "w": 4, "x": 4, "y": 0},
+          "targets": [
+            {"refId": "A", "expr": "count({__name__=~\"ray_data_.*\",ray_io_cluster=~\"$Cluster\"}) > 0"}
+          ]
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Train Metrics Present",
+          "datasource": "${datasource}",
+          "gridPos": {"h": 6, "w": 4, "x": 8, "y": 0},
+          "targets": [
+            {"refId": "A", "expr": "count({__name__=~\"ray_train_.*\",ray_io_cluster=~\"$Cluster\"}) > 0"}
+          ]
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Tune Metrics Present",
+          "datasource": "${datasource}",
+          "gridPos": {"h": 6, "w": 4, "x": 12, "y": 0},
+          "targets": [
+            {"refId": "A", "expr": "count({__name__=~\"ray_tune_.*\",ray_io_cluster=~\"$Cluster\"}) > 0"}
+          ]
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "Serve Metrics Present",
+          "datasource": "${datasource}",
+          "gridPos": {"h": 6, "w": 4, "x": 16, "y": 0},
+          "targets": [
+            {"refId": "A", "expr": "count({__name__=~\"ray_serve_.*\",ray_io_cluster=~\"$Cluster\"}) > 0"}
+          ]
+        },
+        {
+          "id": 6,
+          "type": "stat",
+          "title": "RLlib Metrics Present",
+          "datasource": "${datasource}",
+          "gridPos": {"h": 6, "w": 4, "x": 20, "y": 0},
+          "targets": [
+            {"refId": "A", "expr": "count({__name__=~\"ray_rllib_.*|rllib_.*\",ray_io_cluster=~\"$Cluster\"}) > 0"}
+          ]
+        }
+      ]
+    }

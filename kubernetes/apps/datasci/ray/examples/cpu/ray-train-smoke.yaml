@@ -1,0 +1,40 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ray-train-smoke
+  labels:
+    app.kubernetes.io/name: ray-examples
+    ray.example/subsystem: train
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ray-train-smoke
+          image: rayproject/ray:2.53.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - -lc
+            - |
+              python - <<'PY'
+              import ray
+              from ray import train
+
+              ray.init(address="ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001")
+              # The base ray image does not ship with framework extras (e.g. torch).
+              # This smoke test validates train APIs are importable and cluster connectivity works.
+              print("train_scaling_config", train.ScalingConfig(num_workers=1))
+              print("train_run_config", train.RunConfig(name="ray-train-smoke"))
+              ray.shutdown()
+              PY
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi

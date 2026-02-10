@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - default-dashboard.yaml
   - data-dashboard.yaml
+  - health-dashboard.yaml
   - serve-dashboard.yaml
   - serve-deployment-dashboard.yaml
 generatorOptions:

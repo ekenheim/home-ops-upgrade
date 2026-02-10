@@ -104,7 +104,7 @@ data:
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(max_over_time(ray_tasks{IsRetry=\"0\",State=~\"FINISHED|FAILED\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}[14d])) by (State) or clamp_min(sum(ray_tasks{IsRetry=\"0\",State!~\"FINISHED|FAILED\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (State), 0)",
+                    "expr": "(sum(max_over_time(ray_tasks{IsRetry=\"0\",State=~\"FINISHED|FAILED\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}[14d])) by (State) or clamp_min(sum(ray_tasks{IsRetry=\"0\",State!~\"FINISHED|FAILED\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (State), 0)) or clamp_min(sum(ray_scheduler_tasks{instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (State), 0)",
                     "interval": "",
                     "legendFormat": "{{State}}",
                     "queryType": "randomWalk",
@@ -112,7 +112,7 @@ data:
                 },
                 {
                     "exemplar": true,
-                    "expr": "sum(max_over_time(ray_tasks{IsRetry!=\"0\",State=~\"FINISHED|FAILED\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}[14d])) by (State) or clamp_min(sum(ray_tasks{IsRetry!=\"0\",State!~\"FINISHED|FAILED\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (State), 0)",
+                    "expr": "(sum(max_over_time(ray_tasks{IsRetry!=\"0\",State=~\"FINISHED|FAILED\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}[14d])) by (State) or clamp_min(sum(ray_tasks{IsRetry!=\"0\",State!~\"FINISHED|FAILED\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (State), 0)) or clamp_min(sum(label_replace(ray_scheduler_unscheduleable_tasks{instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}, \"State\", \"RETRY:$1\", \"Reason\", \"(.*)\")) by (State), 0)",
                     "interval": "",
                     "legendFormat": "{{State}} (retry)",
                     "queryType": "randomWalk",
@@ -238,7 +238,7 @@ data:
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "clamp_min(sum(ray_tasks{IsRetry=\"0\",State!~\"FINISHED|FAILED\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (Name), 0)",
+                    "expr": "clamp_min((sum(ray_tasks{IsRetry=\"0\",State!~\"FINISHED|FAILED\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (Name)) or (sum(label_replace(ray_scheduler_tasks{instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}, \"Name\", \"scheduler:$1\", \"State\", \"(.*)\")) by (Name)), 0)",
                     "interval": "",
                     "legendFormat": "{{Name}}",
                     "queryType": "randomWalk",
@@ -246,7 +246,7 @@ data:
                 },
                 {
                     "exemplar": true,
-                    "expr": "clamp_min(sum(ray_tasks{IsRetry!=\"0\",State!~\"FINISHED|FAILED\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (Name), 0)",
+                    "expr": "clamp_min((sum(ray_tasks{IsRetry!=\"0\",State!~\"FINISHED|FAILED\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (Name)) or (sum(label_replace(ray_scheduler_unscheduleable_tasks{instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}, \"Name\", \"retry:$1\", \"Reason\", \"(.*)\")) by (Name)), 0)",
                     "interval": "",
                     "legendFormat": "{{Name}} (retry)",
                     "queryType": "randomWalk",
@@ -372,7 +372,7 @@ data:
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "clamp_min(sum(ray_tasks{IsRetry=\"0\",State=~\"RUNNING*\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (Name), 0)",
+                    "expr": "clamp_min((sum(ray_tasks{IsRetry=\"0\",State=~\"RUNNING*\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (Name)) or (sum(label_replace(ray_scheduler_tasks{State=\"Executing\",instance=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}, \"Name\", \"scheduler:$1\", \"State\", \"(.*)\")) by (Name)), 0)",
                     "interval": "",
                     "legendFormat": "{{Name}}",
                     "queryType": "randomWalk",
@@ -506,7 +506,7 @@ data:
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(ray_actors{Source=\"gcs\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (State)",
+                    "expr": "sum(ray_actors{Source=\"gcs\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (State) or sum(ray_gcs_actors_count{SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (State)",
                     "interval": "",
                     "legendFormat": "{{State}}",
                     "queryType": "randomWalk",
@@ -632,7 +632,7 @@ data:
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(ray_actors{Source=\"executor\",NodeAddress=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (State)",
+                    "expr": "sum(ray_actors{Source=\"executor\",NodeAddress=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (State) or sum(ray_gcs_actors_count{SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (State)",
                     "interval": "",
                     "legendFormat": "{{State}}",
                     "queryType": "randomWalk",
@@ -758,7 +758,7 @@ data:
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(ray_actors{State!=\"DEAD\",Source=\"executor\",NodeAddress=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (Name)",
+                    "expr": "sum(ray_actors{State!=\"DEAD\",Source=\"executor\",NodeAddress=~\"$Instance\",SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (Name) or sum(label_replace(ray_gcs_actors_count{SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}, \"Name\", \"gcs:$1\", \"State\", \"(.*)\")) by (Name)",
                     "interval": "",
                     "legendFormat": "{{Name}}",
                     "queryType": "randomWalk",
@@ -2950,7 +2950,7 @@ data:
             "targets": [
                 {
                     "exemplar": true,
-                    "expr": "sum(autoscaler_active_nodes{SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (NodeType)",
+                    "expr": "sum(autoscaler_active_nodes{SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}) by (NodeType) or sum(label_replace(ray_node_cpu_count{SessionName=~\"$SessionName\",ray_io_cluster=~\"$Cluster\",}, \"NodeType\", \"$1\", \"RayNodeType\", \"(.*)\")) by (NodeType)",
                     "interval": "",
                     "legendFormat": "Active Nodes: {{NodeType}}",
                     "queryType": "randomWalk",

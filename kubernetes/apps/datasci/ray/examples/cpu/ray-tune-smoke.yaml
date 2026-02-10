@@ -1,0 +1,47 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ray-tune-smoke
+  labels:
+    app.kubernetes.io/name: ray-examples
+    ray.example/subsystem: tune
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ray-tune-smoke
+          image: rayproject/ray:2.53.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - -lc
+            - |
+              python - <<'PY'
+              import ray
+              from ray import tune
+
+              ray.init(address="ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001")
+
+              def objective(config):
+                  return {"score": config["x"] * 2}
+
+              tuner = tune.Tuner(
+                  objective,
+                  param_space={"x": tune.grid_search([1, 2, 3])},
+              )
+              result_grid = tuner.fit()
+              print("tune_result_count", len(result_grid))
+              print("tune_best", result_grid.get_best_result(metric="score", mode="max").metrics)
+              ray.shutdown()
+              PY
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi

@@ -1,0 +1,40 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ray-data-smoke
+  labels:
+    app.kubernetes.io/name: ray-examples
+    ray.example/subsystem: data
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ray-data-smoke
+          image: rayproject/ray:2.53.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - -lc
+            - |
+              python - <<'PY'
+              import ray
+              import ray.data
+
+              ray.init(address="ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001")
+              ds = ray.data.range(50000).map_batches(lambda b: {"id": [x * 2 for x in b["id"]]})
+              total = ds.count()
+              total_sum = ds.sum("id")
+              print("data_count", total, "data_sum", total_sum)
+              ray.shutdown()
+              PY
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi

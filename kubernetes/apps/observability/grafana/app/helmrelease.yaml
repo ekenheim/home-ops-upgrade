@@ -178,21 +178,6 @@ spec:
         external-secrets:
           url: https://raw.githubusercontent.com/external-secrets/external-secrets/main/docs/snippets/dashboard.json
           datasource: Prometheus
-        flyte-admin:
-          # renovate: depName="UPDATED - FlyteAdmin Dashboard (via Prometheus)"
-          gnetId: 21720
-          revision: 2
-          datasource: Prometheus
-        flyte-propeller:
-          # renovate: depName="UPDATED - Flyte Propeller Dashboard (via Prometheus)"
-          gnetId: 21719
-          revision: 2
-          datasource: Prometheus
-        flyte-user:
-          # renovate: depName="UPDATED - Flyte User Dashboard (via Prometheus)"
-          gnetId: 22146
-          revision: 2
-          datasource: Prometheus
       kubernetes:
         kubernetes-api-server:
           # renovate: depName="Kubernetes / System / API Server"

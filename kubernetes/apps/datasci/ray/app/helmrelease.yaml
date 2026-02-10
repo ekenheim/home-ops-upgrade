@@ -27,6 +27,7 @@ spec:
       pullPolicy: IfNotPresent
 
     head:
+      enableInTreeAutoscaling: true
       rayStartParams:
         dashboard-host: '0.0.0.0'
         ray-client-server-port: '10001'

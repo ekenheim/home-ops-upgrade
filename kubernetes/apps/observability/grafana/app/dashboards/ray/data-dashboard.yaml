@@ -1,0 +1,141 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/configmap-v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ray-data-grafana-dashboard
+  labels:
+    grafana_dashboard: "1"
+data:
+  data_grafana_dashboard.json: |
+    {
+      "title": "Ray Data Dashboard",
+      "uid": "rayDataDashboard",
+      "schemaVersion": 27,
+      "version": 1,
+      "editable": true,
+      "timezone": "",
+      "style": "dark",
+      "tags": [
+        "rayVersion:2.53.0"
+      ],
+      "time": {
+        "from": "now-30m",
+        "to": "now"
+      },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "refresh": 1,
+            "hide": 2
+          },
+          {
+            "name": "Cluster",
+            "type": "query",
+            "datasource": "${datasource}",
+            "includeAll": true,
+            "multi": false,
+            "refresh": 2,
+            "query": {
+              "query": "label_values(ray_node_network_receive_speed{}, ray_io_cluster)",
+              "refId": "RayClusterVariableQuery"
+            }
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Ray Data Running Tasks",
+          "type": "graph",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(ray_data_num_tasks_running{ray_io_cluster=~\"$Cluster\"}) by (dataset, operator)",
+              "legendFormat": "{{dataset}} / {{operator}}"
+            }
+          ],
+          "lines": true,
+          "linewidth": 1,
+          "fill": 0,
+          "pointradius": 2,
+          "points": false,
+          "nullPointMode": "null",
+          "yaxes": [
+            {
+              "format": "tasks",
+              "min": "0",
+              "show": true
+            },
+            {
+              "format": "short",
+              "show": true
+            }
+          ],
+          "xaxis": {
+            "mode": "time",
+            "show": true
+          },
+          "legend": {
+            "show": true,
+            "values": true,
+            "current": true
+          }
+        },
+        {
+          "id": 2,
+          "title": "Ray Data Current Bytes",
+          "type": "graph",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(ray_data_current_bytes{ray_io_cluster=~\"$Cluster\"}) by (dataset, operator)",
+              "legendFormat": "{{dataset}} / {{operator}}"
+            }
+          ],
+          "lines": true,
+          "linewidth": 1,
+          "fill": 0,
+          "pointradius": 2,
+          "points": false,
+          "nullPointMode": "null",
+          "yaxes": [
+            {
+              "format": "bytes",
+              "min": "0",
+              "show": true
+            },
+            {
+              "format": "short",
+              "show": true
+            }
+          ],
+          "xaxis": {
+            "mode": "time",
+            "show": true
+          },
+          "legend": {
+            "show": true,
+            "values": true,
+            "current": true
+          }
+        }
+      ]
+    }

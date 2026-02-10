@@ -80,6 +80,12 @@ patches:
       kind: DestinationRule
       name: ml-pipeline-seaweedfs
       namespace: kubeflow
+  # Katib UI route still points to old deploykf gateway/host; route via kubeflow-gateway
+  - path: patches/katib-virtualservice-kubeflow-gateway.yaml
+    target:
+      kind: VirtualService
+      name: katib-ui
+      namespace: kubeflow
   # Note: Custom patches for KFP (Postgres, MinIO) and Katib (Postgres) are disabled
   # until the base deployment is working. The default configs use MySQL/MariaDB.
   # TODO: Re-enable patches after verifying basic deployment works

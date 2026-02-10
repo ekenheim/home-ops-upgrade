@@ -10,7 +10,8 @@ metadata:
 spec:
   workloadSelector:
     labels:
-      app: istio-ingressgateway
+      app: istio-ingress
+      istio: ingress
   configPatches:
     - applyTo: HTTP_FILTER
       match:

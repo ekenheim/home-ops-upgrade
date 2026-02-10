@@ -1,0 +1,32 @@
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: katib-ui
+  namespace: kubeflow
+spec:
+  gateways:
+    - kubeflow-gateway
+  hosts:
+    - "*"
+  http:
+    - match:
+        - uri:
+            prefix: /_/katib/
+      rewrite:
+        uri: /katib/
+      route:
+        - destination:
+            host: katib-ui.kubeflow.svc.cluster.local
+            port:
+              number: 80
+    - match:
+        - uri:
+            prefix: /katib/
+      rewrite:
+        uri: /katib/
+      route:
+        - destination:
+            host: katib-ui.kubeflow.svc.cluster.local
+            port:
+              number: 80

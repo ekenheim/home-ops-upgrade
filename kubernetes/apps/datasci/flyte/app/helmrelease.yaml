@@ -62,4 +62,14 @@ spec:
                 secretKeyRef:
                   name: flyte-s3-credentials
                   key: AWS_SECRET_ACCESS_KEY
+    service:
+      enabled: true
+    flyteadmin:
+      serviceMonitor:
+        enabled: true
+        interval: 1m
+    flytepropeller:
+      serviceMonitor:
+        enabled: true
+        interval: 1m
 

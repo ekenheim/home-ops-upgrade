@@ -74,6 +74,7 @@ spec:
                   name: immich-db-secret
             env:
               LOG_LEVEL: log
+              IMMICH_TELEMETRY_INCLUDE: all
               # IMMICH_CONFIG_FILE: /config/immich-config.json
               IMMICH_MEDIA_LOCATION: &mediaLocation /usr/src/app/upload
               # Database connection settings to prevent lock issues

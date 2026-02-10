@@ -4,3 +4,4 @@ kind: Kustomization
 namespace: datasci
 resources:
   - ./helmrelease.yaml
+  - ./podmonitor.yaml

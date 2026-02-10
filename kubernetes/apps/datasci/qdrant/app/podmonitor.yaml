@@ -1,0 +1,17 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: qdrant
+  namespace: datasci
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: qdrant
+  podMetricsEndpoints:
+    - path: /metrics
+      interval: 1m
+      targetPort: 6333
+      metricRelabelings:
+        - action: labeldrop
+          regex: (pod)

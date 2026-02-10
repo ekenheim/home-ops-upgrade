@@ -87,12 +87,12 @@ patches:
       name: katib-ui
       namespace: kubeflow
   # KServe models web app: add /_/kserve-endpoints route and update ingress principal
-  - path: patches/kserve-models-web-app-routing-and-authz.yaml
+  - path: patches/kserve-models-web-app-virtualservice.yaml
     target:
       kind: VirtualService
       name: kserve-models-web-app
       namespace: kubeflow
-  - path: patches/kserve-models-web-app-routing-and-authz.yaml
+  - path: patches/kserve-models-web-app-authorizationpolicy.yaml
     target:
       kind: AuthorizationPolicy
       name: kserve-models-web-app

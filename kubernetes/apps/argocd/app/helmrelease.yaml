@@ -16,9 +16,11 @@ spec:
         name: argo-cd
         namespace: flux-system
   install:
+    timeout: 30m
     remediation:
       retries: 3
   upgrade:
+    timeout: 30m
     remediation:
       retries: 3
   values:

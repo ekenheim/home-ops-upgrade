@@ -15,11 +15,13 @@ spec:
         name: cilium
         namespace: flux-system
   install:
+    disableWait: true
     remediation:
       retries: 3
     timeout: 15m
   upgrade:
     cleanupOnFail: true
+    disableWait: true
     remediation:
       strategy: rollback
       retries: 3

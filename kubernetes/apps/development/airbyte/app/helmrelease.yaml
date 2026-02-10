@@ -15,6 +15,12 @@ spec:
         namespace: flux-system
   install:
     timeout: 30m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 30m
+    remediation:
+      retries: 3
   values:
     # https://artifacthub.io/packages/helm/airbyte/airbyte
     # https://github.com/airbytehq/airbyte-platform/blob/main/charts/airbyte/values.yaml

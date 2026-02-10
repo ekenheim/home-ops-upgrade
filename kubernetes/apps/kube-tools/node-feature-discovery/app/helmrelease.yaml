@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: node-feature-discovery
-      version: 0.18.3
+      version: 0.18.2
       sourceRef:
         kind: HelmRepository
         name: node-feature-discovery
@@ -20,6 +20,7 @@ spec:
       retries: 3
   upgrade:
     cleanupOnFail: true
+    disableWait: true
     crds: CreateReplace
     remediation:
       strategy: rollback

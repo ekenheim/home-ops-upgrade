@@ -1,0 +1,14 @@
+# Disable mTLS for metadata-grpc because the deployment runs without an Istio sidecar.
+# Sidecar-injected clients (metadata-writer/ml-pipeline) otherwise attempt ISTIO_MUTUAL
+# and fail to connect to metadata-grpc-service:8080.
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: metadata-grpc-service
+  namespace: kubeflow
+spec:
+  host: metadata-grpc-service.kubeflow.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: DISABLE

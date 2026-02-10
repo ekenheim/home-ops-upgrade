@@ -70,6 +70,11 @@ patches:
       kind: DestinationRule
       name: ml-pipeline-mysql
       namespace: kubeflow
+  - path: patches/metadata-grpc-destinationrule-disable-mtls.yaml
+    target:
+      kind: DestinationRule
+      name: metadata-grpc-service
+      namespace: kubeflow
   - path: patches/seaweedfs-destinationrule-disable-mtls.yaml
     target:
       kind: DestinationRule

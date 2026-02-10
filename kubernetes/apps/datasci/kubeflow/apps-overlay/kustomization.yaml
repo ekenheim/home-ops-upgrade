@@ -86,6 +86,17 @@ patches:
       kind: VirtualService
       name: katib-ui
       namespace: kubeflow
+  # KServe models web app: add /_/kserve-endpoints route and update ingress principal
+  - path: patches/kserve-models-web-app-routing-and-authz.yaml
+    target:
+      kind: VirtualService
+      name: kserve-models-web-app
+      namespace: kubeflow
+  - path: patches/kserve-models-web-app-routing-and-authz.yaml
+    target:
+      kind: AuthorizationPolicy
+      name: kserve-models-web-app
+      namespace: kubeflow
   # Note: Custom patches for KFP (Postgres, MinIO) and Katib (Postgres) are disabled
   # until the base deployment is working. The default configs use MySQL/MariaDB.
   # TODO: Re-enable patches after verifying basic deployment works

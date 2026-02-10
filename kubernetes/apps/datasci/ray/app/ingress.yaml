@@ -1,0 +1,25 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ray-dashboard
+  namespace: datasci
+  annotations:
+    external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Data Science
+    gethomepage.dev/name: KubeRay
+    gethomepage.dev/icon: mdi:ray-start-arrow
+spec:
+  ingressClassName: internal
+  rules:
+    - host: kuberay.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ray-external
+                port:
+                  number: 8265

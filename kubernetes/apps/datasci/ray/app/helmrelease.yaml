@@ -38,6 +38,8 @@ spec:
           cpu: "1"
           memory: "2G"
       containerEnv:
+        - name: RAY_LOG_TO_STDERR
+          value: "1"
         - name: RAY_PROMETHEUS_HOST
           value: "http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090"
         - name: RAY_GRAFANA_HOST
@@ -70,6 +72,8 @@ spec:
           cpu: "1"
           memory: "2G"
       containerEnv:
+        - name: RAY_LOG_TO_STDERR
+          value: "1"
         - name: RAY_PROMETHEUS_HOST
           value: "http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090"
         - name: RAY_GRAFANA_HOST
@@ -104,7 +108,7 @@ spec:
         hajimari.io/icon: mdi:ray
       className: internal
       hosts:
-        - host: ray.${SECRET_DOMAIN}
+        - host: kuberay.${SECRET_DOMAIN}
           paths:
             - path: /
               service:
@@ -112,7 +116,7 @@ spec:
                 port: 8265
       tls:
         - hosts:
-            - ray.${SECRET_DOMAIN}
+            - kuberay.${SECRET_DOMAIN}
 
     service:
       type: ClusterIP  # Keep as ClusterIP since we're using ray-external for external access

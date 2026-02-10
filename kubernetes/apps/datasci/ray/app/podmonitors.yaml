@@ -1,0 +1,53 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: ray-head-monitor
+  namespace: datasci
+spec:
+  jobLabel: ray-head
+  selector:
+    matchLabels:
+      ray.io/cluster: ray-kuberay
+      ray.io/node-type: head
+  podMetricsEndpoints:
+    - port: metrics
+      relabelings:
+        - action: replace
+          sourceLabels:
+            - __meta_kubernetes_pod_label_ray_io_cluster
+          targetLabel: ray_io_cluster
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: ray-workers-monitor
+  namespace: datasci
+spec:
+  jobLabel: ray-workers
+  selector:
+    matchLabels:
+      ray.io/cluster: ray-kuberay
+      ray.io/node-type: worker
+  podMetricsEndpoints:
+    - port: metrics
+      relabelings:
+        - action: replace
+          sourceLabels:
+            - __meta_kubernetes_pod_label_ray_io_cluster
+          targetLabel: ray_io_cluster
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kuberay-operator
+  namespace: datasci
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kuberay-operator
+      app.kubernetes.io/instance: kuberay-operator
+  endpoints:
+    - port: http
+      interval: 30s
+      honorLabels: true

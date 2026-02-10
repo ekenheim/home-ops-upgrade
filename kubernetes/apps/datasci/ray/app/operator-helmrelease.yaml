@@ -25,3 +25,9 @@ spec:
   values:
     crds:
       enabled: true
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        honorLabels: true

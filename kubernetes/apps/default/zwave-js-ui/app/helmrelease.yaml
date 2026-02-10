@@ -66,6 +66,10 @@ spec:
         pod:
           nodeSelector:
             aeotec.feature.node.kubernetes.io/zwave: "true"
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+              effect: NoSchedule
     service:
       app:
         controller: *app

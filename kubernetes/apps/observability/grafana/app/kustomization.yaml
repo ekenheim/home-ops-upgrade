@@ -6,4 +6,5 @@ resources:
   - ./helmrelease.yaml
   - ./externalsecret.yaml
   - ./dashboards/ray
+  - ./dashboards/seldon
   - ../../../../templates/gatus/external

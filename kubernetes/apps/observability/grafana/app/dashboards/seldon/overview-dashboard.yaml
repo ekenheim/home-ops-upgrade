@@ -1,0 +1,177 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/configmap-v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: seldon-overview-grafana-dashboard
+  labels:
+    grafana_dashboard: "1"
+data:
+  seldon_overview_dashboard.json: |
+    {
+      "title": "Seldon Core Overview",
+      "uid": "seldonCoreOverview",
+      "schemaVersion": 27,
+      "version": 1,
+      "editable": true,
+      "timezone": "",
+      "style": "dark",
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "refresh": 1,
+            "hide": 2
+          },
+          {
+            "name": "Namespace",
+            "type": "query",
+            "datasource": "${datasource}",
+            "includeAll": true,
+            "multi": true,
+            "refresh": 2,
+            "query": {
+              "query": "label_values(seldon_api_executor_server_requests_seconds_count, namespace)",
+              "refId": "NamespaceVar"
+            }
+          },
+          {
+            "name": "Deployment",
+            "type": "query",
+            "datasource": "${datasource}",
+            "includeAll": true,
+            "multi": true,
+            "refresh": 2,
+            "query": {
+              "query": "label_values(seldon_api_executor_server_requests_seconds_count{namespace=~\"$Namespace\"}, seldon_deployment_name)",
+              "refId": "DeploymentVar"
+            }
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Seldon Runtime Pods Scraped",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 0
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(up{job=\"istio-system/seldon-runtime\"})"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Controller Pod Scraped",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 0
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(up{job=\"istio-system/seldon-controller-manager\"})"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Seldon Metrics Series",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 0
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "count({__name__=~\"seldon_.*\"})"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "graph",
+          "title": "Executor Request Rate",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 6
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(seldon_api_executor_server_requests_seconds_count{namespace=~\"$Namespace\",seldon_deployment_name=~\"$Deployment\"}[5m])) by (namespace, seldon_deployment_name)",
+              "legendFormat": "{{namespace}}/{{seldon_deployment_name}}"
+            }
+          ],
+          "lines": true,
+          "linewidth": 1
+        },
+        {
+          "id": 5,
+          "type": "graph",
+          "title": "Executor Error Rate",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 6
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(seldon_api_executor_server_requests_seconds_count{namespace=~\"$Namespace\",seldon_deployment_name=~\"$Deployment\",code!~\"2..\"}[5m])) by (namespace, seldon_deployment_name, code)",
+              "legendFormat": "{{namespace}}/{{seldon_deployment_name}} {{code}}"
+            }
+          ],
+          "lines": true,
+          "linewidth": 1
+        },
+        {
+          "id": 6,
+          "type": "graph",
+          "title": "Executor p95 Latency (s)",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 14
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.95, sum(rate(seldon_api_executor_server_requests_seconds_bucket{namespace=~\"$Namespace\",seldon_deployment_name=~\"$Deployment\"}[5m])) by (le, namespace, seldon_deployment_name))",
+              "legendFormat": "{{namespace}}/{{seldon_deployment_name}}"
+            }
+          ],
+          "lines": true,
+          "linewidth": 1
+        }
+      ]
+    }

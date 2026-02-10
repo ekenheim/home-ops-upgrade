@@ -5,4 +5,5 @@ namespace: istio-system
 resources:
   - helmrelease.yaml
   - externalsecrets.yaml
+  - podmonitors.yaml
 # - gateway.yaml # Removed, using main Istio gateway

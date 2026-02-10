@@ -8,10 +8,15 @@ on:
     branches: ["main"]
     paths: ["terraform/**"]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   publish-terraform:
     name: Publish Terraform
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -37,7 +42,7 @@ jobs:
           token: "${{ steps.app-token.outputs.token }}"
 
       - name: Setup Homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+        uses: Homebrew/actions/setup-homebrew@v4
 
       - name: Setup Workflow Tools
         shell: bash

@@ -10,6 +10,10 @@ on:
   schedule:
     - cron: "0 0 * * *" # Daily at Midnight
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   label-sync:
     name: Label Sync

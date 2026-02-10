@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: ["main"]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
@@ -94,6 +97,7 @@ jobs:
     if: ${{ needs.pre-job.outputs.any_changed == 'true' && needs.compare.outputs.images != '[]' }}
     name: Image Pull - Pull Images
     runs-on: ${{ format('home-ops-runner-{0}', matrix.cluster) }}
+    timeout-minutes: 30
     needs: ["pre-job", "compare"]
     strategy:
       matrix:
@@ -105,13 +109,21 @@ jobs:
       - name: Install talosctl
         run: curl -fsSL https://talos.dev/install | sh
 
+      - name: Validate NODE variable
+        shell: bash
+        run: |
+          if [ -z "${NODE:-}" ]; then
+            echo "NODE is not set on this runner. Configure NODE for talosctl target selection."
+            exit 1
+          fi
+
       - name: Pull Image
         run: talosctl --nodes $NODE image pull ${{ matrix.images }}
 
   status:
     if: ${{ always() }}
     name: Image Pull - Success
-    needs: pull
+    needs: ["pre-job", "extract", "compare", "pull"]
     runs-on: ubuntu-latest
     steps:
       - name: Any jobs failed?

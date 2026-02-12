@@ -127,9 +127,9 @@ deploykf_dependencies:
       backgroundController:
         resources:
           limits:
-            memory: 1Gi
+            memory: 2Gi
           requests:
-            memory: 256Mi
+            memory: 512Mi
       cleanupJobs:
         admissionReports:
           enabled: false

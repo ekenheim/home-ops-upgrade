@@ -23,6 +23,15 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
+  valuesFrom:
+    - kind: Secret
+      name: harbor-secret
+      valuesKey: harborAdminPassword
+      targetPath: harborAdminPassword
+    - kind: Secret
+      name: harbor-secret
+      valuesKey: secretKey
+      targetPath: secretKey
   values:
     expose:
       type: loadBalancer
@@ -75,10 +84,6 @@ spec:
     # our CSI does not support ReadWriteMany so we must use Recreate on pods
     updateStrategy:
       type: Recreate
-
-    harborAdminPassword: "${SECRET_HARBOR_ADMIN_PASSWORD}"
-    # The secret key used for encryption. Must be a string of 16 chars.
-    secretKey: "${SECRET_HARBOR_ENCRPYTION_KEY}"
 
     notary:
       enabled: false

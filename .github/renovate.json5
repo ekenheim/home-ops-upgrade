@@ -1,8 +1,15 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  // PAT in Mend UI (credentials): needed for private repo API + GHCR image tag lookups
   hostRules: [
     {
       matchHost: 'https://api.github.com/repos/ekenheim/nordic-housing',
+      token: '{{ secrets.hempriser }}',
+    },
+    // GHCR: Renovate discovers new image tags by querying ghcr.io, not api.github.com
+    {
+      matchHost: 'ghcr.io',
+      hostType: 'docker',
       token: '{{ secrets.hempriser }}',
     },
   ],

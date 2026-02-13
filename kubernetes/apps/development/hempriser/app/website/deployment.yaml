@@ -23,7 +23,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: website
-          image: harbor-registry.development.svc.cluster.local:5000/ekenheim/nordic-housing-website:latest
+          image: ghcr.io/ekenheim/nordic-housing-website:e9e5768
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

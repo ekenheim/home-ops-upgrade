@@ -34,19 +34,20 @@ spec:
       targetPath: secretKey
   values:
     expose:
-      type: loadBalancer
+      type: ingress
       tls:
         enabled: true
         certSource: secret
-        auto:
-          commonName: "harbor.dummy.com"
         secret:
           secretName: harbor-ingress
-      loadBalancer:
-        IP: "${SVC_HARBOR_ADDR}"
+      ingress:
+        hosts:
+          core: harbor.${SECRET_DOMAIN}
+        className: external
         annotations:
-          external-dns.alpha.kubernetes.io/hostname: harbor.${SECRET_DOMAIN}
-          #io.cilium/lb-ipam-ips: ${SVC_HARBOR_ADDR}
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          nginx.ingress.kubernetes.io/ssl-redirect: "true"
+          nginx.ingress.kubernetes.io/proxy-body-size: "0"
 
     externalURL: https://harbor.${SECRET_DOMAIN}
     ipFamily:
@@ -54,11 +55,16 @@ spec:
         enabled: false
     persistence:
       enabled: true
+      imageChartStorage:
+        disableredirect: true
+        type: s3
+        s3:
+          existingSecret: harbor-secret
+          region: us-east-1
+          bucket: harbor
+          regionendpoint: http://minio-secondary.storage.svc.cluster.local:9000
+          rootdirectory: /registry
       persistentVolumeClaim:
-        registry:
-          existingClaim: harbor-registry-v1
-          storageClass: ceph-block
-          subPath: registry
         jobservice:
           jobLog:
             storageClass: ceph-block
@@ -72,22 +78,9 @@ spec:
     database:
       type: internal
 
-#      imageChartStorage:
-#        type: s3
-#        s3:
-#          bucket: kubernetes-registry
-#          accesskey: ${AWS_SECRET_KEY_ID}
-#          secretkey: ${AWS_SECRET_KEY}
-#          regionendpoint: https://${SECRET_BACKUP_SERVER}
-#          rootdirectory: /prod
-
     # our CSI does not support ReadWriteMany so we must use Recreate on pods
     updateStrategy:
       type: Recreate
 
     notary:
       enabled: false
-
-    nginx:
-      podAnnotations:
-        secret.reloader.stakater.com/reload: harbor-ingress

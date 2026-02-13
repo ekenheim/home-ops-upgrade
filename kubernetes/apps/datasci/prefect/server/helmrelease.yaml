@@ -7,7 +7,7 @@ spec:
   chart:
     spec:
       chart: prefect-server
-      version: 2026.2.5193506
+      version: 2026.2.12200748
       sourceRef:
         kind: HelmRepository
         name: prefect

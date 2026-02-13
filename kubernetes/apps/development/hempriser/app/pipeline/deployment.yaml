@@ -31,7 +31,7 @@ spec:
             name: hempriser-minio
       containers:
         - name: pipeline
-          image: harbor.${SECRET_DOMAIN}/hempriser/nordic-housing-pipeline:latest
+          image: harbor.${SECRET_DOMAIN}/ekenheim/nordic-housing-pipeline:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: grpc

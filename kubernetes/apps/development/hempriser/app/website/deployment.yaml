@@ -23,7 +23,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: website
-          image: harbor.${SECRET_DOMAIN}/hempriser/nordic-housing-website:latest
+          image: harbor.${SECRET_DOMAIN}/ekenheim/nordic-housing-website:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

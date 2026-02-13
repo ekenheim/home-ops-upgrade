@@ -1,0 +1,31 @@
+---
+# Website at hempriser.${SECRET_DOMAIN} (internal ingress). TLS and DNS via cert-manager / external-dns.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hempriser-website
+  namespace: development
+  labels:
+    app.kubernetes.io/name: hempriser
+    app.kubernetes.io/component: website
+  annotations:
+    external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Hempriser
+    gethomepage.dev/group: Development
+spec:
+  ingressClassName: internal
+  rules:
+    - host: hempriser.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hempriser-website
+                port:
+                  number: 3000
+  tls:
+    - hosts:
+        - hempriser.${SECRET_DOMAIN}

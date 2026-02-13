@@ -1,0 +1,55 @@
+---
+# Dagster code location (gRPC server on port 4000). Register in Dagster UI at
+# hempriser-pipeline.development.svc.cluster.local:4000
+# Shapefile/area mapping: assume Option A — baked into image at /app/shp/ and /app/data/
+# (or mount ConfigMap/PVC and set SHAPEFILE_PATH / AREA_MAPPING_PATH).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hempriser-pipeline
+  namespace: development
+  labels:
+    app.kubernetes.io/name: hempriser
+    app.kubernetes.io/component: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hempriser
+      app.kubernetes.io/component: pipeline
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hempriser
+        app.kubernetes.io/component: pipeline
+    spec:
+      restartPolicy: Always
+      envFrom:
+        - secretRef:
+            name: hempriser-postgres
+        - secretRef:
+            name: hempriser-minio
+      containers:
+        - name: pipeline
+          image: harbor.${SECRET_DOMAIN}/hempriser/nordic-housing-pipeline:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: grpc
+              containerPort: 4000
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          livenessProbe:
+            tcpSocket:
+              port: grpc
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: grpc
+            initialDelaySeconds: 10
+            periodSeconds: 5

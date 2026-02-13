@@ -1,0 +1,37 @@
+---
+# Nordic Housing scraper: runs on schedule, writes to MinIO (config/state/raw).
+# Image: Harbor hempriser/nordic-housing-scraper. Add imagePullSecrets if Harbor project is private.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hempriser-scraper
+  namespace: development
+  labels:
+    app.kubernetes.io/name: hempriser
+    app.kubernetes.io/component: scraper
+spec:
+  schedule: "0 * * * *"  # hourly; adjust as needed
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          envFrom:
+            - secretRef:
+                name: hempriser-minio
+          containers:
+            - name: scraper
+              image: harbor.${SECRET_DOMAIN}/hempriser/nordic-housing-scraper:latest
+              imagePullPolicy: IfNotPresent
+              # Optional: imagePullSecrets: [{ name: hempriser-registry }] if Harbor is private
+              # Scraper uses MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY from hempriser-minio
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  memory: 512Mi

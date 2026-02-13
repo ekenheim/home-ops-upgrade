@@ -1,6 +1,6 @@
 ---
 # Nordic Housing scraper: runs on schedule, writes to MinIO (config/state/raw).
-# Image: Harbor ekenheim/nordic-housing-scraper (public project).
+# Image: in-cluster Harbor registry (harbor-registry.development.svc.cluster.local:5000).
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -25,7 +25,7 @@ spec:
                 name: hempriser-minio
           containers:
             - name: scraper
-              image: harbor.${SECRET_DOMAIN}/ekenheim/nordic-housing-scraper:latest
+              image: harbor-registry.development.svc.cluster.local:5000/ekenheim/nordic-housing-scraper:latest
               imagePullPolicy: IfNotPresent
               # Scraper uses MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY from hempriser-minio
               resources:

@@ -31,7 +31,7 @@ spec:
       postgresqlHost: postgres-pgbouncer.database.svc.cluster.local
       image:
         repository: docker.io/library/postgres
-        tag: "18.1"
+        tag: "18.2"
         pullPolicy: IfNotPresent
       postgresqlParams: {}
       service:

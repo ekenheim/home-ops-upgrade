@@ -24,6 +24,8 @@ spec:
         app.kubernetes.io/component: pipeline
     spec:
       restartPolicy: Always
+      imagePullSecrets:
+        - name: ghcr-pull
       envFrom:
         - secretRef:
             name: hempriser-postgres

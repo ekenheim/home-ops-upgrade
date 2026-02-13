@@ -20,6 +20,8 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: ghcr-pull
           envFrom:
             - secretRef:
                 name: hempriser-minio

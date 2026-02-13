@@ -21,6 +21,8 @@ spec:
         app.kubernetes.io/component: website
     spec:
       restartPolicy: Always
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: website
           image: ghcr.io/ekenheim/nordic-housing-website:e9e5768

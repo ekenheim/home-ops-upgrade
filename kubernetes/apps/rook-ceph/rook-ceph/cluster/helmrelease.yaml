@@ -61,6 +61,9 @@ spec:
         modules:
           - name: pg_autoscaler
             enabled: true
+      mon:
+        count: 3
+        allowMultiplePerNode: false
       network:
         provider: host
         connections:

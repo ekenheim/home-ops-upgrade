@@ -12,3 +12,4 @@ resources:
   - ./airbyte/ks.yaml
   - ./metabase/ks.yaml
   - ./redpanda/ks.yaml
+  - ./harbor/ks.yaml

@@ -48,6 +48,13 @@ spec:
             name: hempriser-pipeline
     dagsterDaemon:
       checkDbReadyInitContainer: false
+    runLauncher:
+      type: K8sRunLauncher
+      config:
+        k8sRunLauncher:
+          jobNamespace: datasci
+          envSecrets:
+            - name: hempriser-minio
     # User code: subchart disabled (no pods). Workspace still created via dagsterWebserver.workspace above.
     dagster-user-deployments:
       enabled: true

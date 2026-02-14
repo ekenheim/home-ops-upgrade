@@ -25,7 +25,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: website
-          image: ghcr.io/ekenheim/nordic-housing-website:1.0.1
+          image: ghcr.io/ekenheim/nordic-housing-website:v1.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -2,10 +2,10 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "packageRules": [
     {
-      "description": ["Git-SHA tags: accept any tag so Renovate can suggest newer builds"],
+      "description": ["Semver versioning for nordic-housing images"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["/ghcr.io\\/ekenheim\\/nordic-housing/"],
-      "versioning": "loose"
+      "versioning": "semver"
     },
     {
       "description": ["Loose versioning for non-semver packages"],

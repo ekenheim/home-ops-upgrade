@@ -35,6 +35,15 @@
       "automergeType": "branch",
       "matchUpdateTypes": ["major", "minor", "patch", "digest"],
       "matchPackageNames": ["ghcr.io/ekenheim/agency", "ghcr.io/ekenheim/bloghugo"]
+    },
+    {
+      "description": ["Auto-merge hempriser/nordic-housing image updates"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["/nordic-housing/"],
+      "matchUpdateTypes": ["major", "minor", "patch", "digest"],
+      "automerge": true,
+      "automergeType": "branch",
+      "ignoreTests": true
     }
   ]
 }

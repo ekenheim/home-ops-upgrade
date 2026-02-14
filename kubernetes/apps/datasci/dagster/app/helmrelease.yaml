@@ -54,8 +54,7 @@ spec:
         k8sRunLauncher:
           jobNamespace: datasci
           envVars:
-            - name: DAGSTER_HOME
-              value: "/tmp/dagster"
+            - "DAGSTER_HOME=/tmp/dagster"
           envSecrets:
             - name: hempriser-minio
             - name: hempriser-postgres

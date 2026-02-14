@@ -53,8 +53,12 @@ spec:
       config:
         k8sRunLauncher:
           jobNamespace: datasci
+          envVars:
+            - name: DAGSTER_HOME
+              value: "/tmp/dagster"
           envSecrets:
             - name: hempriser-minio
+            - name: hempriser-postgres
     # User code: subchart disabled (no pods). Workspace still created via dagsterWebserver.workspace above.
     dagster-user-deployments:
       enabled: true

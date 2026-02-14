@@ -25,6 +25,9 @@ spec:
       strategy: rollback
       retries: 3
   values:
+    # Pull secret for private GHCR images (e.g. hempriser pipeline)
+    imagePullSecrets:
+      - name: ghcr-pull
     # Crunchy Postgres: PgBouncer in database namespace; secret dagster-postgresql-secret (ExternalSecret → crunchy-pgo-secrets)
     postgresql:
       enabled: false

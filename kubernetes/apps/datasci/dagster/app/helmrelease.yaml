@@ -40,10 +40,12 @@ spec:
     # Skip DB-ready init container (uses postgres image → ImagePullBackOff); we use Crunchy external DB
     dagsterWebserver:
       checkDbReadyInitContainer: false
-      # Empty workspace so daemon/webserver get -w workspace.yaml; no code locations until we add deployments.
       workspace:
         enabled: true
-        servers: []
+        servers:
+          - host: hempriser-pipeline.development.svc.cluster.local
+            port: 4000
+            name: hempriser-pipeline
     dagsterDaemon:
       checkDbReadyInitContainer: false
     # User code: subchart disabled (no pods). Workspace still created via dagsterWebserver.workspace above.

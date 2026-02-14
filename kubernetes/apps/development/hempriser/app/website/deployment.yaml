@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: hempriser
     app.kubernetes.io/component: website
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: hempriser
@@ -25,27 +25,28 @@ spec:
         - name: ghcr-pull
       containers:
         - name: website
-          image: ghcr.io/ekenheim/nordic-housing-website:1.0.0
+          image: ghcr.io/ekenheim/nordic-housing-website:1.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: 80
               protocol: TCP
           resources:
             requests:
               cpu: 50m
-              memory: 128Mi
+              memory: 64Mi
             limits:
-              memory: 512Mi
+              cpu: 200m
+              memory: 128Mi
           livenessProbe:
             httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 15
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /
+              path: /healthz
               port: http
             initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10

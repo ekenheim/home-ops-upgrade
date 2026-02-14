@@ -26,25 +26,33 @@ spec:
       restartPolicy: Always
       imagePullSecrets:
         - name: ghcr-pull
-      envFrom:
-        - secretRef:
-            name: hempriser-postgres
-        - secretRef:
-            name: hempriser-minio
       containers:
         - name: pipeline
-          image: ghcr.io/ekenheim/nordic-housing-pipeline:1.0.0
+          image: ghcr.io/ekenheim/nordic-housing-pipeline:1.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - name: grpc
               containerPort: 4000
               protocol: TCP
+          envFrom:
+            - secretRef:
+                name: hempriser-postgres
+            - secretRef:
+                name: hempriser-minio
+          env:
+            - name: DAGSTER_MODULE_NAME
+              value: "pipeline.dagster.repository"
+            - name: SHAPEFILE_PATH
+              value: "/app/shp/Basområden.shp"
+            - name: AREA_MAPPING_PATH
+              value: "/app/data/comprehensive_area_mapping_full.json"
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 1000m
+              memory: 2Gi
             limits:
-              memory: 1Gi
+              cpu: 2000m
+              memory: 4Gi
           livenessProbe:
             tcpSocket:
               port: grpc

@@ -25,7 +25,7 @@ spec:
               service:
                 name: hempriser-website
                 port:
-                  number: 3000
+                  number: 80
   tls:
     - hosts:
         - hempriser.${SECRET_DOMAIN}

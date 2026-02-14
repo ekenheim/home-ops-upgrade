@@ -170,6 +170,10 @@ spec:
       databases: ["dagster"]
       password:
         type: AlphaNumeric
+    - name: "hempriser"
+      databases: ["hempriser"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

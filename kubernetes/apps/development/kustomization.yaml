@@ -13,4 +13,4 @@ resources:
   - ./metabase/ks.yaml
   - ./redpanda/ks.yaml
   - ./harbor/ks.yaml
-  - ./hempriser/ks.yaml
+  #- ./hempriser/ks.yaml

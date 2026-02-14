@@ -40,6 +40,8 @@ spec:
             - secretRef:
                 name: hempriser-minio
           env:
+            - name: DAGSTER_HOME
+              value: "/tmp/dagster"
             - name: DAGSTER_MODULE_NAME
               value: "pipeline.dagster.repository"
             - name: DAGSTER_CURRENT_IMAGE

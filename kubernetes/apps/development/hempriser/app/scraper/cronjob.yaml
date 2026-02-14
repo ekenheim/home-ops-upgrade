@@ -27,7 +27,7 @@ spec:
                 name: hempriser-minio
           containers:
             - name: scraper
-              image: ghcr.io/ekenheim/nordic-housing-scraper:v1.0.0
+              image: ghcr.io/ekenheim/nordic-housing-scraper:1.0.0
               imagePullPolicy: IfNotPresent
               # Scraper uses MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY from hempriser-minio
               resources:

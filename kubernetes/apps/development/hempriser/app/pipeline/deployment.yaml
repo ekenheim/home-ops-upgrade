@@ -28,7 +28,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: pipeline
-          image: ghcr.io/ekenheim/nordic-housing-pipeline:v1.0.1
+          image: ghcr.io/ekenheim/nordic-housing-pipeline:v1.0.2
           imagePullPolicy: IfNotPresent
           ports:
             - name: grpc
@@ -44,7 +44,7 @@ spec:
             - name: DAGSTER_MODULE_NAME
               value: "pipeline.dagster.repository"
             - name: DAGSTER_CURRENT_IMAGE
-              value: "ghcr.io/ekenheim/nordic-housing-pipeline:v1.0.1"
+              value: "ghcr.io/ekenheim/nordic-housing-pipeline:v1.0.2"
             - name: SHAPEFILE_PATH
               value: "/app/shp/Basområden.shp"
             - name: AREA_MAPPING_PATH

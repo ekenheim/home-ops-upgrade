@@ -28,7 +28,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: pipeline
-          image: ghcr.io/ekenheim/nordic-housing-pipeline:v1.0.4
+          image: ghcr.io/ekenheim/nordic-housing-pipeline:v1.0.5
           imagePullPolicy: IfNotPresent
           ports:
             - name: grpc
@@ -39,12 +39,11 @@ spec:
                 name: hempriser-postgres
             - secretRef:
                 name: hempriser-minio
-                optional: true  # Remove once Bitwarden key "hempriser-minio" exists and ExternalSecret syncs
           env:
             - name: DAGSTER_MODULE_NAME
               value: "pipeline.dagster.repository"
             - name: DAGSTER_CURRENT_IMAGE
-              value: "ghcr.io/ekenheim/nordic-housing-pipeline:v1.0.4"
+              value: "ghcr.io/ekenheim/nordic-housing-pipeline:v1.0.5"
             - name: SHAPEFILE_PATH
               value: "/app/shp/Basområden.shp"
             - name: AREA_MAPPING_PATH

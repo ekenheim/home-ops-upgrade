@@ -61,6 +61,13 @@ spec:
           envSecrets:
             - name: hempriser-minio
             - name: hempriser-postgres
+          resources:
+            requests:
+              cpu: 2000m
+              memory: 4Gi
+            limits:
+              cpu: 4000m
+              memory: 8Gi
     # User code: subchart disabled (no pods). Workspace still created via dagsterWebserver.workspace above.
     dagster-user-deployments:
       enabled: true

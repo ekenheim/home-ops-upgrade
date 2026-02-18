@@ -14,7 +14,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: ray-tune-smoke
-          image: rayproject/ray:2.53.0
+          image: rayproject/ray:2.54.0
           imagePullPolicy: IfNotPresent
           command:
             - bash

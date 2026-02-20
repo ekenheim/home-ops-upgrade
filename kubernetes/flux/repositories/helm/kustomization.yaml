@@ -30,6 +30,7 @@ resources:
   - ./jetstack.yaml
   - ./k8s-gateway.yaml
   - ./kubernetes-sigs-nfd.yaml
+  - ./kubeflow-spark-operator.yaml
   - ./metrics-server.yaml
   - ./movetokube.yaml
   - ./node-feature-discovery.yaml

@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/objectbucket.io/objectbucketclaim_v1alpha1.json
+# Bronze: raw ERA5 NetCDF + ENTSO-E XML
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: grid-resilience-bronze
+spec:
+  bucketName: grid-resilience-bronze
+  storageClassName: ceph-bucket
+---
+# Silver: Parquet, model-ready (spatially joined weather + grid data)
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: grid-resilience-silver
+spec:
+  bucketName: grid-resilience-silver
+  storageClassName: ceph-bucket
+---
+# Gold: inference artifacts (P10/P50/P90 posterior traces as NetCDF)
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: grid-resilience-gold
+spec:
+  bucketName: grid-resilience-gold
+  storageClassName: ceph-bucket

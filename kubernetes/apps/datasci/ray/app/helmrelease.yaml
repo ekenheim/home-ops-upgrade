@@ -33,11 +33,11 @@ spec:
         ray-client-server-port: '10001'
       resources:
         limits:
+          cpu: "4"
+          memory: "8G"
+        requests:
           cpu: "2"
           memory: "4G"
-        requests:
-          cpu: "1"
-          memory: "2G"
       containerEnv:
         - name: RAY_LOG_TO_STDERR
           value: "1"
@@ -64,14 +64,14 @@ spec:
       groupName: workergroup
       replicas: 2
       minReplicas: 1
-      maxReplicas: 5
+      maxReplicas: 12
       resources:
         limits:
-          cpu: "2"
-          memory: "4G"
+          cpu: "8"
+          memory: "16G"
         requests:
-          cpu: "1"
-          memory: "2G"
+          cpu: "4"
+          memory: "8G"
       containerEnv:
         - name: RAY_LOG_TO_STDERR
           value: "1"

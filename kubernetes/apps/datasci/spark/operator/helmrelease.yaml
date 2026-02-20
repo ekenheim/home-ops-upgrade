@@ -68,10 +68,10 @@ spec:
       replicas: 4
       resources:
         requests:
-          cpu: 500m
+          cpu: 4000m
           memory: 512Mi
         limits:
-          cpu: 1000m
+          cpu: 8000m
           memory: 50Gi
       extraEnv:
         - name: SPARK_WORKER_OPTS

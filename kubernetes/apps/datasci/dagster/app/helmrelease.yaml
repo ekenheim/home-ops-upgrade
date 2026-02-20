@@ -58,6 +58,7 @@ spec:
           jobNamespace: datasci
           envVars:
             - "DAGSTER_HOME=/tmp/dagster"
+            - "RAY_ADDRESS=ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001"
           envSecrets:
             - name: hempriser-minio
             - name: hempriser-postgres

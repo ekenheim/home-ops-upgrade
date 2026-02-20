@@ -6,6 +6,5 @@ metadata:
   name: kubeflow-spark-operator
   namespace: flux-system
 spec:
-  type: oci
   interval: 1h
-  url: oci://ghcr.io/kubeflow/spark-operator/helm-charts
+  url: https://kubeflow.github.io/spark-operator

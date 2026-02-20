@@ -93,17 +93,9 @@ spec:
       annotations:
         hajimari.io/enable: "true"
         hajimari.io/icon: mdi:database
-      className: internal
-      hosts:
-        - host: spark.${SECRET_DOMAIN}
-          paths:
-            - path: /
-              service:
-                name: spark-master-svc
-                port: 8080
-      tls:
-        - hosts:
-            - spark.${SECRET_DOMAIN}
+      ingressClassName: internal
+      hostname: spark.${SECRET_DOMAIN}
+      tls: true
     web:
       enabled: true
       service:

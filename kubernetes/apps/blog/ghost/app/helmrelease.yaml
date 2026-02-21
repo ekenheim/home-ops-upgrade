@@ -39,7 +39,7 @@ spec:
               tag: 6.19.2
             env:
               TZ: "Stockholm/Europe"
-              url: "https://${SECRET_SECONDARY_DOMAIN}"
+              url: "https://blog.${SECRET_DOMAIN}"
               database__client: mysql
               database__connection__host: ghost-mariadb.blog.svc.cluster.local
               database__connection__user: ghost
@@ -57,10 +57,8 @@ spec:
     ingress:
       app:
         className: external
-        annotations:
-          external-dns.alpha.kubernetes.io/target: external.${SECRET_SECONDARY_DOMAIN}
         hosts:
-          - host: &host "${SECRET_SECONDARY_DOMAIN}"
+          - host: &host "blog.${SECRET_DOMAIN}"
             paths:
               - path: /
                 pathType: Prefix

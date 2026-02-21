@@ -19,7 +19,6 @@ spec:
         selector:
           dnsZones:
             - "${SECRET_DOMAIN}"
-            #- "${SECRET_SECONDARY_DOMAIN}"
 ---
 # yaml-language-server: $schema=https://lds-schemas.pages.dev/cert-manager.io/clusterissuer_v1.json
 apiVersion: cert-manager.io/v1
@@ -41,4 +40,3 @@ spec:
         selector:
           dnsZones:
             - "${SECRET_DOMAIN}"
-            #- "${SECRET_SECONDARY_DOMAIN}"

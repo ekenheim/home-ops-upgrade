@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: growthbook
+      version: 4.3.1
       sourceRef:
         kind: HelmRepository
         name: growthbook
@@ -27,10 +28,14 @@ spec:
         - name: APP_ORIGIN
           value: "https://growthbook.${SECRET_DOMAIN}"
     frontend:
+      image:
+        tag: "4.3.0"
       env:
         - name: API_HOST
           value: "https://growthbook-api.${SECRET_DOMAIN}"
     backend:
+      image:
+        tag: "4.3.0"
       mongodbEnabled: true
       env:
         - name: JWT_SECRET

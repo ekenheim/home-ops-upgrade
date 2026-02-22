@@ -15,3 +15,4 @@ resources:
   - ./redpanda/ks.yaml
   - ./harbor/ks.yaml
   - ./hempriser/ks.yaml
+  - ./growthbook/ks.yaml

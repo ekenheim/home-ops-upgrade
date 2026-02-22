@@ -22,6 +22,7 @@ resources:
   - ./external-secrets.yaml
   - ./flyte.yaml
   - ./grafana.yaml
+  - ./growthbook.yaml
   - ./homepage.yaml
   - ./istio.yaml
   - ./ingress-nginx.yaml

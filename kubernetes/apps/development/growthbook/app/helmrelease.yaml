@@ -1,0 +1,67 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app growthbook
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: growthbook
+      sourceRef:
+        kind: HelmRepository
+        name: growthbook
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    global:
+      env:
+        - name: APP_ORIGIN
+          value: "https://growthbook.${SECRET_DOMAIN}"
+    frontend:
+      env:
+        - name: API_HOST
+          value: "https://growthbook-api.${SECRET_DOMAIN}"
+    backend:
+      mongodbEnabled: true
+      env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: growthbook-secret
+              key: JWT_SECRET
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: growthbook-secret
+              key: ENCRYPTION_KEY
+    mongodb:
+      enabled: true
+    ingress:
+      enabled: true
+      className: internal
+      annotations:
+        external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+      hosts:
+        - host: growthbook.${SECRET_DOMAIN}
+          paths:
+            - path: /
+              pathType: Prefix
+              service: frontend
+        - host: growthbook-api.${SECRET_DOMAIN}
+          paths:
+            - path: /
+              pathType: Prefix
+              service: backend
+      tls:
+        - hosts:
+            - growthbook.${SECRET_DOMAIN}
+            - growthbook-api.${SECRET_DOMAIN}

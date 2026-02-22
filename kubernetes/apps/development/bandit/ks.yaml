@@ -1,17 +1,17 @@
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-# Copy this folder into your k8s repo (e.g. kubernetes/apps/datasci/bandit/) and ensure path below matches.
+# Copy this folder into your k8s repo (e.g. kubernetes/apps/development/bandit/) and ensure path below matches.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: bandit
   namespace: flux-system
 spec:
-  targetNamespace: datasci
+  targetNamespace: development
   commonMetadata:
     labels:
       app.kubernetes.io/name: bandit
-  path: ./kubernetes/apps/datasci/bandit/app
+  path: ./kubernetes/apps/development/bandit/app
   prune: true
   sourceRef:
     kind: GitRepository

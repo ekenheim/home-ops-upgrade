@@ -5,7 +5,7 @@ apiVersion: db.movetokube.com/v1alpha1
 kind: Postgres
 metadata:
   name: &app bandit
-  namespace: datasci
+  namespace: development
   annotations:
     postgres.db.movetokube.com/instance: datasci
 spec:
@@ -15,7 +15,7 @@ apiVersion: db.movetokube.com/v1alpha1
 kind: PostgresUser
 metadata:
   name: &app bandit
-  namespace: datasci
+  namespace: development
   annotations:
     postgres.db.movetokube.com/instance: datasci
 spec:

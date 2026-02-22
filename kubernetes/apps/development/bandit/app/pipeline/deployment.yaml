@@ -1,11 +1,11 @@
 ---
 # Dagster code location (gRPC server on port 4000). Register in Dagster UI at
-# bandit-pipeline.datasci.svc.cluster.local:4000
+# bandit-pipeline.development.svc.cluster.local:4000
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: bandit-pipeline
-  namespace: datasci
+  namespace: development
   labels:
     app.kubernetes.io/name: bandit
     app.kubernetes.io/component: pipeline
@@ -51,9 +51,9 @@ spec:
             - name: DRAGONFLY_DB
               value: "2"
             - name: MLFLOW_TRACKING_URI
-              value: "http://mlflow.datasci.svc.cluster.local"
+              value: "http://mlflow.development.svc.cluster.local"
             - name: BANDIT_SERVICE_URL
-              value: "http://bandit-service.datasci.svc.cluster.local:8000"
+              value: "http://bandit-service.development.svc.cluster.local:8000"
           resources:
             requests:
               cpu: 500m

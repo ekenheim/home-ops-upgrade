@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: bandit-service
-  namespace: datasci
+  namespace: development
   labels:
     app.kubernetes.io/name: bandit
     app.kubernetes.io/component: service

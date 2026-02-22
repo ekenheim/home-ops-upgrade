@@ -4,7 +4,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: bandit-service
-  namespace: datasci
+  namespace: development
   labels:
     app.kubernetes.io/name: bandit
     app.kubernetes.io/component: service

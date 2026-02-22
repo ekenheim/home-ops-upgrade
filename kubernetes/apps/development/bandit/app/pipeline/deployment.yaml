@@ -26,7 +26,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: pipeline
-          image: ghcr.io/ekenheim/bandit-pipeline:v0.1.1
+          image: ghcr.io/ekenheim/bandit-pipeline:v0.1.2
           imagePullPolicy: Always
           ports:
             - name: grpc
@@ -44,7 +44,7 @@ spec:
             - name: DAGSTER_MODULE_NAME
               value: "pipeline.repository"
             - name: DAGSTER_CURRENT_IMAGE
-              value: "ghcr.io/ekenheim/bandit-pipeline:v0.1.1"
+              value: "ghcr.io/ekenheim/bandit-pipeline:v0.1.2"
             - name: DRAGONFLY_HOST
               value: "dragonfly.database.svc.cluster.local"
             - name: DRAGONFLY_PORT
@@ -52,7 +52,7 @@ spec:
             - name: DRAGONFLY_DB
               value: "2"
             - name: MLFLOW_TRACKING_URI
-              value: "http://mlflow.development.svc.cluster.local"
+              value: "http://mlflow.datasci.svc.cluster.local:5000"
             - name: BANDIT_SERVICE_URL
               value: "http://bandit-service.development.svc.cluster.local:8000"
           resources:

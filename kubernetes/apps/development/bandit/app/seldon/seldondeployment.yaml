@@ -31,7 +31,7 @@ spec:
               - name: ghcr-pull
             containers:
               - name: thompson-router
-                image: ghcr.io/ekenheim/bandit-service:v0.1.0
+                image: ghcr.io/ekenheim/bandit-service:v0.1.2
                 envFrom:
                   - secretRef:
                       name: seldon-core-secret

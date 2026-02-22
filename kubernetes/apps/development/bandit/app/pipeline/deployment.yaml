@@ -37,6 +37,7 @@ spec:
                 name: bandit-postgres
             - secretRef:
                 name: bandit-minio
+                optional: true
           env:
             - name: DAGSTER_HOME
               value: "/tmp/dagster"

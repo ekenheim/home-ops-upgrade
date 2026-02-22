@@ -73,7 +73,7 @@ spec:
               memory: 4Gi
             limits:
               cpu: 4000m
-              memory: 8Gi
+              memory: 16Gi
     # User code: subchart disabled (no pods). Workspace still created via dagsterWebserver.workspace above.
     dagster-user-deployments:
       enabled: true

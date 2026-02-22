@@ -5,3 +5,5 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
+  # Placeholders so run pods start; ExternalSecrets overwrite when sync succeeds
+  - ./bandit-secrets-placeholder.yaml

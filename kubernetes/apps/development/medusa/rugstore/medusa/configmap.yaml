@@ -4,6 +4,3 @@ metadata:
   name: medusa-config
 data:
   MEDUSA_ADMIN_ONBOARDING_TYPE: "default"
-  STORE_CORS: "http://localhost:8000,https://docs.medusajs.com"
-  ADMIN_CORS: "http://localhost:5173,http://localhost:9000,https://docs.medusajs.com"
-  AUTH_CORS: "http://localhost:5173,http://localhost:9000,http://localhost:8000,https://docs.medusajs.com"

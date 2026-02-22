@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 3.7.3 # Consider using the latest patch version if available
+      version: 3.7.3
       sourceRef:
         kind: HelmRepository
         name: bjw-s
@@ -27,17 +27,15 @@ spec:
   values:
     controllers:
       medusa-server:
-        # This controller runs the main Medusa backend server
+        annotations:
+          reloader.stakater.com/auto: "true"
         initContainers:
           migrate-db:
             image:
-              # Use the ImagePolicy marker for automation later
               repository: ghcr.io/ekenheim/ecom/medusa
               tag: 0.0.11
             env:
-              # NODE_ENV should be production for deployed environments
               NODE_ENV: production
-              DATABASE_TYPE: postgres
               DATABASE_URL:
                 valueFrom:
                   secretKeyRef:
@@ -49,27 +47,26 @@ spec:
                     name: medusa-db-secret
                     key: REDIS_URL
             command:
-              - node # Execute with node
-              - node_modules/.bin/medusa # Path to the executable
-              - db:migrate # Arguments to the executable
+              - node
+              - node_modules/.bin/medusa
+              - db:migrate
             resources:
               requests:
                 cpu: 100m
-                memory: 128Mi
-              limits:
                 memory: 256Mi
+              limits:
+                memory: 512Mi
 
         containers:
           main:
             image:
-              # Use the ImagePolicy marker for automation later
               repository: ghcr.io/ekenheim/ecom/medusa
               tag: 0.0.11
             env:
-              # NODE_ENV should be production for deployed environments
               NODE_ENV: production
               PORT: "9000"
-              DATABASE_TYPE: postgres
+              MEDUSA_WORKER_MODE: server
+              DISABLE_MEDUSA_ADMIN: "false"
               DATABASE_URL:
                 valueFrom:
                   secretKeyRef:
@@ -100,64 +97,105 @@ spec:
                   secretKeyRef:
                     name: medusa-secret
                     key: ADMIN_CORS
-              # Add other necessary env vars from secrets/configmaps (e.g., Minio, Meilisearch)
-            command: # Use the command defined in the Dockerfile CMD
+              AUTH_CORS:
+                valueFrom:
+                  secretKeyRef:
+                    name: medusa-secret
+                    key: AUTH_CORS
+              MEDUSA_BACKEND_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: medusa-secret
+                    key: MEDUSA_BACKEND_URL
+            command:
               - yarn
               - start
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 9000
+                  initialDelaySeconds: 60
+                  periodSeconds: 30
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 9000
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  failureThreshold: 3
             resources:
               requests:
-                cpu: 100m # Adjust based on performance monitoring
-                memory: 256Mi # Adjust based on performance monitoring
+                cpu: 200m
+                memory: 512Mi
               limits:
-                memory: 512Mi # Adjust based on performance monitoring
+                memory: 1Gi
         pod:
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
             fsGroup: 1000
-            fsGroupChangePolicy: "OnRootMismatch"
+            fsGroupChangePolicy: OnRootMismatch
 
       medusa-worker:
-        # Disable the worker controller for now
-        enabled: false
-        # containers:
-        #   main:
-        #     image:
-        #       repository: ghcr.io/ekenheim/ecom/medusa
-        #       tag: main # {"$imagepolicy": "development:medusa-main:tag"}
-        #     env:
-        #       NODE_ENV: production
-        #       DATABASE_TYPE: postgres
-        #       DATABASE_URL:
-        #         valueFrom:
-        #           secretKeyRef:
-        #             name: medusa-db-secret
-        #             key: DATABASE_URL
-        #       REDIS_URL:
-        #         valueFrom:
-        #           secretKeyRef:
-        #             name: medusa-db-secret
-        #             key: REDIS_URL
-        #     # IMPORTANT: Find the correct command for the worker in package.json
-        #     # command:
-        #     #  - yarn
-        #     #  - start:worker # Example, replace with actual command
-        #     resources:
-        #       requests:
-        #         cpu: 100m
-        #         memory: 128Mi
-        #       limits:
-        #         memory: 256Mi
-        # pod:
-        #   securityContext:
-        #     runAsUser: 1000
-        #     runAsGroup: 1000
-        #     fsGroup: 1000
-        #     fsGroupChangePolicy: "OnRootMismatch"
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          main:
+            image:
+              repository: ghcr.io/ekenheim/ecom/medusa
+              tag: 0.0.11
+            env:
+              NODE_ENV: production
+              PORT: "9000"
+              MEDUSA_WORKER_MODE: worker
+              DISABLE_MEDUSA_ADMIN: "true"
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: medusa-db-secret
+                    key: DATABASE_URL
+              REDIS_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: medusa-db-secret
+                    key: REDIS_URL
+              JWT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: medusa-secret
+                    key: JWT_SECRET
+              COOKIE_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: medusa-secret
+                    key: COOKIE_SECRET
+            command:
+              - yarn
+              - start
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
 
     service:
       medusa-server:
-        controller: medusa-server # Ensure this matches the enabled controller name
+        controller: medusa-server
         type: ClusterIP
         ports:
           http:
@@ -166,30 +204,21 @@ spec:
 
     ingress:
       main:
-        enabled: false # Keep disabled for now unless external access needed
-        # className: nginx
-        # annotations:
-        #   external-dns.alpha.kubernetes.io/target: ingress.${SECRET_DOMAIN}
-        #   hajimari.io/icon: mdi:shopping
-        # hosts:
-        #   - host: &host "medusa.${SECRET_DOMAIN}"
-        #     paths:
-        #       - path: /
-        #         pathType: Prefix
-        #         service:
-        #           identifier: medusa-server # Matches the service key
-        #           port: http
-        # tls:
-        #   - hosts:
-        #       - *host
-
-    # persistence:
-    #   data:
-    #     # Only enable if Medusa is configured for local file storage
-    #     # and you aren't using Minio/S3
-    #     enabled: false
-    #     # type: persistentVolumeClaim
-    #     # accessMode: ReadWriteOnce
-    #     # size: 10Gi
-    #     # globalMounts:
-    #     #   - path: /app/data
+        className: internal
+        annotations:
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/name: Medusa
+          gethomepage.dev/icon: mdi:shopping
+          gethomepage.dev/group: Development
+        hosts:
+          - host: &host "medusa.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: medusa-server
+                  port: http
+        tls:
+          - hosts:
+              - *host

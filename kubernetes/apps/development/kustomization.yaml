@@ -16,3 +16,4 @@ resources:
   - ./harbor/ks.yaml
   - ./hempriser/ks.yaml
   - ./growthbook/ks.yaml
+  - ./medusa/ks.yaml

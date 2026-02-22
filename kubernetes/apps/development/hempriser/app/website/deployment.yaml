@@ -25,12 +25,15 @@ spec:
         - name: ghcr-pull
       containers:
         - name: website
-          image: ghcr.io/ekenheim/nordic-housing-website:v1.0.32
+          image: ghcr.io/ekenheim/nordic-housing-website:v1.0.33
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 80
               protocol: TCP
+          env:
+            - name: MINIO_ZONE_JSON_URL
+              value: "http://minio-secondary.storage.svc.cluster.local:9000/hempriser/frontend/h3_zones_res9.json"
           resources:
             requests:
               cpu: 50m

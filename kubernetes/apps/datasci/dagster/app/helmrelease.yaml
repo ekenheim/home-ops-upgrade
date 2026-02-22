@@ -49,6 +49,9 @@ spec:
           - host: hempriser-pipeline.development.svc.cluster.local
             port: 4000
             name: hempriser-pipeline
+          - host: bandit-pipeline.development.svc.cluster.local
+            port: 4000
+            name: bandit-pipeline
     dagsterDaemon:
       checkDbReadyInitContainer: false
     runLauncher:
@@ -62,6 +65,8 @@ spec:
           envSecrets:
             - name: hempriser-minio
             - name: hempriser-postgres
+            - name: bandit-minio
+            - name: bandit-postgres
           resources:
             requests:
               cpu: 2000m

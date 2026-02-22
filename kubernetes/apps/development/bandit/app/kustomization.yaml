@@ -6,5 +6,5 @@ resources:
   - ./externalsecret.yaml
   - ./pipeline
   - ./service
-  - ./db
+  # - ./db   # Omit: development uses Crunchy PGO; ensure postgres-pguser-bandit secret exists
   - ./seldon

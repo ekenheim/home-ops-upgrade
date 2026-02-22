@@ -8,6 +8,7 @@ resources:
   # Flux-Kustomizations
   #- ./umami/ks.yaml
   - ./bytewax/ks.yaml
+  - ./bandit/ks.yaml
   - ./meilisearch/ks.yaml
   - ./airbyte/ks.yaml
   - ./metabase/ks.yaml

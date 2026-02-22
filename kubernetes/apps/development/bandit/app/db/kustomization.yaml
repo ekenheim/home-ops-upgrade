@@ -1,0 +1,7 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+# Omit this if Postgres is provisioned elsewhere (e.g. Crunchy PGO with secret postgres-pguser-bandit).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./postgres.yaml

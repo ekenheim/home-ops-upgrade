@@ -1,0 +1,25 @@
+---
+# MoveToKube Postgres: database and user for bandit (events, posterior_snapshots, experiments).
+# If you use Crunchy PGO instead, remove app/db from kustomization and ensure secret postgres-pguser-bandit exists.
+apiVersion: db.movetokube.com/v1alpha1
+kind: Postgres
+metadata:
+  name: &app bandit
+  namespace: datasci
+  annotations:
+    postgres.db.movetokube.com/instance: datasci
+spec:
+  database: *app
+---
+apiVersion: db.movetokube.com/v1alpha1
+kind: PostgresUser
+metadata:
+  name: &app bandit
+  namespace: datasci
+  annotations:
+    postgres.db.movetokube.com/instance: datasci
+spec:
+  role: *app
+  database: *app
+  secretName: database
+  privileges: OWNER

@@ -1,0 +1,51 @@
+---
+# Seldon router: Thompson Sampling selects one of N arms. Requires Seldon Core in cluster.
+apiVersion: machinelearning.seldon.io/v1
+kind: SeldonDeployment
+metadata:
+  name: bandit-router
+  namespace: datasci
+  labels:
+    app.kubernetes.io/name: bandit
+    app.kubernetes.io/component: seldon
+spec:
+  predictors:
+    - name: default
+      graph:
+        name: thompson-router
+        type: ROUTER
+        endpoint:
+          type: REST
+        children:
+          - name: arm-0
+            type: MODEL
+            endpoint:
+              type: REST
+          - name: arm-1
+            type: MODEL
+            endpoint:
+              type: REST
+      componentSpecs:
+        - spec:
+            imagePullSecrets:
+              - name: ghcr-pull
+            containers:
+              - name: thompson-router
+                image: ghcr.io/ekenheim/bandit-service:v0.1.0
+                envFrom:
+                  - secretRef:
+                      name: seldon-core-secret
+                env:
+                  - name: DRAGONFLY_HOST
+                    value: "dragonfly.database.svc.cluster.local"
+                  - name: DRAGONFLY_PORT
+                    value: "6379"
+                  - name: DRAGONFLY_DB
+                    value: "2"
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+                  limits:
+                    cpu: 500m
+                    memory: 512Mi

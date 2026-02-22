@@ -174,6 +174,10 @@ spec:
       databases: ["hempriser"]
       password:
         type: AlphaNumeric
+    - name: "bandit"
+      databases: ["bandit"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

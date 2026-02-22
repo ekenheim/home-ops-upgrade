@@ -33,3 +33,12 @@ Deployment layout aligned with the hempriser pattern for the same cluster.
 ## Image tags
 
 Update image tags in `app/service/deployment.yaml`, `app/pipeline/deployment.yaml`, and `app/seldon/seldondeployment.yaml` when you release new versions (or use a tag like `latest` / image updater).
+
+## Image pull (ImagePullBackOff)
+
+Pods use `imagePullSecrets: ghcr-pull` and images `ghcr.io/ekenheim/bandit-service:v0.1.0` and `ghcr.io/ekenheim/bandit-pipeline:v0.1.0`. If you see **ImagePullBackOff**:
+
+1. **Secret** – Ensure the `ghcr-pull` secret exists in the `development` namespace (same as hempriser). It must be a `kubernetes.io/dockerconfigjson` secret for `ghcr.io` (e.g. from a GitHub PAT with `read:packages`).
+2. **Images** – Build and push the bandit images to GHCR so those tags exist and are readable by the PAT used in `ghcr-pull`.
+
+To see the exact error: `kubectl describe pod -n development -l app.kubernetes.io/name=bandit` and check the Events (e.g. 404 = image/tag missing, 401 = auth failed).

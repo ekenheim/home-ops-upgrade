@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: gha-runner-scale-set
+  name: gha-runner-scale-set-nordic-housing
 spec:
   interval: 30m
   chart:
@@ -31,9 +31,9 @@ spec:
       valuesKey: github_token
       targetPath: githubConfigSecret.github_token
   values:
-    nameOverride: gha-runner-scale-set
-    runnerScaleSetName: gha-runner-scale-set
-    githubConfigUrl: https://github.com/ekenheim/home-ops-upgrade
+    nameOverride: gha-runner-scale-set-nordic-housing
+    runnerScaleSetName: gha-runner-scale-set-nordic-housing
+    githubConfigUrl: https://github.com/ekenheim/nordic-housing
     minRunners: 1
     maxRunners: 10
     containerMode:

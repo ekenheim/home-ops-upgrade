@@ -8,3 +8,5 @@ resources:
   # Flux-Kustomizations
   - ./gha-runner-scale-set-controller/ks.yaml
   - ./gha-runner-scale-set/ks.yaml
+  - ./gha-runner-scale-set-nordic-housing/ks.yaml
+  - ./gha-runner-scale-set-bandit/ks.yaml

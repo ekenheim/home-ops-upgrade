@@ -229,11 +229,14 @@ spec:
               MEDUSA_BACKEND_URL: "http://medusa-medusa-server:9000"
               NEXT_PUBLIC_BASE_URL: "https://storefront.${SECRET_DOMAIN}"
               NEXT_PUBLIC_DEFAULT_REGION: "se"
+              NEXT_PUBLIC_MEDUSA_BACKEND_URL: "https://medusa.${SECRET_DOMAIN}"
             envFrom:
               - configMapRef:
                   name: storefront-config
               - secretRef:
                   name: storefront-secret
+              - secretRef:
+                  name: medusa-s3-secret
             probes:
               liveness:
                 enabled: true

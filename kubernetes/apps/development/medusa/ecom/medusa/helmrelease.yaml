@@ -116,6 +116,10 @@ spec:
                   name: medusa-config
               - secretRef:
                   name: medusa-s3-secret
+            volumeMounts:
+              - name: medusa-app-config
+                mountPath: /app/medusa-config.js
+                subPath: medusa-config.js
             command:
               - node_modules/.bin/medusa
               - start
@@ -154,6 +158,10 @@ spec:
             runAsGroup: 1000
             fsGroup: 1000
             fsGroupChangePolicy: OnRootMismatch
+          volumes:
+            - name: medusa-app-config
+              configMap:
+                name: medusa-app-config
 
       medusa-worker:
         annotations:
@@ -194,6 +202,10 @@ spec:
                   name: medusa-config
               - secretRef:
                   name: medusa-s3-secret
+            volumeMounts:
+              - name: medusa-app-config
+                mountPath: /app/medusa-config.js
+                subPath: medusa-config.js
             command:
               - node_modules/.bin/medusa
               - start
@@ -206,6 +218,10 @@ spec:
         pod:
           imagePullSecrets:
             - name: ghcr-pull
+          volumes:
+            - name: medusa-app-config
+              configMap:
+                name: medusa-app-config
 
       storefront:
         annotations:

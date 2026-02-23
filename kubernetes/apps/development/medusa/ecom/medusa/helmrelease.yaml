@@ -33,7 +33,7 @@ spec:
           migrate-db:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: latest
+              tag: ea21e1d
               pullPolicy: Always
             env:
               NODE_ENV: production
@@ -61,7 +61,7 @@ spec:
           main:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: latest
+              tag: ea21e1d
               pullPolicy: Always
             env:
               NODE_ENV: production
@@ -157,7 +157,7 @@ spec:
           main:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: latest
+              tag: ea21e1d
               pullPolicy: Always
             env:
               NODE_ENV: production

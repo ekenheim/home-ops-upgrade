@@ -33,7 +33,7 @@ spec:
           migrate-db:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: 0.0.11
+              tag: latest
             env:
               NODE_ENV: production
               DATABASE_URL:
@@ -48,7 +48,7 @@ spec:
                     key: REDIS_URL
             command:
               - node
-              - node_modules/.bin/medusa
+              - index.js
               - db:migrate
             resources:
               requests:
@@ -61,7 +61,7 @@ spec:
           main:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: 0.0.11
+              tag: latest
             env:
               NODE_ENV: production
               PORT: "9000"
@@ -107,9 +107,12 @@ spec:
                   secretKeyRef:
                     name: medusa-secret
                     key: MEDUSA_BACKEND_URL
+            envFrom:
+              - configMapRef:
+                  name: medusa-config
             command:
-              - yarn
-              - start
+              - node
+              - index.js
             probes:
               liveness:
                 enabled: true
@@ -138,6 +141,8 @@ spec:
               limits:
                 memory: 1Gi
         pod:
+          imagePullSecrets:
+            - name: ghcr-pull
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
@@ -151,7 +156,7 @@ spec:
           main:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: 0.0.11
+              tag: latest
             env:
               NODE_ENV: production
               PORT: "9000"
@@ -177,9 +182,12 @@ spec:
                   secretKeyRef:
                     name: medusa-secret
                     key: COOKIE_SECRET
+            envFrom:
+              - configMapRef:
+                  name: medusa-config
             command:
-              - yarn
-              - start
+              - node
+              - index.js
             resources:
               requests:
                 cpu: 100m
@@ -187,11 +195,71 @@ spec:
               limits:
                 memory: 512Mi
         pod:
+          imagePullSecrets:
+            - name: ghcr-pull
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
             fsGroup: 1000
             fsGroupChangePolicy: OnRootMismatch
+
+      storefront:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          wait-for-medusa:
+            image:
+              repository: busybox
+              tag: "1.36"
+            command:
+              - sh
+              - -c
+              - until nc -z medusa 9000; do echo waiting for medusa; sleep 2; done
+        containers:
+          main:
+            image:
+              repository: ghcr.io/ekenheim/ecom/storefront
+              tag: latest
+            env:
+              MEDUSA_BACKEND_URL: "http://medusa:9000"
+              NEXT_PUBLIC_BASE_URL: "https://storefront.${SECRET_DOMAIN}"
+              NEXT_PUBLIC_DEFAULT_REGION: "se"
+            envFrom:
+              - configMapRef:
+                  name: storefront-config
+              - secretRef:
+                  name: storefront-secret
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: 8000
+                  initialDelaySeconds: 20
+                  periodSeconds: 20
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: 8000
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  failureThreshold: 3
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
+        pod:
+          imagePullSecrets:
+            - name: ghcr-pull
 
     service:
       medusa-server:
@@ -200,6 +268,13 @@ spec:
         ports:
           http:
             port: 9000
+            protocol: HTTP
+      storefront:
+        controller: storefront
+        type: ClusterIP
+        ports:
+          http:
+            port: 8000
             protocol: HTTP
 
     ingress:
@@ -212,13 +287,21 @@ spec:
           gethomepage.dev/icon: mdi:shopping
           gethomepage.dev/group: Development
         hosts:
-          - host: &host "medusa.${SECRET_DOMAIN}"
+          - host: &medusaHost "medusa.${SECRET_DOMAIN}"
             paths:
               - path: /
                 pathType: Prefix
                 service:
                   identifier: medusa-server
                   port: http
+          - host: &storefrontHost "storefront.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: storefront
+                  port: http
         tls:
           - hosts:
-              - *host
+              - *medusaHost
+              - *storefrontHost

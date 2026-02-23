@@ -16,10 +16,12 @@ spec:
         namespace: flux-system
   maxHistory: 2
   install:
+    disableWait: true
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
+    disableWait: true
     timeout: 15m
     remediation:
       retries: 3

@@ -104,15 +104,15 @@ spec:
                     replicas: 1
                     resources:
                       limits:
-                        memory: 1Gi
+                        memory: 2Gi
                       requests:
-                        memory: 256Mi
+                        memory: 512Mi
                     ## Disable readiness probe - v1.10.0 has a bug where it returns HTTP 500
                     readinessProbe: null
                   backgroundController:
                     resources:
                       limits:
-                        memory: 2Gi
+                        memory: 4Gi
                       requests:
                         memory: 512Mi
                   cleanupJobs:

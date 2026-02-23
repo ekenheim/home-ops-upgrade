@@ -114,6 +114,8 @@ spec:
             envFrom:
               - configMapRef:
                   name: medusa-config
+              - secretRef:
+                  name: medusa-s3-secret
             command:
               - node_modules/.bin/medusa
               - start
@@ -190,6 +192,8 @@ spec:
             envFrom:
               - configMapRef:
                   name: medusa-config
+              - secretRef:
+                  name: medusa-s3-secret
             command:
               - node_modules/.bin/medusa
               - start

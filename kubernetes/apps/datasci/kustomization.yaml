@@ -21,6 +21,7 @@ resources:
   - ./mcp-polygon/ks.yaml
   - ./searxng/ks.yaml
   - ./jupyter-lab/ks.yaml
+  - ./marimo/ks.yaml
   - ./qdrant/ks.yaml
   - ./flyte/ks.yaml
   - ./grid-resilience/ks.yaml

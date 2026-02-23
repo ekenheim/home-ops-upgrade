@@ -20,6 +20,7 @@ spec:
       retries: 3
   upgrade:
     cleanupOnFail: true
+    timeout: 15m
     remediation:
       retries: 3
   uninstall:
@@ -211,7 +212,7 @@ spec:
             command:
               - sh
               - -c
-              - until nc -z medusa 9000; do echo waiting for medusa; sleep 2; done
+              - until nc -z medusa-medusa-server 9000; do echo waiting for medusa; sleep 2; done
         containers:
           main:
             image:
@@ -219,7 +220,7 @@ spec:
               tag: latest
               pullPolicy: Always
             env:
-              MEDUSA_BACKEND_URL: "http://medusa:9000"
+              MEDUSA_BACKEND_URL: "http://medusa-medusa-server:9000"
               NEXT_PUBLIC_BASE_URL: "https://storefront.${SECRET_DOMAIN}"
               NEXT_PUBLIC_DEFAULT_REGION: "se"
             envFrom:

@@ -236,7 +236,7 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /
+                    path: /api/health
                     port: 8000
                   initialDelaySeconds: 20
                   periodSeconds: 20
@@ -246,7 +246,7 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /
+                    path: /api/health
                     port: 8000
                   initialDelaySeconds: 10
                   periodSeconds: 10

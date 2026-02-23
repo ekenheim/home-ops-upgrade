@@ -80,7 +80,7 @@ spec:
               ## Deploy Kyverno (required by deployKF)
               ## NOTE: Kyverno v1.10.0 has bugs - these workarounds are needed:
               ##   - Single replica to avoid leader election race conditions
-              ##   - Increased memory (1Gi) to prevent OOMKilled
+              ##   - Increased memory (2Gi) to prevent OOMKilled
               ##   - Disabled readiness probe (returns HTTP 500 due to bugs)
               ##   - Disabled cleanup jobs (use non-existent kubectl image)
               ##
@@ -112,9 +112,9 @@ spec:
                   backgroundController:
                     resources:
                       limits:
-                        memory: 1Gi
+                        memory: 2Gi
                       requests:
-                        memory: 256Mi
+                        memory: 512Mi
                   cleanupJobs:
                     admissionReports:
                       enabled: false

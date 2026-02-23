@@ -47,8 +47,7 @@ spec:
                     name: medusa-db-secret
                     key: REDIS_URL
             command:
-              - node
-              - index.js
+              - node_modules/.bin/medusa
               - db:migrate
             resources:
               requests:
@@ -111,8 +110,8 @@ spec:
               - configMapRef:
                   name: medusa-config
             command:
-              - node
-              - index.js
+              - node_modules/.bin/medusa
+              - start
             probes:
               liveness:
                 enabled: true
@@ -186,8 +185,8 @@ spec:
               - configMapRef:
                   name: medusa-config
             command:
-              - node
-              - index.js
+              - node_modules/.bin/medusa
+              - start
             resources:
               requests:
                 cpu: 100m
@@ -197,11 +196,6 @@ spec:
         pod:
           imagePullSecrets:
             - name: ghcr-pull
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            fsGroup: 1000
-            fsGroupChangePolicy: OnRootMismatch
 
       storefront:
         annotations:

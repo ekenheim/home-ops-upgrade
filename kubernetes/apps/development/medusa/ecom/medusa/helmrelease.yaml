@@ -34,6 +34,7 @@ spec:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
               tag: latest
+              pullPolicy: Always
             env:
               NODE_ENV: production
               DATABASE_URL:
@@ -61,6 +62,7 @@ spec:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
               tag: latest
+              pullPolicy: Always
             env:
               NODE_ENV: production
               PORT: "9000"
@@ -156,6 +158,7 @@ spec:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
               tag: latest
+              pullPolicy: Always
             env:
               NODE_ENV: production
               PORT: "9000"
@@ -214,6 +217,7 @@ spec:
             image:
               repository: ghcr.io/ekenheim/ecom/storefront
               tag: latest
+              pullPolicy: Always
             env:
               MEDUSA_BACKEND_URL: "http://medusa:9000"
               NEXT_PUBLIC_BASE_URL: "https://storefront.${SECRET_DOMAIN}"

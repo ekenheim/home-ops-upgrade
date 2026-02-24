@@ -27,6 +27,8 @@ spec:
       gatus:
         replicas: 3
         strategy: RollingUpdate
+        serviceAccount:
+          identifier: gatus
         annotations:
           reloader.stakater.com/auto: "true"
         initContainers:
@@ -132,8 +134,7 @@ spec:
                 identifier: app
                 port: http
     serviceAccount:
-      create: true
-      name: *app
+      gatus: {}
     persistence:
       config:
         type: emptyDir

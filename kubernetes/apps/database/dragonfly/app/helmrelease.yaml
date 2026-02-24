@@ -26,6 +26,8 @@ spec:
     controllers:
       dragonfly-operator:
         strategy: RollingUpdate
+        serviceAccount:
+          identifier: dragonfly-operator
         containers:
           app:
             image:
@@ -89,8 +91,7 @@ spec:
           metrics:
             port: 8080
     serviceAccount:
-      create: true
-      name: *app
+      dragonfly-operator: {}
     serviceMonitor:
       app:
         serviceName: *app

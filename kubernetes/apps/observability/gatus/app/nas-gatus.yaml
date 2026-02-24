@@ -9,7 +9,7 @@ data:
   config.yaml: |
     endpoints:
       - name: nas
-        group: infrastructure
+        group: infra
         url: http://${NAS_IP}/login
         interval: 1m
         conditions: ["[STATUS] == 200"]

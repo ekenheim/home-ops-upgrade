@@ -8,4 +8,4 @@ resources:
   - ./dashboards/apps
   - ./dashboards/ray
   - ./dashboards/seldon
-  - ../../../../templates/gatus/external
+  - ../../../../templates/gatus/infra

@@ -170,6 +170,10 @@ spec:
       databases: ["dagster"]
       password:
         type: AlphaNumeric
+    - name: "dashclaw"
+      databases: ["dashclaw"]
+      password:
+        type: AlphaNumeric
     - name: "hempriser"
       databases: ["hempriser"]
       password:

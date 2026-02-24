@@ -10,3 +10,4 @@ resources:
   - ./external-dns/ks.yaml
   - ./nginx/ks.yaml
   - ./tailscale/ks.yaml
+  # - ./headscale/ks.yaml  # disabled; using Tailscale

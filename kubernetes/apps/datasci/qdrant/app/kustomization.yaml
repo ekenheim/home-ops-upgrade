@@ -5,3 +5,4 @@ namespace: datasci
 resources:
   - ./helmrelease.yaml
   - ./podmonitor.yaml
+  - ../../../../templates/gatus/guarded

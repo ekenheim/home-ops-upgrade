@@ -4,3 +4,4 @@ resources:
   - helmrelease.yaml
   - externalsecrets.yaml
   - configmap.yaml
+  - ../../../../../../templates/gatus/external

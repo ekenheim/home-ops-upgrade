@@ -6,7 +6,7 @@ resources:
   - ./issuer.yaml
   - ./certificate.yaml
   - ./ca-key-header-fix-cronjob.yaml
-  - ./externalsecret-minio-creds.yaml
+  # externalsecret-minio-creds.yaml removed (DeployKF workaround, kubeflow namespace re-created)
   # externalsecret-profile-object-store-auth-team-1{,}-prod removed (DeployKF)
 
 

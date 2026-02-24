@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 4.6.2
+      version: 3.7.3
       sourceRef:
         kind: HelmRepository
         name: bjw-s
@@ -218,8 +218,6 @@ spec:
         tls:
           - hosts:
               - "openclaw-code.${SECRET_DOMAIN}"
-    serviceAccount:
-      openclaw: {}
     persistence:
       config:
         type: persistentVolumeClaim

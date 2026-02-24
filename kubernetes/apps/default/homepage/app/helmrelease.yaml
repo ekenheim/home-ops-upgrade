@@ -27,6 +27,8 @@ spec:
       homepage:
         replicas: 2
         strategy: RollingUpdate
+        serviceAccount:
+          identifier: homepage
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
@@ -46,6 +48,8 @@ spec:
                 memory: 200M
               limits:
                 memory: 2G
+    serviceAccount:
+      homepage: {}
     service:
       app:
         controller: *app
@@ -82,6 +86,3 @@ spec:
             path: /app/config/settings.yaml
           - subPath: widgets.yaml
             path: /app/config/widgets.yaml
-    serviceAccount:
-      create: true
-      name: *app

@@ -15,6 +15,15 @@ spec:
         name: bjw-s
         namespace: flux-system
       interval: 15m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    force: true
+    remediation:
+      strategy: rollback
+      retries: 3
   values:
     defaultPodOptions:
       #runtimeClassName: "nvidia"

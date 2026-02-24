@@ -8,31 +8,31 @@ resources:
   # Flux-Kustomizations | Databases
   #- ./postgres/
   # Flux-Kustomizations
-  - ./dagster/ks.yaml
-  - ./dashclaw/ks.yaml
-  - ./docat/ks.yaml
-  - ./miso-chat/ks.yaml
-  - ./openclaw/ks.yaml
-  - ./mlflow/ks.yaml
-  - ./langflow/ks.yaml
-  - ./prefect/ks.yaml
-  - ./dask/ks.yaml
-  - ./ray/ks.yaml
-  - ./spark/ks.yaml
-  - ./ollama-igpu/ks.yaml
-  - ./vllm/ks.yaml
-  - ./open-webui/ks.yaml
-  - ./mcp-polygon/ks.yaml
-  - ./searxng/ks.yaml
-  - ./jupyter-lab/ks.yaml
-  - ./marimo/ks.yaml
-  - ./qdrant/ks.yaml
-  - ./flyte/ks.yaml
-  - ./grid-resilience/ks.yaml
-  - ./label-studio/ks.yaml
-  - ./seldon-core/ks.yaml
-  - ./kyverno-fixes
-  - ./kubeflow/ks.yaml
+  #- ./dagster/ks.yaml
+  #- ./dashclaw/ks.yaml
+  #- ./docat/ks.yaml
+  #- ./miso-chat/ks.yaml
+  #- ./openclaw/ks.yaml
+  #- ./mlflow/ks.yaml
+  #- ./langflow/ks.yaml
+  #- ./prefect/ks.yaml
+  #- ./dask/ks.yaml
+  #- ./ray/ks.yaml
+  #- ./spark/ks.yaml
+  #- ./ollama-igpu/ks.yaml
+  #- ./vllm/ks.yaml
+  #- ./open-webui/ks.yaml
+  #- ./mcp-polygon/ks.yaml
+  #- ./searxng/ks.yaml
+  #- ./jupyter-lab/ks.yaml
+  #- ./marimo/ks.yaml
+  #- ./qdrant/ks.yaml
+  #- ./flyte/ks.yaml
+  #- ./grid-resilience/ks.yaml
+  #- ./label-studio/ks.yaml
+  #- ./seldon-core/ks.yaml
+  #- ./kyverno-fixes
+ # - ./kubeflow/ks.yaml
   # DeployKF (unmaintained) - DISABLED: Remove after new Kubeflow is verified
   # See Section 8 of kubeflow_native_deployment plan for removal steps
   # - ./deploykf-values/ks.yaml
@@ -41,5 +41,7 @@ resources:
   # - ./kubeflow-authz-overrides/ks.yaml
   # - ./kubeflow-routing-overrides/ks.yaml
   # - ./kubeflow-profile-authz-relax/ks.yaml
-  - ./kyverno-fixes/ks.yaml
-  - ./kubeflow-secrets/ks.yaml
+
+
+ # - ./kyverno-fixes/ks.yaml
+#  - ./kubeflow-secrets/ks.yaml

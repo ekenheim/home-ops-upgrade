@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 3.7.3
+      version: 4.6.2
       sourceRef:
         kind: HelmRepository
         name: bjw-s
@@ -218,56 +218,11 @@ spec:
         tls:
           - hosts:
               - "openclaw-code.${SECRET_DOMAIN}"
-    rbac:
-      roles:
-        openclaw-read-all:
-          type: ClusterRole
-          rules:
-            - apiGroups: [""]
-              resources: ["pods", "nodes", "services", "namespaces", "configmaps", "persistentvolumes", "persistentvolumeclaims", "endpoints", "resourcequotas", "limitranges", "serviceaccounts", "events"]
-              verbs: ["get", "list", "watch"]
-            - apiGroups: [""]
-              resources: ["pods/log"]
-              verbs: ["get", "list"]
-            - apiGroups: ["apps"]
-              resources: ["deployments", "daemonsets", "statefulsets", "replicasets"]
-              verbs: ["get", "list", "watch"]
-            - apiGroups: ["batch"]
-              resources: ["jobs", "cronjobs"]
-              verbs: ["get", "list", "watch"]
-            - apiGroups: ["networking.k8s.io"]
-              resources: ["ingresses", "networkpolicies"]
-              verbs: ["get", "list", "watch"]
-            - apiGroups: ["storage.k8s.io"]
-              resources: ["storageclasses"]
-              verbs: ["get", "list", "watch"]
-            - apiGroups: ["rbac.authorization.k8s.io"]
-              resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
-              verbs: ["get", "list", "watch"]
-            - apiGroups: ["metrics.k8s.io"]
-              resources: ["nodes", "pods"]
-              verbs: ["get", "list", "watch"]
-            - apiGroups: ["helm.toolkit.fluxcd.io"]
-              resources: ["helmreleases"]
-              verbs: ["get", "list", "watch"]
-            - apiGroups: ["kustomize.toolkit.fluxcd.io"]
-              resources: ["kustomizations"]
-              verbs: ["get", "list", "watch"]
-            - apiGroups: ["external-secrets.io"]
-              resources: ["externalsecrets"]
-              verbs: ["get", "list", "watch"]
-      bindings:
-        openclaw-read-all:
-          type: ClusterRoleBinding
-          roleRef:
-            identifier: openclaw-read-all
-          subjects:
-            - identifier: openclaw
-              serviceAccount: openclaw
     serviceAccount:
       openclaw: {}
     persistence:
       config:
+        type: persistentVolumeClaim
         existingClaim: "{{ .Release.Name }}"
         globalMounts:
           - path: *homepath

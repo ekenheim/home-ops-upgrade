@@ -82,9 +82,6 @@ spec:
       notebooks:
         enabled: true
         type: persistentVolumeClaim
-        accessMode: ReadWriteMany
-        storageClass: ceph-filesystem
-        size: 10Gi
-        retain: true
+        existingClaim: marimo-notebooks
         globalMounts:
           - path: /home/marimo

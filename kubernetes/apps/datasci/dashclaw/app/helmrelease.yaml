@@ -34,8 +34,6 @@ spec:
               tag: 2.0.0@sha256:9816637a05f81e899e483acdf53b6f8fe8a3b266aaa89e25813807ca664be886
             env:
               NEXTAUTH_URL: "https://dashclaw.${SECRET_DOMAIN}"
-              NEXTAUTH_DEBUG: "true"
-              ALLOWED_ORIGIN: "https://dashclaw.${SECRET_DOMAIN}"
               DASHCLAW_MODE: "self_host"
             envFrom:
               - secretRef:
@@ -45,9 +43,9 @@ spec:
             resources:
               requests:
                 cpu: 50m
-                memory: 256Mi
-              limits:
                 memory: 512Mi
+              limits:
+                memory: 1Gi
     service:
       app:
         controller: *app

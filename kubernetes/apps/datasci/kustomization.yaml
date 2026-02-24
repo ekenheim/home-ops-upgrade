@@ -9,7 +9,10 @@ resources:
   #- ./postgres/
   # Flux-Kustomizations
   - ./dagster/ks.yaml
+  - ./dashclaw/ks.yaml
   - ./docat/ks.yaml
+  - ./miso-chat/ks.yaml
+  - ./openclaw/ks.yaml
   - ./mlflow/ks.yaml
   - ./langflow/ks.yaml
   - ./prefect/ks.yaml
@@ -17,6 +20,7 @@ resources:
   - ./ray/ks.yaml
   - ./spark/ks.yaml
   - ./ollama-igpu/ks.yaml
+  - ./vllm/ks.yaml
   - ./open-webui/ks.yaml
   - ./mcp-polygon/ks.yaml
   - ./searxng/ks.yaml

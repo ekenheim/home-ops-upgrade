@@ -40,7 +40,7 @@ spec:
               - --port
               - "2718"
               - --no-token
-              - /home/marimo
+            workingDir: /home/marimo
             env:
               TZ: ${TIMEZONE}
             resources:

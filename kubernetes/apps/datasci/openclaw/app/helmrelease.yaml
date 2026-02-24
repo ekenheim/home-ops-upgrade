@@ -221,7 +221,7 @@ spec:
     persistence:
       config:
         type: persistentVolumeClaim
-        existingClaim: "{{ .Release.Name }}"
+        existingClaim: openclaw
         globalMounts:
           - path: *homepath
       data:
@@ -232,7 +232,7 @@ spec:
           - path: /data
       openclaw-config:
         type: secret
-        name: "{{ .Release.Name }}-config"
+        name: openclaw-config
         globalMounts:
           - path: /home/node/.openclaw/openclaw.json
             subPath: openclaw.json

@@ -3,19 +3,19 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./namespace.yaml
-  - ./actual/ks.yaml
-  - ./home-assistant/ks.yaml
-  - ./homepage/ks.yaml
-  - ./misc-gatus/ks.yaml
-  - ./misc-ingress/ks.yaml
+#  - ./actual/ks.yaml
+#  - ./home-assistant/ks.yaml
+#  - ./homepage/ks.yaml
+#  - ./misc-gatus/ks.yaml
+#  - ./misc-ingress/ks.yaml
   #- ./mosquitto/ks.yaml
-  - ./music-assistant/ks.yaml
+#  - ./music-assistant/ks.yaml
   #- ./your-spotify/ks.yaml
   #- ./memos/ks.yaml
-  - ./it-tools/ks.yaml
-  - ./paperless/ks.yaml
+#  - ./it-tools/ks.yaml
+#  - ./paperless/ks.yaml
   #- ./syncthing/ks.yaml
-  - ./pairdrop/ks.yaml
+#  - ./pairdrop/ks.yaml
   #- ./zigbee2mqtt/ks.yaml
-  - ./zwave-js-ui/ks.yaml
-  - ./immich/ks.yaml
+#  - ./zwave-js-ui/ks.yaml
+#  - ./immich/ks.yaml

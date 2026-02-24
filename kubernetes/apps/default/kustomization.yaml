@@ -17,5 +17,5 @@ resources:
   #- ./syncthing/ks.yaml
   - ./pairdrop/ks.yaml
   #- ./zigbee2mqtt/ks.yaml
-  #- ./zwave-js-ui/ks.yaml
+  - ./zwave-js-ui/ks.yaml
   - ./immich/ks.yaml

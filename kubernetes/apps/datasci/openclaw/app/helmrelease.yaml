@@ -34,12 +34,13 @@ spec:
               tag: latest
             env:
               OLLAMA_URL: http://ollama-igpu.datasci.svc.cluster.local:11434
+              NODE_OPTIONS: "--max-old-space-size=900"
             resources:
               requests:
                 cpu: 50m
-                memory: 128Mi
+                memory: 256Mi
               limits:
-                memory: 512Mi
+                memory: 1Gi
     service:
       app:
         controller: *app

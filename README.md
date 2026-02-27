@@ -97,23 +97,22 @@ If it's not in Git, it doesn't run — and if it drifts, Flux will bring it back
 
 ### Flux Workflow
 
-Here's a simplified example of how Flux handles deployment ordering. `postgres` has to be healthy before `authentik` can start, and `ArgoCD` in turn waits for `authentik` to be ready — because it uses it for SSO.
+Here's how Flux handles deployment ordering using real examples from the cluster. `external-secrets` and the Postgres operator have no dependencies so they come up immediately. The Postgres cluster waits for both of those to be healthy, and only then can `authentik` start — since it needs a running database before it can do anything useful.
 
 ```mermaid
 graph TD;
   id1>Kustomization: cluster] -->|Creates| id2>Kustomization: cluster-apps];
-  id2>Kustomization: cluster-apps] -->|Creates| id3>Kustomization: postgres];
-  id2>Kustomization: cluster-apps] -->|Creates| id6>Kustomization: authentik]
-  id2>Kustomization: cluster-apps] -->|Creates| id8>Kustomization: argocd]
-  id2>Kustomization: cluster-apps] -->|Creates| id5>Kustomization: postgres-cluster]
-  id3>Kustomization: postgres] -->|Creates| id4[HelmRelease: postgres];
-  id5>Kustomization: postgres-cluster] -->|Depends on| id3>Kustomization: postgres];
-  id5>Kustomization: postgres-cluster] -->|Creates| id10[Postgres Cluster];
-  id6>Kustomization: authentik] -->|Creates| id7(HelmRelease: authentik);
-  id6>Kustomization: authentik] -->|Depends on| id5>Kustomization: postgres-cluster];
-  id8>Kustomization: argocd] -->|Creates| id9(HelmRelease: argocd);
-  id8>Kustomization: argocd] -->|Depends on| id5>Kustomization: postgres-cluster];
-  id9(HelmRelease: argocd) -->|Depends on| id7(HelmRelease: authentik);
+  id2>Kustomization: cluster-apps] -->|Creates| id3>Kustomization: external-secrets];
+  id2>Kustomization: cluster-apps] -->|Creates| id4>Kustomization: crunchy-postgres-operator];
+  id2>Kustomization: cluster-apps] -->|Creates| id6>Kustomization: crunchy-postgres-operator-cluster];
+  id2>Kustomization: cluster-apps] -->|Creates| id8>Kustomization: authentik];
+  id3>Kustomization: external-secrets] -->|Creates| id5[HelmRelease: external-secrets];
+  id4>Kustomization: crunchy-postgres-operator] -->|Creates| id7[HelmRelease: crunchy-postgres-operator];
+  id6>Kustomization: crunchy-postgres-operator-cluster] -->|Depends on| id4>Kustomization: crunchy-postgres-operator];
+  id6>Kustomization: crunchy-postgres-operator-cluster] -->|Depends on| id3>Kustomization: external-secrets];
+  id6>Kustomization: crunchy-postgres-operator-cluster] -->|Creates| id9[CrunchyPostgres Cluster];
+  id8>Kustomization: authentik] -->|Depends on| id6>Kustomization: crunchy-postgres-operator-cluster];
+  id8>Kustomization: authentik] -->|Creates| id10(HelmRelease: authentik);
 ```
 
 ---

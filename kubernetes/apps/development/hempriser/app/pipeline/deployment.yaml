@@ -38,6 +38,8 @@ spec:
             - secretRef:
                 name: hempriser-postgres
             - secretRef:
+                name: hempriser-dagster-db
+            - secretRef:
                 name: hempriser-minio
           env:
             - name: DAGSTER_HOME

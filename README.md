@@ -39,10 +39,9 @@ _... automated via [Flux](https://fluxcd.io), [Renovate](https://github.com/reno
 
 ## Overview
 
-This is a monorepository for my home Kubernetes clusters.
-I try to adhere to Infrastructure as Code (IaC) and GitOps practices using tools like [Ansible](https://www.ansible.com/), [Terraform](https://developer.hashicorp.com/terraform), [Kubernetes](https://kubernetes.io/), [Flux](https://github.com/fluxcd/flux2), [Renovate](https://github.com/renovatebot/renovate), and [GitHub Actions](https://github.com/features/actions).
+This is a monorepository for my home Kubernetes cluster. I try to keep everything defined as code and managed through GitOps — if it's running, it should be in Git. The main tools I rely on are [Ansible](https://www.ansible.com/), [Terraform](https://developer.hashicorp.com/terraform), [Kubernetes](https://kubernetes.io/), [Flux](https://github.com/fluxcd/flux2), [Renovate](https://github.com/renovatebot/renovate), and [GitHub Actions](https://github.com/features/actions).
 
-The purpose here is to learn k8s, while practicing Gitops.
+Started this to learn Kubernetes properly, and it's grown quite a bit since then — it now runs everything from media and smart home automation to a fairly serious data science stack.
 
 ---
 
@@ -50,82 +49,102 @@ The purpose here is to learn k8s, while practicing Gitops.
 
 ### Installation
 
-My clusters are running on [Talos Linux](https://www.talos.dev) immutable Kubernetes OS. This is a semi-hyper-converged cluster, workloads and block storage are sharing the same available resources on my nodes while I have a separate NAS server with ZFS for NFS/SMB shares, bulk file storage and backups.
+The cluster runs [Talos Linux](https://www.talos.dev), an immutable, API-driven OS purpose-built for Kubernetes. There's no SSH, no package manager — configuration is entirely declarative via `talconfig.yaml` and applied with [talhelper](https://github.com/budimanjojo/talhelper).
+
+The setup is semi-hyper-converged: workloads and block storage share the same nodes, while a separate NAS handles NFS/SMB shares, bulk storage, and off-cluster backups.
 
 ### Core Components
 
-- [actions-runner-controller](https://github.com/actions/actions-runner-controller): self-hosted Github runners
-- [cilium](https://github.com/cilium/cilium): internal Kubernetes networking plugin
-- [cert-manager](https://cert-manager.io/docs/): creates SSL certificates for services in my cluster
-- [external-dns](https://github.com/kubernetes-sigs/external-dns): automatically syncs DNS records from my cluster ingresses to a DNS provider
-- [external-secrets](https://github.com/external-secrets/external-secrets/): managed Kubernetes secrets using [Bitwarden](https://bitwarden.com/).
-- [ingress-nginx](https://github.com/kubernetes/ingress-nginx/): ingress controller for Kubernetes using NGINX as a reverse proxy and load balancer
-- [longhorn](https://longhorn.io/): Cloud native distributed block storage for Kubernetes
-- [sops](https://toolkit.fluxcd.io/guides/mozilla-sops/): managed secrets for Kubernetes, Ansible, and Terraform which are committed to Git
-- [spegel](https://github.com/XenitAB/spegel): stateless cluster local OCI registry mirror
-- [tf-controller](https://github.com/weaveworks/tf-controller): additional Flux component used to run Terraform from within a Kubernetes cluster.
+- [actions-runner-controller](https://github.com/actions/actions-runner-controller): self-hosted GitHub Actions runners inside the cluster
+- [cilium](https://github.com/cilium/cilium): CNI for internal Kubernetes networking, replacing kube-proxy entirely
+- [cert-manager](https://cert-manager.io/docs/): handles SSL certificate issuance and renewal for all cluster services
+- [cloudflared](https://github.com/cloudflare/cloudflared): Cloudflare Tunnel for exposing services without opening inbound firewall ports
+- [external-dns](https://github.com/kubernetes-sigs/external-dns): automatically creates DNS records from ingress and service definitions
+- [external-secrets](https://github.com/external-secrets/external-secrets/): syncs secrets from [Bitwarden](https://bitwarden.com/) into Kubernetes
+- [headscale](https://github.com/juanfont/headscale): self-hosted Tailscale control plane for mesh VPN access
+- [ingress-nginx](https://github.com/kubernetes/ingress-nginx/): ingress controller using NGINX as a reverse proxy and load balancer
+- [openebs](https://openebs.io/): local hostpath storage for workloads that need node-local fast storage
+- [rook-ceph](https://rook.io/): distributed block storage across the cluster nodes
+- [sops](https://toolkit.fluxcd.io/guides/mozilla-sops/): encrypted secrets committed to Git, used across Kubernetes and Ansible
+- [spegel](https://github.com/XenitAB/spegel): peer-to-peer OCI registry mirror so nodes don't all pull images independently
+- [tofu-controller](https://github.com/flux-iac/tofu-controller): runs OpenTofu (open-source Terraform) from within the cluster, managed by Flux
 - [volsync](https://github.com/backube/volsync): backup and recovery of persistent volume claims
 
 ### GitOps
 
-[Flux](https://github.com/fluxcd/flux2) watches the clusters in my [kubernetes](./kubernetes/) folder and makes the changes to my clusters based on the state of my Git repository.
+[Flux](https://github.com/fluxcd/flux2) watches the `kubernetes/` folder and reconciles the cluster to match whatever is in Git. It recursively searches for the top-level `kustomization.yaml` in each app directory, which in turn points to `HelmRelease` objects and any supporting resources.
 
-The way Flux works for me here is it will recursively search the `kubernetes/${cluster}/apps` folder until it finds the most top level `kustomization.yaml` per directory and then apply all the resources listed in it. That aforementioned `kustomization.yaml` will generally only have a namespace resource and one or many Flux kustomizations. Those Flux kustomizations will generally have a `HelmRelease` or other resources related to the application underneath it which will be applied.
+If it's not in Git, it doesn't run — and if it drifts, Flux will bring it back.
 
-[Renovate](https://github.com/renovatebot/renovate) watches my **entire** repository looking for dependency updates, when they are found a PR is automatically created. When some PRs are merged Flux applies the changes to my cluster.
+[Renovate](https://github.com/renovatebot/renovate) monitors the entire repository for outdated dependencies. When a new chart or image version is available, it opens a PR automatically. Merging that PR is all it takes to trigger a rollout.
 
 ### Directories
-
-This Git repository contains the following directories:
 
 ```sh
 📁 .
 ├── 📁 .devcontainer/    # Development container configuration
 ├── 📁 .github/          # GitHub Actions workflows
 ├── 📁 .taskfiles/       # Taskfile configurations
-├── 📁 ansible/          # Ansible playbooks and roles
+├── 📁 ansible/          # Ansible playbooks for supporting infrastructure (NAS, etc.)
 ├── 📁 clusterconfig/    # Cluster configuration files
 ├── 📁 kubernetes/       # Kubernetes manifests
 │   ├── 📁 apps/         # Application deployments
-│   ├── 📁 bootstrap/    # Bootstrap procedures
-│   ├── 📁 flux/         # Core flux configuration
-│   └── 📁 templates/    # Re-useable components
-└── 📁 terraform/        # Terraform configurations
+│   ├── 📁 bootstrap/    # Bootstrap procedures and Talos config
+│   ├── 📁 flux/         # Core Flux configuration
+│   └── 📁 templates/    # Reusable components (VolSync, etc.)
+└── 📁 terraform/        # Terraform/OpenTofu configurations
 ```
 
 ### Flux Workflow
 
-This is a high-level look how Flux deploys my applications with dependencies. Below there are 3 apps `postgres`, `authentik` and `weave-gitops`. `postgres` is the first app that needs to be running and healthy before `authentik` and `weave-gitops`. Once `postgres` is healthy `authentik` will be deployed and after that is healthy `weave-gitops` will be deployed.
+Here's a simplified example of how Flux handles deployment ordering. `postgres` has to be healthy before `authentik` can start, and `ArgoCD` in turn waits for `authentik` to be ready — because it uses it for SSO.
 
 ```mermaid
 graph TD;
   id1>Kustomization: cluster] -->|Creates| id2>Kustomization: cluster-apps];
   id2>Kustomization: cluster-apps] -->|Creates| id3>Kustomization: postgres];
   id2>Kustomization: cluster-apps] -->|Creates| id6>Kustomization: authentik]
-  id2>Kustomization: cluster-apps] -->|Creates| id8>Kustomization: weave-gitops]
+  id2>Kustomization: cluster-apps] -->|Creates| id8>Kustomization: argocd]
   id2>Kustomization: cluster-apps] -->|Creates| id5>Kustomization: postgres-cluster]
   id3>Kustomization: postgres] -->|Creates| id4[HelmRelease: postgres];
   id5>Kustomization: postgres-cluster] -->|Depends on| id3>Kustomization: postgres];
   id5>Kustomization: postgres-cluster] -->|Creates| id10[Postgres Cluster];
   id6>Kustomization: authentik] -->|Creates| id7(HelmRelease: authentik);
   id6>Kustomization: authentik] -->|Depends on| id5>Kustomization: postgres-cluster];
-  id8>Kustomization: weave-gitops] -->|Creates| id9(HelmRelease: weave-gitops);
-  id8>Kustomization: weave-gitops] -->|Depends on| id5>Kustomization: postgres-cluster];
-  id9(HelmRelease: weave-gitops) -->|Depends on| id7(HelmRelease: authentik);
+  id8>Kustomization: argocd] -->|Creates| id9(HelmRelease: argocd);
+  id8>Kustomization: argocd] -->|Depends on| id5>Kustomization: postgres-cluster];
+  id9(HelmRelease: argocd) -->|Depends on| id7(HelmRelease: authentik);
 ```
 
-### Networking
+---
 
-<details>
-  <summary>Click to see a high-level network diagram</summary>
-  <!-- Network diagram removed -->
-</details>
+## 🗂️ Applications
+
+The cluster runs a wide range of workloads, organized by namespace:
+
+### Data Science
+A fairly deep ML/data stack built around [Kubeflow](https://www.kubeflow.org/) pipelines and [Ray](https://www.ray.io/) for distributed compute. Also running [Dagster](https://dagster.io/), [Prefect](https://www.prefect.io/), [Apache Spark](https://spark.apache.org/), [MLflow](https://mlflow.org/) for experiment tracking, and [Jupyter Lab](https://jupyter.org/) for interactive work. On the AI/inference side: [Ollama](https://ollama.com/), [vLLM](https://github.com/vllm-project/vllm), [Open WebUI](https://github.com/open-webui/open-webui), and [Langflow](https://langflow.org/) for building LLM workflows.
+
+### Smart Home / IoT
+[Home Assistant](https://www.home-assistant.io/) is the hub, with [Zigbee2MQTT](https://www.zigbee2mqtt.io/) and [Z-Wave JS UI](https://github.com/zwave-js/zwave-js-ui) handling device protocols. [Music Assistant](https://music-assistant.io/) manages multi-room audio. All backed by a local [Mosquitto](https://mosquitto.org/) MQTT broker.
+
+### Media
+[Plex](https://www.plex.tv/) for media streaming, with [Kavita](https://www.kavitareader.com/) for books and comics. [Overseerr](https://overseerr.dev/) handles requests, [Maintainerr](https://github.com/jorenn92/Maintainerr) handles library cleanup, and the usual *arr stack ([Sonarr](https://sonarr.tv/), [Radarr](https://radarr.video/), [Prowlarr](https://github.com/Prowlarr/Prowlarr), [SABnzbd](https://sabnzbd.org/)) manages downloads.
+
+### Personal / Productivity
+[Immich](https://immich.app/) for photo management, [Paperless-ngx](https://docs.paperless-ngx.com/) for documents, [Syncthing](https://syncthing.net/) for file sync, and [Actual Budget](https://actualbudget.org/) for personal finance.
+
+### Observability
+Full monitoring stack: [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) with [Grafana](https://grafana.com/), long-term metrics via [Thanos](https://thanos.io/), external health monitoring with [Gatus](https://gatus.dev/), and [Kromgo](https://github.com/kashalls/kromgo) for the README badges above.
+
+### Development / Internal Tools
+[Harbor](https://goharbor.io/) as a private OCI registry, [Meilisearch](https://www.meilisearch.com/) for search, [Redpanda](https://redpanda.com/) as a Kafka-compatible event streaming platform, and [Metabase](https://www.metabase.com/) for business intelligence dashboards.
 
 ---
 
 ## ☁️ Cloud Dependencies
 
-While most of my infrastructure and workloads are self-hosted I do rely upon the cloud for certain key parts of my setup. This saves me from having to worry about two things. (1) Dealing with chicken/egg scenarios and (2) services I critically need whether my cluster is online or not.
+Most things run locally, but I offload a few things to the cloud where it makes sense — either to avoid chicken-and-egg problems at boot time, or because they need to be available even when the cluster is down.
 
 | Service                                   | Use                                                               | Cost           |
 |-------------------------------------------|-------------------------------------------------------------------|----------------|
@@ -141,17 +160,17 @@ While most of my infrastructure and workloads are self-hosted I do rely upon the
 
 ### Main Kubernetes Cluster
 
-| Name    | Device         | CPU       | OS Disk   | Data Disk | RAM  | OS    | Purpose           | Status |
-|---------|----------------|-----------|-----------|-----------|------|-------|-------------------|--------|
-| master1 | Dell 7080mff   | 16 cores  | 113GB SSD | 1TB NVME  | 64GB | Talos | k8s control-plane | Ready  |
-| master2 | Dell 7080mff   | 16 cores  | 233GB SSD | 1TB NVME  | 64GB | Talos | k8s control-plane | Ready  |
-| master3 | Dell 3080mff   | 16 cores  | 233GB SSD | 1TB NVME  | 64GB | Talos | k8s control-plane | Ready  |
-| worker1 | Dell 3080mff   | 4 cores   | 975GB SSD | 1TB NVME  | 64GB | Talos | k8s worker        | NotReady |
-| worker2 | Dell 3080mff   | 2 cores   | 233GB SSD | N/A       | 64GB | Talos | k8s worker        | Ready  |
-| worker3 | Dell 3080mff   | 40 cores  | 101GB SSD | 1TB NVME  | 120GB| Talos | k8s worker        | NotReady |
+| Name    | Device        | CPU      | OS Disk   | Data Disk | RAM   | OS    | Purpose           | Status   |
+|---------|---------------|----------|-----------|-----------|-------|-------|-------------------|----------|
+| master1 | Dell 7080mff  | 16 cores | 113GB SSD | 1TB NVMe  | 64GB  | Talos | k8s control-plane | Ready    |
+| master2 | Dell 7080mff  | 16 cores | 233GB SSD | 1TB NVMe  | 64GB  | Talos | k8s control-plane | Ready    |
+| master3 | Dell 3080mff  | 16 cores | 233GB SSD | 1TB NVMe  | 64GB  | Talos | k8s control-plane | Ready    |
+| worker1 | Dell 3080mff  | 4 cores  | 975GB SSD | 1TB NVMe  | 32GB  | Talos | k8s worker        | NotReady |
+| worker2 | Dell 3080mff  | 2 cores  | 233GB SSD | N/A       | 16GB  | Talos | k8s worker        | Ready    |
+| worker3 | AMD (32-core) | 32 cores | 101GB SSD | 1TB NVMe  | 96GB  | Talos | k8s worker        | Ready    |
 
-Total CPU: 94 cores
-Total RAM: 440GB
+Total CPU: 86 cores
+Total RAM: 336GB
 
 ### Supporting Hardware
 

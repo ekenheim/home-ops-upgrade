@@ -11,7 +11,7 @@ resources:
   - ./dagster/ks.yaml
   - ./dashclaw/ks.yaml
   - ./docat/ks.yaml
-  - ./miso-chat/ks.yaml
+  #- ./miso-chat/ks.yaml
   - ./openclaw/ks.yaml
   - ./mlflow/ks.yaml
   - ./langflow/ks.yaml

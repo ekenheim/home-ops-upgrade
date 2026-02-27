@@ -123,10 +123,10 @@ graph TD;
 The cluster runs a wide range of workloads, organized by namespace:
 
 ### Data Science
-A fairly deep ML/data stack built around [Kubeflow](https://www.kubeflow.org/) pipelines and [Ray](https://www.ray.io/) for distributed compute. Also running [Dagster](https://dagster.io/), [Prefect](https://www.prefect.io/), [Apache Spark](https://spark.apache.org/), [MLflow](https://mlflow.org/) for experiment tracking, and [Jupyter Lab](https://jupyter.org/) for interactive work. On the AI/inference side: [Ollama](https://ollama.com/), [vLLM](https://github.com/vllm-project/vllm), [Open WebUI](https://github.com/open-webui/open-webui), and [Langflow](https://langflow.org/) for building LLM workflows.
+A fairly deep ML/data stack with [Ray](https://www.ray.io/) and [Dask](https://www.dask.org/) for distributed compute, [Apache Spark](https://spark.apache.org/) for large-scale processing, and [Dagster](https://dagster.io/), [Prefect](https://www.prefect.io/), and [Flyte](https://flyte.org/) for orchestration. [MLflow](https://mlflow.org/) handles experiment tracking, [Jupyter Lab](https://jupyter.org/) and [Marimo](https://marimo.io/) for interactive notebooks. [Kubeflow](https://www.kubeflow.org/) is deployed and being migrated from deployKF to a native install. On the AI/inference side: [Ollama](https://ollama.com/), [vLLM](https://github.com/vllm-project/vllm), [Open WebUI](https://github.com/open-webui/open-webui), and [Langflow](https://langflow.org/) for building LLM workflows. [Qdrant](https://qdrant.tech/) serves as the vector database.
 
 ### Smart Home / IoT
-[Home Assistant](https://www.home-assistant.io/) is the hub, with [Zigbee2MQTT](https://www.zigbee2mqtt.io/) and [Z-Wave JS UI](https://github.com/zwave-js/zwave-js-ui) handling device protocols. [Music Assistant](https://music-assistant.io/) manages multi-room audio. All backed by a local [Mosquitto](https://mosquitto.org/) MQTT broker.
+[Home Assistant](https://www.home-assistant.io/) is the hub, with [Z-Wave JS UI](https://github.com/zwave-js/zwave-js-ui) handling Z-Wave devices. [Music Assistant](https://music-assistant.io/) manages multi-room audio. All backed by a local [Mosquitto](https://mosquitto.org/) MQTT broker.
 
 ### Media
 [Plex](https://www.plex.tv/) for media streaming, with [Kavita](https://www.kavitareader.com/) for books and comics. [Overseerr](https://overseerr.dev/) handles requests, [Maintainerr](https://github.com/jorenn92/Maintainerr) handles library cleanup, and the usual *arr stack ([Sonarr](https://sonarr.tv/), [Radarr](https://radarr.video/), [Prowlarr](https://github.com/Prowlarr/Prowlarr), [SABnzbd](https://sabnzbd.org/)) manages downloads.
@@ -180,15 +180,17 @@ Total RAM: 336GB
 
 ### Networking/UPS Hardware
 
-| Device                | Purpose                          |
-|-----------------------|----------------------------------|
-| Rellio 2200 VSD      | UPS - Server Rack                |
-| Unifi UDM Pro        | Router                           |
-| Unifi USW-16-PoE     | 16 Port PoE Switch               |
-| Unifi US 8           | 8 Port Switch                    |
-| Unifi US 8           | 8 Port Switch                    |
-| Unifi USW Lite 16 PoE| 16 Port Lite PoE Switch          |
-| Unifi AC Pro         | Access Point                     |
+| Device                    | Purpose                               |
+|---------------------------|---------------------------------------|
+| Rellio 2200 VSD           | UPS - Server Rack                     |
+| Unifi Dream Machine Pro   | Router / Gateway                      |
+| Unifi USW Pro XG 24 PoE  | 24 Port 10G PoE Switch (main rack)    |
+| Unifi USW 16 PoE          | 16 Port PoE Switch                    |
+| Unifi USW Lite 16 PoE     | 16 Port Lite PoE Switch               |
+| Unifi US 8                | 8 Port Switch                         |
+| Unifi US 8                | 8 Port Switch                         |
+| Unifi U7 Pro XGS          | WiFi 7 Access Point                   |
+| Unifi AC Pro              | Access Point                          |
 
 ---
 

@@ -1,5 +1,5 @@
 ---
-# Spark ENTSO-E ingest: reads Bronze (Rook), writes silver/grid_snapshots.parquet to Silver (Rook).
+# Spark ENTSO-E ingest: reads Bronze (Rook), writes silver/entsoe_snapshots.parquet to Silver (Rook).
 # Image: ghcr.io/ekenheim/grid-resilience-data-engineering (FROM apache/spark:4.0.2-python3)
 # ENTSOE_API_KEY injected from grid-reliance-entsoe ExternalSecret.
 # Env vars use BRONZE_*/SILVER_* prefixes matching entsoe_ingest.py env reads.

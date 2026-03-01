@@ -112,6 +112,12 @@ spec:
 
     worker:
       groupName: workergroup
+      image:
+        repository: ghcr.io/ekenheim/grid-resilience-ray-worker
+        tag: latest
+        pullPolicy: Always
+      imagePullSecrets:
+        - name: ghcr-pull
       replicas: 2
       minReplicas: 1
       maxReplicas: 12

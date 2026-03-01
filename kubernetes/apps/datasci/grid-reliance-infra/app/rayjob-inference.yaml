@@ -1,8 +1,9 @@
 ---
 # Bayesian grid model inference RayJob.
-# Submitter runs on grid-resilience-inference image; workers use runtime_env pip install.
+# Submitter: grid-resilience-inference image.
+# Workers: grid-resilience-ray-worker image (PyMC/nutpie/arviz pre-installed — no runtime_env pip).
 # Reads silver/grid_snapshots.parquet from Silver, writes model + forecasts to Gold.
-# Ray cluster: ray-kuberay (datasci namespace), confirmed version 2.54.0.
+# Ray cluster: ray-kuberay (datasci namespace), version 2.54.0.
 apiVersion: ray.io/v1
 kind: RayJob
 metadata:
@@ -13,14 +14,6 @@ metadata:
     app.kubernetes.io/component: inference
 spec:
   entrypoint: python -m inference.run_inference
-  runtimeEnvYAML: |
-    pip:
-      - ray[default]==2.54.0
-      - pymc>=5.20.0
-      - nutpie>=0.16.0
-      - arviz>=0.19.0
-      - boto3>=1.34.0
-      - pyarrow>=14.0.0
   clusterSelector:
     ray.io/cluster: ray-kuberay
   shutdownAfterJobFinishes: true

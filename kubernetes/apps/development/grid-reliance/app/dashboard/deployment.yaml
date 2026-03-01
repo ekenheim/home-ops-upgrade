@@ -9,7 +9,8 @@ metadata:
     app.kubernetes.io/name: grid-reliance
     app.kubernetes.io/component: dashboard
 spec:
-  replicas: 1
+  # Set to 1 once ghcr.io/ekenheim/grid-resilience-dashboard:v1.0.0 is published; ImagePullBackOff until then.
+  replicas: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: grid-reliance

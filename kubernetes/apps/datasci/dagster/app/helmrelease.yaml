@@ -79,6 +79,31 @@ spec:
           runK8sConfig:
             containerConfig:
               env:
+                - name: BRONZE_AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: grid-resilience-bronze
+                      key: AWS_ACCESS_KEY_ID
+                - name: BRONZE_AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: grid-resilience-bronze
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: BRONZE_BUCKET_HOST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: grid-resilience-bronze
+                      key: BUCKET_HOST
+                - name: BRONZE_BUCKET_PORT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: grid-resilience-bronze
+                      key: BUCKET_PORT
+                - name: BRONZE_BUCKET_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: grid-resilience-bronze
+                      key: BUCKET_NAME
                 - name: SILVER_AWS_ACCESS_KEY_ID
                   valueFrom:
                     secretKeyRef:

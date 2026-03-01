@@ -1,0 +1,37 @@
+---
+# Bayesian grid model inference RayJob. Runs on the existing KubeRay cluster (ray-kuberay) in datasci.
+# Reference: grid-resilience repo inference/bayesian-grid-model.yaml.
+# Replace image with your built image (repo code + PyMC, Nutpie, boto3, pandas).
+# Secret/ConfigMap names match Rook ObjectBucketClaims: grid-resilience-silver, grid-resilience-gold.
+# If the job driver runs on cluster workers and needs bucket access, ensure the Ray cluster pod template
+# (datasci/ray HelmRelease) has envFrom for these OBCs, or pass credentials via runtimeEnv.
+apiVersion: ray.io/v1
+kind: RayJob
+metadata:
+  name: grid-resilience-inference
+  namespace: datasci
+  labels:
+    app.kubernetes.io/name: grid-reliance
+    app.kubernetes.io/component: inference
+spec:
+  entrypoint: python -m inference.bayesian_grid_model
+  clusterSelector:
+    ray.io/cluster: ray-kuberay
+  shutdownAfterJobFinishes: true
+  ttlSecondsAfterFinished: 86400
+  jobSubmitterPodTemplate:
+    spec:
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: ray-job-submitter
+          envFrom:
+            - configMapRef:
+                name: grid-resilience-silver
+            - secretRef:
+                name: grid-resilience-silver
+            - configMapRef:
+                name: grid-resilience-gold
+            - secretRef:
+                name: grid-resilience-gold

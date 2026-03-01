@@ -1,0 +1,64 @@
+---
+# Grid Resilience API in datasci, wired to Rook Gold (grid-resilience-gold) so it can read
+# dagster/tail_risk_forecasts.parquet and dagster/hsgp_model.pkl. Uses Rook-style env:
+# BUCKET_HOST, BUCKET_PORT, BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (from OBC Secret + ConfigMap).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grid-reliance-api
+  namespace: datasci
+  labels:
+    app.kubernetes.io/name: grid-reliance
+    app.kubernetes.io/component: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: grid-reliance
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: grid-reliance
+        app.kubernetes.io/component: api
+    spec:
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: api
+          image: ghcr.io/ekenheim/grid-resilience-api:v1.0.3
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: grid-resilience-gold
+            - secretRef:
+                name: grid-resilience-gold
+          env:
+            - name: PYTHONPATH
+              value: "/app"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 6

@@ -1,0 +1,33 @@
+---
+# Rook Ceph ObjectBucketClaims for Grid Resilience (Bronze / Silver / Gold).
+# Each claim creates a Secret and ConfigMap of the same name in this namespace.
+# Gold: dagster outputs (tail_risk_forecasts.parquet, hsgp_model.pkl); consumed by API and RayJob.
+# Silver: ETL outputs (grid_snapshots.parquet); consumed by RayJob and downstream.
+# Bronze: raw ingest (ERA5 etc.); consumed by Spark ERA5 ingest and ETL.
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/objectbucket.io/objectbucketclaim_v1alpha1.json
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: grid-resilience-bronze
+  namespace: datasci
+spec:
+  bucketName: grid-resilience-bronze
+  storageClassName: ceph-bucket
+---
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: grid-resilience-silver
+  namespace: datasci
+spec:
+  bucketName: grid-resilience-silver
+  storageClassName: ceph-bucket
+---
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: grid-resilience-gold
+  namespace: datasci
+spec:
+  bucketName: grid-resilience-gold
+  storageClassName: ceph-bucket

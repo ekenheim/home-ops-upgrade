@@ -37,6 +37,8 @@ spec:
                 name: grid-reliance-postgres
             - secretRef:
                 name: grid-reliance-minio
+            - secretRef:
+                name: grid-reliance-entsoe
           env:
             - name: DAGSTER_HOME
               value: "/opt/dagster"

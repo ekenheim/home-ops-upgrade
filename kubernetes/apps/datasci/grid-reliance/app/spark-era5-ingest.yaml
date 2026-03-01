@@ -1,0 +1,48 @@
+---
+# Spark ERA5 ingest (reference: grid-resilience repo data-engineering/processing/spark-era5-ingest.yaml).
+# Build an image that includes spark_era5_ingest.py at /opt/spark/job/ (or set mainApplicationFile accordingly).
+# Secret/ConfigMap names match Rook ObjectBucketClaims: grid-resilience-bronze (read), grid-resilience-silver (write).
+# Add imagePullSecrets if the image is in a private registry.
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: grid-resilience-era5-ingest
+  namespace: datasci
+  labels:
+    app.kubernetes.io/name: grid-reliance
+    app.kubernetes.io/component: era5-ingest
+spec:
+  type: Python
+  mode: cluster
+  image: ghcr.io/ekenheim/grid-resilience-data-engineering:v1.0.0
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets:
+    - name: ghcr-pull
+  mainApplicationFile: local:///opt/spark/job/spark_era5_ingest.py
+  driver:
+    cores: 1
+    memory: 1g
+    envFrom:
+      - configMapRef:
+          name: grid-resilience-bronze
+      - secretRef:
+          name: grid-resilience-bronze
+      - configMapRef:
+          name: grid-resilience-silver
+      - secretRef:
+          name: grid-resilience-silver
+  executor:
+    cores: 2
+    instances: 2
+    memory: 2g
+    envFrom:
+      - configMapRef:
+          name: grid-resilience-bronze
+      - secretRef:
+          name: grid-resilience-bronze
+      - configMapRef:
+          name: grid-resilience-silver
+      - secretRef:
+          name: grid-resilience-silver
+  restartPolicy:
+    type: Never

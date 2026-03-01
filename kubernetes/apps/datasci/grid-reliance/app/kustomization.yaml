@@ -1,0 +1,11 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: datasci
+resources:
+  - ./objectbucketclaims.yaml
+  - ./api
+  - ./rayjob-inference.yaml
+  - ./spark-era5-ingest.yaml
+  - ./spark-entsoe-ingest.yaml

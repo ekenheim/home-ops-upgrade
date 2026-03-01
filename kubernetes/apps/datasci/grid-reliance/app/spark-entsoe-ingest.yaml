@@ -1,0 +1,52 @@
+---
+# Spark ENTSO-E ingest (second data source; reference: grid-resilience repo data-engineering/processing).
+# Fetches grid/transmission data from ENTSO-E Transparency API using ENTSOE_API_KEY.
+# Same image as ERA5; mainApplicationFile may differ (e.g. entsoe_ingest.py). Adjust path to match your build.
+# Writes to Bronze (and/or Silver); uses grid-reliance-entsoe for API key.
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: grid-resilience-entsoe-ingest
+  namespace: datasci
+  labels:
+    app.kubernetes.io/name: grid-reliance
+    app.kubernetes.io/component: entsoe-ingest
+spec:
+  type: Python
+  mode: cluster
+  image: ghcr.io/ekenheim/grid-resilience-data-engineering:v1.0.0
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets:
+    - name: ghcr-pull
+  mainApplicationFile: local:///opt/spark/job/entsoe_ingest.py
+  driver:
+    cores: 1
+    memory: 1g
+    envFrom:
+      - secretRef:
+          name: grid-reliance-entsoe
+      - configMapRef:
+          name: grid-resilience-bronze
+      - secretRef:
+          name: grid-resilience-bronze
+      - configMapRef:
+          name: grid-resilience-silver
+      - secretRef:
+          name: grid-resilience-silver
+  executor:
+    cores: 2
+    instances: 2
+    memory: 2g
+    envFrom:
+      - secretRef:
+          name: grid-reliance-entsoe
+      - configMapRef:
+          name: grid-resilience-bronze
+      - secretRef:
+          name: grid-resilience-bronze
+      - configMapRef:
+          name: grid-resilience-silver
+      - secretRef:
+          name: grid-resilience-silver
+  restartPolicy:
+    type: Never

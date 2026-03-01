@@ -19,6 +19,7 @@ resources:
   - ./dask/ks.yaml
   - ./ray/ks.yaml
   - ./spark/ks.yaml
+  - ./grid-reliance/ks.yaml
   - ./ollama-igpu/ks.yaml
   - ./vllm/ks.yaml
   - ./open-webui/ks.yaml

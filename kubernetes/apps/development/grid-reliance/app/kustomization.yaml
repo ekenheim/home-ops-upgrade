@@ -1,11 +1,14 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
-# API runs in datasci (grid-reliance-api) with Rook Gold credentials; see kubernetes/apps/datasci/grid-reliance.
+# Grid Reliance app code (development namespace): pipeline code server, dashboard, generator.
+# Data platform infra (OBCs, API, RayJob, Spark) lives in kubernetes/apps/datasci/grid-reliance-infra
+# because the Spark operator and Ray cluster are scoped to datasci and Rook OBCs create
+# their credentials in the same namespace as the claim.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./externalsecret.yaml
-  # - ./api  # Moved to datasci; API there uses Gold OBC (grid-resilience-gold).
+  # - ./api  # API lives in datasci/grid-reliance-infra; it reads directly from the Gold OBC there.
   - ./pipeline
   - ./dashboard
   # - ./generator  # Re-enable when ghcr.io/ekenheim/grid-resilience-generator:v1.0.0 is published

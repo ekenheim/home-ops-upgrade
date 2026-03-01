@@ -1,6 +1,6 @@
 ---
 # Spark ENTSO-E ingest (second data source; reference: grid-resilience repo data-engineering/processing).
-# PLACEHOLDER: image is public so driver pods don't ErrImagePull. Replace with your built image when ready:
+# PLACEHOLDER: uses the official Apache Spark image. Replace with the real data-engineering image when ready:
 #   image: ghcr.io/ekenheim/grid-resilience-data-engineering:v1.0.0
 #   mainApplicationFile: local:///opt/spark/job/entsoe_ingest.py
 #   imagePullSecrets: [ghcr-pull]
@@ -16,9 +16,10 @@ metadata:
 spec:
   type: Python
   mode: cluster
-  image: bitnami/spark:3.5
+  image: apache/spark:4.0.2-python3
   imagePullPolicy: IfNotPresent
-  mainApplicationFile: local:///opt/bitnami/spark/examples/src/main/python/pi.py
+  sparkVersion: "4.0.2"
+  mainApplicationFile: local:///opt/spark/examples/src/main/python/pi.py
   driver:
     serviceAccount: spark
     cores: 1

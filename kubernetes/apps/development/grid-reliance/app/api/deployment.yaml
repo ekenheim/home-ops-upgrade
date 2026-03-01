@@ -9,7 +9,6 @@ metadata:
     app.kubernetes.io/name: grid-reliance
     app.kubernetes.io/component: api
 spec:
-  # Scale to 0 until image fixes ModuleNotFoundError: No module named 'api' (see K8S_HANDOFF.md). Set to 2 when fixed.
   replicas: 2
   selector:
     matchLabels:

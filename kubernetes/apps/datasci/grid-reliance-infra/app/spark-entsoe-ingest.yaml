@@ -16,7 +16,7 @@ metadata:
 spec:
   type: Python
   mode: cluster
-  image: apache/spark:4.0.2-python3
+  image: apache/spark:4.1.1-python3
   imagePullPolicy: IfNotPresent
   sparkVersion: "4.0.2"
   mainApplicationFile: local:///opt/spark/examples/src/main/python/pi.py

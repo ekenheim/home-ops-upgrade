@@ -1,0 +1,26 @@
+---
+# Allow Dagster run pods (and other workloads) in datasci to reach the RGW service
+# for Bronze/Silver/Gold bucket uploads. Without this, NetworkPolicy blocks ingress
+# and Dagster sees "TCP connect timeout" to rook-ceph-rgw-ceph-objectstore.
+# RGW gateway port: 8080 (see cluster helmrelease); 80 allowed for clusters not yet migrated.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rgw-allow-datasci
+  namespace: rook-ceph
+spec:
+  podSelector:
+    matchLabels:
+      app: rook-ceph-rgw
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: datasci
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 80

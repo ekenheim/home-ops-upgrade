@@ -94,11 +94,9 @@ spec:
                     configMapKeyRef:
                       name: grid-resilience-bronze
                       key: BUCKET_HOST
+                # RGW gateway is on 8080 (cluster helmrelease); OBC configmap may still say 80.
                 - name: BRONZE_BUCKET_PORT
-                  valueFrom:
-                    configMapKeyRef:
-                      name: grid-resilience-bronze
-                      key: BUCKET_PORT
+                  value: "8080"
                 - name: BRONZE_BUCKET_NAME
                   valueFrom:
                     configMapKeyRef:
@@ -120,10 +118,7 @@ spec:
                       name: grid-resilience-silver
                       key: BUCKET_HOST
                 - name: SILVER_BUCKET_PORT
-                  valueFrom:
-                    configMapKeyRef:
-                      name: grid-resilience-silver
-                      key: BUCKET_PORT
+                  value: "8080"
                 - name: SILVER_BUCKET_NAME
                   valueFrom:
                     configMapKeyRef:
@@ -145,10 +140,7 @@ spec:
                       name: grid-resilience-gold
                       key: BUCKET_HOST
                 - name: GOLD_BUCKET_PORT
-                  valueFrom:
-                    configMapKeyRef:
-                      name: grid-resilience-gold
-                      key: BUCKET_PORT
+                  value: "8080"
                 - name: GOLD_BUCKET_NAME
                   valueFrom:
                     configMapKeyRef:

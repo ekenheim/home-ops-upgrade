@@ -59,6 +59,56 @@ spec:
             secretKeyRef:
               name: mlflow-minio-creds
               key: AWS_SECRET_ACCESS_KEY
+        - name: GRID_GOLD_BUCKET_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: grid-resilience-gold
+              key: BUCKET_HOST
+        - name: GRID_GOLD_BUCKET_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: grid-resilience-gold
+              key: BUCKET_PORT
+        - name: GRID_GOLD_BUCKET_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: grid-resilience-gold
+              key: BUCKET_NAME
+        - name: GRID_GOLD_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: grid-resilience-gold
+              key: AWS_ACCESS_KEY_ID
+        - name: GRID_GOLD_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: grid-resilience-gold
+              key: AWS_SECRET_ACCESS_KEY
+        - name: GRID_SILVER_BUCKET_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: grid-resilience-silver
+              key: BUCKET_HOST
+        - name: GRID_SILVER_BUCKET_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: grid-resilience-silver
+              key: BUCKET_PORT
+        - name: GRID_SILVER_BUCKET_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: grid-resilience-silver
+              key: BUCKET_NAME
+        - name: GRID_SILVER_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: grid-resilience-silver
+              key: AWS_ACCESS_KEY_ID
+        - name: GRID_SILVER_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: grid-resilience-silver
+              key: AWS_SECRET_ACCESS_KEY
 
     worker:
       groupName: workergroup
@@ -92,6 +142,56 @@ spec:
           valueFrom:
             secretKeyRef:
               name: mlflow-minio-creds
+              key: AWS_SECRET_ACCESS_KEY
+        - name: GRID_GOLD_BUCKET_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: grid-resilience-gold
+              key: BUCKET_HOST
+        - name: GRID_GOLD_BUCKET_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: grid-resilience-gold
+              key: BUCKET_PORT
+        - name: GRID_GOLD_BUCKET_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: grid-resilience-gold
+              key: BUCKET_NAME
+        - name: GRID_GOLD_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: grid-resilience-gold
+              key: AWS_ACCESS_KEY_ID
+        - name: GRID_GOLD_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: grid-resilience-gold
+              key: AWS_SECRET_ACCESS_KEY
+        - name: GRID_SILVER_BUCKET_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: grid-resilience-silver
+              key: BUCKET_HOST
+        - name: GRID_SILVER_BUCKET_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: grid-resilience-silver
+              key: BUCKET_PORT
+        - name: GRID_SILVER_BUCKET_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: grid-resilience-silver
+              key: BUCKET_NAME
+        - name: GRID_SILVER_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: grid-resilience-silver
+              key: AWS_ACCESS_KEY_ID
+        - name: GRID_SILVER_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: grid-resilience-silver
               key: AWS_SECRET_ACCESS_KEY
 
     rayDashboard:

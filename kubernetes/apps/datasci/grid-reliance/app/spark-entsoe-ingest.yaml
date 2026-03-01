@@ -1,8 +1,10 @@
 ---
 # Spark ENTSO-E ingest (second data source; reference: grid-resilience repo data-engineering/processing).
-# Fetches grid/transmission data from ENTSO-E Transparency API using ENTSOE_API_KEY.
-# Same image as ERA5; mainApplicationFile may differ (e.g. entsoe_ingest.py). Adjust path to match your build.
-# Writes to Bronze (and/or Silver); uses grid-reliance-entsoe for API key.
+# PLACEHOLDER: image is public so driver pods don't ErrImagePull. Replace with your built image when ready:
+#   image: ghcr.io/ekenheim/grid-resilience-data-engineering:v1.0.0
+#   mainApplicationFile: local:///opt/spark/job/entsoe_ingest.py
+#   imagePullSecrets: [ghcr-pull]
+# Fetches grid/transmission data from ENTSO-E using ENTSOE_API_KEY; uses grid-reliance-entsoe, Bronze, Silver.
 apiVersion: sparkoperator.k8s.io/v1beta2
 kind: SparkApplication
 metadata:
@@ -14,12 +16,11 @@ metadata:
 spec:
   type: Python
   mode: cluster
-  image: ghcr.io/ekenheim/grid-resilience-data-engineering:v1.0.0
+  image: bitnami/spark:3.5
   imagePullPolicy: IfNotPresent
-  imagePullSecrets:
-    - ghcr-pull
-  mainApplicationFile: local:///opt/spark/job/entsoe_ingest.py
+  mainApplicationFile: local:///opt/bitnami/spark/examples/src/main/python/pi.py
   driver:
+    serviceAccount: spark
     cores: 1
     memory: 1g
     envFrom:

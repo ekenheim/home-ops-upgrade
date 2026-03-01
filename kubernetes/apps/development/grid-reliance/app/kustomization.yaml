@@ -7,4 +7,4 @@ resources:
   - ./api
   - ./pipeline
   - ./dashboard
-  - ./generator
+  # - ./generator  # Re-enable when ghcr.io/ekenheim/grid-resilience-generator:v1.0.0 is published

@@ -28,7 +28,6 @@ resources:
   - ./marimo/ks.yaml
   - ./qdrant/ks.yaml
   - ./flyte/ks.yaml
-  - ./grid-resilience/ks.yaml
   - ./label-studio/ks.yaml
   - ./seldon-core/ks.yaml
   - ./kyverno-fixes

@@ -1,7 +1,7 @@
 ---
 # Spark ERA5 ingest (reference: grid-resilience repo data-engineering/processing/spark-era5-ingest.yaml).
 # PLACEHOLDER: uses the official Apache Spark image. Replace with the real data-engineering image when ready:
-#   image: ghcr.io/ekenheim/grid-resilience-data-engineering:v1.0.0
+#   image: ghcr.io/ekenheim/grid-resilience-data-engineering:v1.0.5
 #   mainApplicationFile: local:///opt/spark/job/spark_era5_ingest.py
 #   imagePullSecrets: [ghcr-pull]
 # Secret/ConfigMap names match Rook ObjectBucketClaims: grid-resilience-bronze (read), grid-resilience-silver (write).

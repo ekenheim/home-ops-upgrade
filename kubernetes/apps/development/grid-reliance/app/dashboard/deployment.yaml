@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: grid-reliance
     app.kubernetes.io/component: dashboard
 spec:
-  # Set to 1 once ghcr.io/ekenheim/grid-resilience-dashboard:v1.0.0 is published; ImagePullBackOff until then.
+  # Set to 1 once ghcr.io/ekenheim/grid-resilience-dashboard:v1.0.5 is published; ImagePullBackOff until then.
   replicas: 0
   selector:
     matchLabels:
@@ -26,7 +26,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: dashboard
-          image: ghcr.io/ekenheim/grid-resilience-dashboard:v1.0.0
+          image: ghcr.io/ekenheim/grid-resilience-dashboard:v1.0.5
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

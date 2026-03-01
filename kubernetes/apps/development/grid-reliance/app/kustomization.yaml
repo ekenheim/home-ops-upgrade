@@ -11,4 +11,5 @@ resources:
   # - ./api  # API lives in datasci/grid-reliance-infra; it reads directly from the Gold OBC there.
   - ./pipeline
   - ./dashboard
-  # - ./generator  # Re-enable when ghcr.io/ekenheim/grid-resilience-generator:v1.0.0 is published
+  - ./db-init  # Schema bootstrap + synthetic seed. Remove once generator image is published.
+  # - ./generator  # Re-enable when ghcr.io/ekenheim/grid-resilience-generator:v1.0.5 is published

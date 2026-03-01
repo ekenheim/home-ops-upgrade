@@ -27,7 +27,7 @@ spec:
       containers:
         - name: api
           image: ghcr.io/ekenheim/grid-resilience-api:v1.0.2
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8000

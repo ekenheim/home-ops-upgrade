@@ -19,7 +19,7 @@ spec:
     ray.io/cluster: ray-kuberay
   shutdownAfterJobFinishes: true
   ttlSecondsAfterFinished: 86400
-  jobSubmitterPodTemplate:
+  submitterPodTemplate:
     spec:
       restartPolicy: Never
       imagePullSecrets:

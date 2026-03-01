@@ -67,6 +67,7 @@ spec:
             - "RAY_ADDRESS=ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001"
             - "BANDIT_SERVICE_URL=http://bandit-service.development.svc.cluster.local:8000"
             - "MLFLOW_TRACKING_URI=http://mlflow.datasci.svc.cluster.local:5000"
+            - "CDSAPI_URL=https://cds.climate.copernicus.eu/api"
           envSecrets:
             - name: hempriser-minio
             - name: hempriser-postgres
@@ -74,6 +75,7 @@ spec:
             - name: bandit-postgres
             - name: grid-reliance-postgres
             - name: grid-reliance-entsoe
+            - name: grid-reliance-cdsapi
           runK8sConfig:
             containerConfig:
               env:

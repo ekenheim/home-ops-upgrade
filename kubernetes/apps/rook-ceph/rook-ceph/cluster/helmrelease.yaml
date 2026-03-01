@@ -200,8 +200,10 @@ spec:
               dataChunks: 2
               codingChunks: 2
           preservePoolsOnDelete: true
+          # With network.provider: host, RGW must not use port 80 or it conflicts with ingress/node
+          # and causes "RGW REST API cannot be reached: Connection refused". Use a dedicated port.
           gateway:
-            port: 80
+            port: 8080
             resources:
               requests:
                 cpu: 100m

@@ -34,6 +34,9 @@ spec:
           envFrom:
             - secretRef:
                 name: grid-reliance-minio
+          env:
+            - name: PYTHONPATH
+              value: "/app"
           resources:
             requests:
               cpu: 50m

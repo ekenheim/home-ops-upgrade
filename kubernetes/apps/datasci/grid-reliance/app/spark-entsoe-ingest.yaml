@@ -17,7 +17,7 @@ spec:
   image: ghcr.io/ekenheim/grid-resilience-data-engineering:v1.0.0
   imagePullPolicy: IfNotPresent
   imagePullSecrets:
-    - name: ghcr-pull
+    - ghcr-pull
   mainApplicationFile: local:///opt/spark/job/entsoe_ingest.py
   driver:
     cores: 1

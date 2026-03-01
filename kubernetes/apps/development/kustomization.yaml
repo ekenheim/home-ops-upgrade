@@ -15,5 +15,6 @@ resources:
   - ./redpanda/ks.yaml
   - ./harbor/ks.yaml
   - ./hempriser/ks.yaml
+  - ./grid-reliance/ks.yaml
   - ./growthbook/ks.yaml
   - ./medusa/ks.yaml

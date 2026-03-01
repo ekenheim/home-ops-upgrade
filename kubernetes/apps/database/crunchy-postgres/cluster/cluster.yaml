@@ -182,6 +182,10 @@ spec:
       databases: ["bandit"]
       password:
         type: AlphaNumeric
+    - name: "gridreliance"
+      databases: ["gridreliance"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

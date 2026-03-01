@@ -52,6 +52,9 @@ spec:
           - host: bandit-pipeline.development.svc.cluster.local
             port: 4000
             name: bandit-pipeline
+          - host: grid-reliance-pipeline.development.svc.cluster.local
+            port: 4000
+            name: grid-reliance-pipeline
     dagsterDaemon:
       checkDbReadyInitContainer: false
     runLauncher:
@@ -69,6 +72,8 @@ spec:
             - name: hempriser-postgres
             - name: bandit-minio
             - name: bandit-postgres
+            - name: grid-reliance-minio
+            - name: grid-reliance-postgres
           resources:
             requests:
               cpu: 2000m

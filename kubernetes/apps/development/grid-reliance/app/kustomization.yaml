@@ -12,4 +12,4 @@ resources:
   - ./pipeline
   - ./dashboard
   - ./db-init  # Schema bootstrap + synthetic seed. Remove once generator image is published.
-  # - ./generator  # Re-enable when ghcr.io/ekenheim/grid-resilience-generator:v1.0.10 is published
+  # - ./generator  # Re-enable when ghcr.io/ekenheim/grid-resilience-generator:v1.0.11 is published

@@ -1,10 +1,8 @@
 ---
-# Spark ENTSO-E ingest (second data source; reference: grid-resilience repo data-engineering/processing).
-# PLACEHOLDER: uses the official Apache Spark image. Replace with the real data-engineering image when ready:
-#   image: ghcr.io/ekenheim/grid-resilience-data-engineering:v1.0.5
-#   mainApplicationFile: local:///opt/spark/job/entsoe_ingest.py
-#   imagePullSecrets: [ghcr-pull]
-# Fetches grid/transmission data from ENTSO-E using ENTSOE_API_KEY; uses grid-reliance-entsoe, Bronze, Silver.
+# Spark ENTSO-E ingest: reads Bronze (Rook), writes silver/grid_snapshots.parquet to Silver (Rook).
+# Image: ghcr.io/ekenheim/grid-resilience-data-engineering (FROM apache/spark:4.0.2-python3)
+# ENTSOE_API_KEY injected from grid-reliance-entsoe ExternalSecret.
+# Env vars use BRONZE_*/SILVER_* prefixes matching entsoe_ingest.py env reads.
 apiVersion: sparkoperator.k8s.io/v1beta2
 kind: SparkApplication
 metadata:
@@ -16,39 +14,131 @@ metadata:
 spec:
   type: Python
   mode: cluster
-  image: apache/spark:4.0.2-python3
+  image: ghcr.io/ekenheim/grid-resilience-data-engineering:v1.0.6
   imagePullPolicy: IfNotPresent
+  imagePullSecrets:
+    - ghcr-pull
   sparkVersion: "4.0.2"
-  mainApplicationFile: local:///opt/spark/examples/src/main/python/pi.py
+  mainApplicationFile: local:///opt/spark/job/entsoe_ingest.py
   driver:
     serviceAccount: spark
     cores: 1
     memory: 1g
-    envFrom:
-      - secretRef:
-          name: grid-reliance-entsoe
-      - configMapRef:
-          name: grid-resilience-bronze
-      - secretRef:
-          name: grid-resilience-bronze
-      - configMapRef:
-          name: grid-resilience-silver
-      - secretRef:
-          name: grid-resilience-silver
+    env:
+      - name: ENTSOE_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: grid-reliance-entsoe
+            key: ENTSOE_API_KEY
+      - name: BRONZE_AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: grid-resilience-bronze
+            key: AWS_ACCESS_KEY_ID
+      - name: BRONZE_AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: grid-resilience-bronze
+            key: AWS_SECRET_ACCESS_KEY
+      - name: BRONZE_BUCKET_HOST
+        valueFrom:
+          configMapKeyRef:
+            name: grid-resilience-bronze
+            key: BUCKET_HOST
+      - name: BRONZE_BUCKET_PORT
+        valueFrom:
+          configMapKeyRef:
+            name: grid-resilience-bronze
+            key: BUCKET_PORT
+      - name: BRONZE_BUCKET_NAME
+        valueFrom:
+          configMapKeyRef:
+            name: grid-resilience-bronze
+            key: BUCKET_NAME
+      - name: SILVER_AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: grid-resilience-silver
+            key: AWS_ACCESS_KEY_ID
+      - name: SILVER_AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: grid-resilience-silver
+            key: AWS_SECRET_ACCESS_KEY
+      - name: SILVER_BUCKET_HOST
+        valueFrom:
+          configMapKeyRef:
+            name: grid-resilience-silver
+            key: BUCKET_HOST
+      - name: SILVER_BUCKET_PORT
+        valueFrom:
+          configMapKeyRef:
+            name: grid-resilience-silver
+            key: BUCKET_PORT
+      - name: SILVER_BUCKET_NAME
+        valueFrom:
+          configMapKeyRef:
+            name: grid-resilience-silver
+            key: BUCKET_NAME
   executor:
     cores: 2
     instances: 2
     memory: 2g
-    envFrom:
-      - secretRef:
-          name: grid-reliance-entsoe
-      - configMapRef:
-          name: grid-resilience-bronze
-      - secretRef:
-          name: grid-resilience-bronze
-      - configMapRef:
-          name: grid-resilience-silver
-      - secretRef:
-          name: grid-resilience-silver
+    env:
+      - name: ENTSOE_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: grid-reliance-entsoe
+            key: ENTSOE_API_KEY
+      - name: BRONZE_AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: grid-resilience-bronze
+            key: AWS_ACCESS_KEY_ID
+      - name: BRONZE_AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: grid-resilience-bronze
+            key: AWS_SECRET_ACCESS_KEY
+      - name: BRONZE_BUCKET_HOST
+        valueFrom:
+          configMapKeyRef:
+            name: grid-resilience-bronze
+            key: BUCKET_HOST
+      - name: BRONZE_BUCKET_PORT
+        valueFrom:
+          configMapKeyRef:
+            name: grid-resilience-bronze
+            key: BUCKET_PORT
+      - name: BRONZE_BUCKET_NAME
+        valueFrom:
+          configMapKeyRef:
+            name: grid-resilience-bronze
+            key: BUCKET_NAME
+      - name: SILVER_AWS_ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: grid-resilience-silver
+            key: AWS_ACCESS_KEY_ID
+      - name: SILVER_AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: grid-resilience-silver
+            key: AWS_SECRET_ACCESS_KEY
+      - name: SILVER_BUCKET_HOST
+        valueFrom:
+          configMapKeyRef:
+            name: grid-resilience-silver
+            key: BUCKET_HOST
+      - name: SILVER_BUCKET_PORT
+        valueFrom:
+          configMapKeyRef:
+            name: grid-resilience-silver
+            key: BUCKET_PORT
+      - name: SILVER_BUCKET_NAME
+        valueFrom:
+          configMapKeyRef:
+            name: grid-resilience-silver
+            key: BUCKET_NAME
   restartPolicy:
     type: Never

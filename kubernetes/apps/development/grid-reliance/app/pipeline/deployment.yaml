@@ -26,7 +26,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: pipeline
-          image: ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.5
+          image: ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.6
           imagePullPolicy: Always
           ports:
             - name: grpc
@@ -36,8 +36,6 @@ spec:
             - secretRef:
                 name: grid-reliance-postgres
             - secretRef:
-                name: grid-reliance-minio
-            - secretRef:
                 name: grid-reliance-entsoe
           env:
             - name: DAGSTER_HOME
@@ -45,7 +43,7 @@ spec:
             - name: DAGSTER_MODULE_NAME
               value: "pipeline.dagster.repository"
             - name: DAGSTER_CURRENT_IMAGE
-              value: "ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.5"
+              value: "ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.6"
             - name: MLFLOW_TRACKING_URI
               value: "http://mlflow.datasci.svc.cluster.local:5000"
           resources:

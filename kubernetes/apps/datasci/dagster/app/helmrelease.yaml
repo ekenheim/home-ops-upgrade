@@ -72,9 +72,61 @@ spec:
             - name: hempriser-postgres
             - name: bandit-minio
             - name: bandit-postgres
-            - name: grid-reliance-minio
             - name: grid-reliance-postgres
             - name: grid-reliance-entsoe
+          runK8sConfig:
+            containerConfig:
+              env:
+                - name: SILVER_AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: grid-resilience-silver
+                      key: AWS_ACCESS_KEY_ID
+                - name: SILVER_AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: grid-resilience-silver
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: SILVER_BUCKET_HOST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: grid-resilience-silver
+                      key: BUCKET_HOST
+                - name: SILVER_BUCKET_PORT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: grid-resilience-silver
+                      key: BUCKET_PORT
+                - name: SILVER_BUCKET_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: grid-resilience-silver
+                      key: BUCKET_NAME
+                - name: GOLD_AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: grid-resilience-gold
+                      key: AWS_ACCESS_KEY_ID
+                - name: GOLD_AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: grid-resilience-gold
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: GOLD_BUCKET_HOST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: grid-resilience-gold
+                      key: BUCKET_HOST
+                - name: GOLD_BUCKET_PORT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: grid-resilience-gold
+                      key: BUCKET_PORT
+                - name: GOLD_BUCKET_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: grid-resilience-gold
+                      key: BUCKET_NAME
           resources:
             requests:
               cpu: 2000m

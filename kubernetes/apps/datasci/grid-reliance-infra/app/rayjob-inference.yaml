@@ -1,8 +1,8 @@
 ---
-# Bayesian grid model inference RayJob. Runs on the existing KubeRay cluster (ray-kuberay) in datasci.
-# Reference: grid-resilience repo inference/bayesian-grid-model.yaml.
-# Replace entrypoint/runtimeEnvYAML with inference image once ghcr.io/ekenheim/grid-resilience-inference:v1.0.5 is published.
-# Silver and Gold OBC credentials are on Ray head/worker pods (datasci/ray helmrelease) and on the submitter below.
+# Bayesian grid model inference RayJob.
+# Submitter runs on grid-resilience-inference image; workers use runtime_env pip install.
+# Reads silver/grid_snapshots.parquet from Silver, writes model + forecasts to Gold.
+# Ray cluster: ray-kuberay (datasci namespace), confirmed version 2.54.0.
 apiVersion: ray.io/v1
 kind: RayJob
 metadata:
@@ -12,7 +12,15 @@ metadata:
     app.kubernetes.io/name: grid-reliance
     app.kubernetes.io/component: inference
 spec:
-  entrypoint: python -m inference.bayesian_grid_model
+  entrypoint: python -m inference.run_inference
+  runtimeEnvYAML: |
+    pip:
+      - ray[default]==2.54.0
+      - pymc>=5.20.0
+      - nutpie>=0.16.0
+      - arviz>=0.19.0
+      - boto3>=1.34.0
+      - pyarrow>=14.0.0
   clusterSelector:
     ray.io/cluster: ray-kuberay
   shutdownAfterJobFinishes: true
@@ -20,14 +28,60 @@ spec:
   submitterPodTemplate:
     spec:
       restartPolicy: Never
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: ray-job-submitter
-          envFrom:
-            - configMapRef:
-                name: grid-resilience-silver
-            - secretRef:
-                name: grid-resilience-silver
-            - configMapRef:
-                name: grid-resilience-gold
-            - secretRef:
-                name: grid-resilience-gold
+          image: ghcr.io/ekenheim/grid-resilience-inference:v1.0.6
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SILVER_AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: grid-resilience-silver
+                  key: AWS_ACCESS_KEY_ID
+            - name: SILVER_AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: grid-resilience-silver
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: SILVER_BUCKET_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: grid-resilience-silver
+                  key: BUCKET_HOST
+            - name: SILVER_BUCKET_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: grid-resilience-silver
+                  key: BUCKET_PORT
+            - name: SILVER_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: grid-resilience-silver
+                  key: BUCKET_NAME
+            - name: GOLD_AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: grid-resilience-gold
+                  key: AWS_ACCESS_KEY_ID
+            - name: GOLD_AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: grid-resilience-gold
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: GOLD_BUCKET_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: grid-resilience-gold
+                  key: BUCKET_HOST
+            - name: GOLD_BUCKET_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: grid-resilience-gold
+                  key: BUCKET_PORT
+            - name: GOLD_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: grid-resilience-gold
+                  key: BUCKET_NAME

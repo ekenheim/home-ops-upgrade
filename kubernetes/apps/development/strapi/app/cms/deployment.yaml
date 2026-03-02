@@ -1,14 +1,15 @@
 ---
 # Strapi CMS (admin + API). Exposed via Ingress at strapi.${SECRET_DOMAIN}.
 #
-# Bootstrap phase: uses naskio/strapi:latest-alpine (community image, Docker Hub public).
-# On first run it auto-creates a vanilla Strapi v5 project in /srv/app using the Postgres
+# Bootstrap phase: uses a minimal custom bootstrap image (node:22-alpine + create-strapi-app).
+# On first run it creates a vanilla Strapi v5 project in /srv/app using the Postgres
 # credentials from strapi-postgres secret. NODE_ENV=development enables Content-Type Builder
 # so you can define your schema. Once your custom image is ready, replace the image and
 # set NODE_ENV=production.
 #
+# naskio/strapi is NOT used: it is a v4 image and breaks on v5 admin panel builds.
 # Strapi publishes NO official images: https://docs.strapi.io/dev-docs/installation/docker
-# See README.md for the production Dockerfile to build your own image.
+# See README.md for the production Dockerfile and bootstrap image instructions.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,9 +31,11 @@ spec:
         app.kubernetes.io/component: cms
     spec:
       restartPolicy: Always
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: cms
-          image: naskio/strapi:latest-alpine
+          image: ghcr.io/ekenheim/strapi-bootstrap:latest
           imagePullPolicy: Always
           ports:
             - name: http

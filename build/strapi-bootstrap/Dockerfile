@@ -11,6 +11,8 @@ RUN apk add --no-cache \
     git \
     bash
 
+WORKDIR /srv
+
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

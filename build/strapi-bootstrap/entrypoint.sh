@@ -7,6 +7,7 @@ if [ ! -f "$APP_DIR/package.json" ]; then
   echo "No Strapi project found at $APP_DIR. Creating a new Strapi v5 project..."
   npx create-strapi-app@latest app \
     --no-run \
+    --skip-cloud \
     --dbclient=postgres \
     --dbhost="${DATABASE_HOST}" \
     --dbport="${DATABASE_PORT:-5432}" \

@@ -42,11 +42,9 @@ spec:
             - |
               set -e
               APP_DIR="/srv/app"
-              cd /srv
-              echo "Working directory: $(pwd)"
               if [ ! -f "$APP_DIR/package.json" ]; then
-                echo "Creating Strapi v5 project at $APP_DIR..."
-                npx create-strapi-app@latest app \
+                echo "Creating Strapi v5 project in /tmp then copying to PVC..."
+                npx create-strapi-app@latest /tmp/strapi-project \
                   --no-run \
                   --skip-cloud \
                   --dbclient=postgres \
@@ -56,7 +54,9 @@ spec:
                   --dbusername="${DATABASE_USERNAME}" \
                   --dbpassword="${DATABASE_PASSWORD}" \
                   --dbssl="${DATABASE_SSL:-false}"
-                echo "Project files: $(ls $APP_DIR)"
+                echo "Copying project files to $APP_DIR..."
+                cp -a /tmp/strapi-project/. "$APP_DIR/"
+                echo "PVC contents: $(ls $APP_DIR)"
               else
                 echo "Existing project found at $APP_DIR."
               fi

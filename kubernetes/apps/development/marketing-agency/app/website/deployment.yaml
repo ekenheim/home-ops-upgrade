@@ -1,0 +1,69 @@
+---
+# Marketing agency Next.js frontend. Exposed via Ingress at marketing-agency.${SECRET_DOMAIN}.
+# Fetches content from Strapi via internal service URL at build/render time (no ingress hop).
+# Replace the image tag once the first build is pushed to GHCR (see FRONTEND_BRIEF.md).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marketing-agency-website
+  namespace: development
+  labels:
+    app.kubernetes.io/name: marketing-agency
+    app.kubernetes.io/component: website
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: marketing-agency
+      app.kubernetes.io/component: website
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: marketing-agency
+        app.kubernetes.io/component: website
+    spec:
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: website
+          image: ghcr.io/ekenheim/marketing-agency-website:v1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3000"
+            - name: HOSTNAME
+              value: "0.0.0.0"
+            - name: STRAPI_API_URL
+              value: "http://strapi-cms.development.svc.cluster.local:1337"
+            - name: NEXT_PUBLIC_STRAPI_URL
+              value: "https://strapi.${SECRET_DOMAIN}"
+          envFrom:
+            - secretRef:
+                name: marketing-agency-strapi-token
+                optional: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10

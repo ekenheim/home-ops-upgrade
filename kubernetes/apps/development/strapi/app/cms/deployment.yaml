@@ -1,0 +1,78 @@
+---
+# Strapi CMS (admin + API). Exposed via Ingress at strapi.${SECRET_DOMAIN}.
+#
+# Bootstrap phase: uses naskio/strapi:latest-alpine (community image, Docker Hub public).
+# On first run it auto-creates a vanilla Strapi v5 project in /srv/app using the Postgres
+# credentials from strapi-postgres secret. NODE_ENV=development enables Content-Type Builder
+# so you can define your schema. Once your custom image is ready, replace the image and
+# set NODE_ENV=production.
+#
+# Strapi publishes NO official images: https://docs.strapi.io/dev-docs/installation/docker
+# See README.md for the production Dockerfile to build your own image.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strapi-cms
+  namespace: development
+  labels:
+    app.kubernetes.io/name: strapi
+    app.kubernetes.io/component: cms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: strapi
+      app.kubernetes.io/component: cms
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: strapi
+        app.kubernetes.io/component: cms
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: cms
+          image: naskio/strapi:latest-alpine
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 1337
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "1337"
+          envFrom:
+            - secretRef:
+                name: strapi-postgres
+            - secretRef:
+                name: strapi-app-keys
+          volumeMounts:
+            - name: strapi-data
+              mountPath: /srv/app
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /_health
+              port: http
+            initialDelaySeconds: 90
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /_health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+      volumes:
+        - name: strapi-data
+          persistentVolumeClaim:
+            claimName: strapi-data

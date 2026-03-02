@@ -18,3 +18,5 @@ resources:
   - ./grid-reliance/ks.yaml
   - ./growthbook/ks.yaml
   - ./medusa/ks.yaml
+  - ./strapi/ks.yaml
+  - ./marketing-agency/ks.yaml

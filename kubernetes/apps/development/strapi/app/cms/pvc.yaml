@@ -1,0 +1,18 @@
+---
+# Persists the Strapi project in /srv/app (content types, config, generated files).
+# Drop this PVC when you switch to a custom-built image — all schema is then baked into
+# the image and the PVC is no longer needed.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: strapi-data
+  namespace: development
+  labels:
+    app.kubernetes.io/name: strapi
+    app.kubernetes.io/component: cms
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi

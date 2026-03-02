@@ -14,7 +14,7 @@ metadata:
     gethomepage.dev/name: Hempriser
     gethomepage.dev/group: Development
 spec:
-  ingressClassName: internal
+  ingressClassName: external
   rules:
     - host: hempriser.${SECRET_DOMAIN}
       http:

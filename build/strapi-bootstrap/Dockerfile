@@ -9,9 +9,12 @@ WORKDIR /tmp
 
 ENV CI=true
 
-RUN npx --yes create-strapi-app@latest template --no-run --skip-cloud && \
+# Pipe "y\n" to satisfy the sqlite prompt when running without a TTY.
+# --skip-cloud suppresses the Strapi Cloud registration prompt.
+# --no-run prevents the CLI from starting Strapi after scaffolding.
+RUN yes | npx --yes create-strapi-app@latest template --no-run --skip-cloud && \
     cd template && \
-    npm install --prefer-offline
+    npm install
 
 # Stage 2: lean runtime image that ships the pre-built project as a seed template.
 FROM node:22-alpine

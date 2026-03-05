@@ -9,6 +9,10 @@ WORKDIR /tmp
 
 ENV CI=true
 
+# Required so create-strapi-app's `git commit` step doesn't fail with exit 128.
+RUN git config --global user.email "build@docker.local" && \
+    git config --global user.name "Docker Build"
+
 # create-strapi-app v5 ignores CI=true for its two interactive prompts. We can't
 # use a finite pipe (printf/echo) because Node v24 readline fires 'close' on EOF
 # before inquirer finishes processing, causing ERR_USE_AFTER_CLOSE.

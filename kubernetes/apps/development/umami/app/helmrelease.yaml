@@ -60,8 +60,9 @@ spec:
             image:
               repository: ghcr.io/umami-software/umami
               tag: postgresql-v2.18.1
-            command: ["node"]
-            args: ["server.js"]
+            command: ["/bin/sh", "-c"]
+            args:
+              - "npm run update-tracker && npm run set-routes-manifest && npm run start-server"
             env:
               TZ: ${TIMEZONE}
               DATABASE_TYPE: postgresql

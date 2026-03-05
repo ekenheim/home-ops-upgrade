@@ -60,6 +60,8 @@ spec:
             image:
               repository: ghcr.io/umami-software/umami
               tag: postgresql-v2.18.1
+            command: ["node_modules/.bin/next"]
+            args: ["start"]
             env:
               TZ: ${TIMEZONE}
               DATABASE_TYPE: postgresql

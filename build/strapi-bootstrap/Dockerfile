@@ -24,6 +24,9 @@ RUN yes "" | npx --yes create-strapi-app@latest template --no-run --skip-cloud
 # This avoids paying the Vite compilation cost on every pod restart.
 WORKDIR /tmp/template
 RUN npm install
+# Install the PostgreSQL driver — the scaffold defaults to SQLite so pg is not
+# included in the generated package.json, but the deployment uses Postgres.
+RUN npm install pg
 RUN npm run build
 
 # Stage 2: lean runtime image that ships the pre-built project as a seed template.

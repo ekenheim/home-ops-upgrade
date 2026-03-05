@@ -63,6 +63,8 @@ spec:
           env:
             - name: NODE_ENV
               value: production
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=1536"
             - name: HOST
               value: "0.0.0.0"
             - name: PORT

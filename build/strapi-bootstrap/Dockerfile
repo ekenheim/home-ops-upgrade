@@ -9,9 +9,9 @@ WORKDIR /tmp
 
 ENV CI=true
 
-# CI=true suppresses all interactive prompts in create-strapi-app v5.
-# --skip-cloud and --no-run keep it fully non-interactive without needing `yes`.
-RUN npx --yes create-strapi-app@latest template --no-run --skip-cloud
+# create-strapi-app v5 still prompts "use default database (sqlite)?" even with CI=true.
+# Feed a single "y\n" so inquirer gets one answer then a clean EOF — no infinite y spam.
+RUN echo "y" | npx --yes create-strapi-app@latest template --no-run --skip-cloud
 
 # Install deps and pre-build the admin panel as separate layers.
 # This avoids paying the Vite compilation cost on every pod restart.

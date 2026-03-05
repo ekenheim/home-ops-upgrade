@@ -9,9 +9,11 @@ WORKDIR /tmp
 
 ENV CI=true
 
-# create-strapi-app v5 still prompts "use default database (sqlite)?" even with CI=true.
-# Feed a single "y\n" so inquirer gets one answer then a clean EOF — no infinite y spam.
-RUN echo "y" | npx --yes create-strapi-app@latest template --no-run --skip-cloud
+# create-strapi-app v5 has two interactive prompts that CI=true does not suppress:
+#   1. "Use default database (sqlite)?" → y
+#   2. "Start with an example structure & data?" → n
+# printf provides exactly those two answers then closes stdin cleanly.
+RUN printf "y\nn\n" | npx --yes create-strapi-app@latest template --no-run --skip-cloud
 
 # Install deps and pre-build the admin panel as separate layers.
 # This avoids paying the Vite compilation cost on every pod restart.

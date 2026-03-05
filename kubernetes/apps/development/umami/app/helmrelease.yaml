@@ -46,13 +46,13 @@ spec:
                 valueFrom:
                   secretKeyRef:
                     name: &db_secret umami-secret
-                    key: DATABASE_URL
+                    key: MIGRATE_DATABASE_URL
             command: ["/bin/sh", "-c"]
             args:
               - |
                 export npm_config_cache=/tmp/.npm
                 cd /app
-                npm install --legacy-peer-deps prisma@6.7.0
+                npm install --no-save --legacy-peer-deps prisma@6.7.0
                 npx prisma generate
                 npx prisma migrate deploy
         containers:

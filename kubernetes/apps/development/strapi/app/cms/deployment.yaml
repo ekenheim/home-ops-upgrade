@@ -49,6 +49,11 @@ spec:
                 cp -a /srv/template/. "$APP_DIR/"
               fi
               cd "$APP_DIR"
+              ADMIN_INDEX="$APP_DIR/node_modules/@strapi/admin/dist/server/server/build/index.html"
+              if [ ! -f "$ADMIN_INDEX" ]; then
+                echo "Admin panel not built — running npm run build..."
+                npm run build
+              fi
               echo "Starting Strapi in production mode..."
               exec npm run start
           ports:

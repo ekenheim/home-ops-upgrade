@@ -1,0 +1,150 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrelease-helm-v2beta2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: rybbit-clickhouse
+  namespace: development
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: app-template
+      version: 4.6.2
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+      interval: 15m
+  maxHistory: 2
+  install:
+    remediation:
+      retries: 5
+  upgrade:
+    remediation:
+      retries: 5
+  values:
+    controllers:
+      rybbit-clickhouse:
+        containers:
+          app:
+            image:
+              repository: clickhouse/clickhouse-server
+              tag: 26.1-alpine
+            env:
+              CLICKHOUSE_DB: analytics
+              CLICKHOUSE_USER: default
+              CLICKHOUSE_DO_NOT_CHOWN: "1"
+            envFrom:
+              - secretRef:
+                  name: rybbit-app
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                memory: 1Gi
+
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        fsGroupChangePolicy: Always
+
+    service:
+      app:
+        controller: rybbit-clickhouse
+        ports:
+          http:
+            port: 8123
+          tcp:
+            port: 9000
+
+    persistence:
+      data:
+        existingClaim: rybbit-clickhouse
+        globalMounts:
+          - path: /var/lib/clickhouse
+      config:
+        enabled: true
+        type: configMap
+        name: rybbit-clickhouse-config
+        globalMounts:
+          - path: /etc/clickhouse-server/config.d
+      users-config:
+        enabled: true
+        type: configMap
+        name: rybbit-clickhouse-users
+        globalMounts:
+          - path: /etc/clickhouse-server/users.d/profiles.xml
+            subPath: profiles.xml
+
+    configMaps:
+      config:
+        enabled: true
+        data:
+          config.xml: |
+            <clickhouse>
+                <logger>
+                    <level>warning</level>
+                    <console>true</console>
+                </logger>
+
+                <skip_check_for_incorrect_settings>1</skip_check_for_incorrect_settings>
+
+                <listen_host>0.0.0.0</listen_host>
+                <tcp_port>9000</tcp_port>
+                <http_port>8123</http_port>
+
+                <query_log>
+                    <database>system</database>
+                    <table>query_log</table>
+                    <partition_by>toYYYYMM(event_date)</partition_by>
+                    <flush_interval_milliseconds>60000</flush_interval_milliseconds>
+                    <ttl>event_date + INTERVAL 1 HOUR DELETE</ttl>
+                </query_log>
+                <query_thread_log remove="remove"/>
+                <metric_log remove="remove"/>
+                <asynchronous_metric_log remove="remove"/>
+                <trace_log remove="remove"/>
+                <text_log remove="remove"/>
+                <part_log remove="remove"/>
+                <session_log remove="remove"/>
+                <processors_profile_log remove="remove"/>
+                <query_views_log remove="remove"/>
+                <query_metric_log remove="remove"/>
+                <asynchronous_insert_log remove="remove"/>
+                <error_log remove="remove"/>
+
+                <background_pool_size>16</background_pool_size>
+                <background_schedule_pool_size>16</background_schedule_pool_size>
+
+                <merge_tree>
+                    <max_bytes_to_merge_at_max_space_in_pool>1073741824</max_bytes_to_merge_at_max_space_in_pool>
+                    <max_bytes_to_merge_at_min_space_in_pool>1048576</max_bytes_to_merge_at_min_space_in_pool>
+                    <max_suspicious_broken_parts>50</max_suspicious_broken_parts>
+                    <max_suspicious_broken_parts_bytes>1073741824</max_suspicious_broken_parts_bytes>
+                    <parts_to_delay_insert>300</parts_to_delay_insert>
+                    <parts_to_throw_insert>600</parts_to_throw_insert>
+                </merge_tree>
+
+                <interserver_http_port remove="remove"/>
+                <mysql_port remove="remove"/>
+                <postgresql_port remove="remove"/>
+                <prometheus_port remove="remove"/>
+                <port remove="remove"/>
+            </clickhouse>
+      users:
+        enabled: true
+        data:
+          profiles.xml: |
+            <clickhouse>
+                <profiles>
+                    <default>
+                        <allow_experimental_json_type>1</allow_experimental_json_type>
+                        <allow_simdjson>0</allow_simdjson>
+                    </default>
+                </profiles>
+            </clickhouse>

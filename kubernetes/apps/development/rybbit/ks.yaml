@@ -3,6 +3,36 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: rybbit-clickhouse
+  namespace: flux-system
+spec:
+  targetNamespace: development
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: rybbit-clickhouse
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  path: ./kubernetes/apps/development/rybbit/clickhouse
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+    namespace: flux-system
+  wait: true
+  dependsOn:
+    - name: external-secrets
+  postBuild:
+    substituteFrom:
+      - kind: ConfigMap
+        name: cluster-settings
+      - kind: Secret
+        name: cluster-secrets
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: rybbit
   namespace: flux-system
 spec:
@@ -10,6 +40,9 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: rybbit
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
   path: ./kubernetes/apps/development/rybbit/app
   prune: true
   sourceRef:
@@ -17,13 +50,11 @@ spec:
     name: home-kubernetes
     namespace: flux-system
   wait: true
-  interval: 30m
-  retryInterval: 1m
-  timeout: 5m
   dependsOn:
     - name: external-secrets
     - name: crunchy-postgres-operator-cluster
     - name: crunchy-postgres-stores
+    - name: rybbit-clickhouse
   postBuild:
     substituteFrom:
       - kind: ConfigMap

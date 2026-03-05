@@ -50,8 +50,9 @@ spec:
             command: ["/bin/sh", "-c"]
             args:
               - |
+                export npm_config_cache=/tmp/.npm
                 cd /app
-                npm install --cache /tmp/.npm prisma@6.7.0
+                npm install --legacy-peer-deps prisma@6.7.0
                 npx prisma generate
                 npx prisma migrate deploy
         containers:

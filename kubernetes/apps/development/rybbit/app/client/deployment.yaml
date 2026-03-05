@@ -27,6 +27,8 @@ spec:
               value: https://rybbit.${SECRET_DOMAIN}
             - name: NEXT_PUBLIC_DISABLE_SIGNUP
               value: "false"
+            - name: BETTER_AUTH_URL
+              value: https://rybbit.${SECRET_DOMAIN}
           resources:
             requests:
               cpu: 50m

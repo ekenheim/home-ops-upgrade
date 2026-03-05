@@ -55,14 +55,11 @@ spec:
               mountPath: /etc/clickhouse-server/config.d/network.xml
               subPath: network.xml
             - name: config
-              mountPath: /etc/clickhouse-server/config.d/enable_json.xml
-              subPath: enable_json.xml
-            - name: config
               mountPath: /etc/clickhouse-server/config.d/logging_rules.xml
               subPath: logging_rules.xml
             - name: config
-              mountPath: /etc/clickhouse-server/config.d/user_logging.xml
-              subPath: user_logging.xml
+              mountPath: /etc/clickhouse-server/users.d/users_profile.xml
+              subPath: users_profile.xml
           resources:
             requests:
               cpu: 100m

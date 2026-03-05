@@ -25,6 +25,10 @@ spec:
     - name: crunchy-postgres-operator-cluster
     - name: crunchy-postgres-stores
   postBuild:
+    substitute:
+      APP: strapi
+      CLAIM: strapi-data
+      VOLSYNC_CAPACITY: 2Gi
     substituteFrom:
       - kind: ConfigMap
         name: cluster-settings

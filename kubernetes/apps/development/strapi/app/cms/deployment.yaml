@@ -37,8 +37,6 @@ spec:
         - name: cms
           image: ghcr.io/ekenheim/strapi-bootstrap@sha256:16ccc81083f79ea7dbf69ea69222fc56b02168b9e8da27710e1681aca6fbfad4
           imagePullPolicy: Always
-          # Override entrypoint to run production server directly. Remove once the
-          # new image (with NODE_ENV-aware entrypoint.sh) is built and pinned.
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -49,20 +47,15 @@ spec:
                 cp -a /srv/template/. "$APP_DIR/"
               fi
               cd "$APP_DIR"
-              ADMIN_INDEX="$APP_DIR/node_modules/@strapi/admin/dist/server/server/build/index.html"
-              if [ ! -f "$ADMIN_INDEX" ]; then
-                echo "Admin panel not built — running npm run build..."
-                npm run build
-              fi
-              echo "Starting Strapi in production mode..."
-              exec npm run start
+              echo "Starting Strapi in development mode to rebuild schema..."
+              exec npm run develop
           ports:
             - name: http
               containerPort: 1337
               protocol: TCP
           env:
             - name: NODE_ENV
-              value: production
+              value: development
             - name: NODE_OPTIONS
               value: "--max-old-space-size=3072"
             - name: HOST

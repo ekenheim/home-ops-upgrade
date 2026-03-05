@@ -35,7 +35,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: cms
-          image: ghcr.io/ekenheim/strapi-bootstrap@sha256:d2851b6bfde9672047378221d86f97b658e262282635c67c83cb2c64d10161f1
+          image: ghcr.io/ekenheim/strapi-bootstrap:latest
           imagePullPolicy: Always
           ports:
             - name: http

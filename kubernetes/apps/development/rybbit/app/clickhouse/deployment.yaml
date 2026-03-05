@@ -1,0 +1,78 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rybbit-clickhouse
+  namespace: development
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rybbit-clickhouse
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rybbit-clickhouse
+    spec:
+      containers:
+        - name: clickhouse
+          image: clickhouse/clickhouse-server:25.4.2
+          ports:
+            - name: http
+              containerPort: 8123
+            - name: native
+              containerPort: 9000
+          env:
+            - name: CLICKHOUSE_DB
+              value: analytics
+            - name: CLICKHOUSE_USER
+              value: default
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rybbit-app
+                  key: CLICKHOUSE_PASSWORD
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/network.xml
+              subPath: network.xml
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/enable_json.xml
+              subPath: enable_json.xml
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/logging_rules.xml
+              subPath: logging_rules.xml
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/user_logging.xml
+              subPath: user_logging.xml
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: rybbit-clickhouse-data
+        - name: config
+          configMap:
+            name: rybbit-clickhouse-config

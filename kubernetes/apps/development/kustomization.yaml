@@ -20,3 +20,4 @@ resources:
   - ./medusa/ks.yaml
   - ./strapi/ks.yaml
   - ./marketing-agency/ks.yaml
+  - ./rybbit/ks.yaml

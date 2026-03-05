@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./externalsecrets.yaml
+  - ./clickhouse/configmap.yaml
+  - ./clickhouse/pvc.yaml
+  - ./clickhouse/deployment.yaml
+  - ./clickhouse/service.yaml
+  - ./backend/deployment.yaml
+  - ./backend/service.yaml
+  - ./client/deployment.yaml
+  - ./client/service.yaml
+  - ./client/ingress.yaml

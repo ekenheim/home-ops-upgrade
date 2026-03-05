@@ -43,13 +43,15 @@ spec:
               protocol: TCP
           env:
             - name: NODE_ENV
-              value: development
+              value: production
             - name: HOST
               value: "0.0.0.0"
             - name: PORT
               value: "1337"
             - name: URL
               value: "https://strapi.${SECRET_DOMAIN}"
+            - name: CORS_ORIGIN
+              value: "https://strapi.${SECRET_DOMAIN},https://marketing-agency.${SECRET_DOMAIN}"
           envFrom:
             - secretRef:
                 name: strapi-postgres

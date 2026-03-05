@@ -12,4 +12,8 @@ fi
 
 cd "$APP_DIR"
 echo "Starting Strapi (NODE_ENV=${NODE_ENV:-development})..."
-exec npm run develop
+if [ "${NODE_ENV}" = "production" ]; then
+  exec npm run start
+else
+  exec npm run develop
+fi

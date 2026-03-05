@@ -27,6 +27,9 @@ RUN npm install
 # Install the PostgreSQL driver — the scaffold defaults to SQLite so pg is not
 # included in the generated package.json, but the deployment uses Postgres.
 RUN npm install pg
+# Allow non-localhost hosts in Vite's dev server so the admin panel loads
+# when accessed via the ingress hostname instead of localhost.
+RUN mkdir -p src/admin && printf 'import { mergeConfig, type UserConfig } from "vite";\n\nexport default (config: UserConfig) => {\n  return mergeConfig(config, {\n    server: { allowedHosts: true },\n  });\n};\n' > src/admin/vite.config.ts
 RUN npm run build
 
 # Stage 2: lean runtime image that ships the pre-built project as a seed template.

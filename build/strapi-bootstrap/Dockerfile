@@ -9,11 +9,12 @@ WORKDIR /tmp
 
 ENV CI=true
 
-# create-strapi-app v5 has two interactive prompts that CI=true does not suppress:
-#   1. "Use default database (sqlite)?" → y
-#   2. "Start with an example structure & data?" → n
-# printf provides exactly those two answers then closes stdin cleanly.
-RUN printf "y\nn\n" | npx --yes create-strapi-app@latest template --no-run --skip-cloud
+# create-strapi-app v5 ignores CI=true for its two interactive prompts. We can't
+# use a finite pipe (printf/echo) because Node v24 readline fires 'close' on EOF
+# before inquirer finishes processing, causing ERR_USE_AFTER_CLOSE.
+# `yes ""` keeps the pipe open (no EOF) and sends empty newlines that accept each
+# prompt's default: sqlite=Y (what we want) and example=N (what we want).
+RUN yes "" | npx --yes create-strapi-app@latest template --no-run --skip-cloud
 
 # Install deps and pre-build the admin panel as separate layers.
 # This avoids paying the Vite compilation cost on every pod restart.

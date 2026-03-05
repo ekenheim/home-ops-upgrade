@@ -9,13 +9,17 @@ WORKDIR /tmp
 
 ENV CI=true
 
-# Pipe "y\n" to satisfy the sqlite prompt when running without a TTY.
-# --skip-cloud suppresses the Strapi Cloud registration prompt.
-# --no-run prevents the CLI from starting Strapi after scaffolding.
-RUN yes | npx --yes create-strapi-app@latest template --no-run --skip-cloud && \
-    cd template && \
-    npm install && \
-    npm run build
+# Scaffold step isolated in its own layer so the `yes` pipe cannot bleed into
+# subsequent npm commands. --skip-cloud and --no-run keep it non-interactive;
+# CI=true suppresses the TypeScript / example prompts automatically in v5.
+# `yes` is kept as a fallback for any remaining TTY-detection prompt.
+RUN yes | npx --yes create-strapi-app@latest template --no-run --skip-cloud
+
+# Install deps and pre-build the admin panel as separate layers.
+# This avoids paying the Vite compilation cost on every pod restart.
+WORKDIR /tmp/template
+RUN npm install
+RUN npm run build
 
 # Stage 2: lean runtime image that ships the pre-built project as a seed template.
 FROM node:24-alpine

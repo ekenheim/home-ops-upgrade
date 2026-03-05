@@ -14,7 +14,8 @@ ENV CI=true
 # --no-run prevents the CLI from starting Strapi after scaffolding.
 RUN yes | npx --yes create-strapi-app@latest template --no-run --skip-cloud && \
     cd template && \
-    npm install
+    npm install && \
+    npm run build
 
 # Stage 2: lean runtime image that ships the pre-built project as a seed template.
 FROM node:24-alpine

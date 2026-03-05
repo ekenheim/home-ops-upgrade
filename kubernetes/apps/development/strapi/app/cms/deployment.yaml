@@ -48,6 +48,8 @@ spec:
               value: "0.0.0.0"
             - name: PORT
               value: "1337"
+            - name: URL
+              value: "https://strapi.${SECRET_DOMAIN}"
           envFrom:
             - secretRef:
                 name: strapi-postgres
@@ -58,22 +60,28 @@ spec:
               mountPath: /srv/app
           resources:
             requests:
-              cpu: 100m
+              cpu: 500m
               memory: 512Mi
             limits:
               cpu: 1000m
               memory: 1Gi
+          startupProbe:
+            httpGet:
+              path: /_health
+              port: http
+            failureThreshold: 60
+            periodSeconds: 15
           livenessProbe:
             httpGet:
               path: /_health
               port: http
-            initialDelaySeconds: 90
+            initialDelaySeconds: 30
             periodSeconds: 30
           readinessProbe:
             httpGet:
               path: /_health
               port: http
-            initialDelaySeconds: 60
+            initialDelaySeconds: 15
             periodSeconds: 10
       volumes:
         - name: strapi-data

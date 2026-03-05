@@ -37,6 +37,20 @@ spec:
         - name: cms
           image: ghcr.io/ekenheim/strapi-bootstrap@sha256:16ccc81083f79ea7dbf69ea69222fc56b02168b9e8da27710e1681aca6fbfad4
           imagePullPolicy: Always
+          # Override entrypoint to run production server directly. Remove once the
+          # new image (with NODE_ENV-aware entrypoint.sh) is built and pinned.
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              APP_DIR="/srv/app"
+              if [ ! -f "$APP_DIR/package.json" ]; then
+                echo "Seeding Strapi project from image template to PVC..."
+                cp -a /srv/template/. "$APP_DIR/"
+              fi
+              cd "$APP_DIR"
+              echo "Starting Strapi in production mode..."
+              exec npm run start
           ports:
             - name: http
               containerPort: 1337

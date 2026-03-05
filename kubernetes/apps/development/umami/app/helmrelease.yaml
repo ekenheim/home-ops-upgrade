@@ -145,5 +145,7 @@ spec:
       node-modules:
         enabled: true
         type: emptyDir
-        globalMounts:
-          - path: /app/node_modules
+        advancedMounts:
+          umami:
+            setup-prisma:
+              - path: /app/node_modules

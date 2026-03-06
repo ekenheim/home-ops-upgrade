@@ -60,7 +60,7 @@ spec:
           main:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: 31dff3c
+              tag: 91076e7
               pullPolicy: Always
             env:
               NODE_ENV: production

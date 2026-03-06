@@ -108,6 +108,11 @@ spec:
                   secretKeyRef:
                     name: medusa-secret
                     key: MEDUSA_BACKEND_URL
+              MEILISEARCH_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: meilisearch-secret
+                    key: MEILI_MASTER_KEY
             envFrom:
               - configMapRef:
                   name: medusa-config
@@ -188,6 +193,11 @@ spec:
                   secretKeyRef:
                     name: medusa-secret
                     key: COOKIE_SECRET
+              MEILISEARCH_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: meilisearch-secret
+                    key: MEILI_MASTER_KEY
             envFrom:
               - configMapRef:
                   name: medusa-config

@@ -159,10 +159,4 @@ data:
           },
         },
       ],
-      plugins: [
-        {
-          resolve: '@agilo/medusa-analytics-plugin',
-          options: {},
-        },
-      ],
     });

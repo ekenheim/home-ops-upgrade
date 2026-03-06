@@ -67,6 +67,7 @@ spec:
               PORT: "9000"
               MEDUSA_WORKER_MODE: server
               DISABLE_MEDUSA_ADMIN: "false"
+              STRIPE_API_KEY: "sk_test_placeholder"
               DATABASE_URL:
                 valueFrom:
                   secretKeyRef:

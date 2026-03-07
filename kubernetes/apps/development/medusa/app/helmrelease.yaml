@@ -234,7 +234,7 @@ spec:
           main:
             image:
               repository: ghcr.io/ekenheim/ecom/storefront
-              tag: 43ed476
+              tag: c3d6727
               pullPolicy: Always
             env:
               MEDUSA_BACKEND_URL: "http://medusa-medusa-server:9000"

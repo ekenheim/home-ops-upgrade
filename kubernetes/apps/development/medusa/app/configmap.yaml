@@ -15,6 +15,7 @@ metadata:
 data:
   NEXT_PUBLIC_DEFAULT_REGION: "se"
   STRAPI_API_URL: "http://strapi-ecom-cms.development.svc.cluster.local:1337"
+  STRAPI_PUBLIC_URL: "https://strapi-ecom.${SECRET_DOMAIN}"
 ---
 apiVersion: v1
 kind: ConfigMap

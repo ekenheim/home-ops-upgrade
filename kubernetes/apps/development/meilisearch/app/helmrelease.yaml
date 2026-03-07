@@ -37,5 +37,16 @@ spec:
           - path: /data
     serviceMonitor:
       enabled: true
+    ingress:
+      enabled: true
+      className: external
+      annotations:
+        external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+      hosts:
+        - meilisearch.${SECRET_DOMAIN}
+      tls:
+        - secretName: meilisearch-tls
+          hosts:
+            - meilisearch.${SECRET_DOMAIN}
     service:
       ipFamilyPolicy: PreferDualStack

@@ -13,6 +13,8 @@ patches:
         value:
           - node_modules
           - .cache
+          - .tmp
+          - build
+          - .strapi
     target:
       kind: ReplicationSource
-      name: strapi

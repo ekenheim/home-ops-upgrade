@@ -24,6 +24,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      GATUS_URL_PATH: /health
     substituteFrom:
       - kind: ConfigMap
         name: cluster-settings

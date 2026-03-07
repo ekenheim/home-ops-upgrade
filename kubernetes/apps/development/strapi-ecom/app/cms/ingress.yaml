@@ -1,0 +1,32 @@
+---
+# Strapi Ecom CMS (admin + API) at strapi-ecom.${SECRET_DOMAIN} (external ingress). TLS and DNS via cert-manager / external-dns.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: strapi-ecom-cms
+  namespace: development
+  labels:
+    app.kubernetes.io/name: strapi-ecom
+    app.kubernetes.io/component: cms
+  annotations:
+    external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Strapi Ecom
+    gethomepage.dev/icon: mdi:database-edit
+    gethomepage.dev/group: Development
+spec:
+  ingressClassName: external
+  rules:
+    - host: strapi-ecom.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: strapi-ecom-cms
+                port:
+                  number: 1337
+  tls:
+    - hosts:
+        - strapi-ecom.${SECRET_DOMAIN}

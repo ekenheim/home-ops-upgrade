@@ -190,6 +190,10 @@ spec:
       databases: ["strapi"]
       password:
         type: AlphaNumeric
+    - name: "strapi-ecom"
+      databases: ["strapi-ecom"]
+      password:
+        type: AlphaNumeric
     - name: "rybbit"
       databases: ["rybbit"]
       password:

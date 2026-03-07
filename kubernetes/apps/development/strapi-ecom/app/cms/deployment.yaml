@@ -1,0 +1,105 @@
+---
+# Strapi Ecom CMS (admin + API). Exposed via Ingress at strapi-ecom.${SECRET_DOMAIN}.
+#
+# Bootstrap phase: uses a minimal custom bootstrap image (node:22-alpine + create-strapi-app).
+# On first run it creates a vanilla Strapi v5 project in /srv/app using the Postgres
+# credentials from strapi-ecom-postgres secret. NODE_ENV=development enables Content-Type Builder
+# so you can define your schema. Once your custom image is ready, replace the image and
+# set NODE_ENV=production.
+#
+# naskio/strapi is NOT used: it is a v4 image and breaks on v5 admin panel builds.
+# Strapi publishes NO official images: https://docs.strapi.io/dev-docs/installation/docker
+# See docs/medusa-strapi-integration.md for content type schema and integration guide.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strapi-ecom-cms
+  namespace: development
+  labels:
+    app.kubernetes.io/name: strapi-ecom
+    app.kubernetes.io/component: cms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: strapi-ecom
+      app.kubernetes.io/component: cms
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: strapi-ecom
+        app.kubernetes.io/component: cms
+    spec:
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: cms
+          image: ghcr.io/ekenheim/strapi-bootstrap@sha256:bea67411a9db326c837eae47991f677b7579256aea3a3ea39f7f2494478a9f9f
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              APP_DIR="/srv/app"
+              if [ ! -f "$APP_DIR/package.json" ]; then
+                echo "Seeding Strapi project from image template to PVC..."
+                cp -a /srv/template/. "$APP_DIR/"
+              fi
+              cd "$APP_DIR"
+              echo "Starting Strapi in development mode to rebuild schema..."
+              exec npm run develop
+          ports:
+            - name: http
+              containerPort: 1337
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=3072"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "1337"
+            - name: URL
+              value: "https://strapi-ecom.${SECRET_DOMAIN}"
+            - name: CORS_ORIGIN
+              value: "https://strapi-ecom.${SECRET_DOMAIN},https://storefront.${SECRET_DOMAIN},https://medusa.${SECRET_DOMAIN}"
+          envFrom:
+            - secretRef:
+                name: strapi-ecom-postgres
+            - secretRef:
+                name: strapi-ecom-app-keys
+          volumeMounts:
+            - name: strapi-ecom-data
+              mountPath: /srv/app
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          startupProbe:
+            httpGet:
+              path: /_health
+              port: http
+            failureThreshold: 60
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /_health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /_health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: strapi-ecom-data
+          persistentVolumeClaim:
+            claimName: strapi-ecom-data

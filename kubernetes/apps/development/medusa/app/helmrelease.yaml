@@ -32,7 +32,7 @@ spec:
           migrate-db:
             image:
               repository: ghcr.io/ekenheim/ecom/medusa
-              tag: "91076e7"
+              tag: "9496114"
               pullPolicy: Always
             env:
               NODE_ENV: production

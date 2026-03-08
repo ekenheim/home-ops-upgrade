@@ -17,9 +17,13 @@ spec:
         name: home-kubernetes
         namespace: flux-system
   install:
+    # The SeldonRuntime CR becomes Ready only after the scheduler connects to Kafka.
+    # Disabling wait allows Flux to succeed immediately; readiness converges in background.
+    disableWait: true
     remediation:
       retries: 3
   upgrade:
+    disableWait: true
     cleanupOnFail: true
     remediation:
       strategy: rollback

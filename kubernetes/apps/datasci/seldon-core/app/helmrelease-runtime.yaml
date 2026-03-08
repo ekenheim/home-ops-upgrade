@@ -6,6 +6,7 @@ metadata:
   name: seldon-core-v2-runtime
 spec:
   interval: 30m
+  timeout: 15m
   dependsOn:
     - name: seldon-core-v2-setup
   chart:

@@ -40,22 +40,22 @@ spec:
             {{- toYaml . | nindent 8 }}
           {{- end }}
     kafkaConfig:
-      bootstrap.servers: {{ .Values.config.kafkaConfig.bootstrap | default "" }}
+      bootstrap.servers: {{ .Values.config.kafkaConfig.bootstrap | default "" | quote }}
       consumer:
         {{- toYaml (.Values.config.kafkaConfig.consumer | default dict) | nindent 8 }}
-      debug: {{ .Values.config.kafkaConfig.debug | default "" }}
+      debug: {{ .Values.config.kafkaConfig.debug | default "" | quote }}
       producer:
         {{- toYaml (.Values.config.kafkaConfig.producer | default dict) | nindent 8 }}
       streams:
         {{- toYaml (.Values.config.kafkaConfig.streams | default dict) | nindent 8 }}
       topics:
         {{- toYaml (.Values.config.kafkaConfig.topics | default dict) | nindent 8 }}
-      topicPrefix: {{ .Values.config.kafkaConfig.topicPrefix | default "" }}
+      topicPrefix: {{ .Values.config.kafkaConfig.topicPrefix | default "" | quote }}
     serviceConfig:
-      grpcServicePrefix: {{ .Values.config.serviceConfig.serviceGRPCPrefix | default "" }}
-      serviceType: {{ .Values.config.serviceConfig.serviceType | default "" }}
+      grpcServicePrefix: {{ .Values.config.serviceConfig.serviceGRPCPrefix | default "" | quote }}
+      serviceType: {{ .Values.config.serviceConfig.serviceType | default "" | quote }}
     tracingConfig:
       disable: {{ .Values.config.tracingConfig.disable | default false }}
-      otelExporterEndpoint: {{ .Values.config.tracingConfig.otelExporterEndpoint | default "" }}
-      otelExporterProtocol: {{ .Values.config.tracingConfig.otelExporterProtocol | default "" }}
-      ratio: {{ .Values.config.tracingConfig.ratio | default "" }}
+      otelExporterEndpoint: {{ .Values.config.tracingConfig.otelExporterEndpoint | default "" | quote }}
+      otelExporterProtocol: {{ .Values.config.tracingConfig.otelExporterProtocol | default "" | quote }}
+      ratio: {{ .Values.config.tracingConfig.ratio | default "" | quote }}

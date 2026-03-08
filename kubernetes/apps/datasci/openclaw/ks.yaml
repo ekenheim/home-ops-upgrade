@@ -6,6 +6,7 @@ metadata:
   name: &app openclaw
   namespace: flux-system
 spec:
+  suspend: true
   targetNamespace: datasci
   commonMetadata:
     labels:

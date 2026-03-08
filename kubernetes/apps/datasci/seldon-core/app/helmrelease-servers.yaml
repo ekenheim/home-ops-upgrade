@@ -10,11 +10,11 @@ spec:
     - name: seldon-core-v2-runtime
   chart:
     spec:
-      chart: seldon-core-v2-servers
-      version: 2.10.2
+      chart: kubernetes/apps/datasci/seldon-core/chart/seldon-core-v2-servers
+      reconcileStrategy: Revision
       sourceRef:
-        kind: HelmRepository
-        name: seldonio
+        kind: GitRepository
+        name: home-kubernetes
         namespace: flux-system
   install:
     remediation:

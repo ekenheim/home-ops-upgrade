@@ -48,6 +48,7 @@ spec:
     txtOwnerId: homelab
     domainFilters:
       - "${SECRET_DOMAIN}"
+      - "${SECRET_SECONDARY_DOMAIN}"
     serviceMonitor:
       enabled: true
     podAnnotations:

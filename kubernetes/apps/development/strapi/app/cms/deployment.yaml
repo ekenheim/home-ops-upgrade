@@ -88,7 +88,7 @@ spec:
             - name: URL
               value: "https://strapi.${SECRET_DOMAIN}"
             - name: CORS_ORIGIN
-              value: "https://strapi.${SECRET_DOMAIN},https://marketing-agency.${SECRET_DOMAIN}"
+              value: "https://strapi.${SECRET_DOMAIN},https://marketing-agency.${SECRET_DOMAIN},https://${SECRET_SECONDARY_DOMAIN}"
           envFrom:
             - secretRef:
                 name: strapi-postgres

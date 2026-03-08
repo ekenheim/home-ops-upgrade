@@ -1,5 +1,5 @@
 ---
-# Marketing agency website at marketing-agency.${SECRET_DOMAIN} (external ingress). TLS and DNS via cert-manager / external-dns.
+# Marketing agency website at ${SECRET_SECONDARY_DOMAIN} (external ingress). TLS and DNS via cert-manager / external-dns.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -16,7 +16,7 @@ metadata:
 spec:
   ingressClassName: external
   rules:
-    - host: marketing-agency.${SECRET_DOMAIN}
+    - host: ${SECRET_SECONDARY_DOMAIN}
       http:
         paths:
           - path: /
@@ -28,4 +28,5 @@ spec:
                   number: 3000
   tls:
     - hosts:
-        - marketing-agency.${SECRET_DOMAIN}
+        - ${SECRET_SECONDARY_DOMAIN}
+      secretName: "${SECRET_SECONDARY_DOMAIN}-tls"

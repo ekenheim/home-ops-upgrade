@@ -414,7 +414,7 @@ spec:
       control-plane: v2-controller-manager
   template:
     metadata:
-      annotations: {{- toYaml .Values.controller.annotations | nindent  8
+      annotations: {{- toYaml (.Values.controller.annotations | default dict) | nindent  8
         }}
       labels:
         control-plane: v2-controller-manager
@@ -499,9 +499,9 @@ metadata:
   namespace: '{{ .Release.Namespace }}'
 spec:
   components:
-  - annotations: {{- toYaml .Values.scheduler.annotations | nindent
+  - annotations: {{- toYaml (.Values.scheduler.annotations | default dict) | nindent
       8 }}
-    labels: {{- toYaml .Values.scheduler.labels | nindent 8 }}
+    labels: {{- toYaml (.Values.scheduler.labels | default dict) | nindent 8 }}
     name: seldon-scheduler
     podSpec:
       containers:
@@ -696,9 +696,9 @@ spec:
         resources:
           requests:
             storage: '{{ .Values.scheduler.resources.storage }}'
-  - annotations: {{- toYaml .Values.pipelinegateway.annotations | nindent
+  - annotations: {{- toYaml (.Values.pipelinegateway.annotations | default dict) | nindent
       8 }}
-    labels: {{- toYaml .Values.pipelinegateway.labels | nindent 8 }}
+    labels: {{- toYaml (.Values.pipelinegateway.labels | default dict) | nindent 8 }}
     name: seldon-pipelinegateway
     podSpec:
       containers:
@@ -890,9 +890,9 @@ spec:
           optional: true
           secretName: confluent-schema
     replicas: 1
-  - annotations: {{- toYaml .Values.modelgateway.annotations | nindent
+  - annotations: {{- toYaml (.Values.modelgateway.annotations | default dict) | nindent
       8 }}
-    labels: {{- toYaml .Values.modelgateway.labels | nindent 8 }}
+    labels: {{- toYaml (.Values.modelgateway.labels | default dict) | nindent 8 }}
     name: seldon-modelgateway
     podSpec:
       containers:
@@ -1054,9 +1054,9 @@ spec:
           optional: true
           secretName: confluent-schema
     replicas: 1
-  - annotations: {{- toYaml .Values.hodometer.annotations | nindent
+  - annotations: {{- toYaml (.Values.hodometer.annotations | default dict) | nindent
       8 }}
-    labels: {{- toYaml .Values.hodometer.labels | nindent 8 }}
+    labels: {{- toYaml (.Values.hodometer.labels | default dict) | nindent 8 }}
     name: hodometer
     podSpec:
       containers:
@@ -1114,8 +1114,8 @@ spec:
       serviceAccountName: hodometer
       terminationGracePeriodSeconds: 5
     replicas: 1
-  - annotations: {{- toYaml .Values.envoy.annotations | nindent 8 }}
-    labels: {{- toYaml .Values.envoy.labels | nindent 8 }}
+  - annotations: {{- toYaml (.Values.envoy.annotations | default dict) | nindent 8 }}
+    labels: {{- toYaml (.Values.envoy.labels | default dict) | nindent 8 }}
     name: seldon-envoy
     podSpec:
       containers:
@@ -1181,9 +1181,9 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.envoy.terminationGracePeriodSeconds
         }}
     replicas: 1
-  - annotations: {{- toYaml .Values.dataflow.annotations | nindent 8
+  - annotations: {{- toYaml (.Values.dataflow.annotations | default dict) | nindent 8
       }}
-    labels: {{- toYaml .Values.dataflow.labels | nindent 8 }}
+    labels: {{- toYaml (.Values.dataflow.labels | default dict) | nindent 8 }}
     name: seldon-dataflow-engine
     podSpec:
       containers:

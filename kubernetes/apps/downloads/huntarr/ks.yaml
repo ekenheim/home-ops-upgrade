@@ -8,6 +8,7 @@ metadata:
   labels:
     substitution.flux.home.arpa/enabled: "true"
 spec:
+  suspend: true
   targetNamespace: downloads
   dependsOn:
     - name: crunchy-postgres-operator-cluster

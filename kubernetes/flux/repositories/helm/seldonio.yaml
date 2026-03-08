@@ -7,4 +7,4 @@ metadata:
   namespace: flux-system
 spec:
   interval: 12h
-  url: https://storage.googleapis.com/seldon-charts
+  url: https://seldonio.github.io/helm-charts/

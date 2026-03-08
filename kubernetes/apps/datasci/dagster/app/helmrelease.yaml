@@ -65,9 +65,12 @@ spec:
           envVars:
             - "DAGSTER_HOME=/tmp/dagster"
             - "RAY_ADDRESS=ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001"
-            - "BANDIT_SERVICE_URL=http://bandit-service.development.svc.cluster.local:8000"
+            - "BANDIT_SERVICE_URL=http://bandit-serve.development.svc.cluster.local:8000"
             - "MLFLOW_TRACKING_URI=http://mlflow.datasci.svc.cluster.local:5000"
             - "CDSAPI_URL=https://cds.climate.copernicus.eu/api"
+            - "DRAGONFLY_HOST=dragonfly-master.database.svc.cluster.local"
+            - "DRAGONFLY_PORT=6379"
+            - "DRAGONFLY_DB=2"
           envSecrets:
             - name: hempriser-minio
             - name: hempriser-postgres

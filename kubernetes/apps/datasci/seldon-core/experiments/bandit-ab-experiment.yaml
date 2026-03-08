@@ -1,0 +1,38 @@
+---
+# Seldon Core v2 Experiment CR — optional static traffic-splitting layer.
+#
+# Purpose: compare two bandit configurations or algorithms side-by-side.
+# Each "model" here is a separately deployed bandit-serve instance or variant.
+#
+# This CR is NOT required for the basic bandit to function.
+# Enable it when you want to:
+#   - Compare two bandit algorithms (e.g., Thompson vs epsilon-greedy)
+#   - Run a shadow test of a new bandit configuration
+#   - Use Seldon's observability layer for request/response logging
+#
+# Prerequisite: the Seldon v2 operator (seldon-core-v2-setup) must be deployed
+# and reconciling the datasci namespace. Deploy the bandit-serve variants as
+# Seldon v2 Model CRs before creating this Experiment.
+#
+# Example: to activate, apply this file and ensure both Model CRs below exist.
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Experiment
+metadata:
+  name: bandit-algorithm-comparison
+  namespace: datasci
+  annotations:
+    # Remind operators this is a traffic-splitting layer, not the bandit itself
+    bandit.ekenheim.io/role: "traffic-split"
+    bandit.ekenheim.io/hot-path: "bandit-serve.development.svc.cluster.local:8000"
+spec:
+  # 50/50 split between two bandit configurations.
+  # Adjust weights to run a shadow test (e.g., 95/5).
+  candidates:
+    - name: bandit-thompson
+      weight: 50
+    - name: bandit-epsilon-greedy
+      weight: 50
+  # Mirror traffic to the default bandit-serve for logging without affecting results
+  mirror:
+    name: bandit-thompson
+    percent: 100

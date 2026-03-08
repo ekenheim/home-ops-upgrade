@@ -3,7 +3,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app seldon-core
+  name: &app bandit-serve
   namespace: flux-system
 spec:
   commonMetadata:
@@ -11,14 +11,15 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: external-secrets
-    - name: cert-manager
+    - name: dragonfly-cluster
+    - name: crunchy-postgres-operator-cluster
   interval: 30m
-  path: ./kubernetes/apps/datasci/seldon-core/app
-  prune: false
+  path: ./kubernetes/apps/development/bandit-serve/app
+  prune: true
   sourceRef:
     kind: GitRepository
     name: home-kubernetes
     namespace: flux-system
-  targetNamespace: datasci
-  timeout: 10m
+  targetNamespace: development
+  timeout: 5m
   wait: true

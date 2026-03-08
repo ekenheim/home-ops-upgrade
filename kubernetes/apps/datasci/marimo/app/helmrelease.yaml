@@ -26,6 +26,22 @@ spec:
   values:
     controllers:
       marimo:
+        initContainers:
+          seed-notebooks:
+            image:
+              repository: busybox
+              tag: latest
+            command:
+              - /bin/sh
+              - -c
+              - |
+                for f in /seed/*.py; do
+                  dest="/home/marimo/$(basename $f)"
+                  if [ ! -f "$dest" ]; then
+                    echo "Seeding $dest"
+                    cp "$f" "$dest"
+                  fi
+                done
         containers:
           app:
             image:
@@ -85,3 +101,10 @@ spec:
         existingClaim: marimo-notebooks
         globalMounts:
           - path: /home/marimo
+      seed:
+        enabled: true
+        type: configMap
+        name: marimo-seed-notebooks
+        globalMounts:
+          - path: /seed
+            readOnly: true

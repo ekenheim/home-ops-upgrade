@@ -2,32 +2,57 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: seldon-controller-manager
-  namespace: istio-system
+  name: seldon-v2-controller-manager
+  namespace: datasci
 spec:
-  jobLabel: seldon-controller
+  jobLabel: seldon-v2-controller
   selector:
     matchLabels:
-      control-plane: seldon-controller-manager
+      control-plane: v2-controller-manager
   podMetricsEndpoints:
     - port: metrics
       path: /metrics
       interval: 30s
 ---
+# Covers scheduler, envoy, hodometer, and other runtime pods created
+# by the Seldon operator from the SeldonRuntime CR.
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: seldon-runtime
-  namespace: istio-system
+  name: seldon-v2-runtime
+  namespace: datasci
 spec:
-  jobLabel: seldon-runtime
+  jobLabel: seldon-v2-runtime
   namespaceSelector:
-    any: true
+    matchNames:
+      - datasci
   selector:
     matchExpressions:
-      - key: seldon-deployment-id
+      - key: app.kubernetes.io/managed-by
+        operator: In
+        values:
+          - seldon-v2-controller-manager
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+---
+# Covers MLServer and Triton pods deployed as Servers by the operator.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: seldon-v2-servers
+  namespace: datasci
+spec:
+  jobLabel: seldon-v2-servers
+  namespaceSelector:
+    matchNames:
+      - datasci
+  selector:
+    matchExpressions:
+      - key: seldon-server
         operator: Exists
   podMetricsEndpoints:
     - port: metrics
-      path: /prometheus
+      path: /metrics
       interval: 30s

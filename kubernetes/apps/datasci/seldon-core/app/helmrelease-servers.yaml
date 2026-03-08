@@ -1,0 +1,37 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: seldon-core-v2-servers
+spec:
+  interval: 30m
+  dependsOn:
+    - name: seldon-core-v2-runtime
+  chart:
+    spec:
+      chart: seldon-core-v2-servers
+      version: 2.10.2
+      sourceRef:
+        kind: HelmRepository
+        name: seldonio
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    # MLServer handles sklearn, xgboost, lightgbm, and custom Python models via MLflow
+    mlserver:
+      replicas: 1
+      minReplicas: 1
+      maxReplicas: 3
+    # Triton handles ONNX, TensorRT, PyTorch; keep at 1 replica for GPU inference when available
+    triton:
+      replicas: 1
+      minReplicas: 1
+      maxReplicas: 2

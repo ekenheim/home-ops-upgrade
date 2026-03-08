@@ -33,6 +33,34 @@ spec:
       restartPolicy: Always
       imagePullSecrets:
         - name: ghcr-pull
+      initContainers:
+        - name: seed-and-schema
+          image: ghcr.io/ekenheim/strapi-bootstrap@sha256:bea67411a9db326c837eae47991f677b7579256aea3a3ea39f7f2494478a9f9f
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              APP_DIR="/srv/app"
+              # Seed the Strapi project template on first run
+              if [ ! -f "$APP_DIR/package.json" ]; then
+                echo "Seeding Strapi project from image template to PVC..."
+                cp -a /srv/template/. "$APP_DIR/"
+              fi
+              # Write the Arm content type schema if not already present.
+              # Strapi v5 reads schema.json on startup and auto-generates REST endpoints.
+              SCHEMA_DIR="$APP_DIR/src/api/arm/content-types/arm"
+              if [ ! -f "$SCHEMA_DIR/schema.json" ]; then
+                echo "Installing Arm content type schema..."
+                mkdir -p "$SCHEMA_DIR"
+                cp /schemas/schema.json "$SCHEMA_DIR/schema.json"
+              fi
+          volumeMounts:
+            - name: strapi-data
+              mountPath: /srv/app
+            - name: arm-schema
+              mountPath: /schemas
+              readOnly: true
       containers:
         - name: cms
           image: ghcr.io/ekenheim/strapi-bootstrap@sha256:bea67411a9db326c837eae47991f677b7579256aea3a3ea39f7f2494478a9f9f
@@ -41,13 +69,8 @@ spec:
           args:
             - |
               set -e
-              APP_DIR="/srv/app"
-              if [ ! -f "$APP_DIR/package.json" ]; then
-                echo "Seeding Strapi project from image template to PVC..."
-                cp -a /srv/template/. "$APP_DIR/"
-              fi
-              cd "$APP_DIR"
-              echo "Starting Strapi in development mode to rebuild schema..."
+              cd /srv/app
+              echo "Starting Strapi in development mode..."
               exec npm run develop
           ports:
             - name: http
@@ -103,3 +126,6 @@ spec:
         - name: strapi-data
           persistentVolumeClaim:
             claimName: strapi-data
+        - name: arm-schema
+          configMap:
+            name: strapi-arm-schema

@@ -6,3 +6,10 @@ resources:
   - pvc.yaml
   - helmrelease.yaml
   - ../../../../templates/gatus/guarded
+
+configMapGenerator:
+  - name: marimo-seed-notebooks
+    files:
+      - bayesian_bandits.py=../notebooks/bayesian_bandits.py
+    options:
+      disableNameSuffixHash: true

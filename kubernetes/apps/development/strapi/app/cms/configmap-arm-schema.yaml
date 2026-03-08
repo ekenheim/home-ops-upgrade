@@ -1,0 +1,55 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: strapi-arm-schema
+  namespace: development
+data:
+  schema.json: |
+    {
+      "kind": "collectionType",
+      "collectionName": "arms",
+      "info": {
+        "singularName": "arm",
+        "pluralName": "arms",
+        "displayName": "Arm",
+        "description": "Bayesian bandit experiment arm — a content variant to be tested"
+      },
+      "options": {
+        "draftAndPublish": true
+      },
+      "pluginOptions": {},
+      "attributes": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "unique": true
+        },
+        "description": {
+          "type": "text"
+        },
+        "content_ref": {
+          "type": "string",
+          "required": true
+        },
+        "is_active": {
+          "type": "boolean",
+          "default": true,
+          "required": true
+        },
+        "experiment_id": {
+          "type": "string",
+          "required": true
+        },
+        "content_type": {
+          "type": "enumeration",
+          "enum": [
+            "page",
+            "product",
+            "banner",
+            "cta",
+            "email"
+          ]
+        }
+      }
+    }

@@ -1,0 +1,41 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: seldon-core-v2-runtime
+spec:
+  interval: 30m
+  dependsOn:
+    - name: seldon-core-v2-setup
+  chart:
+    spec:
+      chart: seldon-core-v2-runtime
+      version: 2.10.2
+      sourceRef:
+        kind: HelmRepository
+        name: seldonio
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    # Disable Kafka-dependent components — Pipelines not needed for bandit use case.
+    # Re-enable if Seldon Core v2 Pipelines are required in future (wire to Redpanda).
+    dataflow:
+      disable: true
+    modelgateway:
+      disable: true
+    pipelinegateway:
+      disable: true
+    config:
+      agentConfig:
+        rclone:
+          # Inject rclone S3 config for model artifact loading from MinIO
+          configSecrets:
+            - seldon-core-secret

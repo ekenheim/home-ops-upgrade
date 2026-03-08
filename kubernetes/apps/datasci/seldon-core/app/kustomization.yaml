@@ -1,9 +1,11 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: istio-system
+namespace: datasci
 resources:
-  - helmrelease.yaml
+  - helmrelease-crds.yaml
+  - helmrelease-setup.yaml
+  - helmrelease-runtime.yaml
+  - helmrelease-servers.yaml
   - externalsecrets.yaml
   - podmonitors.yaml
-# - gateway.yaml # Removed, using main Istio gateway

@@ -11,6 +11,8 @@ spec:
   chart:
     spec:
       chart: kubernetes/apps/datasci/seldon-core/chart/seldon-core-v2-setup
+      # Track git commit revisions so template changes are picked up without bumping Chart.yaml
+      reconcileStrategy: Revision
       sourceRef:
         kind: GitRepository
         name: home-kubernetes

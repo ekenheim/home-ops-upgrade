@@ -39,6 +39,11 @@ spec:
           # Inject rclone S3 config for model artifact loading from MinIO
           configSecrets:
             - seldon-core-secret
+      # Wire to Redpanda (Kafka-compatible) for scheduler connectivity.
+      # The scheduler requires a Kafka broker to reach Ready status and to
+      # reconcile Experiment CRs. Redpanda runs in the development namespace.
+      kafkaConfig:
+        bootstrap: "redpanda-0.redpanda.development.svc.cluster.local:9093"
       tracingConfig:
         # No OpenTelemetry collector deployed — disable tracing
         disable: true

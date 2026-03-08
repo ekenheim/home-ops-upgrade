@@ -12,3 +12,15 @@ spec:
     kind: User
     name: admin@admin.com
   resourceQuotaSpec: {}
+---
+# Replaces the upstream user-namespace/base reference (which used a broken
+# kustomize replacements-on-metadata.name pattern to produce this Profile).
+apiVersion: kubeflow.org/v1
+kind: Profile
+metadata:
+  name: kubeflow-user-example-com
+spec:
+  owner:
+    kind: User
+    name: user@example.com
+  resourceQuotaSpec: {}

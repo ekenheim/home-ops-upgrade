@@ -10,11 +10,11 @@ spec:
     - name: seldon-core-v2-setup
   chart:
     spec:
-      chart: seldon-core-v2-runtime
-      version: 2.10.2
+      chart: kubernetes/apps/datasci/seldon-core/chart/seldon-core-v2-runtime
+      reconcileStrategy: Revision
       sourceRef:
-        kind: HelmRepository
-        name: seldonio
+        kind: GitRepository
+        name: home-kubernetes
         namespace: flux-system
   install:
     remediation:
@@ -39,3 +39,6 @@ spec:
           # Inject rclone S3 config for model artifact loading from MinIO
           configSecrets:
             - seldon-core-secret
+      tracingConfig:
+        # No OpenTelemetry collector deployed — disable tracing
+        disable: true

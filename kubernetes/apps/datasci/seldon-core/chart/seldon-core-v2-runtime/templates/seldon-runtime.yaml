@@ -1,0 +1,61 @@
+apiVersion: mlops.seldon.io/v1alpha1
+kind: SeldonRuntime
+metadata:
+  name: seldon
+  namespace: '{{ .Release.Namespace }}'
+spec:
+  seldonConfig: {{ .Values.seldonConfig }}
+  disableAutoUpdate: {{ .Values.disableAutoUpdate }}
+  overrides:
+  - name: hodometer
+    disable: {{ .Values.hodometer.disable }}
+    replicas: {{ .Values.hodometer.replicas }}
+    podSpec: {{ toJson (.Values.hodometer.podSpec | default dict) }}
+  - name: seldon-scheduler
+    disable: {{ .Values.scheduler.disable }}
+    serviceType: {{ .Values.scheduler.serviceType }}
+    podSpec: {{ toJson (.Values.scheduler.podSpec | default dict) }}
+  - name: seldon-envoy
+    disable: {{ .Values.envoy.disable }}
+    replicas: {{ .Values.envoy.replicas }}
+    serviceType: {{ .Values.envoy.serviceType }}
+    podSpec: {{ toJson (.Values.envoy.podSpec | default dict) }}
+  - name: seldon-dataflow-engine
+    disable: {{ .Values.dataflow.disable }}
+    replicas: {{ .Values.dataflow.replicas }}
+    podSpec: {{ toJson (.Values.dataflow.podSpec | default dict) }}
+  - name: seldon-modelgateway
+    disable: {{ .Values.modelgateway.disable }}
+    replicas: {{ .Values.modelgateway.replicas }}
+    podSpec: {{ toJson (.Values.modelgateway.podSpec | default dict) }}
+  - name: seldon-pipelinegateway
+    disable: {{ .Values.pipelinegateway.disable }}
+    replicas: {{ .Values.pipelinegateway.replicas }}
+    podSpec: {{ toJson (.Values.pipelinegateway.podSpec | default dict) }}
+  config:
+    agentConfig:
+      rclone:
+        config_secrets:
+          {{- with .Values.config.agentConfig.rclone.configSecrets }}
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+    kafkaConfig:
+      bootstrap.servers: {{ .Values.config.kafkaConfig.bootstrap | default "" }}
+      consumer:
+        {{- toYaml (.Values.config.kafkaConfig.consumer | default dict) | nindent 8 }}
+      debug: {{ .Values.config.kafkaConfig.debug | default "" }}
+      producer:
+        {{- toYaml (.Values.config.kafkaConfig.producer | default dict) | nindent 8 }}
+      streams:
+        {{- toYaml (.Values.config.kafkaConfig.streams | default dict) | nindent 8 }}
+      topics:
+        {{- toYaml (.Values.config.kafkaConfig.topics | default dict) | nindent 8 }}
+      topicPrefix: {{ .Values.config.kafkaConfig.topicPrefix | default "" }}
+    serviceConfig:
+      grpcServicePrefix: {{ .Values.config.serviceConfig.serviceGRPCPrefix | default "" }}
+      serviceType: {{ .Values.config.serviceConfig.serviceType | default "" }}
+    tracingConfig:
+      disable: {{ .Values.config.tracingConfig.disable | default false }}
+      otelExporterEndpoint: {{ .Values.config.tracingConfig.otelExporterEndpoint | default "" }}
+      otelExporterProtocol: {{ .Values.config.tracingConfig.otelExporterProtocol | default "" }}
+      ratio: {{ .Values.config.tracingConfig.ratio | default "" }}

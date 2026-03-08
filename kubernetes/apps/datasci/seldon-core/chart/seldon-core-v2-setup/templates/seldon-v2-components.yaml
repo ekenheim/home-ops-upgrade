@@ -1,0 +1,5 @@
+{{- if .Values.useDeploymentsForServers }}
+{{ include "setup.deployments" .  }}
+{{- else }}
+{{ include "setup.statefulsets" .  }}
+{{- end }}

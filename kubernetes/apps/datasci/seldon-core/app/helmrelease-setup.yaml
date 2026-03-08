@@ -10,11 +10,10 @@ spec:
     - name: seldon-core-v2-crds
   chart:
     spec:
-      chart: seldon-core-v2-setup
-      version: 2.10.2
+      chart: kubernetes/apps/datasci/seldon-core/chart/seldon-core-v2-setup
       sourceRef:
-        kind: HelmRepository
-        name: seldonio
+        kind: GitRepository
+        name: home-kubernetes
         namespace: flux-system
   install:
     remediation:

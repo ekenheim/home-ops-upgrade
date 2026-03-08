@@ -48,7 +48,9 @@ spec:
                   name: *app
             args:
               - server
-              - /data
+              - /data1
+              - /data2
+              - /data3
               - --console-address
               - :9001
             probes:
@@ -117,10 +119,24 @@ spec:
         tls:
           - hosts: [*s3Host]
     persistence:
-      data:
+      data1:
         enabled: true
         type: nfs
         server: ${NAS_IP:=temp}
         path: ${SECRET_NFS_MINIO:=temp}
         globalMounts:
-          - path: /data
+          - path: /data1
+      data2:
+        enabled: true
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_MINIO_2:=temp}
+        globalMounts:
+          - path: /data2
+      data3:
+        enabled: true
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_MINIO_3:=temp}
+        globalMounts:
+          - path: /data3

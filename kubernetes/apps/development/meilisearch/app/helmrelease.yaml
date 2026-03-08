@@ -45,7 +45,7 @@ spec:
       hosts:
         - meilisearch.${SECRET_DOMAIN}
       tls:
-        - secretName: meilisearch-tls
+        - secretName: "${SECRET_DOMAIN}-tls"
           hosts:
             - meilisearch.${SECRET_DOMAIN}
     service:

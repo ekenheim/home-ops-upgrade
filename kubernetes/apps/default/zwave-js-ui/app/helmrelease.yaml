@@ -19,7 +19,9 @@ spec:
       retries: 3
   upgrade:
     cleanupOnFail: true
+    force: true
     remediation:
+      strategy: rollback
       retries: 3
   uninstall:
     keepHistory: false

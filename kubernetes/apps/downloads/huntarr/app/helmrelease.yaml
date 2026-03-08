@@ -19,6 +19,7 @@ spec:
       retries: 3
   upgrade:
     cleanupOnFail: true
+    force: true
     remediation:
       strategy: rollback
       retries: 3
@@ -46,7 +47,6 @@ spec:
 
     ingress:
       main:
-        enabled: true
         className: internal
         annotations:
           gethomepage.dev/enabled: "true"

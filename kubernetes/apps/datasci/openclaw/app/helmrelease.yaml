@@ -15,10 +15,13 @@ spec:
         namespace: flux-system
   interval: 15m
   install:
+    timeout: 30m
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
+    force: true
+    timeout: 30m
     remediation:
       strategy: rollback
       retries: 3

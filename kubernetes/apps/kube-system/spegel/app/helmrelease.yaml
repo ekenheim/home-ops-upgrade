@@ -26,7 +26,7 @@ spec:
   values:
     spegel:
       containerdSock: /run/containerd/containerd.sock
-      containerdRegistryConfigPath: /etc/cri/conf.d/hosts
+      containerdRegistryConfigPath: /var/lib/spegel/containerd/certs.d
       retryCount: 3
       retryDelay: 5s
       timeout: 30s
@@ -38,3 +38,16 @@ spec:
         port: 8080
     serviceMonitor:
       enabled: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    volumeMounts:
+      - name: spegel-config
+        mountPath: /var/lib/spegel/containerd/certs.d
+    volumes:
+      - name: spegel-config
+        emptyDir: {}

@@ -62,6 +62,12 @@ nodes:
             gateway: "192.168.50.1"
         vip:
           ip: "192.168.50.10"
+    patches:
+      - |-
+        machine:
+          kubelet:
+            nodeLabels:
+              aeotec.feature.node.kubernetes.io/zwave: "true"
   - hostname: "worker1"
     ipAddress: "192.168.50.30"
     installDisk: "/dev/sdb"

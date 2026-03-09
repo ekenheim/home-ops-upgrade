@@ -13,7 +13,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: bandit-experiment
-  namespace: development
+  namespace: datasci
   labels:
     app.kubernetes.io/name: bandit
     app.kubernetes.io/component: seldon-experiment

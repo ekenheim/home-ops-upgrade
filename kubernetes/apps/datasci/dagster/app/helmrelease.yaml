@@ -81,6 +81,13 @@ spec:
             - name: grid-reliance-cdsapi
           runK8sConfig:
             containerConfig:
+              volumeMounts:
+                - name: bandit-pg-patch
+                  mountPath: /app/pipeline/jobs/snapshot_posteriors.py
+                  subPath: snapshot_posteriors.py
+                - name: bandit-pg-patch
+                  mountPath: /app/pipeline/jobs/conclude_experiments.py
+                  subPath: conclude_experiments.py
               env:
                 - name: BRONZE_AWS_ACCESS_KEY_ID
                   valueFrom:
@@ -149,6 +156,12 @@ spec:
                     configMapKeyRef:
                       name: grid-resilience-gold
                       key: BUCKET_NAME
+          podSpecConfig:
+            volumes:
+              - name: bandit-pg-patch
+                configMap:
+                  name: bandit-pg-patch
+                  optional: true
           resources:
             requests:
               cpu: 2000m

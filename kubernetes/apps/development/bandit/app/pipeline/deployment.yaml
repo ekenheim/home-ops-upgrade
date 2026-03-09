@@ -22,6 +22,10 @@ spec:
         app.kubernetes.io/component: pipeline
     spec:
       restartPolicy: Always
+      volumes:
+        - name: bandit-pg-patch
+          configMap:
+            name: bandit-pg-patch
       imagePullSecrets:
         - name: ghcr-pull
       containers:
@@ -55,6 +59,13 @@ spec:
               value: "http://mlflow.datasci.svc.cluster.local:5000"
             - name: BANDIT_SERVICE_URL
               value: "http://bandit-service.development.svc.cluster.local:8000"
+          volumeMounts:
+            - name: bandit-pg-patch
+              mountPath: /app/pipeline/jobs/snapshot_posteriors.py
+              subPath: snapshot_posteriors.py
+            - name: bandit-pg-patch
+              mountPath: /app/pipeline/jobs/conclude_experiments.py
+              subPath: conclude_experiments.py
           resources:
             requests:
               cpu: 500m

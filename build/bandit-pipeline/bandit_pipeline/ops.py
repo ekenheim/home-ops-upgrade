@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def _pg_conn() -> psycopg2.extensions.connection:
-    return psycopg2.connect(os.environ["PG_CONNECTION_STRING"])
+    return psycopg2.connect(os.environ["BANDIT_PG_DSN"])
 
 
 def _redis_client() -> redis.Redis:

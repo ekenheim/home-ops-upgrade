@@ -1,0 +1,288 @@
+---
+# Patches snapshot_posteriors.py and conclude_experiments.py to use BANDIT_PG_DSN
+# instead of PG_CONNECTION_STRING, which is overwritten by grid-reliance-postgres
+# in the shared Dagster run-worker env-secrets injection.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bandit-pg-patch
+  namespace: development
+data:
+  snapshot_posteriors.py: |
+    """Dagster job: snapshot_posteriors
+
+    Reads current alpha/beta values from Dragonfly for all active experiments
+    and writes a snapshot row to the posterior_snapshots Postgres table.
+    Triggered every 100 events by a Dagster sensor (or run manually).
+
+    The snapshot table drives the Grafana posterior distribution dashboard.
+    """
+
+    import logging
+    import os
+    from datetime import datetime, timezone
+
+    import redis
+    import sqlalchemy as sa
+    from dagster import Config, job, op
+
+    logger = logging.getLogger(__name__)
+
+    DRAGONFLY_HOST = os.getenv("DRAGONFLY_HOST", "dragonfly.database.svc.cluster.local")
+    DRAGONFLY_PORT = int(os.getenv("DRAGONFLY_PORT", "6379"))
+    DRAGONFLY_DB = int(os.getenv("DRAGONFLY_DB", "2"))
+    PG_DSN = os.getenv("BANDIT_PG_DSN", "")
+
+    CREATE_TABLE_SQL = """
+    CREATE TABLE IF NOT EXISTS posterior_snapshots (
+        snapshot_at    TIMESTAMPTZ NOT NULL,
+        experiment_id  TEXT NOT NULL,
+        arm_id         INTEGER NOT NULL,
+        alpha          INTEGER NOT NULL,
+        beta           INTEGER NOT NULL,
+        primary_prob   FLOAT,
+        PRIMARY KEY (snapshot_at, experiment_id, arm_id)
+    );
+    """
+
+
+    class SnapshotConfig(Config):
+        experiment_ids: list[str] = []
+
+
+    def _dragonfly() -> redis.Redis:
+        return redis.Redis(
+            host=DRAGONFLY_HOST, port=DRAGONFLY_PORT, db=DRAGONFLY_DB, decode_responses=True
+        )
+
+
+    @op
+    def read_posteriors_from_dragonfly(context, config: SnapshotConfig) -> list[dict]:
+        """Read alpha/beta for all arms of each experiment via pipelined MGET."""
+        df = _dragonfly()
+        rows = []
+        now = datetime.now(timezone.utc)
+
+        for exp_id in config.experiment_ids:
+            n_arms_raw = df.get(f"experiment:{exp_id}:n_arms")
+            if n_arms_raw is None:
+                context.log.warning(f"Experiment {exp_id} not found in Dragonfly — skipping")
+                continue
+            n_arms = int(n_arms_raw)
+
+            keys = []
+            for k in range(n_arms):
+                keys.extend([
+                    f"experiment:{exp_id}:arm:{k}:alpha",
+                    f"experiment:{exp_id}:arm:{k}:beta",
+                ])
+            values = df.mget(keys)
+
+            for k in range(n_arms):
+                alpha = int(values[2 * k] or 1)
+                beta = int(values[2 * k + 1] or 1)
+                rows.append({
+                    "snapshot_at": now,
+                    "experiment_id": exp_id,
+                    "arm_id": k,
+                    "alpha": alpha,
+                    "beta": beta,
+                })
+
+        context.log.info(
+            f"Collected {len(rows)} posterior snapshots across "
+            f"{len(config.experiment_ids)} experiments"
+        )
+        return rows
+
+
+    @op
+    def write_snapshots_to_postgres(context, rows: list[dict]) -> None:
+        """Write snapshot rows to posterior_snapshots table."""
+        if not rows:
+            context.log.info("No rows to write")
+            return
+
+        if not PG_DSN:
+            context.log.warning("BANDIT_PG_DSN not set — skipping Postgres write")
+            return
+
+        engine = sa.create_engine(PG_DSN)
+        with engine.begin() as conn:
+            conn.execute(sa.text(CREATE_TABLE_SQL))
+            conn.execute(
+                sa.text(
+                    """
+                    INSERT INTO posterior_snapshots
+                        (snapshot_at, experiment_id, arm_id, alpha, beta)
+                    VALUES
+                        (:snapshot_at, :experiment_id, :arm_id, :alpha, :beta)
+                    ON CONFLICT DO NOTHING
+                    """
+                ),
+                rows,
+            )
+        context.log.info(f"Wrote {len(rows)} snapshot rows to Postgres")
+
+
+    @job(name="snapshot_posteriors")
+    def snapshot_posteriors_job() -> None:
+        rows = read_posteriors_from_dragonfly()
+        write_snapshots_to_postgres(rows)
+
+  conclude_experiments.py: |
+    """Dagster job: conclude_experiments
+
+    Periodically checks the posterior probability stopping rule for all active
+    experiments. When P(arm k is best) > 0.95, marks the experiment as concluded
+    in Postgres and posts an annotation to Grafana.
+
+    Stopping rule:
+      P(theta_{k*} = max_k theta_k) > 0.95
+      Estimated via 10,000 Monte Carlo samples from each Beta posterior.
+
+    This is valid at any sample size — no multiple-comparisons inflation.
+    """
+
+    from __future__ import annotations
+
+    import logging
+    import os
+    from datetime import datetime, timezone
+
+    import numpy as np
+    import redis
+    import requests
+    import sqlalchemy as sa
+    from dagster import job, op
+
+    logger = logging.getLogger(__name__)
+
+    DRAGONFLY_HOST = os.getenv("DRAGONFLY_HOST", "dragonfly.database.svc.cluster.local")
+    DRAGONFLY_PORT = int(os.getenv("DRAGONFLY_PORT", "6379"))
+    DRAGONFLY_DB = int(os.getenv("DRAGONFLY_DB", "2"))
+    PG_DSN = os.getenv("BANDIT_PG_DSN", "")
+    GRAFANA_URL = os.getenv("GRAFANA_URL", "http://grafana.observability.svc.cluster.local")
+    GRAFANA_TOKEN = os.getenv("GRAFANA_TOKEN", "")
+    STOPPING_THRESHOLD = float(os.getenv("STOPPING_THRESHOLD", "0.95"))
+
+
+    def _dragonfly() -> redis.Redis:
+        return redis.Redis(
+            host=DRAGONFLY_HOST, port=DRAGONFLY_PORT, db=DRAGONFLY_DB, decode_responses=True
+        )
+
+
+    def _check_stopping_rule(
+        experiment_id: str, threshold: float = STOPPING_THRESHOLD, n_samples: int = 10_000
+    ) -> tuple[bool, int, list[float]]:
+        """Returns (should_conclude, winner_arm_id, p_best_per_arm)."""
+        df = _dragonfly()
+        exp_key = f"experiment:{experiment_id}"
+        n_arms = int(df.get(f"{exp_key}:n_arms") or 0)
+        if n_arms == 0:
+            return False, -1, []
+
+        keys = []
+        for k in range(n_arms):
+            keys.extend([f"{exp_key}:arm:{k}:alpha", f"{exp_key}:arm:{k}:beta"])
+        values = df.mget(keys)
+        alphas = [int(values[2 * k] or 1) for k in range(n_arms)]
+        betas = [int(values[2 * k + 1] or 1) for k in range(n_arms)]
+
+        samples = np.array([np.random.beta(a, b, size=n_samples) for a, b in zip(alphas, betas)])
+        p_best = (samples.argmax(axis=0)[:, None] == np.arange(n_arms)).mean(axis=0)
+
+        winner = int(p_best.argmax())
+        return bool(p_best[winner] >= threshold), winner, p_best.tolist()
+
+
+    @op
+    def fetch_active_experiments(context) -> list[str]:
+        """Query Postgres for all experiments with status = 'running'."""
+        if not PG_DSN:
+            context.log.warning("BANDIT_PG_DSN not set — returning empty experiment list")
+            return []
+        engine = sa.create_engine(PG_DSN)
+        with engine.connect() as conn:
+            rows = conn.execute(
+                sa.text("SELECT experiment_id::text FROM experiments WHERE status = 'running'")
+            ).fetchall()
+        experiment_ids = [row[0] for row in rows]
+        context.log.info(f"Found {len(experiment_ids)} active experiments")
+        return experiment_ids
+
+
+    @op
+    def check_and_conclude(context, experiment_ids: list[str]) -> list[str]:
+        """Check stopping rule for each experiment; mark concluded ones in Postgres."""
+        if not experiment_ids:
+            context.log.info("No active experiments to check")
+            return []
+
+        concluded = []
+        engine = sa.create_engine(PG_DSN) if PG_DSN else None
+
+        for exp_id in experiment_ids:
+            should_stop, winner, p_best = _check_stopping_rule(exp_id)
+            context.log.info(
+                f"Experiment {exp_id}: p_best={[f'{p:.3f}' for p in p_best]}, "
+                f"should_conclude={should_stop}"
+            )
+
+            if should_stop and engine:
+                with engine.begin() as conn:
+                    conn.execute(
+                        sa.text(
+                            """
+                            UPDATE experiments
+                            SET status = 'concluded',
+                                winner_arm = :winner,
+                                concluded_at = :now
+                            WHERE experiment_id = :exp_id::uuid
+                              AND status = 'running'
+                            """
+                        ),
+                        {"winner": winner, "now": datetime.now(timezone.utc), "exp_id": exp_id},
+                    )
+                context.log.info(f"Concluded experiment {exp_id} — winner: arm {winner}")
+                concluded.append(exp_id)
+
+        return concluded
+
+
+    @op
+    def post_grafana_annotations(context, concluded_ids: list[str]) -> None:
+        """Post a Grafana annotation for each newly concluded experiment."""
+        if not concluded_ids:
+            return
+
+        if not GRAFANA_TOKEN:
+            context.log.warning("GRAFANA_TOKEN not set — skipping Grafana annotations")
+            return
+
+        headers = {"Authorization": f"Bearer {GRAFANA_TOKEN}", "Content-Type": "application/json"}
+        now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+
+        for exp_id in concluded_ids:
+            payload = {
+                "time": now_ms,
+                "tags": ["bandit", "experiment-concluded"],
+                "text": f"Experiment {exp_id} concluded — winner declared at P(best) > {STOPPING_THRESHOLD}",
+            }
+            resp = requests.post(
+                f"{GRAFANA_URL}/api/annotations", json=payload, headers=headers, timeout=10
+            )
+            if resp.ok:
+                context.log.info(f"Posted Grafana annotation for experiment {exp_id}")
+            else:
+                context.log.warning(
+                    f"Grafana annotation failed for {exp_id}: {resp.status_code} {resp.text}"
+                )
+
+
+    @job(name="conclude_experiments")
+    def conclude_experiments_job() -> None:
+        experiment_ids = fetch_active_experiments()
+        concluded = check_and_conclude(experiment_ids)
+        post_grafana_annotations(concluded)

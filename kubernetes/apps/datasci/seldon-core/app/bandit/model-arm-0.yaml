@@ -8,7 +8,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: bandit-arm-0
-  namespace: datasci
+
   labels:
     app.kubernetes.io/name: bandit
     app.kubernetes.io/component: seldon-arm

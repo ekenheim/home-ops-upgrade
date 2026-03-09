@@ -7,4 +7,5 @@ resources:
   - ./pipeline
   - ./service
   # - ./db   # Omit: development uses Crunchy PGO; ensure postgres-pguser-bandit secret exists
-  - ./seldon
+  # Seldon v2 Model+Experiment CRs live in datasci/seldon-core/app/bandit
+  # (targetNamespace here forces development; Seldon runtime is in datasci)

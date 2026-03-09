@@ -3,4 +3,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./seldondeployment.yaml
+  - ./model-arm-0.yaml
+  - ./model-arm-1.yaml
+  - ./experiment-bandit.yaml

@@ -1,0 +1,252 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/configmap-v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bandit-experiments-grafana-dashboard
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: Data
+data:
+  bandit_experiments_dashboard.json: |
+    {
+      "title": "Bandit Experiments",
+      "uid": "banditExperiments",
+      "schemaVersion": 39,
+      "version": 1,
+      "editable": true,
+      "time": { "from": "now-24h", "to": "now" },
+      "refresh": "30s",
+      "tags": ["bandit", "experiments"],
+      "templating": {
+        "list": [
+          {
+            "name": "experiment_id",
+            "type": "query",
+            "label": "Experiment",
+            "datasource": { "type": "postgres", "uid": "bandit-postgres" },
+            "query": "SELECT DISTINCT experiment_id FROM posterior_snapshots ORDER BY 1",
+            "refresh": 2,
+            "includeAll": true,
+            "multi": false,
+            "sort": 0
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Active Experiments",
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+          "datasource": { "type": "postgres", "uid": "bandit-postgres" },
+          "targets": [{
+            "rawSql": "SELECT COUNT(*) FROM experiments WHERE status = 'running'",
+            "format": "table",
+            "refId": "A"
+          }],
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "color": { "fixedColor": "blue", "mode": "fixed" }, "unit": "short" } }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Concluded Experiments",
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+          "datasource": { "type": "postgres", "uid": "bandit-postgres" },
+          "targets": [{
+            "rawSql": "SELECT COUNT(*) FROM experiments WHERE status = 'concluded'",
+            "format": "table",
+            "refId": "A"
+          }],
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "color": { "fixedColor": "green", "mode": "fixed" }, "unit": "short" } }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Total Posterior Snapshots",
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+          "datasource": { "type": "postgres", "uid": "bandit-postgres" },
+          "targets": [{
+            "rawSql": "SELECT COUNT(*) FROM posterior_snapshots",
+            "format": "table",
+            "refId": "A"
+          }],
+          "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "unit": "short" } }
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Latest Snapshot",
+          "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+          "datasource": { "type": "postgres", "uid": "bandit-postgres" },
+          "targets": [{
+            "rawSql": "SELECT MAX(snapshot_at) FROM posterior_snapshots",
+            "format": "table",
+            "refId": "A"
+          }],
+          "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "unit": "dateTimeAsLocal" } }
+        },
+        {
+          "id": 5,
+          "type": "table",
+          "title": "Experiment Status",
+          "gridPos": { "h": 6, "w": 24, "x": 0, "y": 4 },
+          "datasource": { "type": "postgres", "uid": "bandit-postgres" },
+          "targets": [{
+            "rawSql": "SELECT experiment_id, status, winner_arm, concluded_at FROM experiments ORDER BY concluded_at DESC NULLS LAST, experiment_id",
+            "format": "table",
+            "refId": "A"
+          }],
+          "options": {
+            "sortBy": [{ "displayName": "status", "desc": false }],
+            "cellHeight": "sm"
+          },
+          "fieldConfig": {
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "status" },
+                "properties": [{
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                }, {
+                  "id": "mappings",
+                  "value": [
+                    { "type": "value", "options": { "running": { "text": "Running", "color": "blue", "index": 0 } } },
+                    { "type": "value", "options": { "concluded": { "text": "Concluded", "color": "green", "index": 1 } } }
+                  ]
+                }]
+              },
+              {
+                "matcher": { "id": "byName", "options": "concluded_at" },
+                "properties": [{ "id": "unit", "value": "dateTimeAsLocal" }]
+              }
+            ]
+          }
+        },
+        {
+          "id": 6,
+          "type": "timeseries",
+          "title": "P(Best Arm) Over Time — $experiment_id",
+          "description": "Probability that each arm has the highest true reward rate. Converges toward 1.0 for the winner.",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+          "datasource": { "type": "postgres", "uid": "bandit-postgres" },
+          "targets": [{
+            "rawSql": "SELECT\n  snapshot_at AS time,\n  CONCAT('arm_', arm_id) AS metric,\n  primary_prob\nFROM posterior_snapshots\nWHERE experiment_id = '$experiment_id'\n  AND snapshot_at BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY snapshot_at, arm_id",
+            "format": "time_series",
+            "refId": "A"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "min": 0, "max": 1,
+              "custom": { "lineWidth": 2, "fillOpacity": 10, "spanNulls": true }
+            }
+          },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "Alpha (Successes) Over Time — $experiment_id",
+          "description": "Cumulative successes per arm. Steeper slope = more traffic and/or higher reward rate.",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+          "datasource": { "type": "postgres", "uid": "bandit-postgres" },
+          "targets": [{
+            "rawSql": "SELECT\n  snapshot_at AS time,\n  CONCAT('arm_', arm_id, ' alpha') AS metric,\n  alpha\nFROM posterior_snapshots\nWHERE experiment_id = '$experiment_id'\n  AND snapshot_at BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY snapshot_at, arm_id",
+            "format": "time_series",
+            "refId": "A"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": { "lineWidth": 2, "fillOpacity": 10, "spanNulls": true }
+            }
+          },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "Beta (Failures) Over Time — $experiment_id",
+          "description": "Cumulative failures per arm. Arm with low beta relative to alpha is performing well.",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+          "datasource": { "type": "postgres", "uid": "bandit-postgres" },
+          "targets": [{
+            "rawSql": "SELECT\n  snapshot_at AS time,\n  CONCAT('arm_', arm_id, ' beta') AS metric,\n  beta\nFROM posterior_snapshots\nWHERE experiment_id = '$experiment_id'\n  AND snapshot_at BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY snapshot_at, arm_id",
+            "format": "time_series",
+            "refId": "A"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": { "lineWidth": 2, "fillOpacity": 10, "spanNulls": true }
+            }
+          },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+        },
+        {
+          "id": 9,
+          "type": "timeseries",
+          "title": "Conversion Rate Estimate α/(α+β) — $experiment_id",
+          "description": "Beta posterior mean: best estimate of the true reward rate per arm. Converges to the true rate as data accumulates.",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+          "datasource": { "type": "postgres", "uid": "bandit-postgres" },
+          "targets": [{
+            "rawSql": "SELECT\n  snapshot_at AS time,\n  CONCAT('arm_', arm_id) AS metric,\n  ROUND(alpha::numeric / (alpha + beta), 4) AS conversion_rate\nFROM posterior_snapshots\nWHERE experiment_id = '$experiment_id'\n  AND snapshot_at BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY snapshot_at, arm_id",
+            "format": "time_series",
+            "refId": "A"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "min": 0, "max": 1,
+              "custom": { "lineWidth": 2, "fillOpacity": 10, "spanNulls": true }
+            }
+          },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+        },
+        {
+          "id": 10,
+          "type": "table",
+          "title": "Latest Posteriors — All Experiments",
+          "description": "Most recent alpha/beta snapshot per arm per experiment with current p_best.",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 26 },
+          "datasource": { "type": "postgres", "uid": "bandit-postgres" },
+          "targets": [{
+            "rawSql": "SELECT\n  ps.experiment_id,\n  ps.arm_id,\n  ps.alpha,\n  ps.beta,\n  ps.alpha + ps.beta - 2 AS total_events,\n  ROUND(ps.alpha::numeric / (ps.alpha + ps.beta), 4) AS conv_rate_estimate,\n  ROUND(COALESCE(ps.primary_prob, 0)::numeric, 4) AS p_best,\n  ps.snapshot_at\nFROM posterior_snapshots ps\nINNER JOIN (\n  SELECT experiment_id, arm_id, MAX(snapshot_at) AS latest\n  FROM posterior_snapshots GROUP BY experiment_id, arm_id\n) latest ON ps.experiment_id = latest.experiment_id\n  AND ps.arm_id = latest.arm_id\n  AND ps.snapshot_at = latest.latest\nORDER BY ps.experiment_id, ps.arm_id",
+            "format": "table",
+            "refId": "A"
+          }],
+          "options": { "cellHeight": "sm", "sortBy": [{ "displayName": "experiment_id" }] },
+          "fieldConfig": {
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "conv_rate_estimate" },
+                "properties": [{ "id": "unit", "value": "percentunit" }]
+              },
+              {
+                "matcher": { "id": "byName", "options": "p_best" },
+                "properties": [
+                  { "id": "unit", "value": "percentunit" },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "gradient-gauge"
+                  },
+                  { "id": "min", "value": 0 },
+                  { "id": "max", "value": 1 }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "snapshot_at" },
+                "properties": [{ "id": "unit", "value": "dateTimeAsLocal" }]
+              }
+            ]
+          }
+        }
+      ]
+    }

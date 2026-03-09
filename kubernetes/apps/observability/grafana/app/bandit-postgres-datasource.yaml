@@ -1,0 +1,28 @@
+---
+# Grafana datasource for the bandit Postgres database.
+# The Grafana sidecar picks up any ConfigMap with grafana_datasource: "1"
+# from any namespace, so no helmrelease change is needed.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bandit-postgres-datasource
+  namespace: observability
+  labels:
+    grafana_datasource: "1"
+data:
+  bandit-postgres-datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: BanditPostgres
+        type: postgres
+        uid: bandit-postgres
+        url: postgres-pgbouncer.database.svc:5432
+        database: bandit
+        user: bandit
+        secureJsonData:
+          password: Tv4fPZRrS1OpBQ6nwLkwOm2N
+        jsonData:
+          sslmode: disable
+          postgresVersion: 1400
+          timescaledb: false
+        editable: false

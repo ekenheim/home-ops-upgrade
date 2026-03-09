@@ -164,7 +164,6 @@ Most things run locally, but I offload a few things to the cloud where it makes 
 | master1 | Dell 7080mff  | 16 cores | 113GB SSD | 1TB NVMe  | 64GB  | Talos | k8s control-plane | Ready    |
 | master2 | Dell 7080mff  | 16 cores | 233GB SSD | 1TB NVMe  | 64GB  | Talos | k8s control-plane | Ready    |
 | master3 | Dell 3080mff  | 16 cores | 233GB SSD | 1TB NVMe  | 64GB  | Talos | k8s control-plane | Ready    |
-| worker1 | Dell 3080mff  | 4 cores  | 975GB SSD | 1TB NVMe  | 32GB  | Talos | k8s worker        | NotReady |
 | worker2 | Dell 3080mff  | 2 cores  | 233GB SSD | N/A       | 16GB  | Talos | k8s worker        | Ready    |
 | worker3 | AMD (32-core) | 32 cores | 101GB SSD | 1TB NVMe  | 96GB  | Talos | k8s worker        | Ready    |
 

@@ -33,7 +33,7 @@ spec:
             image:
               repository: ghcr.io/ekenheim/bandit-serve
               tag: latest
-            imagePullPolicy: Always
+              pullPolicy: Always
             envFrom:
               - secretRef:
                   name: bandit-serve-secret

@@ -5,4 +5,4 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./cms
-  - ../../../../templates/volsync
+  - ./pvc.yaml

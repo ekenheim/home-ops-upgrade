@@ -1,0 +1,14 @@
+---
+# Standalone PVC for Strapi app data. VolSync disabled; content is backed up via Postgres.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "${CLAIM:-strapi-data}"
+  labels:
+    app.kubernetes.io/name: "${APP:-strapi}"
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: "${VOLSYNC_CAPACITY:-2Gi}"
+  storageClassName: "ceph-block"

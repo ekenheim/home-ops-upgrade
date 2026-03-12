@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app recommendarr
+  name: &app suggestarr
 spec:
   interval: 1h
   maxHistory: 1
@@ -46,18 +46,16 @@ spec:
         containers:
           main:
             image:
-              repository: docker.io/tannermiddleton/recommendarr
-              tag: v1.4.4
+              repository: docker.io/ciuse99/suggestarr
+              tag: "2.4.2"
             env:
-              PUBLIC_URL: https://recomendarr.${SECRET_DOMAIN}
-              DOCKER_ENV: true
-              PORT: &port 3000
-              FORCE_SECURE_COOKIES: true
+              SUGGESTARR_PORT: &port 5000
+              LOG_LEVEL: info
             envFrom:
               - secretRef:
                   name: ${APP}-secret
             securityContext:
-              readOnlyRootFilesystem: true
+              readOnlyRootFilesystem: false
               capabilities:
                 drop:
                   - ALL
@@ -87,12 +85,9 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Downloads
-          gethomepage.dev/name: Recommendarr
-          gethomepage.dev/icon: recommendarr.png
-          gethomepage.dev/description: Recommendarr
-          gethomepage.dev/widget.type: recommendarr
-          gethomepage.dev/widget.url: http://recommendarr.downloads
-          #gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_RECOMMENDARR_TOKEN}}` }}"
+          gethomepage.dev/name: SuggestArr
+          gethomepage.dev/icon: suggestarr.png
+          gethomepage.dev/description: SuggestArr - request recommended movies and TV shows to Jellyseer/Overseerr from Jellyfin/Plex/Emby watch history
           external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
         hosts:
         - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
@@ -105,4 +100,4 @@ spec:
       data:
         existingClaim: *app
         globalMounts:
-          - path: /app/server/data
+          - path: /app/config/config_files

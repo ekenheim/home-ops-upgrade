@@ -17,9 +17,10 @@ spec:
   sourceRef:
     kind: GitRepository
     name: home-kubernetes
-  wait: true
+  wait: false # HelmRelease can stay InProgress until PVC binds (volsync restore)
   interval: 30m
-  timeout: 3m
+  retryInterval: 1m
+  timeout: 5m
   postBuild:
     substitute:
       APP: *app

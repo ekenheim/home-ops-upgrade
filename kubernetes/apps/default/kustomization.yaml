@@ -16,6 +16,7 @@ resources:
   - ./paperless/ks.yaml
   - ./syncthing/ks.yaml
   - ./pairdrop/ks.yaml
+  - ./filebrowser/ks.yaml
   #- ./zigbee2mqtt/ks.yaml
   - ./zwave-js-ui/ks.yaml
   - ./immich/ks.yaml

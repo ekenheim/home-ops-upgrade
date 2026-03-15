@@ -31,7 +31,7 @@ spec:
           app:
             image:
               repository: ghcr.io/joryirving/dashclaw
-              tag: 2.0.0@sha256:9816637a05f81e899e483acdf53b6f8fe8a3b266aaa89e25813807ca664be886
+              tag: 2.1.0@sha256:532d766995c8503e229ed9c81becfd9e5002003b9cb25d0a77c91f0174f41a23
             env:
               NEXTAUTH_URL: "https://dashclaw.${SECRET_DOMAIN}"
               DASHCLAW_MODE: "self_host"

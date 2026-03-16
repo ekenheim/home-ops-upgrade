@@ -32,7 +32,7 @@ spec:
           sources: ["pci", "system", "usb"]
       sources:
           usb:
-            deviceClassWhitelist: ["02", "03", "0e", "ef", "fe", "ff"]
+            deviceClassWhitelist: ["00", "02", "03", "0e", "ef", "fe", "ff"]
             deviceLabelFields: ["class", "vendor", "device"]
     prometheus:
       enable: true

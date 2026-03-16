@@ -44,8 +44,8 @@ spec:
               TZ: ${TIMEZONE}
               # Trust ingress proxy so X-Forwarded-For is used (suppresses express-rate-limit warning)
               TRUST_PROXY: "true"
-              # On this cluster the char device is -if00 (-if01 is control and not a char device)
-              ZWAVE_SERIAL_PORT: /dev/serial/by-id/usb-0658_0200-if00
+              # CP2105 dual UART: if00=Zigbee, if01=Z-Wave; udev symlink set in talconfig
+              ZWAVE_SERIAL_PORT: /dev/zwave
             probes:
               liveness: &probes
                 enabled: true
@@ -79,10 +79,6 @@ spec:
         pod:
           nodeSelector:
             aeotec.feature.node.kubernetes.io/zwave: "true"
-          tolerations:
-            - key: node-role.kubernetes.io/control-plane
-              operator: Exists
-              effect: NoSchedule
     service:
       app:
         controller: *app
@@ -119,6 +115,6 @@ spec:
       usb:
         enabled: true
         type: hostPath
-        hostPath: /dev/serial/by-id/usb-0658_0200-if00
+        hostPath: /dev/zwave
         globalMounts:
-          - path: /dev/serial/by-id/usb-0658_0200-if00
+          - path: /dev/zwave

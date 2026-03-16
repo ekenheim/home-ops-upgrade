@@ -6,13 +6,12 @@ metadata:
   name: aeotec-zwave-device
 spec:
   rules:
-    - # Aeotec Z-Stick Gen5+
+    - # Aeotec Z-Stick 10 Pro (ZWA060-C) — CP2105 Dual UART, bDeviceClass=00
       name: aeotec.zwave
       labels:
         aeotec.feature.node.kubernetes.io/zwave: "true"
       matchFeatures:
         - feature: usb.device
           matchExpressions:
-            class: { op: In, value: ["02"] }
-            vendor: { op: In, value: ["0658"] }
-            device: { op: In, value: ["0200"] }
+            vendor: { op: In, value: ["10c4"] }
+            device: { op: In, value: ["ea70"] }

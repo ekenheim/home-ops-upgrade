@@ -62,12 +62,6 @@ nodes:
             gateway: "192.168.50.1"
         vip:
           ip: "192.168.50.10"
-    patches:
-      - |-
-        machine:
-          kubelet:
-            nodeLabels:
-              aeotec.feature.node.kubernetes.io/zwave: "true"
   - hostname: "worker1"
     ipAddress: "192.168.50.30"
     installDisk: "/dev/sdb"
@@ -234,6 +228,14 @@ patches:
             type: bind
             source: /var/openebs/local
             options: ["bind", "rshared", "rw"]
+
+  # Stable /dev/zwave symlink for Aeotec Z-Stick 10 Pro (CP2105 10c4:ea70)
+  # if01 = Z-Wave port; if00 = Zigbee port
+  - |-
+    machine:
+      udev:
+        rules:
+          - SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea70", ENV{ID_USB_INTERFACE_NUM}=="01", SYMLINK+="zwave"
 
   # Disable predictable NIC naming
   #- |-

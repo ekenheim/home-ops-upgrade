@@ -92,6 +92,12 @@ spec:
               cpu: 4000m
               memory: 16Gi
           runK8sConfig:
+            podSpecConfig:
+              volumes:
+                - name: bandit-pg-patch
+                  configMap:
+                    name: bandit-pg-patch
+                    optional: true
             containerConfig:
               volumeMounts:
                 - name: bandit-pg-patch
@@ -168,12 +174,6 @@ spec:
                     configMapKeyRef:
                       name: grid-resilience-gold
                       key: BUCKET_NAME
-          podSpecConfig:
-            volumes:
-              - name: bandit-pg-patch
-                configMap:
-                  name: bandit-pg-patch
-                  optional: true
     # User code: subchart disabled (no pods). Workspace still created via dagsterWebserver.workspace above.
     dagster-user-deployments:
       enabled: true

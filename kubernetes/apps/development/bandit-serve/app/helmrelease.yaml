@@ -31,9 +31,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/ekenheim/bandit-serve
-              tag: latest
-              pullPolicy: Always
+              repository: ghcr.io/ekenheim/bandit-service
+              tag: v0.1.2
             envFrom:
               - secretRef:
                   name: bandit-serve-secret

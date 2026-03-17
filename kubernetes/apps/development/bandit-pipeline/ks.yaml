@@ -11,7 +11,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: crunchy-postgres-operator-cluster
-    - name: bandit-serve
+    - name: bandit
   interval: 30m
   path: ./kubernetes/apps/development/bandit-pipeline/app
   prune: true

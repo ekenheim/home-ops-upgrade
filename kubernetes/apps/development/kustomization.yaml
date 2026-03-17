@@ -18,7 +18,6 @@ resources:
   - ./grid-reliance/ks.yaml
   - ./growthbook/ks.yaml
   - ./medusa/ks.yaml
-  - ./bandit-serve/ks.yaml
   - ./bandit-pipeline/ks.yaml
   - ./strapi/ks.yaml
   - ./strapi-ecom/ks.yaml

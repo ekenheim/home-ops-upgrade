@@ -35,7 +35,6 @@ spec:
               repository: quay.io/minio/minio
               tag: RELEASE.2025-03-12T18-04-18Z
             securityContext:
-              privileged: true
               runAsUser: 0
               runAsGroup: 0
               allowPrivilegeEscalation: true

@@ -59,10 +59,10 @@ spec:
                     port: &port 8080
                   initialDelaySeconds: 0
                   periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 3
+                  timeoutSeconds: 5
+                  failureThreshold: 5
               readiness: *probes
-              startup: # Add startup probe like mlflow
+              startup:
                 enabled: true
                 custom: true
                 spec:
@@ -71,16 +71,16 @@ spec:
                     port: *port
                   initialDelaySeconds: 0
                   periodSeconds: 5
-                  timeoutSeconds: 1
-                  failureThreshold: 30 # Adjust as needed
+                  timeoutSeconds: 5
+                  failureThreshold: 30
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: {drop: ["ALL"]}
             resources:
               requests:
-                cpu: 10m
-                memory: 128Mi
+                cpu: 50m
+                memory: 256Mi
               limits:
                 memory: 4Gi
     defaultPodOptions:

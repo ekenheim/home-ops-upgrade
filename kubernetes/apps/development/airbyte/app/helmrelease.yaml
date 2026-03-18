@@ -26,6 +26,23 @@ spec:
     # https://github.com/airbytehq/airbyte-platform/blob/main/charts/airbyte/values.yaml
     global:
       airbyteUrl: https://airbyte.${SECRET_DOMAIN}
+    server:
+      livenessProbe:
+        initialDelaySeconds: 60
+        periodSeconds: 15
+        timeoutSeconds: 15
+        failureThreshold: 5
+      readinessProbe:
+        initialDelaySeconds: 30
+        periodSeconds: 15
+        timeoutSeconds: 15
+        failureThreshold: 5
+      resources:
+        requests:
+          cpu: 50m
+          memory: 1Gi
+        limits:
+          memory: 2Gi
     # Ingress created via app/ingress.yaml (chart ingress not used)
     ingress:
       enabled: false

@@ -33,14 +33,14 @@ spec:
                   SECRET="kyverno-svc.kyverno.svc.kyverno-tls-ca"
 
                   # Read current key (do not print it).
-                  KEY_PEM="$(kubectl get secret -n "${NS}" "${SECRET}" -o jsonpath='{.data.tls\.key}' | base64 -d)"
+                  KEY_PEM="$(kubectl get secret -n "$NS" "$SECRET" -o jsonpath='{.data.tls\.key}' | base64 -d)"
 
                   # Only fix when Kyverno stored a PKCS#1 key under the PKCS#8 PEM type.
-                  if printf '%s' "${KEY_PEM}" | head -n1 | grep -q 'BEGIN PRIVATE KEY'; then
-                    FIXED_PEM="$(printf '%s' "${KEY_PEM}" | sed 's/BEGIN PRIVATE KEY/BEGIN RSA PRIVATE KEY/; s/END PRIVATE KEY/END RSA PRIVATE KEY/')"
-                    FIXED_B64="$(printf '%s' "${FIXED_PEM}" | base64 | tr -d '\n')"
+                  if printf '%s' "$KEY_PEM" | head -n1 | grep -q 'BEGIN PRIVATE KEY'; then
+                    FIXED_PEM="$(printf '%s' "$KEY_PEM" | sed 's/BEGIN PRIVATE KEY/BEGIN RSA PRIVATE KEY/; s/END PRIVATE KEY/END RSA PRIVATE KEY/')"
+                    FIXED_B64="$(printf '%s' "$FIXED_PEM" | base64 | tr -d '\n')"
 
-                    kubectl patch secret -n "${NS}" "${SECRET}" --type merge -p "{\"data\":{\"tls.key\":\"${FIXED_B64}\"}}"
+                    kubectl patch secret -n "$NS" "$SECRET" --type merge -p "{\"data\":{\"tls.key\":\"$FIXED_B64\"}}"
                   fi
 
 

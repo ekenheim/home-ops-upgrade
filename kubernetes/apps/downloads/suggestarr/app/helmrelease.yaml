@@ -34,8 +34,6 @@ spec:
         type: statefulset
         pod:
           hostUsers: false
-          nodeSelector:
-            node-role.kubernetes.io/worker: ""
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000

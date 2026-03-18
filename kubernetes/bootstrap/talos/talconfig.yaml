@@ -189,6 +189,7 @@ patches:
           image-gc-low-threshold: 50
           image-gc-high-threshold: 55
           rotate-server-certificates: true
+          max-pods: "250"
         nodeIP:
           validSubnets:
             - "192.168.50.0/24"

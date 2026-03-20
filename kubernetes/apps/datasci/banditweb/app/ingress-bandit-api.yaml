@@ -4,14 +4,16 @@ kind: Ingress
 metadata:
   name: banditweb-api
   namespace: datasci
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: internal
   rules:
     - host: bandit.${SECRET_DOMAIN}
       http:
         paths:
-          - path: /bandit/
-            pathType: Prefix
+          - path: /bandit(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: seldon-mesh

@@ -30,6 +30,7 @@ resources:
   - ./qdrant/ks.yaml
   - ./flyte/ks.yaml
   - ./label-studio/ks.yaml
+  - ./banditweb/ks.yaml
   - ./seldon-core/ks.yaml
   - ./kyverno-fixes
   - ./kubeflow/ks.yaml

@@ -1,0 +1,16 @@
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: banditweb-allow-nginx-internal
+  namespace: datasci
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: banditweb
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/network/sa/nginx-internal

@@ -122,6 +122,8 @@ spec:
               MLFLOW_SERVE_ARTIFACTS: "true"
               MLFLOW_HOST: 0.0.0.0
               MLFLOW_PORT: &port 5000
+              # Allow cross-origin requests from the ingress domain
+              MLFLOW_SERVER_CORS_ALLOWED_ORIGINS: "https://mlflow.${SECRET_DOMAIN}"
             # envFrom:
             #   - secretRef:
             #       name: database-mlflow

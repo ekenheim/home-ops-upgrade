@@ -4,5 +4,6 @@ kind: Kustomization
 namespace: datasci
 resources:
   - ./externalsecret.yaml
+  - ./externalsecret-harbor-pull.yaml
   - ./server.yaml
   - ./models.yaml

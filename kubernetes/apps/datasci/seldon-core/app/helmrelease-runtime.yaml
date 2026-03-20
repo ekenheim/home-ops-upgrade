@@ -35,7 +35,7 @@ spec:
     dataflow:
       disable: true
     modelgateway:
-      disable: true
+      disable: false
     pipelinegateway:
       disable: true
     config:

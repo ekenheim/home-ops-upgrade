@@ -23,6 +23,9 @@ spec:
       strategy: rollback
       retries: 3
   values:
+    defaultPodOptions:
+      imagePullSecrets:
+        - name: harbor-pull
     controllers:
       banditweb:
         containers:

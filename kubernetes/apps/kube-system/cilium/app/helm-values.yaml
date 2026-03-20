@@ -35,6 +35,8 @@ l2announcements:
 loadBalancer:
   algorithm: maglev
   mode: snat
+socketLB:
+  hostNamespaceOnly: false
 localRedirectPolicy: true
 operator:
   replicas: 2

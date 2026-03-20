@@ -58,7 +58,7 @@ spec:
               memory: 4Gi
             limits:
               cpu: 4000m
-              memory: 8Gi
+              memory: 1Gi
           livenessProbe:
             tcpSocket:
               port: grpc

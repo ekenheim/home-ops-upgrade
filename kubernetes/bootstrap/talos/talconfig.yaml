@@ -190,6 +190,8 @@ patches:
           image-gc-high-threshold: 55
           rotate-server-certificates: true
           max-pods: "250"
+          system-reserved: "memory=2Gi"
+          kube-reserved: "memory=1Gi"
         nodeIP:
           validSubnets:
             - "192.168.50.0/24"

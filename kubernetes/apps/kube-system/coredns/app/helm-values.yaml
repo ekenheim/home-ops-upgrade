@@ -26,8 +26,6 @@ servers:
         parameters: 0.0.0.0:9153
       - name: hosts
         configBlock: |-
-          192.168.50.188 harbor.${SECRET_DOMAIN}
-          172.67.188.79 s3.${SECRET_DOMAIN}
           fallthrough
       - name: kubernetes
         parameters: cluster.local in-addr.arpa ip6.arpa

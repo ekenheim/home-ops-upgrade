@@ -11,7 +11,7 @@ spec:
   server: bandit-mlserver
   requirements:
     - mlserver
-  secretName: bandit-demo-secret
+
   memory: 256Mi
   parameters:
     - name: implementation
@@ -35,7 +35,7 @@ spec:
   server: bandit-mlserver
   requirements:
     - mlserver
-  secretName: bandit-demo-secret
+
   memory: 256Mi
   parameters:
     - name: implementation
@@ -59,7 +59,7 @@ spec:
   server: bandit-mlserver
   requirements:
     - mlserver
-  secretName: bandit-demo-secret
+
   memory: 256Mi
   parameters:
     - name: implementation
@@ -81,7 +81,7 @@ spec:
   server: bandit-mlserver
   requirements:
     - mlserver
-  secretName: bandit-demo-secret
+
   memory: 512Mi
   parameters:
     - name: implementation

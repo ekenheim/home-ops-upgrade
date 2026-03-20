@@ -31,7 +31,7 @@ spec:
         containers:
           app:
             image:
-              repository: harbor.${SECRET_DOMAIN}/development/bandit-models/bandit-frontend
+              repository: harbor.${SECRET_DOMAIN}/banditweb/bandit-frontend
               tag: latest
             probes:
               liveness:

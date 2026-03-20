@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "harbor.${SECRET_DOMAIN}/development/bandit-models/bandit-epsilon-greedy:latest"
+  storageUri: "harbor.${SECRET_DOMAIN}/banditweb/epsilon-greedy:latest"
   server: bandit-mlserver
   requirements:
     - mlserver-custom
@@ -31,7 +31,7 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "harbor.${SECRET_DOMAIN}/development/bandit-models/bandit-ucb:latest"
+  storageUri: "harbor.${SECRET_DOMAIN}/banditweb/ucb:latest"
   server: bandit-mlserver
   requirements:
     - mlserver-custom
@@ -55,7 +55,7 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "harbor.${SECRET_DOMAIN}/development/bandit-models/bandit-thompson-sampling:latest"
+  storageUri: "harbor.${SECRET_DOMAIN}/banditweb/thompson-sampling:latest"
   server: bandit-mlserver
   requirements:
     - mlserver-custom
@@ -77,7 +77,7 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "harbor.${SECRET_DOMAIN}/development/bandit-models/bandit-linucb:latest"
+  storageUri: "harbor.${SECRET_DOMAIN}/banditweb/linucb:latest"
   server: bandit-mlserver
   requirements:
     - mlserver-custom

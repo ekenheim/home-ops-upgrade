@@ -2,7 +2,7 @@
 apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
-  name: bandit-epsilon-greedy
+  name: epsilon-greedy
   labels:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
@@ -26,7 +26,7 @@ spec:
 apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
-  name: bandit-ucb
+  name: ucb
   labels:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
@@ -50,7 +50,7 @@ spec:
 apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
-  name: bandit-thompson-sampling
+  name: thompson-sampling
   labels:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
@@ -72,7 +72,7 @@ spec:
 apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
-  name: bandit-linucb
+  name: linucb
   labels:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model

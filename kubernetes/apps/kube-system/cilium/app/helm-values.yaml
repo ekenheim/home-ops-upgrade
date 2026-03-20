@@ -5,6 +5,7 @@ bandwidthManager:
   bbr: true
 bpf:
   hostLegacyRouting: true
+  lbExternalClusterIP: true
   masquerade: true
   tproxy: true
 cgroup:

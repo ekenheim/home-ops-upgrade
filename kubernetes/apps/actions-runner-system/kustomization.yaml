@@ -11,4 +11,5 @@ resources:
   - ./gha-runner-scale-set-nordic-housing/ks.yaml
   - ./gha-runner-scale-set-bandit/ks.yaml
   - ./gha-runner-scale-set-ecom/ks.yaml
+  - ./gha-runner-scale-set-banditweb/ks.yaml
   - ./gha-runner-scale-set-grid-reliance/ks.yaml

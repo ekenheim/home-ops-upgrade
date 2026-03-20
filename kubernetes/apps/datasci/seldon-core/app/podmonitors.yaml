@@ -14,33 +14,26 @@ spec:
       path: /metrics
       interval: 30s
 ---
-# Covers scheduler, envoy, hodometer, and other runtime pods created
-# by the Seldon operator from the SeldonRuntime CR.
+# Envoy proxy — exposes per-model request rates, latencies, error codes.
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: seldon-v2-runtime
+  name: seldon-v2-envoy
   namespace: datasci
 spec:
-  jobLabel: seldon-v2-runtime
+  jobLabel: seldon-v2-envoy
   namespaceSelector:
     matchNames:
       - datasci
   selector:
-    matchExpressions:
-      - key: app.kubernetes.io/name
-        operator: In
-        values:
-          - seldon-envoy
-          - seldon-modelgateway
-          - seldon-scheduler
-          - hodometer
+    matchLabels:
+      app.kubernetes.io/name: seldon-envoy
   podMetricsEndpoints:
-    - port: metrics
-      path: /metrics
-      interval: 30s
+    - port: envoy-stats
+      path: /stats/prometheus
+      interval: 15s
 ---
-# Covers MLServer and Triton pods deployed as Servers by the operator.
+# Covers MLServer and Triton server pods (agent sidecar metrics).
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:

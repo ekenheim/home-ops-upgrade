@@ -12,7 +12,7 @@ spec:
   server: bandit-mlserver
   requirements:
     - mlserver
-  memory: 256Mi
+  memory: 128Mi
   parameters:
     - name: implementation
       value: epsilon_greedy.EpsilonGreedyModel
@@ -36,7 +36,7 @@ spec:
   server: bandit-mlserver
   requirements:
     - mlserver
-  memory: 256Mi
+  memory: 128Mi
   parameters:
     - name: implementation
       value: ucb.UCBModel
@@ -60,7 +60,7 @@ spec:
   server: bandit-mlserver
   requirements:
     - mlserver
-  memory: 256Mi
+  memory: 128Mi
   parameters:
     - name: implementation
       value: thompson_sampling.ThompsonSamplingModel
@@ -82,7 +82,7 @@ spec:
   server: bandit-mlserver
   requirements:
     - mlserver
-  memory: 512Mi
+  memory: 256Mi
   parameters:
     - name: implementation
       value: linucb.LinUCBModel

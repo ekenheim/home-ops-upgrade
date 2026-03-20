@@ -9,10 +9,10 @@ metadata:
 data:
   seldon_overview_dashboard.json: |
     {
-      "title": "Seldon Core Overview",
+      "title": "Seldon Core v2 Overview",
       "uid": "seldonCoreOverview",
       "schemaVersion": 27,
-      "version": 1,
+      "version": 2,
       "editable": true,
       "timezone": "",
       "style": "dark",
@@ -30,28 +30,17 @@ data:
             "hide": 2
           },
           {
-            "name": "Namespace",
+            "name": "Model",
             "type": "query",
             "datasource": "${datasource}",
             "includeAll": true,
             "multi": true,
             "refresh": 2,
             "query": {
-              "query": "label_values(seldon_api_executor_server_requests_seconds_count, namespace)",
-              "refId": "NamespaceVar"
-            }
-          },
-          {
-            "name": "Deployment",
-            "type": "query",
-            "datasource": "${datasource}",
-            "includeAll": true,
-            "multi": true,
-            "refresh": 2,
-            "query": {
-              "query": "label_values(seldon_api_executor_server_requests_seconds_count{namespace=~\"$Namespace\"}, seldon_deployment_name)",
-              "refId": "DeploymentVar"
-            }
+              "query": "label_values(envoy_cluster_external_upstream_rq{envoy_cluster_name=~\".*_http\"}, envoy_cluster_name)",
+              "refId": "ModelVar"
+            },
+            "regex": "/(.+)_\\d+_http/"
           }
         ]
       },
@@ -59,18 +48,13 @@ data:
         {
           "id": 1,
           "type": "stat",
-          "title": "Seldon Runtime Pods Scraped",
+          "title": "Envoy Proxy Scraped",
           "datasource": "${datasource}",
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 0,
-            "y": 0
-          },
+          "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
           "targets": [
             {
               "refId": "A",
-              "expr": "sum(up{job=\"istio-system/seldon-runtime\"})"
+              "expr": "sum(up{job=~\".*seldon-v2-envoy.*\"})"
             }
           ]
         },
@@ -79,99 +63,149 @@ data:
           "type": "stat",
           "title": "Controller Pod Scraped",
           "datasource": "${datasource}",
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 8,
-            "y": 0
-          },
+          "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
           "targets": [
             {
               "refId": "A",
-              "expr": "sum(up{job=\"istio-system/seldon-controller-manager\"})"
+              "expr": "sum(up{job=~\".*seldon-v2-controller.*\"})"
             }
           ]
         },
         {
           "id": 3,
           "type": "stat",
-          "title": "Seldon Metrics Series",
+          "title": "Server Pods Scraped",
           "datasource": "${datasource}",
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 16,
-            "y": 0
-          },
+          "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
           "targets": [
             {
               "refId": "A",
-              "expr": "count({__name__=~\"seldon_.*\"})"
+              "expr": "sum(up{job=~\".*seldon-v2-servers.*\"})"
             }
           ]
         },
         {
           "id": 4,
-          "type": "graph",
-          "title": "Executor Request Rate",
+          "type": "stat",
+          "title": "Loaded Models",
           "datasource": "${datasource}",
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 6
-          },
+          "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
           "targets": [
             {
               "refId": "A",
-              "expr": "sum(rate(seldon_api_executor_server_requests_seconds_count{namespace=~\"$Namespace\",seldon_deployment_name=~\"$Deployment\"}[5m])) by (namespace, seldon_deployment_name)",
-              "legendFormat": "{{namespace}}/{{seldon_deployment_name}}"
+              "expr": "count(envoy_cluster_external_upstream_rq{envoy_cluster_name=~\".*_http\",envoy_cluster_name!~\"admin.*|mirror.*|xds.*\"})"
             }
-          ],
-          "lines": true,
-          "linewidth": 1
+          ]
         },
         {
           "id": 5,
-          "type": "graph",
-          "title": "Executor Error Rate",
+          "type": "timeseries",
+          "title": "Request Rate (req/s)",
           "datasource": "${datasource}",
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 6
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps"
+            }
           },
           "targets": [
             {
               "refId": "A",
-              "expr": "sum(rate(seldon_api_executor_server_requests_seconds_count{namespace=~\"$Namespace\",seldon_deployment_name=~\"$Deployment\",code!~\"2..\"}[5m])) by (namespace, seldon_deployment_name, code)",
-              "legendFormat": "{{namespace}}/{{seldon_deployment_name}} {{code}}"
+              "expr": "sum by (envoy_cluster_name) (rate(envoy_cluster_external_upstream_rq_completed{envoy_cluster_name=~\"($Model)_\\\\d+_http\"}[5m]))",
+              "legendFormat": "{{ envoy_cluster_name }}"
             }
           ],
-          "lines": true,
-          "linewidth": 1
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
+          }
         },
         {
           "id": 6,
-          "type": "graph",
-          "title": "Executor p95 Latency (s)",
+          "type": "timeseries",
+          "title": "Error Rate (non-2xx)",
           "datasource": "${datasource}",
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 14
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps"
+            }
           },
           "targets": [
             {
               "refId": "A",
-              "expr": "histogram_quantile(0.95, sum(rate(seldon_api_executor_server_requests_seconds_bucket{namespace=~\"$Namespace\",seldon_deployment_name=~\"$Deployment\"}[5m])) by (le, namespace, seldon_deployment_name))",
-              "legendFormat": "{{namespace}}/{{seldon_deployment_name}}"
+              "expr": "sum by (envoy_cluster_name, envoy_response_code_class) (rate(envoy_cluster_external_upstream_rq_xx{envoy_cluster_name=~\"($Model)_\\\\d+_http\",envoy_response_code_class!=\"2\"}[5m]))",
+              "legendFormat": "{{ envoy_cluster_name }} ({{ envoy_response_code_class }}xx)"
             }
           ],
-          "lines": true,
-          "linewidth": 1
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom" }
+          }
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "p95 Latency",
+          "datasource": "${datasource}",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.95, sum by (le, envoy_cluster_name) (rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=~\"($Model)_\\\\d+_http\"}[5m])))",
+              "legendFormat": "{{ envoy_cluster_name }}"
+            }
+          ],
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
+          }
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "p50 Latency",
+          "datasource": "${datasource}",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.50, sum by (le, envoy_cluster_name) (rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=~\"($Model)_\\\\d+_http\"}[5m])))",
+              "legendFormat": "{{ envoy_cluster_name }}"
+            }
+          ],
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
+          }
+        },
+        {
+          "id": 9,
+          "type": "timeseries",
+          "title": "Total Requests by Model",
+          "datasource": "${datasource}",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 22 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "envoy_cluster_external_upstream_rq_completed{envoy_cluster_name=~\"($Model)_\\\\d+_http\"}",
+              "legendFormat": "{{ envoy_cluster_name }}"
+            }
+          ],
+          "options": {
+            "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"] }
+          }
         }
       ]
     }

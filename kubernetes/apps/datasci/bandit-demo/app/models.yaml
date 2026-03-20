@@ -7,11 +7,11 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "harbor.${SECRET_DOMAIN}/banditweb/epsilon-greedy:latest"
+  storageUri: "s3://bandit-models/epsilon-greedy"
+  secretName: seldon-core-secret
   server: bandit-mlserver
   requirements:
     - mlserver
-
   memory: 256Mi
   parameters:
     - name: implementation
@@ -31,11 +31,11 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "harbor.${SECRET_DOMAIN}/banditweb/ucb:latest"
+  storageUri: "s3://bandit-models/ucb"
+  secretName: seldon-core-secret
   server: bandit-mlserver
   requirements:
     - mlserver
-
   memory: 256Mi
   parameters:
     - name: implementation
@@ -55,11 +55,11 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "harbor.${SECRET_DOMAIN}/banditweb/thompson-sampling:latest"
+  storageUri: "s3://bandit-models/thompson-sampling"
+  secretName: seldon-core-secret
   server: bandit-mlserver
   requirements:
     - mlserver
-
   memory: 256Mi
   parameters:
     - name: implementation
@@ -77,11 +77,11 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "harbor.${SECRET_DOMAIN}/banditweb/linucb:latest"
+  storageUri: "s3://bandit-models/linucb"
+  secretName: seldon-core-secret
   server: bandit-mlserver
   requirements:
     - mlserver
-
   memory: 512Mi
   parameters:
     - name: implementation

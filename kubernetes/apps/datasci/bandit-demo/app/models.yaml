@@ -15,7 +15,7 @@ spec:
   memory: 256Mi
   parameters:
     - name: implementation
-      value: bandit_runtime.epsilon_greedy.EpsilonGreedyModel
+      value: epsilon_greedy.EpsilonGreedyModel
     - name: n_arms
       value: "5"
     - name: mlflow_experiment
@@ -39,7 +39,7 @@ spec:
   memory: 256Mi
   parameters:
     - name: implementation
-      value: bandit_runtime.ucb.UCBModel
+      value: ucb.UCBModel
     - name: n_arms
       value: "5"
     - name: mlflow_experiment
@@ -63,7 +63,7 @@ spec:
   memory: 256Mi
   parameters:
     - name: implementation
-      value: bandit_runtime.thompson_sampling.ThompsonSamplingModel
+      value: thompson_sampling.ThompsonSamplingModel
     - name: n_arms
       value: "5"
     - name: mlflow_experiment
@@ -85,7 +85,7 @@ spec:
   memory: 512Mi
   parameters:
     - name: implementation
-      value: bandit_runtime.linucb.LinUCBModel
+      value: linucb.LinUCBModel
     - name: n_arms
       value: "5"
     - name: mlflow_experiment

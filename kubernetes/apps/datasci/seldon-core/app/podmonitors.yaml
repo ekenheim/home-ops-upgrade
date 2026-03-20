@@ -28,10 +28,13 @@ spec:
       - datasci
   selector:
     matchExpressions:
-      - key: app.kubernetes.io/managed-by
+      - key: app.kubernetes.io/name
         operator: In
         values:
-          - seldon-v2-controller-manager
+          - seldon-envoy
+          - seldon-modelgateway
+          - seldon-scheduler
+          - hodometer
   podMetricsEndpoints:
     - port: metrics
       path: /metrics
@@ -50,7 +53,7 @@ spec:
       - datasci
   selector:
     matchExpressions:
-      - key: seldon-server
+      - key: seldon-server-name
         operator: Exists
   podMetricsEndpoints:
     - port: metrics

@@ -1,0 +1,100 @@
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: bandit-epsilon-greedy
+  labels:
+    app.kubernetes.io/name: bandit-demo
+    app.kubernetes.io/component: seldon-model
+spec:
+  storageUri: "harbor.${SECRET_DOMAIN}/development/bandit-models/bandit-epsilon-greedy:latest"
+  server:
+    name: bandit-mlserver
+  requirements:
+    - mlserver-custom
+  secretName: bandit-demo-secret
+  memory: 256Mi
+  parameters:
+    - name: implementation
+      value: bandit_runtime.epsilon_greedy.EpsilonGreedyModel
+    - name: n_arms
+      value: "5"
+    - name: mlflow_experiment
+      value: bandit-epsilon-greedy
+    - name: epsilon
+      value: "0.1"
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: bandit-ucb
+  labels:
+    app.kubernetes.io/name: bandit-demo
+    app.kubernetes.io/component: seldon-model
+spec:
+  storageUri: "harbor.${SECRET_DOMAIN}/development/bandit-models/bandit-ucb:latest"
+  server:
+    name: bandit-mlserver
+  requirements:
+    - mlserver-custom
+  secretName: bandit-demo-secret
+  memory: 256Mi
+  parameters:
+    - name: implementation
+      value: bandit_runtime.ucb.UCBModel
+    - name: n_arms
+      value: "5"
+    - name: mlflow_experiment
+      value: bandit-ucb
+    - name: c
+      value: "2.0"
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: bandit-thompson-sampling
+  labels:
+    app.kubernetes.io/name: bandit-demo
+    app.kubernetes.io/component: seldon-model
+spec:
+  storageUri: "harbor.${SECRET_DOMAIN}/development/bandit-models/bandit-thompson-sampling:latest"
+  server:
+    name: bandit-mlserver
+  requirements:
+    - mlserver-custom
+  secretName: bandit-demo-secret
+  memory: 256Mi
+  parameters:
+    - name: implementation
+      value: bandit_runtime.thompson_sampling.ThompsonSamplingModel
+    - name: n_arms
+      value: "5"
+    - name: mlflow_experiment
+      value: bandit-thompson-sampling
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: bandit-linucb
+  labels:
+    app.kubernetes.io/name: bandit-demo
+    app.kubernetes.io/component: seldon-model
+spec:
+  storageUri: "harbor.${SECRET_DOMAIN}/development/bandit-models/bandit-linucb:latest"
+  server:
+    name: bandit-mlserver
+  requirements:
+    - mlserver-custom
+  secretName: bandit-demo-secret
+  memory: 512Mi
+  parameters:
+    - name: implementation
+      value: bandit_runtime.linucb.LinUCBModel
+    - name: n_arms
+      value: "5"
+    - name: mlflow_experiment
+      value: bandit-linucb
+    - name: context_dim
+      value: "4"
+    - name: alpha
+      value: "1.0"

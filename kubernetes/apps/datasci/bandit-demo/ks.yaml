@@ -3,7 +3,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app banditweb
+  name: &app bandit-demo
   namespace: flux-system
 spec:
   targetNamespace: datasci
@@ -11,8 +11,9 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: bandit-demo
-  path: ./kubernetes/apps/datasci/banditweb/app
+    - name: seldon-core
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/datasci/bandit-demo/app
   prune: true
   sourceRef:
     kind: GitRepository

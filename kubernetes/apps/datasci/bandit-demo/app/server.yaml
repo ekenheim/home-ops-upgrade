@@ -1,0 +1,13 @@
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Server
+metadata:
+  name: bandit-mlserver
+  labels:
+    app.kubernetes.io/name: bandit-demo
+    app.kubernetes.io/component: seldon-server
+spec:
+  serverConfig: mlserver
+  replicas: 1
+  minReplicas: 1
+  maxReplicas: 2

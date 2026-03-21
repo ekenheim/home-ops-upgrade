@@ -7,21 +7,11 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "s3://bandit-models/epsilon-greedy"
-  secretName: seldon-core-secret
+  storageUri: "s3://bandit-models/epsilon_greedy/"
   server: bandit-mlserver
   requirements:
     - mlserver
-  memory: 128Mi
-  parameters:
-    - name: implementation
-      value: epsilon_greedy.EpsilonGreedyModel
-    - name: n_arms
-      value: "5"
-    - name: mlflow_experiment
-      value: bandit-epsilon-greedy
-    - name: epsilon
-      value: "0.1"
+  memory: 256Mi
 ---
 apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
@@ -31,21 +21,11 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "s3://bandit-models/ucb"
-  secretName: seldon-core-secret
+  storageUri: "s3://bandit-models/ucb/"
   server: bandit-mlserver
   requirements:
     - mlserver
-  memory: 128Mi
-  parameters:
-    - name: implementation
-      value: ucb.UCBModel
-    - name: n_arms
-      value: "5"
-    - name: mlflow_experiment
-      value: bandit-ucb
-    - name: c
-      value: "2.0"
+  memory: 256Mi
 ---
 apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
@@ -55,19 +35,11 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "s3://bandit-models/thompson-sampling"
-  secretName: seldon-core-secret
+  storageUri: "s3://bandit-models/thompson_sampling/"
   server: bandit-mlserver
   requirements:
     - mlserver
-  memory: 128Mi
-  parameters:
-    - name: implementation
-      value: thompson_sampling.ThompsonSamplingModel
-    - name: n_arms
-      value: "5"
-    - name: mlflow_experiment
-      value: bandit-thompson-sampling
+  memory: 256Mi
 ---
 apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
@@ -77,23 +49,11 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "s3://bandit-models/linucb"
-  secretName: seldon-core-secret
+  storageUri: "s3://bandit-models/linucb/"
   server: bandit-mlserver
   requirements:
     - mlserver
   memory: 256Mi
-  parameters:
-    - name: implementation
-      value: linucb.LinUCBModel
-    - name: n_arms
-      value: "5"
-    - name: mlflow_experiment
-      value: bandit-linucb
-    - name: context_dim
-      value: "4"
-    - name: alpha
-      value: "1.0"
 ---
 apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
@@ -103,19 +63,11 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "s3://bandit-models/bayesian_ucb"
-  secretName: seldon-core-secret
+  storageUri: "s3://bandit-models/bayesian_ucb/"
   server: bandit-mlserver
   requirements:
     - mlserver
   memory: 256Mi
-  parameters:
-    - name: implementation
-      value: bayesian_ucb.BayesianUCBModel
-    - name: n_arms
-      value: "5"
-    - name: mlflow_experiment
-      value: bandit-bayesian-ucb
 ---
 apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
@@ -125,19 +77,11 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "s3://bandit-models/exp3"
-  secretName: seldon-core-secret
+  storageUri: "s3://bandit-models/exp3/"
   server: bandit-mlserver
   requirements:
     - mlserver
   memory: 256Mi
-  parameters:
-    - name: implementation
-      value: exp3.Exp3Model
-    - name: n_arms
-      value: "5"
-    - name: mlflow_experiment
-      value: bandit-exp3
 ---
 apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
@@ -147,20 +91,8 @@ metadata:
     app.kubernetes.io/name: bandit-demo
     app.kubernetes.io/component: seldon-model
 spec:
-  storageUri: "s3://bandit-models/lints"
-  secretName: seldon-core-secret
+  storageUri: "s3://bandit-models/lints/"
   server: bandit-mlserver
   requirements:
     - mlserver
   memory: 512Mi
-  parameters:
-    - name: implementation
-      value: lints.LinTSModel
-    - name: n_arms
-      value: "5"
-    - name: mlflow_experiment
-      value: bandit-lints
-    - name: context_dim
-      value: "4"
-    - name: alpha
-      value: "1.0"

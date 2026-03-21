@@ -20,7 +20,6 @@ spec:
       retries: 3
   upgrade:
     cleanupOnFail: true
-    force: true
     timeout: 30m
     remediation:
       strategy: rollback

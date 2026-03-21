@@ -21,7 +21,6 @@ spec:
     remediation:
       retries: 5
   upgrade:
-    force: true
     remediation:
       retries: 5
   values:

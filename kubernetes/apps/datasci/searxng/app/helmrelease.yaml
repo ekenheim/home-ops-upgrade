@@ -40,6 +40,8 @@ spec:
               SEARXNG_BASE_URL: https://search.${SECRET_DOMAIN}
               SEARXNG_PORT: &port 8080
               SEARXNG_REDIS_URL: redis://dragonfly.database.svc.cluster.local:6379
+              UWSGI_WORKERS: "4"
+              UWSGI_THREADS: "4"
             envFrom:
               - secretRef:
                   name: *app

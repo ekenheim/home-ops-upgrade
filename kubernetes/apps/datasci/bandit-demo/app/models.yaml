@@ -94,3 +94,73 @@ spec:
       value: "4"
     - name: alpha
       value: "1.0"
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: bayesian-ucb
+  labels:
+    app.kubernetes.io/name: bandit-demo
+    app.kubernetes.io/component: seldon-model
+spec:
+  storageUri: "s3://bandit-models/bayesian_ucb"
+  secretName: seldon-core-secret
+  server: bandit-mlserver
+  requirements:
+    - mlserver
+  memory: 256Mi
+  parameters:
+    - name: implementation
+      value: bayesian_ucb.BayesianUCBModel
+    - name: n_arms
+      value: "5"
+    - name: mlflow_experiment
+      value: bandit-bayesian-ucb
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: exp3
+  labels:
+    app.kubernetes.io/name: bandit-demo
+    app.kubernetes.io/component: seldon-model
+spec:
+  storageUri: "s3://bandit-models/exp3"
+  secretName: seldon-core-secret
+  server: bandit-mlserver
+  requirements:
+    - mlserver
+  memory: 256Mi
+  parameters:
+    - name: implementation
+      value: exp3.Exp3Model
+    - name: n_arms
+      value: "5"
+    - name: mlflow_experiment
+      value: bandit-exp3
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: lints
+  labels:
+    app.kubernetes.io/name: bandit-demo
+    app.kubernetes.io/component: seldon-model
+spec:
+  storageUri: "s3://bandit-models/lints"
+  secretName: seldon-core-secret
+  server: bandit-mlserver
+  requirements:
+    - mlserver
+  memory: 512Mi
+  parameters:
+    - name: implementation
+      value: lints.LinTSModel
+    - name: n_arms
+      value: "5"
+    - name: mlflow_experiment
+      value: bandit-lints
+    - name: context_dim
+      value: "4"
+    - name: alpha
+      value: "1.0"

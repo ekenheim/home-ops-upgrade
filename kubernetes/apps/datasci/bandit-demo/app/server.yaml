@@ -11,3 +11,19 @@ spec:
   replicas: 1
   minReplicas: 1
   maxReplicas: 2
+  podSpec:
+    containers:
+      - name: mlserver
+        resources:
+          requests:
+            cpu: 200m
+            memory: 2.5Gi
+          limits:
+            memory: 2.5Gi
+      - name: agent
+        resources:
+          requests:
+            cpu: 200m
+            memory: 2.5Gi
+          limits:
+            memory: 2.5Gi

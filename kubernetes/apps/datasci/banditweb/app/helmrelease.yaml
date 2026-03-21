@@ -50,12 +50,29 @@ spec:
                 memory: 64Mi
               limits:
                 memory: 128Mi
+      analysis:
+        containers:
+          app:
+            image:
+              repository: harbor.${SECRET_DOMAIN}/banditweb/bandit-analysis
+              tag: latest
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
     service:
       app:
         controller: *app
         ports:
           http:
             port: *port
+      analysis:
+        controller: analysis
+        ports:
+          http:
+            port: 8090
     ingress:
       app:
         className: internal

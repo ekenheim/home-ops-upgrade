@@ -1,0 +1,24 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: banditweb-analysis
+  namespace: datasci
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: internal
+  rules:
+    - host: bandit.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /analysis(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: banditweb-analysis
+                port:
+                  number: 8090
+  tls:
+    - hosts:
+        - bandit.${SECRET_DOMAIN}

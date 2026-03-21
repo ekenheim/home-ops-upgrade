@@ -5,4 +5,5 @@ namespace: datasci
 resources:
   - ./helmrelease.yaml
   - ./ingress-bandit-api.yaml
+  - ./ingress-analysis.yaml
   - ./authorizationpolicy.yaml

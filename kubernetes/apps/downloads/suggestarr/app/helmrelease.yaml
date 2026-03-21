@@ -33,7 +33,6 @@ spec:
       *app :
         type: statefulset
         pod:
-          hostUsers: false
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000

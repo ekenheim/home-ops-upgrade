@@ -10,6 +10,11 @@ spec:
     spec:
       automountServiceAccountToken: false
       restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: unlock-minio
           image: docker.io/restic/restic:0.18.1
@@ -17,9 +22,17 @@ spec:
           envFrom:
             - secretRef:
                 name: "${app}-volsync"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
         - name: unlock-r2
           image: docker.io/restic/restic:0.18.1
           args: ["unlock", "--remove-all"]
           envFrom:
             - secretRef:
                 name: "${app}-volsync-r2"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]

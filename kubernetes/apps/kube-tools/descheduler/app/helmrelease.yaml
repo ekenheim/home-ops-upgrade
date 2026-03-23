@@ -36,6 +36,12 @@ spec:
                 evictLocalStoragePods: true
                 evictSystemCriticalPods: true
                 nodeFit: true
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/created-by
+                      operator: NotIn
+                      values:
+                        - volsync
             - name: RemovePodsViolatingInterPodAntiAffinity
             - name: RemovePodsViolatingNodeAffinity
               args:

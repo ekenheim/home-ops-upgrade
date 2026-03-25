@@ -44,11 +44,12 @@ spec:
           path: /
     toolbox:
       enabled: true
-    configOverride: |+
+    configOverride: |
       [global]
       bdev_enable_discard = true
       bdev_async_discard = true
       osd_class_update_on_start = false
+      ; end of ceph.conf
 
     cephClusterSpec:
       crashCollector:

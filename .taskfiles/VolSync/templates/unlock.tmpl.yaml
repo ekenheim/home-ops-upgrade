@@ -15,6 +15,9 @@ spec:
         runAsUser: 65534
         seccompProfile:
           type: RuntimeDefault
+      volumes:
+        - name: cache
+          emptyDir: {}
       containers:
         - name: unlock-minio
           image: docker.io/restic/restic:0.18.1
@@ -22,6 +25,12 @@ spec:
           envFrom:
             - secretRef:
                 name: "${app}-volsync"
+          env:
+            - name: XDG_CACHE_HOME
+              value: /cache
+          volumeMounts:
+            - name: cache
+              mountPath: /cache
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -32,6 +41,12 @@ spec:
           envFrom:
             - secretRef:
                 name: "${app}-volsync-r2"
+          env:
+            - name: XDG_CACHE_HOME
+              value: /cache
+          volumeMounts:
+            - name: cache
+              mountPath: /cache
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

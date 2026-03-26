@@ -35,7 +35,7 @@ spec:
           app:
             image:
               repository: intel/vllm
-              tag: 0.14.1-xpu@sha256:6aeeaba11a27dfb57da6448676f5eec23117823c6eae4a1c82978e8693b5a9c3
+              tag: 0.17.0-xpu@sha256:e961d08135a6a8ef6decd857c6deab7a70eb00e19de21de54cbc0ce05d9a9f43
             args:
               - --host
               - "0.0.0.0"

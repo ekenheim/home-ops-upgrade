@@ -51,7 +51,7 @@ spec:
               repository: ghcr.io/dapperdivers/posterizarr
               tag: v1.9.77@sha256:3dee82f7719b60103344df94fefc9bc1ce61d9ccf791bf81239666f489f3add1
             env:
-              TZ: ${TIME_ZONE}
+              TZ: ${TIMEZONE}
             resources:
               requests:
                 cpu: 100m

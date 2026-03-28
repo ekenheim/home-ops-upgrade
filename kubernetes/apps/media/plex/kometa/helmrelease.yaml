@@ -51,6 +51,7 @@ spec:
                 python3 kometa.py --run --read-only-config --run-libraries "Movies";
                 python3 kometa.py --run --read-only-config --run-libraries "Movies 4K";
                 python3 kometa.py --run --read-only-config --run-libraries "Series";
+                python3 kometa.py --run --read-only-config --run-playlists-only;
             env:
               TZ: *timeZone
             envFrom:

@@ -48,6 +48,9 @@ spec:
             - secretRef:
                 name: marketing-agency-strapi-token
                 optional: true
+            - secretRef:
+                name: marketing-agency-google
+                optional: true
           resources:
             requests:
               cpu: 50m

@@ -87,9 +87,6 @@ spec:
             regex: (pod)
       targets:
         - module: icmp
-          name: unifi-dream-machine
-          url: ${UNIFI_CONTROLLER_IP}
-        - module: icmp
           name: unraid-nas
           url: ${NAS_IP}
     prometheusRule:

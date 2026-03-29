@@ -114,6 +114,10 @@ spec:
               sourceLabels: ["__meta_kubernetes_pod_node_name"]
               targetLabel: kubernetes_node
     prometheus:
+      thanosService:
+        enabled: true
+      thanosServiceMonitor:
+        enabled: true
       ingress:
         enabled: true
         ingressClassName: internal
@@ -131,6 +135,8 @@ spec:
         hosts:
           - prometheus.${SECRET_DOMAIN}
       prometheusSpec:
+        thanos:
+          image: quay.io/thanos/thanos:v0.41.0
         scrapeInterval: 1m # Must match interval in Grafana Helm chart
         enableAdminAPI: true
         enableFeatures:

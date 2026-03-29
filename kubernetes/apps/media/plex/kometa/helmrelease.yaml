@@ -70,6 +70,8 @@ spec:
                 drop:
                   - ALL
     defaultPodOptions:
+      annotations:
+        descheduler.alpha.kubernetes.io/evict: "false"
       securityContext:
         runAsNonRoot: true
         runAsUser: 568

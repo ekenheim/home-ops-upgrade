@@ -19,7 +19,7 @@ spec:
     pilot:
       autoscaleEnabled: true
       autoscaleMin: 1
-      autoscaleMax: 2
+      autoscaleMax: 5
       env:
         PILOT_ENABLE_ALPHA_GATEWAY_API: "true"
       resources:

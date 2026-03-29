@@ -24,6 +24,14 @@ spec:
       retries: 3
       strategy: rollback
   values:
+    replicaCount: 2
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: external-dns-unifi
     domainFilters:
       - ${SECRET_DOMAIN}
       - istio.local

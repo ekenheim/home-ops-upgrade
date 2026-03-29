@@ -27,6 +27,7 @@ spec:
     fullnameOverride: nginx-external
     controller:
       replicaCount: 2
+      minAvailable: 1
       service:
         annotations:
           external-dns.alpha.kubernetes.io/hostname: |

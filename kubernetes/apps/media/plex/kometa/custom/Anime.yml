@@ -41,17 +41,16 @@ collections:
     schedule: daily
   Trending:
     template: {name: Chart Alpha, num: 4}
-    trakt_trending: 40
     tmdb_trending_daily: 40
     tmdb_trending_weekly: 40
-    summary: Movies Trending across the internet, according to https://trakt.tv/movies/trending.
+    summary: Anime Trending across the internet.
     url_poster: https://i.imgur.com/oOS46kt.jpg
     schedule: daily
   Popular:
     template: {name: Chart Alpha, num: 4}
     tmdb_popular: 40
     imdb_search:
-      type: movie, tv_movie, documentary, short
+      type: movie, tv_movie, short
       limit: 40
     summary: Popular Movies across the internet.
     url_poster: https://i.imgur.com/U3OaYtB.jpg
@@ -65,7 +64,7 @@ collections:
   Emmy Winners:
     template: { name: Chart, num: 5 }
     imdb_search:
-      type: tv_series, tv_miniseries
+      type: tv_series, tv_mini_series
       event: emmy_winner
     summary: Emmy Winning Shows
     schedule: weekly (sunday)

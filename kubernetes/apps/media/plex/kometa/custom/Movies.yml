@@ -12,10 +12,10 @@ templates:
     collection_minimum: 3
     delete_below_minimum: true
   Best of:
-    trakt_list: https://trakt.tv/users/lish408/lists/rotten-tomatoes-best-of-<<year>>
+    imdb_list: https://www.imdb.com/search/title/?title_type=feature&release_date=<<year>>-01-01,<<year>>-12-31&sort=user_rating,desc&count=100
     sort_title: +_Best of <<year>>
     sync_mode: sync
-    summary: Rotten Tomatoes Best Movies of <<year>>, according to https://trakt.tv/users/lish408/lists/rotten-tomatoes-best-of-<<year>>.
+    summary: Best Movies of <<year>>, according to IMDb top rated.
     collection_order: release
     collection_minimum: 3
     delete_below_minimum: true
@@ -30,7 +30,7 @@ templates:
     delete_below_minimum: true
   IMDb Genre:
     default:
-      title: feature
+      title: movie
       limit: 100
     imdb_search:
       type: <<title>>
@@ -133,6 +133,7 @@ collections:
         audio_language.not: de
     item_label: EnglishOnly
     build_collection: false
+    sync_mode: append
   Not English Only Anymore:
     plex_search:
       all:
@@ -142,6 +143,7 @@ collections:
         label: EnglishOnly
     item_label.remove: EnglishOnly
     build_collection: false
+    sync_mode: append
   German Only:
     plex_search:
       all:
@@ -150,6 +152,7 @@ collections:
         label: EnglishOnly
     item_label.remove: EnglishOnly
     build_collection: false
+    sync_mode: append
 ######################################################
 #                Studio Collections                  #
 ######################################################
@@ -161,13 +164,6 @@ collections:
 #                Chart Collections                   #
 ######################################################
 
-  Top 10 Pirated Films:
-    template: {name: Chart Alpha, num: 4}
-    trakt_list:
-      - https://trakt.tv/users/fs-corrupt/lists/top-10-pirated-movies-of-the-week?sort=rank,asc
-    summary: These are the top 10 most pirated movies in the last week according to https://trakt.tv/users/linaspurinis/lists/top-10-pirated-movies-of-the-week?sort=rank,asc
-    url_poster: https://i.imgur.com/tIIEBSP.jpg
-    schedule: daily
   Popular Movies on Plex:
     template: {name: Chart Alpha, num: 2}
     tautulli_popular:
@@ -183,17 +179,16 @@ collections:
     schedule: daily
   Trending:
     template: {name: Chart Alpha, num: 4}
-    trakt_trending: 40
     tmdb_trending_daily: 40
     tmdb_trending_weekly: 40
-    summary: Movies Trending across the internet, according to https://trakt.tv/movies/trending.
+    summary: Movies Trending across the internet.
     url_poster: https://i.imgur.com/oOS46kt.jpg
     schedule: daily
   Popular:
     template: {name: Chart Alpha, num: 4}
     tmdb_popular: 40
     imdb_search:
-      type: movie, tv_movie, documentary, short
+      type: movie, tv_movie, short
       limit: 40
     summary: Popular Movies across the internet.
     url_poster: https://i.imgur.com/U3OaYtB.jpg
@@ -204,33 +199,6 @@ collections:
     summary: Top Rated Movies across the internet
     url_poster: https://i.imgur.com/VvfdUHn.jpg
     schedule: daily
-  Top Horror Movies:
-    template: {name: Chart Alpha, num: 7}
-    trakt_list:
-      - https://trakt.tv/users/w1nt3r/lists/time-out-s-100-best-horror-films?sort=rank,asc
-    summary: Top horror movies, accoring to https://trakt.tv/users/w1nt3r/lists/time-out-s-100-best-horror-films?sort=rank,asc.
-    url_poster: https://i.imgur.com/oOR5qVD.jpg
-    radarr_add: true
-    radarr_search: true
-    schedule: weekly (sunday)
-  Best of 1980s:
-    template: {name: Chart Alpha, num: 8}
-    trakt_list: https://trakt.tv/users/zyrus/lists/80s-classics?sort=rank,asc
-    summary: Best of 1980s, according to https://trakt.tv/users/zyrus/lists/80s-classics?sort=rank,asc.
-    url_poster: https://i.imgur.com/Lep5SN7.jpg
-    schedule: weekly (sunday)
-  Best of 1990s:
-    template: {name: Chart Alpha, num: 9.0}
-    trakt_list: https://trakt.tv/users/sp1ti/lists/a-v-club-s-best-films-of-the-90s?sort=rank,asc
-    summary: Best of the 1990s, according to https://trakt.tv/users/sp1ti/lists/a-v-club-s-best-films-of-the-90s?sort=rank,asc.
-    url_poster: https://i.imgur.com/ziwXMK4.jpg
-    schedule: weekly (sunday)
-  Best of 2000s:
-    template: {name: Chart Alpha, num: 9.1}
-    trakt_list: https://trakt.tv/users/sp1ti/lists/a-v-club-s-best-films-of-the-00s?sort=rank,asc
-    summary: Best of the 2000s, according to https://trakt.tv/users/sp1ti/lists/a-v-club-s-best-films-of-the-00s?sort=rank,asc.
-    url_poster: https://i.imgur.com/1dtBQzK.jpg
-    schedule: weekly (sunday)
   Best of 2020:
     template: {name: Best of, year: 2020}
     url_poster: https://i.imgur.com/rw5Gg5y.jpg
@@ -238,14 +206,14 @@ collections:
   Oscars:
     template: {name: Chart Release}
     imdb_search:
-      type: feature, documentary
+      type: movie, tv_movie
       event: oscar_winner
     summary: Oscar Winning Movies
     url_poster: https://i.imgur.com/w7U2VOp.jpg
     schedule: weekly (sunday)
   In Cinema:
     template: {name: Chart Alpha, num: 2}
-    trakt_list: https://trakt.tv/users/fs-corrupt/lists/in-cinemas?sort=rank,asc
-    summary: Currently in Austria/Germany Cinema´s, according to https://trakt.tv/users/fs-corrupt/lists/in-cinemas?sort=rank,asc.
+    tmdb_now_playing: 30
+    summary: Movies currently playing in cinemas.
     url_poster: https://i.imgur.com/f1jz2HR.jpg
     schedule: daily

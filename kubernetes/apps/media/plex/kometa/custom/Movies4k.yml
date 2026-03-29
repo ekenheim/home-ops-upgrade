@@ -12,10 +12,10 @@ templates:
     collection_minimum: 3
     delete_below_minimum: true
   Best of:
-    trakt_list: https://trakt.tv/users/lish408/lists/rotten-tomatoes-best-of-<<year>>
+    imdb_list: https://www.imdb.com/search/title/?title_type=feature&release_date=<<year>>-01-01,<<year>>-12-31&sort=user_rating,desc&count=100
     sort_title: +_Best of <<year>>
     sync_mode: sync
-    summary: Rotten Tomatoes Best Movies of <<year>>, according to https://trakt.tv/users/lish408/lists/rotten-tomatoes-best-of-<<year>>.
+    summary: Best Movies of <<year>>, according to IMDb top rated.
     collection_order: release
     collection_minimum: 3
     delete_below_minimum: true
@@ -30,7 +30,7 @@ templates:
     delete_below_minimum: true
   IMDb Genre:
     default:
-      title: feature
+      title: movie
       limit: 100
     imdb_search:
       type: <<title>>

@@ -82,10 +82,4 @@ templates:
     libraries: <<libraries>>
     url_poster: https://raw.githubusercontent.com/Kometa-Team/Default-Images/master/playlist/<<playlist_name_encoded>>.jpg
 
-playlists:
-  The Walking Dead Universe (Timeline Order):
-    template:
-      - name: playlist
-        key: walking
-    trakt_list: https://trakt.tv/users/fs-corrupt/lists/the-walking-dead-universe
-    summary: Chronological order as the story develops.
+playlists: {}

@@ -29,7 +29,7 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         cronjob:
-          schedule: "@daily"
+          schedule: "0 8 * * *"
           timeZone: ${TIMEZONE}
           concurrencyPolicy: Forbid
           successfulJobsHistory: 1
@@ -43,7 +43,7 @@ spec:
               PLEX_URL: http://plex.media.svc.cluster.local:32400
               PLEX_PATH: /data/plex_config/Library/Application Support/Plex Media Server
               MODE: remove
-              PHOTO_TRANSCODER: true
+              PHOTO_TRANSCODER: "false"
             envFrom:
               - secretRef:
                   name: plex-secret

@@ -43,6 +43,8 @@ spec:
     # Skip DB-ready init container (uses postgres image → ImagePullBackOff); we use Crunchy external DB
     dagsterWebserver:
       checkDbReadyInitContainer: false
+      annotations:
+        descheduler.alpha.kubernetes.io/evict: "false"
       workspace:
         enabled: true
         servers:
@@ -57,6 +59,8 @@ spec:
             name: grid-reliance-pipeline
     dagsterDaemon:
       checkDbReadyInitContainer: false
+      annotations:
+        descheduler.alpha.kubernetes.io/evict: "false"
     runLauncher:
       type: K8sRunLauncher
       config:

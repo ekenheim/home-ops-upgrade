@@ -26,6 +26,8 @@ spec:
       retries: 3
   values:
     # Chart runs a StatefulSet (dataflow) + optional API deployment. Default uses simple.py from chart examples.
+    podAnnotations:
+      descheduler.alpha.kubernetes.io/evict: "false"
     configuration:
       pythonFileName: "simple.py"
       processesCount: 1

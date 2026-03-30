@@ -16,6 +16,9 @@ spec:
     spec:
       backoffLimit: 2
       template:
+        metadata:
+          annotations:
+            descheduler.alpha.kubernetes.io/evict: "false"
         spec:
           serviceAccountName: kyverno-admission-controller
           restartPolicy: OnFailure

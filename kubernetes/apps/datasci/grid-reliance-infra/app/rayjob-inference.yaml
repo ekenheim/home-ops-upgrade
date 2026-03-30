@@ -19,6 +19,9 @@ spec:
   shutdownAfterJobFinishes: true
   ttlSecondsAfterFinished: 86400
   submitterPodTemplate:
+    metadata:
+      annotations:
+        descheduler.alpha.kubernetes.io/evict: "false"
     spec:
       restartPolicy: Never
       imagePullSecrets:

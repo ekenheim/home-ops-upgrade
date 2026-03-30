@@ -50,6 +50,9 @@ spec:
                   secretKeyRef:
                     name: harbor-database
                     key: POSTGRES_PASSWORD
+    defaultPodOptions:
+      annotations:
+        descheduler.alpha.kubernetes.io/evict: "false"
     persistence:
       backup:
         type: nfs

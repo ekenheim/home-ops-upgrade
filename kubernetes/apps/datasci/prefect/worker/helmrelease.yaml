@@ -86,6 +86,9 @@ spec:
         apiUrl: http://prefect-server.datasci.svc.cluster.local:4200/api
         # uiUrl: http://localhost:4200
 
+      podAnnotations:
+        descheduler.alpha.kubernetes.io/evict: "false"
+
       replicaCount: 1
 
       resources:

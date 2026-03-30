@@ -27,6 +27,8 @@ spec:
       pullPolicy: IfNotPresent
 
     head:
+      annotations:
+        descheduler.alpha.kubernetes.io/evict: "false"
       enableInTreeAutoscaling: true
       rayStartParams:
         dashboard-host: '0.0.0.0'
@@ -111,6 +113,8 @@ spec:
               key: AWS_SECRET_ACCESS_KEY
 
     worker:
+      annotations:
+        descheduler.alpha.kubernetes.io/evict: "false"
       groupName: workergroup
       image:
         repository: ghcr.io/ekenheim/grid-resilience-ray-worker

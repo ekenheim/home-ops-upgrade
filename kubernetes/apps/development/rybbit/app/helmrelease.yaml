@@ -40,7 +40,7 @@ spec:
               BASE_URL: https://rybbit.${SECRET_DOMAIN}
               DISABLE_SIGNUP: "false"
               DISABLE_TELEMETRY: "true"
-              PGSSLMODE: no-verify
+              PGSSLMODE: disable
             envFrom:
               - secretRef:
                   name: rybbit-postgres

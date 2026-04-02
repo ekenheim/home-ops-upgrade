@@ -48,10 +48,10 @@ spec:
           for: 15m
           labels:
             severity: critical
-        - alert: SmartDeviceAvailableSpareUnderThreadhold
+        - alert: SmartDeviceAvailableSpareUnderThreshold
           annotations:
             summary: Device {{ $labels.device }} on instance {{ $labels.instance }}
-              is under available spare threashold.
+              is under available spare threshold.
           expr: smartctl_device_available_spare_threshold > smartctl_device_available_spare
           for: 15m
           labels:
@@ -59,7 +59,7 @@ spec:
         - alert: SmartDeviceInterfaceSlow
           annotations:
             summary: Device {{ $labels.device }} on instance {{ $labels.instance }}
-              interface is slower then it should be.
+              interface is slower than it should be.
           expr: |
             smartctl_device_interface_speed{speed_type="current"} != on(device, instance, namespace, pod) smartctl_device_interface_speed{speed_type="max"}
           for: 15m

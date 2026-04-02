@@ -32,7 +32,7 @@ spec:
         cores: 1
       memory:
         container:
-          max: 1536Mi
+          max: 2560Mi
     storage:
       persistentVolume:
         enabled: true

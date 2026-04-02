@@ -32,7 +32,7 @@ spec:
         cores: 1
       memory:
         container:
-          max: 2560Mi
+          max: 1536Mi
     storage:
       persistentVolume:
         enabled: true
@@ -46,3 +46,7 @@ spec:
       enabled: true
     monitoring:
       enabled: false
+    config:
+      cluster:
+        core_balancing_continuous: false
+        partition_autobalancing_mode: "off"

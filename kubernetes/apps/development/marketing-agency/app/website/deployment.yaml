@@ -27,7 +27,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: website
-          image: ghcr.io/ekenheim/marketing-agency-website:v1.0.20
+          image: ghcr.io/ekenheim/marketing-agency-website:v1.0.22
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

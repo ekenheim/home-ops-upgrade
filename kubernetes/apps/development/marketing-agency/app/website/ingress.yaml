@@ -26,7 +26,18 @@ spec:
                 name: marketing-agency-website
                 port:
                   number: 3000
+    - host: www.${SECRET_SECONDARY_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: marketing-agency-website
+                port:
+                  number: 3000
   tls:
     - hosts:
         - ${SECRET_SECONDARY_DOMAIN}
+        - www.${SECRET_SECONDARY_DOMAIN}
       secretName: "${SECRET_SECONDARY_DOMAIN}-tls"

@@ -58,6 +58,15 @@ spec:
                 mkdir -p "$SCHEMA_DIR"
                 cp /schemas/schema.json "$SCHEMA_DIR/schema.json"
               fi
+              # Ensure translate plugin + DeepL provider are installed and configured.
+              # Handles existing PVCs that were seeded before the plugin was added.
+              if [ ! -d "$APP_DIR/node_modules/strapi-plugin-translate" ]; then
+                echo "Installing strapi-plugin-translate and deepl provider..."
+                cd "$APP_DIR"
+                npm install strapi-plugin-translate@2.0.0-next.4 strapi-provider-translate-deepl@1.3.0-next.4
+              fi
+              # Always sync plugin config from the image template.
+              cp /srv/template/config/plugins.ts "$APP_DIR/config/plugins.ts"
           volumeMounts:
             - name: strapi-data
               mountPath: /srv/app

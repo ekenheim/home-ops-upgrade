@@ -38,7 +38,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: cms
-          image: ghcr.io/ekenheim/strapi-bootstrap@sha256:bea67411a9db326c837eae47991f677b7579256aea3a3ea39f7f2494478a9f9f
+          image: ghcr.io/ekenheim/strapi-bootstrap@sha256:785dcd505abc846fd6a598e66b67a05f33bf10c0d7f2c65a54b60b64f00a0718
           imagePullPolicy: Always
           command: ["/bin/sh", "-c"]
           args:

@@ -27,12 +27,16 @@ RUN npm install
 # Install the PostgreSQL driver — the scaffold defaults to SQLite so pg is not
 # included in the generated package.json, but the deployment uses Postgres.
 RUN npm install pg
+# DeepL translation plugin — auto-translates content between i18n locales.
+RUN npm install strapi-plugin-deepl
 # Allow non-localhost hosts in Vite's dev server so the admin panel loads
 # when accessed via the ingress hostname instead of localhost.
 RUN mkdir -p src/admin && printf 'import { mergeConfig, type UserConfig } from "vite";\n\nexport default (config: UserConfig) => {\n  return mergeConfig(config, {\n    server: { allowedHosts: true },\n  });\n};\n' > src/admin/vite.config.ts
 # CORS middleware — reads allowed origins from CORS_ORIGIN env var (comma-separated).
 # Falls back to * so dev mode works without configuration.
 RUN printf 'export default [\n  "strapi::logger",\n  "strapi::errors",\n  "strapi::security",\n  {\n    name: "strapi::cors",\n    config: {\n      origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : ["*"],\n      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],\n      headers: ["Content-Type", "Authorization", "Origin", "Accept"],\n      keepHeaderOnError: true,\n    },\n  },\n  "strapi::poweredBy",\n  "strapi::query",\n  "strapi::body",\n  "strapi::session",\n  "strapi::favicon",\n  "strapi::public",\n];\n' > config/middlewares.js
+# DeepL plugin configuration — reads API key from DEEPL_API_KEY env var at runtime.
+RUN printf 'export default ({ env }) => ({\n  deepl: {\n    enabled: true,\n    config: {\n      apiKey: env("DEEPL_API_KEY"),\n      freeApi: true,\n      translatedFieldTypes: ["string", "text", "richtext", "component", "dynamiczone"],\n    },\n  },\n});\n' > config/plugins.ts
 RUN npm run build
 
 # Stage 2: lean runtime image that ships the pre-built project as a seed template.

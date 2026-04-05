@@ -97,6 +97,8 @@ spec:
                 name: strapi-postgres
             - secretRef:
                 name: strapi-app-keys
+            - secretRef:
+                name: strapi-deepl
           volumeMounts:
             - name: strapi-data
               mountPath: /srv/app

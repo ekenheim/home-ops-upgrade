@@ -15,6 +15,7 @@ overlays:
       name: 4K_banner
     overlay:
       name: 4K_banner
+      url: https://raw.githubusercontent.com/Kometa-Team/Kometa/master/config/overlays/4K.png
     plex_search:
       all:
         resolution: '4K'

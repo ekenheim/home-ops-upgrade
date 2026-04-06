@@ -10,7 +10,7 @@ data:
     endpoints:
       - name: crunchy-pgo
         group: infra
-        url: tcp://postgres-pgbouncer.database.svc.cluster.local:5432
+        url: tcp://postgres-ha.database.svc.cluster.local:5432
         interval: 1m
         conditions: ["[CONNECTED] == true"]
         alerts: [{ type: discord }]

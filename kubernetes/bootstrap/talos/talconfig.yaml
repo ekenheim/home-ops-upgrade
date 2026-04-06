@@ -269,11 +269,28 @@ controlPlane:
           advertisedSubnets:
             - "192.168.50.0/24"
 
-    # Disable default API server admission plugins.
+    # Configure API server admission to allow privileged by default.
+    # Namespaces opt into restrictions via pod-security labels.
     - |-
       cluster:
         apiServer:
-          admissionControl: null
+          admissionControl:
+            - name: PodSecurity
+              configuration:
+                apiVersion: pod-security.admission.config.k8s.io/v1alpha1
+                kind: PodSecurityConfiguration
+                defaults:
+                  enforce: privileged
+                  enforce-version: latest
+                  audit: restricted
+                  audit-version: latest
+                  warn: restricted
+                  warn-version: latest
+                exemptions:
+                  namespaces:
+                    - kube-system
+                  runtimeClasses: []
+                  usernames: []
 
     # Enable K8s Talos API Access
     - |-

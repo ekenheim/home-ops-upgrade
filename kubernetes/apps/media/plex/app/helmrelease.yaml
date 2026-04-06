@@ -71,6 +71,8 @@ spec:
                 gpu.intel.com/i915: 1
                 memory: 8G
         pod:
+          annotations:
+            descheduler.alpha.kubernetes.io/evict: "false"
           affinity:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:

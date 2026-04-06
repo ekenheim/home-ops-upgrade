@@ -27,6 +27,8 @@ spec:
     kind: Deployment
     deschedulerPolicyAPIVersion: descheduler/v1alpha2
     deschedulerPolicy:
+      maxNoOfPodsToEvictPerNode: 3
+      maxNoOfPodsToEvictPerNamespace: 2
       profiles:
         - name: Default
           pluginConfig:
@@ -34,7 +36,7 @@ spec:
               args:
                 evictFailedBarePods: true
                 evictLocalStoragePods: true
-                evictSystemCriticalPods: true
+                evictSystemCriticalPods: false
                 nodeFit: true
                 labelSelector:
                   matchExpressions:
@@ -52,20 +54,21 @@ spec:
               args:
                 constraints:
                   - DoNotSchedule
-                  - ScheduleAnyway
             - name: LowNodeUtilization
               namespaces:
                 exclude:
-                  - "remote"
+                  - database
+                  - media
+                  - remote
               args:
                 thresholds:
-                  cpu: 60
+                  cpu: 35
+                  memory: 35
+                  pods: 30
+                targetThresholds:
+                  cpu: 70
                   memory: 70
                   pods: 70
-                targetThresholds:
-                  cpu: 75
-                  memory: 75
-                  pods: 80
           plugins:
             balance:
               enabled:

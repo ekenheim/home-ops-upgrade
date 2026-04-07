@@ -40,8 +40,6 @@ spec:
       - --nodes=$(NODE_IP)
       - health
       - --server=false
-      - --control-plane-nodes=$(NODE_IP)
-      - --worker-nodes=$(NODE_IP)
       - --wait-timeout=10m
   upgrade:
     <<: *prepare

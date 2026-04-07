@@ -8,7 +8,7 @@ metadata:
     upgrade.cattle.io/force: "true"
 spec:
   version: ${TALOS_VERSION}
-  serviceAccountName: system-upgrade
+  serviceAccountName: system-upgrade-controller
   secrets:
     - name: talos
       path: /var/run/secrets/talos.dev

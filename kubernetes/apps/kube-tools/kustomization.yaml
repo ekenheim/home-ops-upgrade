@@ -13,4 +13,4 @@ resources:
   - ./intel-device-plugins/ks.yaml
   - ./reloader/ks.yaml
   - ./fstrim/ks.yaml
-  #- ./system-upgrade-controller/ks.yaml
+  - ./system-upgrade-controller/ks.yaml

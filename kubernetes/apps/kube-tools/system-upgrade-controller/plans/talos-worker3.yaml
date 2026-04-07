@@ -3,7 +3,7 @@
 apiVersion: upgrade.cattle.io/v1
 kind: Plan
 metadata:
-  name: talos
+  name: talos-worker3
   annotations:
     upgrade.cattle.io/force: "true"
 spec:
@@ -21,14 +21,11 @@ spec:
         operator: In
         values: ["talos"]
       - key: kubernetes.io/hostname
-        operator: NotIn
+        operator: In
         values: ["worker3"]
   tolerations:
     - key: CriticalAddonsOnly
       operator: Exists
-    - key: node-role.kubernetes.io/control-plane
-      operator: Exists
-      effect: NoSchedule
   prepare: &prepare
     image: ghcr.io/siderolabs/talosctl:${TALOS_VERSION}
     envs:
@@ -46,6 +43,6 @@ spec:
     args:
       - --nodes=$(NODE_IP)
       - upgrade
-      - --image=factory.talos.dev/metal-installer/${TALOS_SCHEMATIC}:${TALOS_VERSION}
+      - --image=factory.talos.dev/metal-installer/${TALOS_SCHEMATIC_WORKER3}:${TALOS_VERSION}
       - --preserve
       - --reboot-mode=powercycle

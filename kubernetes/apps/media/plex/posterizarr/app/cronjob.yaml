@@ -1,0 +1,84 @@
+---
+# Monthly full Posterizarr run.
+#
+# The watcher Deployment only processes deltas (recently_added trigger files
+# and short scheduled sweeps), so items that errored, predate posterizarr's
+# deployment, or were affected by config/overlay changes never get backfilled.
+# This CronJob exec's into the running watcher pod once a month and invokes
+# `Start.ps1 -Mode run`, which walks every library item top-to-bottom.
+#
+# We exec into the existing pod (rather than running a standalone CronJob pod)
+# because the posterizarr config PVC is RWO on ceph-block and is held by the
+# watcher Deployment 24/7 — it can't be mounted by a second pod in parallel.
+# Posterizarr's `Posterizarr.Running` lock file prevents the watcher from
+# kicking off a competing run while ours is in progress.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: posterizarr-monthly-run
+  namespace: media
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: posterizarr-monthly-run
+  namespace: media
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: posterizarr-monthly-run
+  namespace: media
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: posterizarr-monthly-run
+subjects:
+  - kind: ServiceAccount
+    name: posterizarr-monthly-run
+    namespace: media
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: posterizarr-monthly-run
+  namespace: media
+spec:
+  # 03:00 Europe/Stockholm on the 2nd of every month.
+  schedule: "0 3 2 * *"
+  timeZone: Europe/Stockholm
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          annotations:
+            descheduler.alpha.kubernetes.io/evict: "false"
+        spec:
+          serviceAccountName: posterizarr-monthly-run
+          restartPolicy: Never
+          containers:
+            - name: trigger
+              image: docker.io/bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -ec
+                - |
+                  set -euo pipefail
+                  POD="$(kubectl -n media get pod \
+                    -l app.kubernetes.io/name=posterizarr \
+                    -o jsonpath='{.items[0].metadata.name}')"
+                  echo "Triggering full Posterizarr run inside pod: $POD"
+                  exec kubectl -n media exec "$POD" -c app -- \
+                    pwsh /app/Start.ps1 -Mode run

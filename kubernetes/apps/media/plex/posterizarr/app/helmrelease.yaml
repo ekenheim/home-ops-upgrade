@@ -69,6 +69,16 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 140
+        # The posterizarr config PVC was originally provisioned with /config
+        # owned by root:568 (drwxrwsr-x) and config.json owned by 1000:568.
+        # Without 568 in the process group list the init container's
+        # `mv /tmp/config.json /config/config.json` fails with EACCES on
+        # the unlink half (no group-write on /config), so the rendered
+        # config silently never refreshes — which is how a stale Fanart.tv
+        # key sat on disk for ~a month. Adding 568 as a supplemental group
+        # gives the process group-write on /config without changing the
+        # primary uid/gid the upstream image expects.
+        supplementalGroups: [568]
     persistence:
       config:
         existingClaim: *app

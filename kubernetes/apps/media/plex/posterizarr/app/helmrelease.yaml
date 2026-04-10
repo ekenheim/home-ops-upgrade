@@ -48,8 +48,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/dapperdivers/posterizarr
-              tag: v1.9.77@sha256:3dee82f7719b60103344df94fefc9bc1ce61d9ccf791bf81239666f489f3add1
+              repository: ghcr.io/fscorrupt/posterizarr
+              tag: 2.2.35@sha256:aec1f3717af57f8644b0b44f2acaee77ef1fc6c3e2c64a412940d2eeeac489af
             env:
               TZ: ${TIMEZONE}
             resources:

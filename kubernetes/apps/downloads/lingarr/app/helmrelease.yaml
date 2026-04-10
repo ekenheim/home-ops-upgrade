@@ -91,7 +91,7 @@ spec:
         server: ${NAS_IP:=temp}
         path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
-          - path: /movies
+          - path: /Media/movies
             subPath: Media/movies
-          - path: /tv
+          - path: /Media/series
             subPath: Media/series

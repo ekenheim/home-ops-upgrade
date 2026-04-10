@@ -60,10 +60,10 @@ spec:
                   httpGet:
                     path: /health
                     port: &port 6767
-                  initialDelaySeconds: 30
-                  periodSeconds: 30
-                  timeoutSeconds: 10
-                  failureThreshold: 5
+                  initialDelaySeconds: 60
+                  periodSeconds: 60
+                  timeoutSeconds: 30
+                  failureThreshold: 10
               readiness: *probes
             securityContext: &securityContext
               allowPrivilegeEscalation: false

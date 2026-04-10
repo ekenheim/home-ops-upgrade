@@ -32,6 +32,7 @@ resources:
   - ./label-studio/ks.yaml
   - ./bandit-demo/ks.yaml
   - ./banditweb/ks.yaml
+  - ./miso-gallery/ks.yaml
   - ./seldon-core/ks.yaml
   - ./kyverno-fixes
   - ./kubeflow/ks.yaml

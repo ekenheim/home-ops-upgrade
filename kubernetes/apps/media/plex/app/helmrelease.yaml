@@ -123,11 +123,12 @@ spec:
     persistence:
       config:
         existingClaim: *app
-      # Separate PVC for cache to avoid backing up cache files
+      # Separate PVC for cache to avoid backing up regenerable data
       plex-cache:
         existingClaim: plex-cache
         globalMounts:
           - path: /config/Library/Application Support/Plex Media Server/Cache
+          - path: /config/Library/Application Support/Plex Media Server/Media
       logs:
         type: emptyDir
         globalMounts:

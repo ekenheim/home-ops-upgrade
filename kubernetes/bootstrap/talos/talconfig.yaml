@@ -98,26 +98,23 @@ nodes:
     talosImageURL: factory.talos.dev/metal-installer/96f8c146a67c80daad900d3fc1a6976fe11062321eee9ab6ae2a6aea88b2d26e:v1.12.6
     controlPlane: false
     networkInterfaces:
-      # 10G Internal Port
-      - deviceSelector:
-          hardwareAddr: 58:47:ca:7e:9f:cf
+      # 2x 10G bonded via LACP
+      - interface: bond0
+        bond:
+          mode: 802.3ad
+          lacpRate: fast
+          xmitHashPolicy: layer3+4
+          miimon: 100
+          updelay: 200
+          downdelay: 200
+          deviceSelectors:
+            - hardwareAddr: "58:47:ca:7e:9f:cf"
+            - hardwareAddr: "58:47:ca:7e:9f:d0"
         dhcp: true
         mtu: 9000
         routes:
           - network: 0.0.0.0/0
             gateway: "192.168.50.1"
-        dhcpOptions:
-            routeMetric: 1024
-      # 10G Internal Port
-      - deviceSelector:
-          hardwareAddr: 58:47:ca:7e:9f:d0
-        dhcp: true
-        mtu: 9000
-        routes:
-          - network: 0.0.0.0/0
-            gateway: "192.168.50.1"
-        dhcpOptions:
-            routeMetric: 2048
 
 patches:
   # Configure containerd

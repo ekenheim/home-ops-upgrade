@@ -11,7 +11,6 @@ resources:
   - ./dagster/ks.yaml
   - ./dashclaw/ks.yaml
   - ./docat/ks.yaml
-  #- ./miso-chat/ks.yaml
   #- ./openclaw/ks.yaml
   - ./mlflow/ks.yaml
   - ./langflow/ks.yaml
@@ -21,7 +20,6 @@ resources:
   - ./spark/ks.yaml
   - ./grid-reliance-infra/ks.yaml
   - ./ollama-igpu/ks.yaml
-  - ./vllm/ks.yaml
   - ./open-webui/ks.yaml
   - ./mcp-polygon/ks.yaml
   - ./searxng/ks.yaml
@@ -32,7 +30,6 @@ resources:
   - ./label-studio/ks.yaml
   - ./bandit-demo/ks.yaml
   - ./banditweb/ks.yaml
-  - ./miso-gallery/ks.yaml
   - ./seldon-core/ks.yaml
   - ./kyverno-fixes
   - ./kubeflow/ks.yaml

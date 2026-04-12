@@ -124,5 +124,19 @@ spec:
         path: ${SECRET_NFS_PPM:=temp}
         globalMounts:
         - path: /assets
+      manualassets:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_PPM:=temp}
+        globalMounts:
+        - path: /manualassets
+          subPath: manualassets
+      assetsbackup:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_PPM:=temp}
+        globalMounts:
+        - path: /assetsbackup
+          subPath: assetsbackup
 
 

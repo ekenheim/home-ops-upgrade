@@ -111,7 +111,7 @@ nodes:
             - hardwareAddr: "58:47:ca:7e:9f:cf"
             - hardwareAddr: "58:47:ca:7e:9f:d0"
         dhcp: true
-        mtu: 1500
+        mtu: 9000
         routes:
           - network: 0.0.0.0/0
             gateway: "192.168.50.1"

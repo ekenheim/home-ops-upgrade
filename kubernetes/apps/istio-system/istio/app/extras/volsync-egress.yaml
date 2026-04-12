@@ -30,7 +30,7 @@ spec:
   - to:
     - operation:
         hosts:
-        - "s3.ekenhome.se"
+        - "s3.${SECRET_DOMAIN}"
         ports:
         - "443"
         - "80"

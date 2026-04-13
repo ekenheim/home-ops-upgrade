@@ -14,8 +14,8 @@ resources:
   #- ./openclaw/ks.yaml
   - ./mlflow/ks.yaml
   - ./langflow/ks.yaml
-  - ./prefect/ks.yaml
-  - ./dask/ks.yaml
+  #- ./prefect/ks.yaml
+  #- ./dask/ks.yaml
   - ./ray/ks.yaml
   - ./spark/ks.yaml
   - ./grid-reliance-infra/ks.yaml
@@ -26,7 +26,7 @@ resources:
   - ./jupyter-lab/ks.yaml
   - ./marimo/ks.yaml
   - ./qdrant/ks.yaml
-  - ./flyte/ks.yaml
+  #- ./flyte/ks.yaml
   - ./label-studio/ks.yaml
   - ./bandit-demo/ks.yaml
   - ./banditweb/ks.yaml

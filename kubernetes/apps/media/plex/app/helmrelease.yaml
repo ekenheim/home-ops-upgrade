@@ -81,6 +81,22 @@ spec:
                       - key: kubernetes.io/hostname
                         operator: NotIn
                         values: ["worker2"]
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - topologyKey: kubernetes.io/hostname
+                  namespaces: ["datasci"]
+                  labelSelector:
+                    matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values: ["ollama-igpu"]
+                - topologyKey: kubernetes.io/hostname
+                  namespaces: ["downloads"]
+                  labelSelector:
+                    matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values: ["whisper"]
           securityContext:
             runAsUser: 568
             runAsGroup: 568

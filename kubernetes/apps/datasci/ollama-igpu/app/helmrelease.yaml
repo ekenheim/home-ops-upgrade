@@ -28,7 +28,7 @@ spec:
   values:
     controllers:
       ollama-igpu:
-        replicas: 3 # 1 per node
+        replicas: 2
         annotations:
           reloader.stakater.com/auto: "true"
         containers:

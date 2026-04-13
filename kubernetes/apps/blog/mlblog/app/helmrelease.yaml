@@ -44,7 +44,7 @@ spec:
               database__connection__host: mlblog-mariadb.blog.svc.cluster.local
               database__connection__user: mlblog
               database__connection__database: mlblog
-              database__connection__charset: UTF8MB4_GENERAL_CI
+              database__connection__charset: utf8mb4
               NODE_ENV: production
             envFrom:
               - secretRef:

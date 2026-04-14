@@ -1,0 +1,18 @@
+---
+# Lenient yamllint config — Flux and Helm values often break strict rules
+extends: relaxed
+
+rules:
+  line-length: disable
+  truthy: disable
+  comments:
+    min-spaces-from-content: 1
+  indentation:
+    indent-sequences: consistent
+  braces: disable
+  brackets: disable
+
+ignore: |
+  .github/
+  kubernetes/apps/datasci/kubeflow/
+  kubernetes/apps/datasci/deploykf-values/

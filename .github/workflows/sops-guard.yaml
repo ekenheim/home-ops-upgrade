@@ -1,0 +1,51 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: SOPS Guard
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "kubernetes/**/*.yaml"
+      - "kubernetes/**/*.yml"
+      - "terraform/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    name: Reject unencrypted secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Scan changed files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          files=$(git diff --name-only --diff-filter=AM "$BASE_SHA" "$HEAD_SHA" -- \
+              'kubernetes/**/*.yaml' 'kubernetes/**/*.yml' 'terraform/**' || true)
+          fail=0
+          for f in $files; do
+            [ -f "$f" ] || continue
+            # Any Kubernetes Secret manifest must be SOPS-encrypted
+            if grep -Eq '^kind:[[:space:]]+Secret[[:space:]]*$' "$f"; then
+              if ! grep -q '^sops:' "$f"; then
+                echo "::error file=$f::Unencrypted Secret committed — must be SOPS-encrypted"
+                fail=1
+              fi
+            fi
+            # Terraform tfvars with plaintext credentials
+            if [[ "$f" == terraform/*.tfvars ]] && ! grep -q '^sops:' "$f"; then
+              echo "::error file=$f::Terraform tfvars committed unencrypted — use SOPS"
+              fail=1
+            fi
+          done
+          exit $fail

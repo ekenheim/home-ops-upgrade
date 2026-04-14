@@ -15,6 +15,16 @@
       ignoreTests: false,
     },
     {
+      description: 'Auto-merge terraform provider patch/minor updates (publish-only workflow, no auto-apply)',
+      matchManagers: ['terraform'],
+      matchUpdateTypes: ['minor', 'patch'],
+      automerge: true,
+      automergeType: 'pr',
+      automergeStrategy: 'squash',
+      platformAutomerge: true,
+      ignoreTests: false,
+    },
+    {
       description: 'Never auto-merge infrastructure, networking, storage, or hardware-sensitive components',
       matchPackageNames: [
         // CNI / networking / DNS

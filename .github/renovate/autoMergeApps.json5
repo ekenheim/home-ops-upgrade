@@ -1,0 +1,54 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  packageRules: [
+    {
+      description: 'Auto-merge application patch/minor updates after CI passes',
+      matchDatasources: ['docker', 'helm', 'github-releases'],
+      matchUpdateTypes: ['minor', 'patch'],
+      matchFileNames: [
+        'kubernetes/apps/**',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+      automergeStrategy: 'squash',
+      platformAutomerge: true,
+      ignoreTests: false,
+    },
+    {
+      description: 'Never auto-merge infrastructure, networking, storage, or hardware-sensitive components',
+      matchPackageNames: [
+        // CNI / networking / DNS
+        '/cilium/',
+        '/coredns/',
+        // Storage layer
+        '/rook.ceph/',
+        '/rook-ceph/',
+        // Hardware / device plugins
+        '/intel-device-plugins-operator/',
+        '/intel-device-plugins-gpu/',
+        // Talos OS / bootloader / installer
+        '/siderolabs/talosctl/',
+        '/siderolabs/installer/',
+        // GitOps and cluster-critical controllers
+        '/flux-operator/',
+        '/flux-instance/',
+        '/cert-manager/',
+        '/external-secrets/',
+        '/spegel/',
+        '/system-upgrade-controller/',
+        '/dragonfly/',
+        // Actions Runner Controller (self-hosted runners)
+        '/gha-runner-scale-set-controller/',
+        '/gha-runner-scale-set/',
+        // Istio service mesh
+        '/istio/',
+      ],
+      automerge: false,
+    },
+    {
+      description: 'Never auto-merge major version bumps',
+      matchUpdateTypes: ['major'],
+      automerge: false,
+    },
+  ],
+}

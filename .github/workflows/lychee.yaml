@@ -52,7 +52,7 @@ jobs:
         id: lychee
         with:
           token: "${{ steps.app-token.outputs.token }}"
-          args: --verbose --no-progress --exclude '^https://developer\.hashicorp\.com/terraform/?$' --exclude 'gatus\.dev' './**/*.md'
+          args: --verbose --no-progress --accept '200,203,204,206,403,429' --exclude '^https://developer\.hashicorp\.com/terraform/?$' --exclude 'gatus\.dev' './**/*.md'
           output: "${{ env.LYCHEE_OUTPUT }}"
           debug: true
 

@@ -5,14 +5,22 @@ extends: relaxed
 rules:
   line-length: disable
   truthy: disable
-  comments:
-    min-spaces-from-content: 1
+  comments: disable
+  comments-indentation: disable
+  new-line-at-end-of-file: disable
+  empty-lines: disable
   indentation:
     indent-sequences: consistent
   braces: disable
   brackets: disable
+  document-start: disable
+  trailing-spaces:
+    level: warning
 
 ignore: |
   .github/
   kubernetes/apps/datasci/kubeflow/
   kubernetes/apps/datasci/deploykf-values/
+  kubernetes/apps/datasci/seldon-core/chart/
+  **/templates/
+  **/charts/

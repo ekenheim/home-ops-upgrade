@@ -1,0 +1,9 @@
+---
+self-hosted-runner:
+  labels:
+    - gha-runner-scale-set
+    - gha-runner-scale-set-bandit
+    - gha-runner-scale-set-banditweb
+    - gha-runner-scale-set-ecom
+    - gha-runner-scale-set-grid-reliance
+    - gha-runner-scale-set-nordic-housing

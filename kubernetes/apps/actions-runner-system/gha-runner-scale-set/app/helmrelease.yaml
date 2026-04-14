@@ -33,11 +33,7 @@ spec:
   values:
     nameOverride: gha-runner-scale-set
     runnerScaleSetName: gha-runner-scale-set
-    # User-level scope: this runner serves all repos under
-    # github.com/ekenheim. The existing classic PAT in
-    # actions-runner-controller-auth-secret already has access to all
-    # user repos, so no credential changes are needed.
-    githubConfigUrl: https://github.com/ekenheim
+    githubConfigUrl: https://github.com/ekenheim/home-ops-upgrade
     minRunners: 0
     maxRunners: 20
     containerMode:

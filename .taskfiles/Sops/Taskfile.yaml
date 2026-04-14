@@ -43,7 +43,7 @@ tasks:
   push-age-key:
     desc: Push SOPS age key to Bitwarden Secrets Manager
     cmds:
-      - bws secret edit 4a5e0a7a-c0a1-4e0f-9b0c-b1610100a9e8 --value "$(cat {{.AGE_FILE}})"
+      - bws secret edit f7c4643a-e769-493c-8c0b-b42c011200ea --value "$(cat {{.AGE_FILE}})"
     preconditions:
       - { msg: "Missing Sops Age key file", sh: "test -f {{.AGE_FILE}}" }
       - { msg: "Bitwarden Secret Manager CLI not found", sh: "command -v bws" }
@@ -53,7 +53,7 @@ tasks:
     desc: Pull SOPS age key from Bitwarden Secrets Manager
     cmds:
       - mkdir -p $(dirname {{.AGE_FILE}})
-      - bws secret get 4a5e0a7a-c0a1-4e0f-9b0c-b1610100a9e8 | jq -r '.value' > {{.AGE_FILE}}
+      - bws secret get f7c4643a-e769-493c-8c0b-b42c011200ea | jq -r '.value' > {{.AGE_FILE}}
       - chmod 600 {{.AGE_FILE}}
     preconditions:
       - { msg: "Bitwarden Secret Manager CLI not found", sh: "command -v bws" }

@@ -39,3 +39,23 @@ tasks:
   .reset:
     internal: true
     cmd: rm -rf {{.SOPS_CONFIG_FILE}}
+
+  push-age-key:
+    desc: Push SOPS age key to Bitwarden Secrets Manager
+    cmds:
+      - bws secret edit 4a5e0a7a-c0a1-4e0f-9b0c-b1610100a9e8 --value "$(cat {{.AGE_FILE}})"
+    preconditions:
+      - { msg: "Missing Sops Age key file", sh: "test -f {{.AGE_FILE}}" }
+      - { msg: "Bitwarden Secret Manager CLI not found", sh: "command -v bws" }
+      - { msg: "BWS_ACCESS_TOKEN not set", sh: "test -n \"${BWS_ACCESS_TOKEN:-}\"" }
+
+  pull-age-key:
+    desc: Pull SOPS age key from Bitwarden Secrets Manager
+    cmds:
+      - mkdir -p $(dirname {{.AGE_FILE}})
+      - bws secret get 4a5e0a7a-c0a1-4e0f-9b0c-b1610100a9e8 | jq -r '.value' > {{.AGE_FILE}}
+      - chmod 600 {{.AGE_FILE}}
+    preconditions:
+      - { msg: "Bitwarden Secret Manager CLI not found", sh: "command -v bws" }
+      - { msg: "JQ not found", sh: "command -v jq" }
+      - { msg: "BWS_ACCESS_TOKEN not set", sh: "test -n \"${BWS_ACCESS_TOKEN:-}\"" }

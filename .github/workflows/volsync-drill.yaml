@@ -1,0 +1,117 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: VolSync Restore Drill
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # Weekly on Monday at 06:00 UTC
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  NAMESPACE: media
+  APP: wizarr
+  DRILL_NAME: wizarr-restore-drill
+  TIMEOUT_SECONDS: "900"
+
+jobs:
+  drill:
+    name: Restore wizarr from backup
+    runs-on: gha-runner-scale-set
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Get Secrets
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            d7abec51-f77a-49fd-be89-b13400f196e8 > KUBECONFIG_CONTENT
+
+      - name: Install kubectl
+        run: |
+          curl -fsSLo kubectl "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+
+      - name: Write kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          printf '%s' "$KUBECONFIG_CONTENT" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Cleanup any leftover drill from previous run
+        run: |
+          kubectl -n "$NAMESPACE" delete replicationdestination "$DRILL_NAME" --ignore-not-found
+          kubectl -n "$NAMESPACE" delete pvc "$DRILL_NAME" --ignore-not-found
+
+      - name: Trigger restore
+        run: |
+          cat <<EOF | kubectl apply -f -
+          ---
+          apiVersion: volsync.backube/v1alpha1
+          kind: ReplicationDestination
+          metadata:
+            name: ${DRILL_NAME}
+            namespace: ${NAMESPACE}
+            labels:
+              home-ops.drill: "true"
+          spec:
+            trigger:
+              manual: restore-once
+            restic:
+              repository: ${APP}-volsync
+              copyMethod: Snapshot
+              volumeSnapshotClassName: csi-ceph-blockpool
+              cacheStorageClassName: ceph-block
+              cacheAccessModes: [ReadWriteOnce]
+              accessModes: [ReadWriteOnce]
+              storageClassName: ceph-block
+              capacity: 2Gi
+              cleanupCachePVC: true
+              cleanupTempPVC: true
+              enableFileDeletion: true
+              moverSecurityContext:
+                runAsUser: 568
+                runAsGroup: 568
+                fsGroup: 568
+          EOF
+
+      - name: Wait for restore to complete
+        run: |
+          set -euo pipefail
+          deadline=$(( $(date +%s) + TIMEOUT_SECONDS ))
+          while :; do
+            result=$(kubectl -n "$NAMESPACE" get replicationdestination "$DRILL_NAME" \
+                -o jsonpath='{.status.latestMoverStatus.result}' 2>/dev/null || true)
+            logs=$(kubectl -n "$NAMESPACE" get replicationdestination "$DRILL_NAME" \
+                -o jsonpath='{.status.latestMoverStatus.logs}' 2>/dev/null || true)
+            echo "[$(date -u +%H:%M:%S)] status=${result:-pending}"
+            if [ "$result" = "Successful" ]; then
+              echo "::notice::Restore drill for $APP completed successfully"
+              echo "$logs" | head -20
+              exit 0
+            fi
+            if [ "$result" = "Failed" ]; then
+              echo "::error::Restore drill for $APP failed"
+              echo "$logs"
+              exit 1
+            fi
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::Restore drill for $APP timed out after ${TIMEOUT_SECONDS}s"
+              kubectl -n "$NAMESPACE" describe replicationdestination "$DRILL_NAME" || true
+              exit 1
+            fi
+            sleep 15
+          done
+
+      - name: Cleanup drill artifacts
+        if: always()
+        run: |
+          kubectl -n "$NAMESPACE" delete replicationdestination "$DRILL_NAME" --ignore-not-found
+          kubectl -n "$NAMESPACE" delete pvc "$DRILL_NAME" --ignore-not-found
+          kubectl -n "$NAMESPACE" delete volumesnapshot -l home-ops.drill=true --ignore-not-found

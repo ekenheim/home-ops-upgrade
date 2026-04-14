@@ -7,7 +7,7 @@ metadata:
    external-dns.alpha.kubernetes.io/target: "10 5 25565 mc.${SECRET_DOMAIN}"
 spec:
   endpoints:
-  - dnsName: 	_minecraft._tcp
+  - dnsName: _minecraft._tcp
     recordTTL: 300
     recordType: SRV
     targets:

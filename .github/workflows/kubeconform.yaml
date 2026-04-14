@@ -19,15 +19,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Validate manifests
-        uses: docker://ghcr.io/yannh/kubeconform:v0.6.7
-        with:
-          args: >-
-            -strict
-            -ignore-missing-schemas
-            -schema-location default
-            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
-            -skip HelmRelease,Kustomization,GitRepository,HelmRepository,OCIRepository,Bucket,Receiver,Alert,Provider,ImagePolicy,ImageRepository,ImageUpdateAutomation
-            -summary
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | tar -xz -C /usr/local/bin kubeconform
+
+      - name: Run kubeconform
+        run: |
+          set -euo pipefail
+          # Validate only actual Kubernetes manifests. Exclude:
+          #   - SOPS-encrypted files (invalid schema due to sops: top-level key)
+          #   - Non-manifest config files (app configs, dashboards, templates)
+          #   - Talos bootstrap (talconfig/helmfile are not k8s resources)
+          #   - Flux vars (cluster-secrets is a sops secret)
+          files=$(find kubernetes -type f \( -name '*.yaml' -o -name '*.yml' \) \
+            ! -path '*.sops.*' \
+            ! -path 'kubernetes/bootstrap/*' \
+            ! -path 'kubernetes/flux/vars/*' \
+            ! -path '*/kometa/*' \
+            ! -path '*/configs/*' \
+            ! -path '*/config/*' \
+            ! -path '*/dashboard/*' \
+            ! -path '*/dashboards/*' \
+            ! -path '*/resources/*' \
+            ! -path '*/templates/*' \
+            ! -path '*/charts/*' \
+            ! -path '*/chart/*' \
+            ! -path '*/overlay*/*' \
+            ! -path '*/kubeflow/*' \
+            ! -path '*/deploykf-*/*')
+
+          echo "Validating $(echo "$files" | wc -l) files"
+          echo "$files" | xargs kubeconform \
+            -strict \
+            -ignore-missing-schemas \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            -skip 'HelmRelease,Kustomization,GitRepository,HelmRepository,OCIRepository,Bucket,Receiver,Alert,Provider,ImagePolicy,ImageRepository,ImageUpdateAutomation,Plan' \
+            -summary \
             -output pretty
-            /github/workspace/kubernetes

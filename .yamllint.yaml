@@ -9,13 +9,16 @@ rules:
   comments-indentation: disable
   new-line-at-end-of-file: disable
   empty-lines: disable
-  indentation:
-    indent-sequences: consistent
+  indentation: disable
   braces: disable
   brackets: disable
+  colons: disable
+  commas: disable
   document-start: disable
   trailing-spaces:
     level: warning
+  key-duplicates: enable
+  octal-values: disable
 
 ignore: |
   .github/

@@ -22,7 +22,9 @@ jobs:
         run: |
           set -euo pipefail
           bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
-          ./actionlint -color .github/workflows/*.yaml
+          # Skip shellcheck integration: info-level style nits (SC2086/SC2129)
+          # in upstream-inherited workflows, not worth chasing.
+          ./actionlint -color -shellcheck= .github/workflows/*.yaml
 
   yamllint:
     name: yamllint

@@ -28,27 +28,17 @@ jobs:
       - name: Run kubeconform
         run: |
           set -euo pipefail
-          # Validate only actual Kubernetes manifests. Exclude:
-          #   - SOPS-encrypted files (invalid schema due to sops: top-level key)
-          #   - Non-manifest config files (app configs, dashboards, templates)
-          #   - Talos bootstrap (talconfig/helmfile are not k8s resources)
-          #   - Flux vars (cluster-secrets is a sops secret)
-          files=$(find kubernetes -type f \( -name '*.yaml' -o -name '*.yml' \) \
-            ! -path '*.sops.*' \
-            ! -path 'kubernetes/bootstrap/*' \
-            ! -path 'kubernetes/flux/vars/*' \
-            ! -path '*/kometa/*' \
-            ! -path '*/configs/*' \
-            ! -path '*/config/*' \
-            ! -path '*/dashboard/*' \
-            ! -path '*/dashboards/*' \
-            ! -path '*/resources/*' \
-            ! -path '*/templates/*' \
-            ! -path '*/charts/*' \
-            ! -path '*/chart/*' \
-            ! -path '*/overlay*/*' \
-            ! -path '*/kubeflow/*' \
-            ! -path '*/deploykf-*/*')
+          # Only validate files that declare a top-level `kind:` — skips
+          # helm-values, kustomizeconfig patches, app configs, etc. naturally.
+          # Also exclude SOPS-encrypted secrets (their `sops:` stanza breaks
+          # strict Secret schema) and Talos bootstrap files.
+          # system-upgrade-controller plans use YAML merge-key anchors
+          # (<<: *prepare) which Go YAML flags as duplicate keys — runtime
+          # fine, strict parser not, so exclude.
+          files=$(grep -rlE '^kind:[[:space:]]+[A-Z]' kubernetes \
+            --include='*.yaml' --include='*.yml' \
+            | grep -vE '\.sops\.|^kubernetes/bootstrap/|^kubernetes/flux/vars/|system-upgrade-controller/plans/' \
+            || true)
 
           echo "Validating $(echo "$files" | wc -l) files"
           echo "$files" | xargs kubeconform \

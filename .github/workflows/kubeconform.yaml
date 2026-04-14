@@ -37,7 +37,7 @@ jobs:
           # fine, strict parser not, so exclude.
           files=$(grep -rlE '^kind:[[:space:]]+[A-Z]' kubernetes \
             --include='*.yaml' --include='*.yml' \
-            | grep -vE '\.sops\.|^kubernetes/bootstrap/|^kubernetes/flux/vars/|system-upgrade-controller/plans/' \
+            | grep -vE '\.sops\.|^kubernetes/bootstrap/|^kubernetes/flux/vars/|^kubernetes/templates/|system-upgrade-controller/plans/|/kubeflow/.*/patches/|/deploykf-.*/|/chart/.*/templates/' \
             || true)
 
           echo "Validating $(echo "$files" | wc -l) files"

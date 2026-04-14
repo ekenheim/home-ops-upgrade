@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Run yamllint
-        uses: frenck/action-yamllint@2fd12afca69f6f6ac4f78d4f5fb73df9aac93ea5 # v1.5.0
+        uses: frenck/action-yamllint@34b4bbcaeabedcfefad6adea8c5bbc42af0e2d47 # v1.5.0
         with:
           config: .yamllint.yaml
           strict: false

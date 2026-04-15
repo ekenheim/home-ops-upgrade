@@ -19,3 +19,4 @@ resources:
   #- ./suggestarr/ks.yaml
   - ./sabnzbd/ks.yaml
   - ./sonarr/ks.yaml
+  - ./arr-mcp/ks.yaml

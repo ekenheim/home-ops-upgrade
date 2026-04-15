@@ -22,6 +22,7 @@ resources:
   - ./ollama-igpu/ks.yaml
   - ./open-webui/ks.yaml
   - ./mcp-polygon/ks.yaml
+  - ./toolhive/ks.yaml
   - ./searxng/ks.yaml
   - ./jupyter-lab/ks.yaml
   - ./marimo/ks.yaml

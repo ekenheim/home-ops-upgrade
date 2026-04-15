@@ -1,5 +1,6 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  rebaseWhen: 'behind-base-branch',
   // PAT in Mend UI (credentials): needed for private repo API + GHCR image tag lookups
   hostRules: [
     {

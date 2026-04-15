@@ -16,7 +16,7 @@
       "automerge": true,
       "automergeType": "pr",
       "matchUpdateTypes": ["minor", "patch"],
-      "matchPackageNames": ["/kube-prometheus-stack/", "prefect", "reloader", "windmill"],
+      "matchPackageNames": ["/kube-prometheus-stack/", "prefect", "reloader", "windmill", "/actions-runner-controller/", "/toolhive/"],
       "ignoreTests": false
     },
     {

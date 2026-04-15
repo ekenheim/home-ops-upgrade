@@ -8,5 +8,4 @@ resources:
   - ./podmonitor.yaml
   - ./machine-learning
   - ./server
-  - ./immich-pvc.yaml
   - ../../../../templates/gatus/external

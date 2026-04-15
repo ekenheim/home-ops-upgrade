@@ -21,13 +21,13 @@ spec:
     - name: PROWLARR_URL
       value: http://prowlarr.downloads.svc.cluster.local
   secrets:
-    - name: toolhive-arr
+    - name: toolhive-sonarr
       key: SONARR_API_KEY
       targetEnvName: SONARR_API_KEY
-    - name: toolhive-arr
+    - name: toolhive-radarr
       key: RADARR_API_KEY
       targetEnvName: RADARR_API_KEY
-    - name: toolhive-arr
+    - name: toolhive-prowlarr
       key: PROWLARR_API_KEY
       targetEnvName: PROWLARR_API_KEY
   resources:

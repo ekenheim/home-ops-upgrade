@@ -21,7 +21,10 @@ resources:
   - ./grid-reliance-infra/ks.yaml
   - ./ollama-igpu/ks.yaml
   - ./open-webui/ks.yaml
-  - ./mcp-polygon/ks.yaml
+  # DISABLED: stale entry — open-webui tool gather times out on /sse, breaks
+  # chats that touch any tool server. Re-enable only after registering it
+  # in open-webui as Type: MCP (not OpenAPI) and verifying the handshake.
+  #- ./mcp-polygon/ks.yaml
   - ./toolhive/ks.yaml
   - ./searxng/ks.yaml
   - ./jupyter-lab/ks.yaml

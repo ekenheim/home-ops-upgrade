@@ -21,11 +21,17 @@ spec:
         app.kubernetes.io/component: api
     spec:
       restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
       imagePullSecrets:
         - name: ghcr-pull
       containers:
         - name: api
-          image: ghcr.io/ekenheim/grid-resilience-api:v1.0.14
+          image: ghcr.io/ekenheim/grid-resilience-api:v1.0.15
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities: { drop: ["ALL"] }
           imagePullPolicy: Always
           ports:
             - name: http

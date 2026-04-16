@@ -13,7 +13,7 @@ metadata:
 spec:
   type: Python
   mode: cluster
-  image: ghcr.io/ekenheim/grid-resilience-data-engineering:v1.0.12
+  image: ghcr.io/ekenheim/grid-resilience-data-engineering:v1.0.15
   imagePullPolicy: IfNotPresent
   imagePullSecrets:
     - ghcr-pull
@@ -23,6 +23,17 @@ spec:
     serviceAccount: spark
     cores: 1
     memory: 1g
+    securityContext:
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities: { drop: ["ALL"] }
+    resources:
+      requests:
+        cpu: "1"
+        memory: 1Gi
+      limits:
+        cpu: "1"
+        memory: 1536Mi
     env:
       - name: BRONZE_AWS_ACCESS_KEY_ID
         valueFrom:
@@ -78,6 +89,17 @@ spec:
     cores: 2
     instances: 2
     memory: 2g
+    securityContext:
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities: { drop: ["ALL"] }
+    resources:
+      requests:
+        cpu: "2"
+        memory: 2Gi
+      limits:
+        cpu: "2"
+        memory: 3Gi
     env:
       - name: BRONZE_AWS_ACCESS_KEY_ID
         valueFrom:

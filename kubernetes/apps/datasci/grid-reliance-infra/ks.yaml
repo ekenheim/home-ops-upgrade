@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 # Grid Resilience data platform infra: OBCs (Bronze/Silver/Gold), API (serves Gold), RayJob, Spark jobs.
 # Must live in datasci — Spark operator watches this namespace and the Ray cluster runs here.
-# App code (pipeline, dashboard) lives in development/grid-reliance.
+# App code (pipeline, generator) lives in development/grid-reliance.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:

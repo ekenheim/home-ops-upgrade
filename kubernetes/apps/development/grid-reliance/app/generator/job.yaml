@@ -18,12 +18,18 @@ spec:
         app.kubernetes.io/component: generator
     spec:
       restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
       imagePullSecrets:
         - name: ghcr-pull
       containers:
         - name: generator
-          image: ghcr.io/ekenheim/grid-resilience-generator:v1.0.12
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/ekenheim/grid-resilience-generator:v1.0.15
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities: { drop: ["ALL"] }
           envFrom:
             - secretRef:
                 name: grid-reliance-postgres

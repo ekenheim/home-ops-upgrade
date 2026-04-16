@@ -1,6 +1,6 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
-# Grid Reliance app code (development namespace): pipeline code server, dashboard, generator.
+# Grid Reliance app code (development namespace): pipeline code server.
 # Data platform infra (OBCs, API, RayJob, Spark) lives in kubernetes/apps/datasci/grid-reliance-infra
 # because the Spark operator and Ray cluster are scoped to datasci and Rook OBCs create
 # their credentials in the same namespace as the claim.
@@ -10,6 +10,4 @@ resources:
   - ./externalsecret.yaml
   # - ./api  # API lives in datasci/grid-reliance-infra; it reads directly from the Gold OBC there.
   - ./pipeline
-  - ./dashboard
-  - ./db-init  # Schema bootstrap + synthetic seed. Remove once generator image is published.
-  # - ./generator  # Re-enable when ghcr.io/ekenheim/grid-resilience-generator:v1.0.12 is published
+  - ./generator

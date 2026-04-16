@@ -22,11 +22,17 @@ spec:
         app.kubernetes.io/component: pipeline
     spec:
       restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
       imagePullSecrets:
         - name: ghcr-pull
       containers:
         - name: pipeline
-          image: ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.12
+          image: ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.15
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities: { drop: ["ALL"] }
           imagePullPolicy: Always
           ports:
             - name: grpc
@@ -43,7 +49,7 @@ spec:
             - name: DAGSTER_MODULE_NAME
               value: "pipeline.dagster.repository"
             - name: DAGSTER_CURRENT_IMAGE
-              value: "ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.12"
+              value: "ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.15"
             - name: MLFLOW_TRACKING_URI
               value: "http://mlflow.datasci.svc.cluster.local:5000"
           resources:

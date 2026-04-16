@@ -24,11 +24,17 @@ spec:
         descheduler.alpha.kubernetes.io/evict: "false"
     spec:
       restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
       imagePullSecrets:
         - name: ghcr-pull
       containers:
         - name: ray-job-submitter
-          image: ghcr.io/ekenheim/grid-resilience-inference:v1.0.14
+          image: ghcr.io/ekenheim/grid-resilience-inference:v1.0.15
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities: { drop: ["ALL"] }
           imagePullPolicy: IfNotPresent
           env:
             - name: SILVER_AWS_ACCESS_KEY_ID

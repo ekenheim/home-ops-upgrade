@@ -25,6 +25,8 @@ spec:
     memory: 1g
     securityContext:
       runAsNonRoot: true
+      runAsUser: 185
+      runAsGroup: 185
       allowPrivilegeEscalation: false
       capabilities: { drop: ["ALL"] }
     env:
@@ -84,6 +86,8 @@ spec:
     memory: 2g
     securityContext:
       runAsNonRoot: true
+      runAsUser: 185
+      runAsGroup: 185
       allowPrivilegeEscalation: false
       capabilities: { drop: ["ALL"] }
     env:

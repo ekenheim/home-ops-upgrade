@@ -1,0 +1,36 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Update PR Branches
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  update:
+    name: Update PR Branches
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update all open PR branches
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pulls = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              base: 'main',
+            });
+            for (const pull of pulls.data) {
+              console.log(`Updating PR #${pull.number}: ${pull.title}`);
+              try {
+                await github.rest.pulls.updateBranch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pull.number,
+                });
+                console.log(`  ✓ Updated`);
+              } catch (e) {
+                console.log(`  ✗ Skipped: ${e.message}`);
+              }
+            }

@@ -28,7 +28,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: ray-job-submitter
-          image: ghcr.io/ekenheim/grid-resilience-inference:v1.0.12
+          image: ghcr.io/ekenheim/grid-resilience-inference:v1.0.14
           imagePullPolicy: IfNotPresent
           env:
             - name: SILVER_AWS_ACCESS_KEY_ID

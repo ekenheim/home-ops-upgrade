@@ -30,7 +30,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: pipeline
-          image: ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.15
+          image: ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.16
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
@@ -51,7 +51,7 @@ spec:
             - name: DAGSTER_MODULE_NAME
               value: "pipeline.dagster.repository"
             - name: DAGSTER_CURRENT_IMAGE
-              value: "ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.15"
+              value: "ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.16"
             - name: MLFLOW_TRACKING_URI
               value: "http://mlflow.datasci.svc.cluster.local:5000"
           resources:

@@ -26,7 +26,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: generator
-          image: ghcr.io/ekenheim/grid-resilience-generator:v1.0.15
+          image: ghcr.io/ekenheim/grid-resilience-generator:v1.0.16
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false

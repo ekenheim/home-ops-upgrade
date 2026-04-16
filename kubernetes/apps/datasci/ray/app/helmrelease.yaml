@@ -118,7 +118,7 @@ spec:
       groupName: workergroup
       image:
         repository: ghcr.io/ekenheim/grid-resilience-ray-worker
-        tag: v1.0.15
+        tag: v1.0.16
         pullPolicy: Always
       imagePullSecrets:
         - name: ghcr-pull

@@ -22,7 +22,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: generator
-          image: ghcr.io/ekenheim/grid-resilience-generator:v1.0.12
+          image: ghcr.io/ekenheim/grid-resilience-generator:v1.0.15
           imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:

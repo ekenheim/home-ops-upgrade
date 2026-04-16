@@ -25,7 +25,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: api
-          image: ghcr.io/ekenheim/grid-resilience-api:v1.0.12
+          image: ghcr.io/ekenheim/grid-resilience-api:v1.0.14
           imagePullPolicy: Always
           ports:
             - name: http

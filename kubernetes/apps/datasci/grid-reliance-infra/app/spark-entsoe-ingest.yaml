@@ -28,13 +28,6 @@ spec:
       runAsNonRoot: true
       allowPrivilegeEscalation: false
       capabilities: { drop: ["ALL"] }
-    resources:
-      requests:
-        cpu: "1"
-        memory: 1Gi
-      limits:
-        cpu: "1"
-        memory: 1536Mi
     env:
       - name: ENTSOE_API_KEY
         valueFrom:
@@ -99,13 +92,6 @@ spec:
       runAsNonRoot: true
       allowPrivilegeEscalation: false
       capabilities: { drop: ["ALL"] }
-    resources:
-      requests:
-        cpu: "2"
-        memory: 2Gi
-      limits:
-        cpu: "2"
-        memory: 3Gi
     env:
       - name: ENTSOE_API_KEY
         valueFrom:

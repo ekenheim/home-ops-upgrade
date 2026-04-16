@@ -26,7 +26,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: pipeline
-          image: ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.12
+          image: ghcr.io/ekenheim/grid-resilience-pipeline:v1.0.14
           imagePullPolicy: Always
           ports:
             - name: grpc

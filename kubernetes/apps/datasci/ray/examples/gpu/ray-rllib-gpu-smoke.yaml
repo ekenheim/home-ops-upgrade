@@ -15,7 +15,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: ray-rllib-gpu-smoke
-          image: rayproject/ray:2.54.1
+          image: rayproject/ray:2.55.0
           imagePullPolicy: IfNotPresent
           command:
             - bash

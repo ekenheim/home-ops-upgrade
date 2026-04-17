@@ -78,6 +78,15 @@ spec:
             - "DRAGONFLY_HOST=dragonfly-master.database.svc.cluster.local"
             - "DRAGONFLY_PORT=6379"
             - "DRAGONFLY_DB=2"
+            # grid-reliance HSGP SVI path (other code locations ignore these)
+            - "HSGP_METHOD=svi"
+            - "HSGP_SVI_METHOD=fullrank_advi"
+            - "HSGP_SVI_N_ITER=50000"
+            - "HSGP_SVI_N_SAMPLES=2000"
+            # BLAS/XLA threading — must be pod-spec time; PyMC/JAX import at module load
+            - "OMP_NUM_THREADS=4"
+            - "MKL_NUM_THREADS=4"
+            - "OPENBLAS_NUM_THREADS=4"
           envSecrets:
             - name: hempriser-minio
             - name: hempriser-postgres
@@ -90,8 +99,8 @@ spec:
           volumes: []
           resources:
             requests:
-              cpu: 2000m
-              memory: 4Gi
+              cpu: 4000m
+              memory: 8Gi
             limits:
               cpu: 4000m
               memory: 16Gi

@@ -1,5 +1,5 @@
 ---
-providerRegex: ^(master1|master2|master3|worker2|worker3)$
+providerRegex: ^(master1|master2|master3|worker3)$
 bypassDnsResolution: true
 metrics:
   enable: true

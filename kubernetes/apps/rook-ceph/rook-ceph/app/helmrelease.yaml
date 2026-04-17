@@ -37,14 +37,6 @@ spec:
       enableLiveness: true
       serviceMonitor:
         enabled: true
-      # Pin CSI provisioner (ctrlplugin) Deployments to control-plane nodes,
-      # matching the existing mgr/mon placement. Prevents them from consuming
-      # the small 2-CPU worker2 NUC and starving its CSI nodeplugin DaemonSet.
-      provisionerNodeAffinity: "node-role.kubernetes.io/control-plane="
-      provisionerTolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
     monitoring:
       enabled: true
     resources:

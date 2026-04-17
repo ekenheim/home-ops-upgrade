@@ -1,7 +1,7 @@
 # worker3 — Manual Talos Upgrade Runbook
 
 **Why this node is special:** `worker3` uses an AMD CPU/GPU. The rest of the
-cluster (master1–3, worker2) runs Intel and relies on
+cluster (master1–3) runs Intel and relies on
 `intel-device-plugins-gpu` for iGPU scheduling. The
 `system-upgrade-controller` Plan at
 `kubernetes/apps/kube-tools/system-upgrade-controller/plans/talos.yaml`
@@ -15,7 +15,7 @@ cluster moves to a new Talos version.
 ## When to upgrade
 
 After the automated system-upgrade-controller run finishes upgrading the
-other four nodes (check with `kubectl get nodes -o wide`), schedule a
+other three nodes (check with `kubectl get nodes -o wide`), schedule a
 separate window for worker3.
 
 ## Prerequisites

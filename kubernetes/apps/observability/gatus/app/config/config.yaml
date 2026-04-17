@@ -40,13 +40,3 @@ endpoints:
       dns-resolver: tcp://1.1.1.1:53
     conditions: ["[STATUS] == 404"]
     alerts: [{ type: discord }]
-  - name: cert-manager-expiry
-    group: internal
-    url: https://${SECRET_DOMAIN}
-    interval: 10m
-    conditions:
-      - "[CERTIFICATE_EXPIRATION] > 336h" # alert when under 14 days
-    alerts:
-      - type: discord
-        description: "TLS certificate for ${SECRET_DOMAIN} expires in under 14 days — check cert-manager"
-        failure-threshold: 1

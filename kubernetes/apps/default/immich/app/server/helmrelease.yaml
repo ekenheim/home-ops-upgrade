@@ -60,6 +60,30 @@ spec:
           configmap.reloader.stakater.com/reload: &configMap immich-configmap
           secret.reloader.stakater.com/reload: &secret immich-secret
 
+        initContainers:
+          # Idempotent superuser-only DDL that the immich app user cannot run
+          # itself (e.g. ALTER EXTENSION). Connects to the primary directly
+          # because pgbouncer rejects the postgres superuser.
+          db-extension-update:
+            image:
+              repository: postgres
+              tag: 18-alpine
+            envFrom:
+              - secretRef:
+                  name: immich-db-secret
+              - secretRef:
+                  name: immich-super-secret
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -eu
+                export PGPASSWORD="$POSTGRES_SUPER_PASS"
+                psql -v ON_ERROR_STOP=1 \
+                  -h "$INIT_POSTGRES_HOST" \
+                  -U "$INIT_POSTGRES_USER" \
+                  -d "$DB_DATABASE_NAME" \
+                  -c "ALTER EXTENSION vector UPDATE;"
+
         containers:
           app:
             image:

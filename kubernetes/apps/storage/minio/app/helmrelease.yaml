@@ -25,8 +25,6 @@ spec:
   values:
     controllers:
       minio:
-        labels:
-          nfsMount: "true"
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
@@ -48,9 +46,7 @@ spec:
                   name: *app
             args:
               - server
-              - /data1
-              - /data2
-              - /data3
+              - /data
               - --console-address
               - :9001
             probes:
@@ -67,7 +63,9 @@ spec:
                   failureThreshold: 6
               readiness: *probes
             securityContext:
-              runAsUser: 99
+              runAsUser: 0
+              runAsGroup: 0
+              allowPrivilegeEscalation: true
             resources:
               requests:
                 memory: 100Mi
@@ -118,24 +116,7 @@ spec:
         tls:
           - hosts: [*s3Host]
     persistence:
-      data1:
-        enabled: true
-        type: nfs
-        server: ${NAS_IP:=temp}
-        path: ${SECRET_NFS_MINIO:=temp}
+      data:
+        existingClaim: minio-data
         globalMounts:
-          - path: /data1
-      data2:
-        enabled: true
-        type: nfs
-        server: ${NAS_IP:=temp}
-        path: ${SECRET_NFS_MINIO_2:=temp}
-        globalMounts:
-          - path: /data2
-      data3:
-        enabled: true
-        type: nfs
-        server: ${NAS_IP:=temp}
-        path: ${SECRET_NFS_MINIO_3:=temp}
-        globalMounts:
-          - path: /data3
+          - path: /data

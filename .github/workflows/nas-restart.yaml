@@ -21,7 +21,7 @@
           cluster: ["main"]
       steps:
         - name: Get Secrets
-          uses: bitwarden/sm-action@v2
+          uses: bitwarden/sm-action@v3.0.0
           with:
             access_token: ${{ secrets.BW_ACCESS_TOKEN }}
             secrets: |

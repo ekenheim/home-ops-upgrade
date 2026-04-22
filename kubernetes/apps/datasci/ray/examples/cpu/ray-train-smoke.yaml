@@ -14,7 +14,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: ray-train-smoke
-          image: rayproject/ray:2.55.0
+          image: rayproject/ray:2.55.1
           imagePullPolicy: IfNotPresent
           command:
             - bash

@@ -25,6 +25,18 @@
       "matchDatasources": ["terraform-provider"],
       "versioning": "terraform",
       "matchPackagePatterns": [".*"]
+    },
+    {
+      // Hold Kubernetes < 1.36 until Talos 1.13 GAs — talosctl 1.12.x
+      // refuses the 1.35 -> 1.36 upgrade path. Lift this rule in the same
+      // PR that bumps ghcr.io/siderolabs/installer to v1.13.x.
+      "description": ["Pin kubelet/kubectl to <1.36 (awaiting Talos 1.13 GA)"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "ghcr.io/siderolabs/kubelet",
+        "registry.k8s.io/kubectl"
+      ],
+      "allowedVersions": "<1.36.0"
     }
   ]
 }

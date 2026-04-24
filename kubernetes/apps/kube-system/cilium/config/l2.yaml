@@ -8,7 +8,7 @@ metadata:
 spec:
   loadBalancerIPs: true
   interfaces:
-    - ^(ens|enp).*
+    - ^(ens|enp|bond).*
   nodeSelector:
     matchLabels:
       kubernetes.io/os: linux  # Apply to all Linux nodes
@@ -32,7 +32,7 @@ metadata:
 spec:
   loadBalancerIPs: true
   interfaces:
-    - ^(ens|enp).*
+    - ^(ens|enp|bond).*
   nodeSelector:
     matchLabels:
       kubernetes.io/os: linux
@@ -47,7 +47,7 @@ metadata:
 spec:
   loadBalancerIPs: true
   interfaces:
-    - ^(ens|enp).*
+    - ^(ens|enp|bond).*
   nodeSelector:
     matchLabels:
       kubernetes.io/os: linux
@@ -62,7 +62,7 @@ metadata:
 spec:
   loadBalancerIPs: true
   interfaces:
-    - ^(ens|enp).*
+    - ^(ens|enp|bond).*
   nodeSelector:
     matchLabels:
       kubernetes.io/os: linux
@@ -77,7 +77,7 @@ metadata:
 spec:
   loadBalancerIPs: true
   interfaces:
-    - ^(ens|enp).*
+    - ^(ens|enp|bond).*
   nodeSelector:
     matchLabels:
       kubernetes.io/os: linux
@@ -94,7 +94,7 @@ metadata:
 spec:
   loadBalancerIPs: true
   interfaces:
-    - ^(ens|enp).*
+    - ^(ens|enp|bond).*
   nodeSelector:
     matchLabels:
       kubernetes.io/os: linux

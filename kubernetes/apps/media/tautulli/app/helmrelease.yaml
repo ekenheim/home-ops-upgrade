@@ -45,6 +45,21 @@ spec:
               "--datadir", "/config",
               "--port", "80"
             ]
+            # NFS stale-handle watchdog: see posterizarr helmrelease for context.
+            # Tautulli's notify script writes trigger files into /config/watcher;
+            # if the mount goes stale every Plex addition silently fails with
+            # OSError 116 and posters never get generated.
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["/bin/sh", "-c", "test -d /config/watcher"]
+                  initialDelaySeconds: 60
+                  periodSeconds: 60
+                  timeoutSeconds: 10
+                  failureThreshold: 3
             resources:
               requests:
                 cpu: 20m

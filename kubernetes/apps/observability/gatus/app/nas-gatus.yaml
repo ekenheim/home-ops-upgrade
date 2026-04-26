@@ -17,3 +17,13 @@ data:
         ui:
           hide-url: true
           hide-hostname: true
+      # Catches NFS hangs/re-exports before consumer pods crash-loop.
+      - name: nas-nfs
+        group: infra
+        url: tcp://${NAS_IP}:2049
+        interval: 1m
+        conditions: ["[CONNECTED] == true"]
+        alerts: [{ type: discord }]
+        ui:
+          hide-url: true
+          hide-hostname: true

@@ -52,6 +52,23 @@ spec:
               tag: 2.2.39@sha256:bc11139deb961b250ec9fd16051b34f770ab60374402b4d9e3dd105f875a6d38
             env:
               TZ: ${TIMEZONE}
+            # NFS stale-handle watchdog: when the NAS export gets re-exported
+            # (NAS reboot, share recreation), the existing kernel mount handle
+            # for /config/watcher dies with ESTALE and the watcher loop silently
+            # stops processing trigger files. test -d returns non-zero on ESTALE,
+            # so 3 consecutive failures restart the container, which remounts
+            # cleanly against the current inode.
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["/bin/sh", "-c", "test -d /config/watcher"]
+                  initialDelaySeconds: 60
+                  periodSeconds: 60
+                  timeoutSeconds: 10
+                  failureThreshold: 3
             resources:
               requests:
                 cpu: 100m

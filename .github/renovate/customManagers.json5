@@ -23,6 +23,16 @@
         "datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( repository=(?<registryUrl>\\S+))?\n.+?\"(?<currentValue>\\S+)\""
       ],
       "datasourceTemplate": "{{#if datasource}}{{{datasource}}}{{else}}github-releases{{/if}}"
+    },
+    {
+      "customType": "regex",
+      "description": ["Bump README shields.io static badges annotated with renovate comments"],
+      "fileMatch": ["(^|/)README\\.md$"],
+      "matchStrings": [
+        // <!-- renovate: datasource=github-releases depName=fluxcd/flux2 -->
+        // [![Flux](https://img.shields.io/badge/Flux-v2.8.6-blue?...)](...)
+        "<!-- renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) -->\\s*\\n.*?-(?<currentValue>v\\d+\\.\\d+\\.\\d+)-"
+      ]
     }
   ]
 }

@@ -22,8 +22,11 @@ spec:
       retries: 3
   values:
     image:
+      # Hold at 2.54.0 to match grid-resilience-ray-worker:v1.0.18 (built
+      # against Ray 2.54.0). Ray enforces an exact version match between
+      # head and workers; bump only in lockstep with a worker rebuild.
       repository: rayproject/ray
-      tag: 2.55.1
+      tag: 2.54.0
       pullPolicy: IfNotPresent
 
     head:

@@ -37,6 +37,17 @@
         "registry.k8s.io/kubectl"
       ],
       "allowedVersions": "<1.36.0"
+    },
+    {
+      // Hold rayproject/ray < 2.55 until grid-resilience-ray-worker is
+      // rebuilt against Ray 2.55.x. Ray enforces an exact head/worker
+      // version match — drift here breaks the cluster (workers stuck in
+      // wait-gcs-ready). Lift this rule in the same PR that bumps
+      // ghcr.io/ekenheim/grid-resilience-ray-worker.
+      "description": ["Pin rayproject/ray to <2.55 (awaiting worker rebuild)"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["rayproject/ray"],
+      "allowedVersions": "<2.55.0"
     }
   ]
 }

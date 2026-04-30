@@ -26,7 +26,7 @@ spec:
       # against Ray 2.54.0). Ray enforces an exact version match between
       # head and workers; bump only in lockstep with a worker rebuild.
       repository: rayproject/ray
-      tag: 2.54.0
+      tag: 2.54.1
       pullPolicy: IfNotPresent
 
     head:

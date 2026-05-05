@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 4.6.2 # Match mlflow's version or specify desired version
+      version: 5.0.0 # Match mlflow's version or specify desired version
       sourceRef:
         kind: HelmRepository
         name: bjw-s

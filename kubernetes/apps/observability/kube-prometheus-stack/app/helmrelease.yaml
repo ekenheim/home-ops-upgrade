@@ -136,7 +136,7 @@ spec:
           - prometheus.${SECRET_DOMAIN}
       prometheusSpec:
         thanos:
-          image: quay.io/thanos/thanos:v0.41.0
+          version: v0.41.0
         scrapeInterval: 1m # Must match interval in Grafana Helm chart
         enableAdminAPI: true
         enableFeatures:

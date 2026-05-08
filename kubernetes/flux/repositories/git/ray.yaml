@@ -8,7 +8,7 @@ spec:
   interval: 30m
   url: https://github.com/ray-project/ray
   ref:
-    tag: ray-2.35.0  # Using the latest release tag as of the search results
+    tag: v2.55.1  # Using the latest release tag as of the search results
   ignore: |
     # exclude all
     /*

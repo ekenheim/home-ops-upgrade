@@ -31,7 +31,7 @@ spec:
           app:
             image:
               repository: ghcr.io/unpoller/unpoller
-              tag: v3.0.0@sha256:1c9caf56720b59343113fe148fb2f4c84e5a74e4dad10cc504b2fff82f5ef794
+              tag: v3.1.1@sha256:7df3080cd8895055327d5776497015645d14eab7ed1a6558073f97072cbc6411
             env:
               UP_UNIFI_DEFAULT_URL: ${UNIFI_CONTROLLER_IP}
               UP_INFLUXDB_DISABLE: true

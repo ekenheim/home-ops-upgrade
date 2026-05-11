@@ -77,7 +77,8 @@ spec:
                   --host 0.0.0.0 \
                   --port 5000 \
                   --backend-store-uri "$MLFLOW_BACKEND_STORE_URI" \
-                  --default-artifact-root "$MLFLOW_DEFAULT_ARTIFACT_ROOT" \
+                  --default-artifact-root mlflow-artifacts:/ \
+                  --artifacts-destination s3://mlflow-artifacts/ \
                   --serve-artifacts \
                   --allowed-hosts "*"
             env:
@@ -104,7 +105,8 @@ spec:
                     key: POSTGRES_PASSWORD
 
               # --- S3 Artifact Store Config ---
-              MLFLOW_DEFAULT_ARTIFACT_ROOT: s3://mlflow-artifacts/
+              # Proxy mode: clients upload via the server (default-artifact-root=mlflow-artifacts:/),
+              # server writes to MinIO using artifacts-destination + these creds.
               MLFLOW_S3_ENDPOINT_URL: http://minio-secondary.storage.svc.cluster.local:9000
               AWS_ACCESS_KEY_ID:
                 valueFrom:

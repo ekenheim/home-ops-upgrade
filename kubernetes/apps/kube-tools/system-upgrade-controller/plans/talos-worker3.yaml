@@ -36,6 +36,10 @@ spec:
     args:
       - --nodes=$(NODE_IP)
       - health
+      # Worker nodes cannot serve the cluster health-check RPC; --server=false
+      # runs the check client-side. Required for worker plans (control-plane
+      # plans can omit it). See talos.yaml.
+      - --server=false
       - --wait-timeout=10m
   upgrade:
     <<: *prepare

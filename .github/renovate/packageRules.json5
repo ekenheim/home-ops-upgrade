@@ -39,15 +39,16 @@
       "allowedVersions": "<1.36.0"
     },
     {
-      // Hold rayproject/ray < 2.55 until grid-resilience-ray-worker is
-      // rebuilt against Ray 2.55.x. Ray enforces an exact head/worker
-      // version match — drift here breaks the cluster (workers stuck in
-      // wait-gcs-ready). Lift this rule in the same PR that bumps
-      // ghcr.io/ekenheim/grid-resilience-ray-worker.
-      "description": ["Pin rayproject/ray to <2.55 (awaiting worker rebuild)"],
+      // Pin rayproject/ray to exactly 2.54.0 to match the Ray version
+      // baked into ghcr.io/ekenheim/grid-resilience-ray-worker:v1.0.18.
+      // Ray enforces an EXACT head/worker version match — even a patch
+      // bump (2.54.0 -> 2.54.1) breaks the cluster (workers stuck in
+      // wait-gcs-ready). Bump this in the same PR that rebuilds the
+      // worker image against the new Ray version.
+      "description": ["Pin rayproject/ray to 2.54.0 (exact match with worker image)"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["rayproject/ray"],
-      "allowedVersions": "<2.55.0"
+      "allowedVersions": "<2.54.1"
     }
   ]
 }

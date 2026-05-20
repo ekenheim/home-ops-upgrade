@@ -18,7 +18,7 @@ resources:
   #- ./dask/ks.yaml
   - ./ray/ks.yaml
   - ./spark/ks.yaml
-  #- ./grid-reliance-infra/ks.yaml
+  - ./grid-reliance-infra/ks.yaml
   - ./ollama-igpu/ks.yaml
   - ./open-webui/ks.yaml
   # DISABLED: stale entry — open-webui tool gather times out on /sse, breaks

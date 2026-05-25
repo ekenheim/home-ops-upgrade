@@ -61,8 +61,10 @@ spec:
 
                   TMPL='{range .items[*]}{.metadata.namespace}|{.involvedObject.kind}|{.involvedObject.name}|{.lastTimestamp}|{.message}{"\n"}{end}'
 
-                  kubectl get events -A --field-selector reason=Failed -o jsonpath="$TMPL" \
-                    | grep -E "stale file handle|failed to prepare subPath for volumeMount" \
+                  # grep returns 1 on no matches; under pipefail that aborts the
+                  # script even though "nothing to clean" is the happy path.
+                  { kubectl get events -A --field-selector reason=Failed -o jsonpath="$TMPL" \
+                      | grep -E "stale file handle|failed to prepare subPath for volumeMount" || true; } \
                     | awk -F'|' -v cutoff="$CUTOFF_EPOCH" '
                         $2 == "Pod" && $4 != "" {
                           cmd = "date -u -d \"" $4 "\" +%s 2>/dev/null"

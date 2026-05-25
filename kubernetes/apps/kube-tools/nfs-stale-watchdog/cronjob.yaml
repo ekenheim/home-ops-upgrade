@@ -1,0 +1,82 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nfs-stale-watchdog
+spec:
+  # Scans pod events for stale NFS handles (and the symptomatic subPath-prep
+  # failure that follows a NAS re-export), then deletes the offending pod so
+  # kubelet unmounts and re-mounts on reschedule. See
+  # project_nfs_stale_handle_silent_break in memory for background.
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          annotations:
+            descheduler.alpha.kubernetes.io/evict: "false"
+        spec:
+          serviceAccountName: nfs-stale-watchdog
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: watchdog
+              image: docker.io/bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              command:
+                - /bin/bash
+                - -ec
+                - |
+                  set -euo pipefail
+
+                  # Only act on events within the last LOOKBACK_MIN minutes so
+                  # we don't re-target a recovered pod whose old event is still
+                  # within the API's 1h retention window. This matters for
+                  # StatefulSet pods (stable names) where a stale event from
+                  # 40min ago could otherwise nuke a healthy replacement.
+                  LOOKBACK_MIN=15
+                  CUTOFF_EPOCH=$(date -u -d "${LOOKBACK_MIN} minutes ago" +%s)
+
+                  TMPL='{range .items[*]}{.metadata.namespace}|{.involvedObject.kind}|{.involvedObject.name}|{.lastTimestamp}|{.message}{"\n"}{end}'
+
+                  kubectl get events -A --field-selector reason=Failed -o jsonpath="$TMPL" \
+                    | grep -E "stale file handle|failed to prepare subPath for volumeMount" \
+                    | awk -F'|' -v cutoff="$CUTOFF_EPOCH" '
+                        $2 == "Pod" && $4 != "" {
+                          cmd = "date -u -d \"" $4 "\" +%s 2>/dev/null"
+                          ts = 0
+                          cmd | getline ts
+                          close(cmd)
+                          if (ts >= cutoff) print $1 "\t" $3
+                        }' \
+                    | sort -u \
+                    | while IFS=$'\t' read -r ns pod; do
+                        [ -z "$ns" ] && continue
+                        [ -z "$pod" ] && continue
+                        echo "[nfs-watchdog] deleting $ns/$pod"
+                        kubectl -n "$ns" delete pod "$pod" --ignore-not-found --wait=false
+                      done
+
+                  echo "[nfs-watchdog] scan complete"

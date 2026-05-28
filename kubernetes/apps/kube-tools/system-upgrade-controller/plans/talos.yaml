@@ -41,19 +41,18 @@ spec:
     ignoreDaemonSets: true
     skipWaitForDeleteTimeout: 5
     timeout: 10m
-  prepare: &prepare
+  # No prepare: SUC cordons the target node before running prepare, and
+  # `talosctl health` in 1.13.3 fails the cluster check on any unschedulable
+  # node — i.e. the target — so prepare can never pass. Talos's upgrade
+  # itself refuses to run on an unhealthy cluster (etcd quorum, control
+  # plane), so this safety net survives without the duplicate pre-flight.
+  upgrade:
     image: ghcr.io/siderolabs/talosctl:${TALOS_VERSION}
     envs:
       - name: NODE_IP
         valueFrom:
           fieldRef:
             fieldPath: status.hostIP
-    args:
-      - --nodes=$(NODE_IP)
-      - health
-      - --wait-timeout=3m
-  upgrade:
-    <<: *prepare
     args:
       - --nodes=$(NODE_IP)
       - upgrade

@@ -35,23 +35,14 @@ spec:
     ignoreDaemonSets: true
     skipWaitForDeleteTimeout: 5
     timeout: 10m
-  prepare: &prepare
+  # No prepare — see plans/talos.yaml for rationale.
+  upgrade:
     image: ghcr.io/siderolabs/talosctl:${TALOS_VERSION}
     envs:
       - name: NODE_IP
         valueFrom:
           fieldRef:
             fieldPath: status.hostIP
-    args:
-      - --nodes=$(NODE_IP)
-      - health
-      # Worker nodes cannot serve the cluster health-check RPC; --server=false
-      # runs the check client-side. Required for worker plans (control-plane
-      # plans can omit it). See talos.yaml.
-      - --server=false
-      - --wait-timeout=3m
-  upgrade:
-    <<: *prepare
     args:
       - --nodes=$(NODE_IP)
       - upgrade

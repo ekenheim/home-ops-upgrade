@@ -36,7 +36,12 @@ spec:
             env:
               SYSTEM_UPGRADE_CONTROLLER_DEBUG: false
               SYSTEM_UPGRADE_CONTROLLER_THREADS: 2
-              SYSTEM_UPGRADE_JOB_ACTIVE_DEADLINE_SECONDS: 900
+              # 45-min ceiling per upgrade Job. Plans can override via
+              # spec.jobActiveDeadlineSecs. The old 900s left no headroom once
+              # `talosctl health` ran with --wait-timeout=10m before the
+              # upgrade phase even started (saw both master1 and worker3
+              # DeadlineExceeded on the v1.13.2→v1.13.3 roll).
+              SYSTEM_UPGRADE_JOB_ACTIVE_DEADLINE_SECONDS: 2700
               SYSTEM_UPGRADE_JOB_BACKOFF_LIMIT: 99
               SYSTEM_UPGRADE_JOB_IMAGE_PULL_POLICY: IfNotPresent
               SYSTEM_UPGRADE_JOB_KUBECTL_IMAGE: registry.k8s.io/kubectl:v1.35.5

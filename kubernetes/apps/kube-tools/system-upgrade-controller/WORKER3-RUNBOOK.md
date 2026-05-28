@@ -1,22 +1,39 @@
-# worker3 — Manual Talos Upgrade Runbook
+# worker3 — Talos Upgrade Runbook (automated, with manual fallback)
 
-**Why this node is special:** `worker3` uses an AMD CPU/GPU. The rest of the
-cluster (master1–3) runs Intel and relies on
-`intel-device-plugins-gpu` for iGPU scheduling. The
+**Why this node is special:** `worker3` uses an AMD CPU/GPU. The rest of
+the cluster (master1–3) runs Intel and relies on
+`intel-device-plugins-gpu` for iGPU scheduling. The control-plane
 `system-upgrade-controller` Plan at
 `kubernetes/apps/kube-tools/system-upgrade-controller/plans/talos.yaml`
-explicitly excludes `worker3` via nodeSelector so that a generic
-Intel-focused upgrade can't break AMD-specific drivers or Talos
-extensions.
+explicitly excludes `worker3` via nodeSelector so a generic Intel-focused
+upgrade can't apply the wrong schematic.
 
-As a result, worker3 must be upgraded by hand whenever the rest of the
-cluster moves to a new Talos version.
+worker3 is now upgraded automatically by a dedicated
+[`talos-worker3`](./plans/talos-worker3.yaml) Plan that pins
+`TALOS_SCHEMATIC_WORKER3` (the AMD schematic ID lives in
+[`ks.yaml`](./ks.yaml)). The manual steps below are kept as a fallback
+for when the Plan fails (e.g. Job DeadlineExceeded).
 
 ## When to upgrade
 
-After the automated system-upgrade-controller run finishes upgrading the
-other three nodes (check with `kubectl get nodes -o wide`), schedule a
-separate window for worker3.
+Normally: nothing — the `talos-worker3` Plan picks the new version up
+automatically when Renovate bumps `TALOS_VERSION`. Watch
+`kubectl get nodes -o wide` and the Plan status:
+
+```bash
+kubectl get plan -n kube-tools talos-worker3
+```
+
+Fall back to the manual procedure only if the Plan is wedged. Common
+failure modes:
+
+- Plan condition `Complete=False`, message `DeadlineExceeded` — the
+  upgrade Job ran past `spec.jobActiveDeadlineSecs`. The Plan now sets
+  this to 2700s and `drain.disableEviction: true`; if you still hit it,
+  inspect the failed Job logs before bumping further.
+- Node stuck `SchedulingDisabled` with no Job running — SUC cordoned it
+  but the Job aged out. Uncordon and let SUC retry, or proceed manually
+  below.
 
 ## Prerequisites
 

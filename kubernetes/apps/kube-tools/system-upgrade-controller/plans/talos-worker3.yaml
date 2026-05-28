@@ -49,4 +49,5 @@ spec:
       - --image=factory.talos.dev/metal-installer/${TALOS_SCHEMATIC_WORKER3}:${TALOS_VERSION}
       - --preserve
       - --reboot-mode=powercycle
+      - --drain=false
       - --wait=false

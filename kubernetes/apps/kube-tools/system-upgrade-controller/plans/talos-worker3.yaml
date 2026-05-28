@@ -35,7 +35,7 @@ spec:
     ignoreDaemonSets: true
     skipWaitForDeleteTimeout: 5
     timeout: 10m
-  # No prepare — see plans/talos.yaml for rationale.
+  # No prepare; --wait=false on upgrade — see plans/talos.yaml for rationale.
   upgrade:
     image: ghcr.io/siderolabs/talosctl:${TALOS_VERSION}
     envs:
@@ -49,3 +49,4 @@ spec:
       - --image=factory.talos.dev/metal-installer/${TALOS_SCHEMATIC_WORKER3}:${TALOS_VERSION}
       - --preserve
       - --reboot-mode=powercycle
+      - --wait=false

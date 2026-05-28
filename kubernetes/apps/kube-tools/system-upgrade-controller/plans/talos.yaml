@@ -41,11 +41,11 @@ spec:
     ignoreDaemonSets: true
     skipWaitForDeleteTimeout: 5
     timeout: 10m
-  # No prepare: SUC cordons the target node before running prepare, and
-  # `talosctl health` in 1.13.3 fails the cluster check on any unschedulable
-  # node — i.e. the target — so prepare can never pass. Talos's upgrade
-  # itself refuses to run on an unhealthy cluster (etcd quorum, control
-  # plane), so this safety net survives without the duplicate pre-flight.
+  # No prepare: see git history. talosctl 1.13.3's health check insists on
+  # all nodes schedulable, but SUC cordons the target before running prepare
+  # — so it can never pass. Talos's upgrade itself refuses to run on an
+  # unhealthy cluster (etcd quorum, control plane), so this safety net
+  # survives without the duplicate pre-flight.
   upgrade:
     image: ghcr.io/siderolabs/talosctl:${TALOS_VERSION}
     envs:
@@ -59,3 +59,8 @@ spec:
       - --image=factory.talos.dev/metal-installer/${TALOS_SCHEMATIC}:${TALOS_VERSION}
       - --preserve
       - --reboot-mode=powercycle
+      # --wait=false: skip talosctl's built-in cordon/drain/wait/uncordon.
+      # SUC already cordons + drains via the init container; the upgrade
+      # pod runs ON the target node and would otherwise be evicted by
+      # talosctl's own drain → Job marks Failed → infinite retry loop.
+      - --wait=false

@@ -15,6 +15,7 @@ spec:
       ignoreUpdates: true
   concurrency: 1
   exclusive: true
+  jobActiveDeadlineSecs: 2700
   nodeSelector:
     matchExpressions:
       - key: feature.node.kubernetes.io/system-os_release.ID
@@ -29,6 +30,17 @@ spec:
     - key: node-role.kubernetes.io/control-plane
       operator: Exists
       effect: NoSchedule
+  # Drain before Talos's own upgrade reboot so PDB-protected pods (postgres,
+  # knative activator, nginx-external) don't stall the upgrade past the Job
+  # deadline. disableEviction force-deletes pods that PDBs would otherwise
+  # block — acceptable for a planned host reboot.
+  drain:
+    force: true
+    disableEviction: true
+    deleteEmptydirData: true
+    ignoreDaemonSets: true
+    skipWaitForDeleteTimeout: 5
+    timeout: 10m
   prepare: &prepare
     image: ghcr.io/siderolabs/talosctl:${TALOS_VERSION}
     envs:
@@ -39,7 +51,7 @@ spec:
     args:
       - --nodes=$(NODE_IP)
       - health
-      - --wait-timeout=10m
+      - --wait-timeout=3m
   upgrade:
     <<: *prepare
     args:

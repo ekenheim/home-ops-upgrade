@@ -59,8 +59,12 @@ spec:
       - --image=factory.talos.dev/metal-installer/${TALOS_SCHEMATIC}:${TALOS_VERSION}
       - --preserve
       - --reboot-mode=powercycle
-      # --wait=false: skip talosctl's built-in cordon/drain/wait/uncordon.
-      # SUC already cordons + drains via the init container; the upgrade
-      # pod runs ON the target node and would otherwise be evicted by
-      # talosctl's own drain → Job marks Failed → infinite retry loop.
+      # talosctl upgrade has two independent defaults that must both be
+      # disabled. --drain=true (default) cordons the target and evicts
+      # pods — and since the SUC upgrade pod runs ON the target node,
+      # talosctl's own drain evicts it before the upgrade RPC fires.
+      # --wait=true (default) then blocks waiting for the node to come
+      # back. SUC already cordons + drains via the init container, so
+      # the upgrade pod just needs to send the RPC and exit.
+      - --drain=false
       - --wait=false

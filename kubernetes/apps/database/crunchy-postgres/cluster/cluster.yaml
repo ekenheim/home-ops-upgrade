@@ -198,6 +198,10 @@ spec:
       databases: ["rybbit"]
       password:
         type: AlphaNumeric
+    - name: "home-assistant"
+      databases: ["home-assistant"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

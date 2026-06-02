@@ -67,7 +67,7 @@ spec:
             image:
               # renovate: datasource=docker image=ghcr.io/...
               repository: ghcr.io/ninerealmlabs/mlflow-server
-              tag: 3.12.0@sha256:0eefff9476607a4622d9833d6c4c6d70b0ce249af62e55ac6f329dc1337674dc
+              tag: 3.13.0@sha256:57040bb9b47dac68c420e54519ded1297dcdbc074d52dd3dae5350383ffedf35
             # -- Override the command(s) for the default container
             command: [/bin/bash, -c]
             # -- Override the args for the default container

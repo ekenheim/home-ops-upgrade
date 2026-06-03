@@ -41,7 +41,7 @@ spec:
           app:
             image:
               repository: filebrowser/filebrowser
-              tag: v2.63.8@sha256:5e3621915625a9d0676408fd1f9351d4e59aa9b25c55959da880ede287cd09b2
+              tag: v2.63.10@sha256:b0308060fb45b7767f7cf4a21d40e5e0152bad798794907769288a7a12436895
             env:
               TZ: ${TIMEZONE}
               FB_LOG: stdout

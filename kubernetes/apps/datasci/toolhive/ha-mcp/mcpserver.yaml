@@ -19,3 +19,13 @@ spec:
         - name: mcp
           command:
             - ha-mcp-web
+          # toolhive enforces readOnlyRootFilesystem, so Python's
+          # tempfile.gettempdir() finds no writable dir and the server
+          # crashes on startup with "No usable temporary directory found".
+          # A writable emptyDir at /tmp lets it fall back to /tmp/ha-mcp.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

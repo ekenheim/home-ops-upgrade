@@ -5,3 +5,4 @@ kind: Kustomization
 resources:
   - ./rook-ceph-dashboard-password.secret.sops.yaml
   - ./helmrelease.yaml
+  - ./ceph-csi-rbac.yaml

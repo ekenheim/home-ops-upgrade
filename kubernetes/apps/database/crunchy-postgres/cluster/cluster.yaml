@@ -178,6 +178,10 @@ spec:
       databases: ["hempriser"]
       password:
         type: AlphaNumeric
+    - name: "alphaos"
+      databases: ["alphaos"]
+      password:
+        type: AlphaNumeric
     - name: "bandit"
       databases: ["bandit"]
       password:

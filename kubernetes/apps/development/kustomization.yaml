@@ -6,6 +6,7 @@ resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
   # Flux-Kustomizations
+  - ./alphaos/ks.yaml
   #- ./umami/ks.yaml
   - ./bytewax/ks.yaml
   #- ./meilisearch/ks.yaml

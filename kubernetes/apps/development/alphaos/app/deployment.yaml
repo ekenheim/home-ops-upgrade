@@ -1,0 +1,94 @@
+---
+# AlphaOS — multi-asset levels/momentum research engine + paper-trade ledger (FastAPI dashboard).
+# Public image, no imagePullSecret needed. Exposed via internal Ingress at alphaos.${SECRET_DOMAIN}.
+# Loads historical data from MinIO (bucket stocks-us) when alphaos-minio creds exist, else yfinance.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alphaos
+  namespace: development
+  labels:
+    app.kubernetes.io/name: alphaos
+    app.kubernetes.io/component: app
+spec:
+  # ReadWriteOnce PVC ⇒ single replica.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alphaos
+      app.kubernetes.io/component: app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alphaos
+        app.kubernetes.io/component: app
+    spec:
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: app
+          image: ghcr.io/ekenheim/alphaos:sha-0fcf829
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities: { drop: ["ALL"] }
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8503
+              protocol: TCP
+          env:
+            # Force the MinIO loader; harmless if creds are absent (falls back to yfinance).
+            - name: ALPHAOS_USE_MINIO
+              value: "1"
+            - name: MINIO_BUCKET
+              value: "stocks-us"
+          envFrom:
+            # MinIO creds; optional so the app deploys (yfinance fallback) before the secret exists.
+            - secretRef:
+                name: alphaos-minio
+                optional: true
+            # Postgres (DATABASE_URL / PG_CONNECTION_STRING); optional until the DB user is provisioned.
+            - secretRef:
+                name: alphaos-postgres
+                optional: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: data-cache
+              mountPath: /app/alphaos/data_cache
+          # Initial dashboard computation takes 10–30s; startupProbe guards the cold start.
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 6
+      volumes:
+        - name: data-cache
+          persistentVolumeClaim:
+            claimName: alphaos-data-cache

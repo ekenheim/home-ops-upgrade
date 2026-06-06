@@ -1,7 +1,7 @@
 ---
-# AlphaOS — multi-asset levels/momentum research engine + paper-trade ledger (FastAPI dashboard).
-# Public image, no imagePullSecret needed. Exposed via internal Ingress at alphaos.${SECRET_DOMAIN}.
-# Loads historical data from MinIO (bucket stocks-us) when alphaos-minio creds exist, else yfinance.
+# AlphaOS — V2-FRONTIER portfolio tracker (FastAPI dashboard). All state in Postgres;
+# no market-data/MinIO and no local files. Public image, no imagePullSecret needed.
+# Exposed via internal Ingress at alphaos.${SECRET_DOMAIN}.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/name: alphaos
     app.kubernetes.io/component: app
 spec:
-  # ReadWriteOnce PVC ⇒ single replica.
+  # Single replica; all state is in Postgres (no RWO volume to share).
   replicas: 1
   strategy:
     type: Recreate
@@ -32,10 +32,11 @@ spec:
         runAsGroup: 10001
         fsGroup: 10001
       initContainers:
-        # Create/upgrade the Postgres ledger + backtest-archive schema before the app starts.
+        # Migrate the Postgres schema before the app starts. Migration 0002 drops the old
+        # ledger tables and creates the V2-FRONTIER schema.
         # Uses the DIRECT primary uri (DATABASE_URL) — DDL must not go through PgBouncer.
         - name: db-migrate
-          image: ghcr.io/ekenheim/alphaos:sha-adb2bbc
+          image: ghcr.io/ekenheim/alphaos:sha-92c48cd
           command: ["alphaos", "db", "upgrade"]
           securityContext:
             allowPrivilegeEscalation: false
@@ -50,9 +51,9 @@ spec:
           resources:
             requests: { cpu: 50m, memory: 128Mi }
             limits: { cpu: 500m, memory: 512Mi }
-        # Idempotent seed of the strategy catalog.
+        # Idempotent seed of the 5 sleeves.
         - name: db-seed
-          image: ghcr.io/ekenheim/alphaos:sha-adb2bbc
+          image: ghcr.io/ekenheim/alphaos:sha-92c48cd
           command: ["alphaos", "db", "seed"]
           securityContext:
             allowPrivilegeEscalation: false
@@ -69,7 +70,7 @@ spec:
             limits: { cpu: 500m, memory: 512Mi }
       containers:
         - name: app
-          image: ghcr.io/ekenheim/alphaos:sha-adb2bbc
+          image: ghcr.io/ekenheim/alphaos:sha-92c48cd
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
@@ -79,26 +80,10 @@ spec:
             - name: http
               containerPort: 8503
               protocol: TCP
-          env:
-            # Force the MinIO loader; harmless if creds are absent (falls back to yfinance).
-            - name: ALPHAOS_USE_MINIO
-              value: "1"
-            - name: MINIO_BUCKET
-              value: "stocks-us"
-            # LAN MinIO that holds stocks-us (parquet bars). Plain http on :9000 (no TLS).
-            # NOT the in-cluster minio-secondary, which has no stocks-us bucket.
-            - name: MINIO_ENDPOINT_URL
-              value: "http://s3-lan.ekenhome.se:9000"
           envFrom:
-            # MinIO creds; optional so the app deploys (yfinance fallback) before the secret exists.
-            - secretRef:
-                name: alphaos-minio
-                optional: true
-            # Postgres (DATABASE_URL direct + DATABASE_URL_POOLED); optional so the app still
-            # starts if the secret is missing.
+            # Postgres (DATABASE_URL direct + DATABASE_URL_POOLED).
             - secretRef:
                 name: alphaos-postgres
-                optional: true
           resources:
             requests:
               cpu: 100m
@@ -106,9 +91,6 @@ spec:
             limits:
               cpu: "1"
               memory: 1Gi
-          volumeMounts:
-            - name: data-cache
-              mountPath: /app/alphaos/data_cache
           # Initial dashboard computation takes 10–30s; startupProbe guards the cold start.
           startupProbe:
             httpGet:
@@ -129,7 +111,3 @@ spec:
               port: http
             periodSeconds: 10
             failureThreshold: 6
-      volumes:
-        - name: data-cache
-          persistentVolumeClaim:
-            claimName: alphaos-data-cache

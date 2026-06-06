@@ -85,6 +85,10 @@ spec:
               value: "1"
             - name: MINIO_BUCKET
               value: "stocks-us"
+            # LAN MinIO that holds stocks-us (parquet bars). Plain http on :9000 (no TLS).
+            # NOT the in-cluster minio-secondary, which has no stocks-us bucket.
+            - name: MINIO_ENDPOINT_URL
+              value: "http://s3-lan.ekenhome.se:9000"
           envFrom:
             # MinIO creds; optional so the app deploys (yfinance fallback) before the secret exists.
             - secretRef:

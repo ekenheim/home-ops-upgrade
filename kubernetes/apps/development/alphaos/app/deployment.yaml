@@ -31,9 +31,45 @@ spec:
         runAsUser: 10001
         runAsGroup: 10001
         fsGroup: 10001
+      initContainers:
+        # Create/upgrade the Postgres ledger + backtest-archive schema before the app starts.
+        # Uses the DIRECT primary uri (DATABASE_URL) — DDL must not go through PgBouncer.
+        - name: db-migrate
+          image: ghcr.io/ekenheim/alphaos:sha-adb2bbc
+          command: ["alphaos", "db", "upgrade"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities: { drop: ["ALL"] }
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: alphaos-postgres
+                  key: DATABASE_URL
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+        # Idempotent seed of the strategy catalog.
+        - name: db-seed
+          image: ghcr.io/ekenheim/alphaos:sha-adb2bbc
+          command: ["alphaos", "db", "seed"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities: { drop: ["ALL"] }
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: alphaos-postgres
+                  key: DATABASE_URL
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
       containers:
         - name: app
-          image: ghcr.io/ekenheim/alphaos:sha-0fcf829
+          image: ghcr.io/ekenheim/alphaos:sha-adb2bbc
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
@@ -54,7 +90,8 @@ spec:
             - secretRef:
                 name: alphaos-minio
                 optional: true
-            # Postgres (DATABASE_URL / PG_CONNECTION_STRING); optional until the DB user is provisioned.
+            # Postgres (DATABASE_URL direct + DATABASE_URL_POOLED); optional so the app still
+            # starts if the secret is missing.
             - secretRef:
                 name: alphaos-postgres
                 optional: true

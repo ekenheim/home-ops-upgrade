@@ -37,7 +37,7 @@ spec:
         # transactions ledger; positions are derived from it).
         # Uses the DIRECT primary uri (DATABASE_URL) — DDL must not go through PgBouncer.
         - name: db-migrate
-          image: ghcr.io/ekenheim/alphaos:sha-96902cf
+          image: ghcr.io/ekenheim/alphaos:sha-2c67d21
           command: ["alphaos", "db", "upgrade"]
           securityContext:
             allowPrivilegeEscalation: false
@@ -54,7 +54,7 @@ spec:
             limits: { cpu: 500m, memory: 512Mi }
         # Idempotent seed of the 5 sleeves.
         - name: db-seed
-          image: ghcr.io/ekenheim/alphaos:sha-96902cf
+          image: ghcr.io/ekenheim/alphaos:sha-2c67d21
           command: ["alphaos", "db", "seed"]
           securityContext:
             allowPrivilegeEscalation: false
@@ -71,7 +71,7 @@ spec:
             limits: { cpu: 500m, memory: 512Mi }
       containers:
         - name: app
-          image: ghcr.io/ekenheim/alphaos:sha-96902cf
+          image: ghcr.io/ekenheim/alphaos:sha-2c67d21
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false

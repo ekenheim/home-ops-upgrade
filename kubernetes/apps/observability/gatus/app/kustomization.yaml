@@ -7,7 +7,7 @@ resources:
   - ./grafana-dashboard.yaml
   - ./helmrelease.yaml
   - ./rbac.yaml
-  - ../../../../templates/gatus/infra
+  - ../../../../templates/gatus/guarded
 configMapGenerator:
   - name: gatus-configmap
     files:

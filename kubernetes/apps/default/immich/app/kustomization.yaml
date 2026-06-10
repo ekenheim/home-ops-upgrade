@@ -8,4 +8,4 @@ resources:
   - ./podmonitor.yaml
   - ./machine-learning
   - ./server
-  - ../../../../templates/gatus/external
+  - ../../../../templates/gatus/guarded

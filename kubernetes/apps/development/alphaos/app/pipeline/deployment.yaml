@@ -35,7 +35,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: grpc
-          image: ghcr.io/ekenheim/alphaos:0.5.2
+          image: ghcr.io/ekenheim/alphaos:0.6.0
           command:
             ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-m", "marketdata.dagster_defs"]
           securityContext:
@@ -52,7 +52,7 @@ spec:
               value: "/tmp/dagster"
             # Run pods inherit this image (K8sRunLauncher uses DAGSTER_CURRENT_IMAGE).
             - name: DAGSTER_CURRENT_IMAGE
-              value: "ghcr.io/ekenheim/alphaos:0.5.2"
+              value: "ghcr.io/ekenheim/alphaos:0.6.0"
           resources:
             requests:
               cpu: 100m

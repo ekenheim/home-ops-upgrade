@@ -57,6 +57,9 @@ spec:
           - host: grid-reliance-pipeline.development.svc.cluster.local
             port: 4000
             name: grid-reliance-pipeline
+          - host: alphaos-pipeline.development.svc.cluster.local
+            port: 4000
+            name: alphaos-pipeline
     dagsterDaemon:
       checkDbReadyInitContainer: false
       annotations:

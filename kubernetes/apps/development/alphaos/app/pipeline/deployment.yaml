@@ -1,0 +1,72 @@
+---
+# Dagster code location (gRPC server on port 4000) for the AlphaOS market-data pipeline.
+# Register in Dagster UI at alphaos-pipeline.development.svc.cluster.local:4000.
+# The code server only loads definitions (marketdata.dagster_defs) — it does NOT need MinIO/
+# Massive creds to start. Those are required by the *run pods* (jobNamespace: datasci); see the
+# alphaos-minio-rw / alphaos-massive secrets scoped via the job's dagster-k8s/config tag.
+# Pin an explicit tag (NOT :latest — latest only tracks main, which is still 0.4.2).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alphaos-pipeline
+  namespace: development
+  labels:
+    app.kubernetes.io/name: alphaos
+    app.kubernetes.io/component: pipeline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alphaos
+      app.kubernetes.io/component: pipeline
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alphaos
+        app.kubernetes.io/component: pipeline
+    spec:
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: grpc
+          image: ghcr.io/ekenheim/alphaos:0.5.1
+          command:
+            ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-m", "marketdata.dagster_defs"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities: { drop: ["ALL"] }
+          imagePullPolicy: Always
+          ports:
+            - name: grpc
+              containerPort: 4000
+              protocol: TCP
+          env:
+            - name: DAGSTER_HOME
+              value: "/tmp/dagster"
+            # Run pods inherit this image (K8sRunLauncher uses DAGSTER_CURRENT_IMAGE).
+            - name: DAGSTER_CURRENT_IMAGE
+              value: "ghcr.io/ekenheim/alphaos:0.5.1"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          livenessProbe:
+            tcpSocket:
+              port: grpc
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: grpc
+            initialDelaySeconds: 10
+            periodSeconds: 5

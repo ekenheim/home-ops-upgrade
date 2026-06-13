@@ -35,7 +35,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: grpc
-          image: ghcr.io/ekenheim/alphaos:0.6.0
+          image: ghcr.io/ekenheim/alphaos:0.6.1
           command:
             ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-m", "marketdata.dagster_defs"]
           securityContext:

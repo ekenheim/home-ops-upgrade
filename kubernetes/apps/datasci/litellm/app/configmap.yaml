@@ -1,0 +1,64 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-configmap
+data:
+  config.yaml: |
+    model_list:
+      # --- Self-hosted via ollama-igpu (OpenAI-compatible /v1) ---
+      # NOTE: the `llama3.1` model below must be pulled in ollama-igpu
+      # (`ollama pull llama3.1`) or swapped for a model you have.
+      - model_name: self-hosted
+        model_info:
+          mode: chat
+          supports_function_calling: true
+        litellm_params:
+          model: openai/llama3.1
+          api_base: http://ollama-igpu.datasci:11434/v1
+          api_key: ollama
+
+      # `review` is the alias agentmemory points ANTHROPIC_MODEL at.
+      - model_name: review
+        model_info:
+          mode: chat
+          supports_function_calling: true
+        litellm_params:
+          model: openai/llama3.1
+          api_base: http://ollama-igpu.datasci:11434/v1
+          api_key: ollama
+
+      - model_name: all-minilm
+        model_info:
+          mode: embedding
+        litellm_params:
+          model: openai/all-minilm
+          api_base: http://ollama-igpu.datasci:11434/v1
+          api_key: ollama
+
+      # --- Cloud providers (placeholders) ---
+      # Add the matching keys to the `litellm` Bitwarden item + externalsecret,
+      # then uncomment. See jory's repo for the full reference set.
+      # - model_name: MiniMax
+      #   model_info:
+      #     mode: messages
+      #     supports_function_calling: true
+      #     supports_vision: true
+      #   litellm_params:
+      #     model: minimax/MiniMax-M3
+      #     api_base: https://api.minimax.io/anthropic/v1/messages
+      #     api_key: os.environ/MINIMAX_API_KEY
+
+    general_settings:
+      health_check_endpoint: /v1/health
+
+    router_settings:
+      enable_pre_call_checks: true
+      fallbacks:
+        - review: ["self-hosted"]
+
+    litellm_settings:
+      drop_params: true
+      request_timeout: 600
+      num_retries: 2
+      set_verbose: false

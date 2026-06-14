@@ -21,6 +21,9 @@ resources:
   - ./grid-reliance-infra/ks.yaml
   - ./ollama-igpu/ks.yaml
   - ./open-webui/ks.yaml
+  - ./litellm/ks.yaml
+  - ./agentmemory/ks.yaml
+  - ./hermes/ks.yaml
   # DISABLED: stale entry — open-webui tool gather times out on /sse, breaks
   # chats that touch any tool server. Re-enable only after registering it
   # in open-webui as Type: MCP (not OpenAPI) and verifying the handshake.

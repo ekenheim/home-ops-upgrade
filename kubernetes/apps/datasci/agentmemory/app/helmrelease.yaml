@@ -1,0 +1,162 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app agentmemory
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.0.1
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      agentmemory:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        replicas: 1
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/joryirving/agentmemory
+              tag: 0.9.27@sha256:3dbd28e1194f9e36babef9f8611ee10b5673444aed8df8b74144c3ba91073e48
+            command:
+              - /usr/bin/catatonit
+              - --
+              - /bin/sh
+              - -c
+              - |
+                PREFS_HOME="${HOME:-/home/node}"
+                mkdir -p "$PREFS_HOME/.agentmemory"
+                if [ ! -s "$PREFS_HOME/.agentmemory/preferences.json" ]; then
+                  printf '%s\n' '{"schemaVersion":1,"lastAgent":null,"lastAgents":[],"lastProvider":null,"skipSplash":true,"skipNpxHint":true,"skipGlobalInstall":true,"skipConsoleInstall":true,"firstRunAt":"1970-01-01T00:00:00.000Z"}' > "$PREFS_HOME/.agentmemory/preferences.json"
+                fi
+                exec /entrypoint.sh
+            env:
+              AGENTMEMORY_DROP_STALE_INDEX: "true"
+              AGENTMEMORY_TOOLS: "all"
+              AGENTMEMORY_LLM_TIMEOUT_MS: "120000"
+              # --- Embeddings: ollama-igpu (OpenAI-compatible /v1) ---
+              EMBEDDING_PROVIDER: "openai"
+              OPENAI_BASE_URL: "http://ollama-igpu.datasci:11434/v1"
+              OPENAI_API_KEY_FOR_LLM: "false"
+              OPENAI_EMBEDDING_MODEL: "all-minilm"
+              OPENAI_EMBEDDING_DIMENSIONS: "384"
+              # --- LLM enrichment via litellm (Anthropic-compatible endpoint).
+              # litellm translates Anthropic Messages calls to the `review` alias.
+              CONSOLIDATION_ENABLED: "true"
+              GRAPH_EXTRACTION_ENABLED: "true"
+              AGENTMEMORY_AUTO_COMPRESS: "true"
+              ANTHROPIC_BASE_URL: "http://litellm.datasci:4000"
+              ANTHROPIC_MODEL: "review"
+              # --- Server / viewer ---
+              III_REST_PORT: "3111"
+              RUST_LOG: "warn"
+              VIEWER_ALLOWED_HOSTS: "agentmemory.${SECRET_DOMAIN}"
+              VIEWER_ALLOWED_ORIGINS: "https://agentmemory.${SECRET_DOMAIN}"
+              TZ: "${TIMEZONE}"
+            envFrom:
+              - secretRef:
+                  name: agentmemory
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  failureThreshold: 3
+                  httpGet:
+                    path: /agentmemory/livez
+                    port: 3111
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  failureThreshold: 3
+                  httpGet:
+                    path: /agentmemory/livez
+                    port: 3111
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  failureThreshold: 60
+                  httpGet:
+                    path: /agentmemory/livez
+                    port: 3111
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+    service:
+      app:
+        controller: *app
+        ports:
+          api:
+            port: 3111
+          stream:
+            port: 3112
+          viewer:
+            port: 3113
+    ingress:
+      app:
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: Data Science
+          gethomepage.dev/name: AgentMemory
+          gethomepage.dev/icon: mdi-brain
+          gethomepage.dev/description: Long-term memory service for agents
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+          nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+        hosts:
+          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: viewer
+    persistence:
+      data:
+        existingClaim: *app
+        globalMounts:
+          - path: /data
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

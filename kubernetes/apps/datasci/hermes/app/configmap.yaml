@@ -1,0 +1,78 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hermes-config
+data:
+  config.yaml: |
+    model:
+      default: self-hosted
+      provider: litellm-anthropic
+    fallback_providers:
+      - provider: litellm
+        model: self-hosted
+    providers:
+      litellm:
+        base_url: http://litellm.datasci:4000/v1
+        api_key: $${LITELLM_API_KEY}
+      litellm-anthropic:
+        base_url: http://litellm.datasci:4000/
+        api_mode: anthropic_messages
+        api_key: $${LITELLM_API_KEY}
+    toolsets:
+      - hermes-cli
+    terminal:
+      backend: local
+      cwd: /opt/data/workspace
+      timeout: 180
+      persistent_shell: true
+    memory:
+      provider: agentmemory
+      auto_migrate: true
+    compression:
+      enabled: true
+      threshold: 0.50
+      target_ratio: 0.20
+      protect_last_n: 20
+    agent:
+      max_turns: 90
+      gateway_timeout: 1800
+      restart_drain_timeout: 60
+      api_max_retries: 2
+      reasoning_effort: medium
+    streaming:
+      enabled: false
+    security:
+      redact_secrets: true
+    privacy:
+      redact_pii: true
+    platform_toolsets:
+      cli:
+        - hermes-cli
+    # mcp_servers:
+    #   # TODO: toolhive exposes each MCPServer as its own in-cluster service
+    #   # (there is no single vmcp gateway here like jory's). Verify the name/port:
+    #   #   kubectl -n datasci get svc | grep mcp
+    #   # then point hermes at it, e.g.:
+    #   toolhive:
+    #     url: http://mcp-ha-mcp.datasci:8080/mcp
+    auxiliary:
+      vision:
+        provider: litellm-anthropic
+        model: self-hosted
+      compression:
+        provider: litellm
+        model: self-hosted
+        timeout: 180
+      web_extract:
+        provider: litellm
+        model: self-hosted
+        timeout: 120
+      approval:
+        provider: litellm
+        model: self-hosted
+        timeout: 60
+      session_search:
+        provider: litellm
+        model: self-hosted
+        timeout: 120

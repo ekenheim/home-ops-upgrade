@@ -47,12 +47,18 @@ spec:
             - name: grpc
               containerPort: 4000
               protocol: TCP
+          # Dagster's metadata DB (DAGSTER_PG_*) — needed so the code server can build a
+          # DagsterInstance when evaluating schedule ticks. Points at the SHARED "dagster" DB,
+          # not the alphaos app DB. Run pods get app DB/MinIO via the dagster-k8s/config tag.
+          envFrom:
+            - secretRef:
+                name: alphaos-dagster-db
           env:
             - name: DAGSTER_HOME
               value: "/tmp/dagster"
             # Run pods inherit this image (K8sRunLauncher uses DAGSTER_CURRENT_IMAGE).
             - name: DAGSTER_CURRENT_IMAGE
-              value: "ghcr.io/ekenheim/alphaos:0.6.0"
+              value: "ghcr.io/ekenheim/alphaos:0.6.1"
           resources:
             requests:
               cpu: 100m

@@ -32,7 +32,7 @@ spec:
           app:
             image:
               repository: ghcr.io/berriai/litellm
-              tag: v1.89.2@sha256:713e2a036aecc8f2cb24cdf0bdeffd893b4f37190d4b21eb9e26ac648939c67a
+              tag: v1.89.3@sha256:8f3517476b8293ccc1c3b0da7940d8dabbfe64b013454113f5a3cb68265c439b
             args:
               - --config=/app/config.yaml
             env:

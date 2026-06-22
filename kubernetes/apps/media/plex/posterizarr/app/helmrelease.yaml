@@ -49,7 +49,7 @@ spec:
           app:
             image:
               repository: ghcr.io/fscorrupt/posterizarr
-              tag: 2.2.51@sha256:66c29c4e90ceaf4c5281abd9b7a273a6af8f3007533ac2adda345ed345b85570
+              tag: v3.0.0@sha256:75b1829be26bb03bec701dbde861969781f43415f603ade514be327136082007
             env:
               TZ: ${TIMEZONE}
             # NFS stale-handle watchdog: when the NAS export gets re-exported

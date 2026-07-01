@@ -12,7 +12,7 @@ _... automated via [Flux](https://fluxcd.io), [Renovate](https://github.com/reno
 [![Talos](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.ekenhome.se%2Fquery%3Fformat%3Dendpoint%26metric%3Dtalos_version&style=for-the-badge&logo=talos&logoColor=white&color=blue&label=%20)](https://www.talos.dev/)&nbsp;&nbsp;
 [![Kubernetes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.ekenhome.se%2Fkubernetes_version&style=for-the-badge&logo=kubernetes&logoColor=white&color=blue&label=%20)](https://www.talos.dev/)&nbsp;&nbsp;
 <!-- renovate: datasource=github-releases depName=fluxcd/flux2 -->
-[![Flux](https://img.shields.io/badge/Flux-v2.8.8-blue?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io/)&nbsp;&nbsp;
+[![Flux](https://img.shields.io/badge/Flux-v2.9.0-blue?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io/)&nbsp;&nbsp;
 
 </div>
 

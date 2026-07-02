@@ -57,7 +57,7 @@ spec:
                   # StatefulSet pods (stable names) where a stale event from
                   # 40min ago could otherwise nuke a healthy replacement.
                   LOOKBACK_MIN=15
-                  CUTOFF_EPOCH=$(date -u -d "${LOOKBACK_MIN} minutes ago" +%s)
+                  CUTOFF_EPOCH=$(date -u -d "$${LOOKBACK_MIN} minutes ago" +%s)
 
                   TMPL='{range .items[*]}{.metadata.namespace}|{.involvedObject.kind}|{.involvedObject.name}|{.lastTimestamp}|{.message}{"\n"}{end}'
 

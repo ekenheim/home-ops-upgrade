@@ -65,9 +65,9 @@
     "autoRegister": true,
     "buttonText": "Login with Authelia",
     "clientId": "immich",
-    "clientSecret": "${IMMICH_OAUTH_CLIENT_SECRET}",
+    "clientSecret": "",
     "defaultStorageQuota": 0,
-    "enabled": true,
+    "enabled": false,
     "issuerUrl": "https://auth.mcgrath.nz/.well-known/openid-configuration",
     "mobileOverrideEnabled": false,
     "mobileRedirectUri": "",
@@ -78,13 +78,10 @@
     "storageQuotaClaim": "immich_quota"
   },
   "passwordLogin": {
-    "enabled": false
+    "enabled": true
   },
   "reverseGeocoding": {
     "enabled": true
-  },
-  "database": {
-    "url": "postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOSTNAME}:${DB_PORT}/${DB_DATABASE_NAME}?connection_limit=5&pool_timeout=20&connect_timeout=10"
   },
   "metadata": {
     "faces": {

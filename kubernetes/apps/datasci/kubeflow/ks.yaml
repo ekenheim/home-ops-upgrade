@@ -5,6 +5,13 @@ kind: Kustomization
 metadata:
   name: kubeflow-common
   namespace: flux-system
+  labels:
+    # Disable postBuild substitution (the cluster-apps parent injects substituteFrom into
+    # every child ks unless this label is set). The local overlay references zero ${...}
+    # vars, while the remote kubeflow/knative bases ship literal ${...} placeholders
+    # (e.g. ${REVISION_UID} in the Knative config-observability _example) that break
+    # envsubst strict mode. Same rationale/mechanism as kubeflow-apps below.
+    substitution.flux.home.arpa/disabled: "true"
 spec:
   commonMetadata:
     labels:
@@ -22,12 +29,6 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 10m
-  postBuild:
-    substituteFrom:
-      - kind: ConfigMap
-        name: cluster-settings
-      - kind: Secret
-        name: cluster-secrets
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1

@@ -15,3 +15,16 @@ generatorOptions:
     grafana_folder: Ray # Put these dashboards in a 'Ray' folder in Grafana
   labels:
     grafana_dashboard: "1"
+# These dashboards are literal ConfigMap resources, so generatorOptions.annotations
+# above never apply to them. Patch the substitute-disable annotation onto each so
+# Flux envsubst leaves Grafana template vars like ${datasource} untouched.
+patches:
+  - target:
+      kind: ConfigMap
+    patch: |
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: not-used
+        annotations:
+          kustomize.toolkit.fluxcd.io/substitute: disabled

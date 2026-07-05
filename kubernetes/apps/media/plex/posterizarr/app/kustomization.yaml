@@ -20,3 +20,11 @@ configMapGenerator:
       disableNameSuffixHash: true
 generatorOptions:
   disableNameSuffixHash: true
+  annotations:
+    # config.json.template carries ${...} placeholders that are NOT Flux vars:
+    # init-config.sh fills FanartTvAPIKey/tvdbapi/tmdbtoken/PlexToken at runtime
+    # via `yq env(...)` from posterizarr-secret, and the Discord ${WebhookID}/
+    # ${WebhookToken} are inert placeholders. Flux strict-mode envsubst otherwise
+    # fails on the first unset one (FANARTTV_API_KEY), blocking the whole
+    # kustomization. Disable post-build substitution on the generated ConfigMap.
+    kustomize.toolkit.fluxcd.io/substitute: disabled

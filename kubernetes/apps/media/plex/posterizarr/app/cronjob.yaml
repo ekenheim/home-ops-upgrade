@@ -80,5 +80,9 @@ spec:
                     -l app.kubernetes.io/name=posterizarr \
                     -o jsonpath='{.items[0].metadata.name}')"
                   echo "Triggering full Posterizarr run inside pod: $POD"
+                  # /tmp/Start.ps1 is the envsubst/CheckJson-patched copy the app
+                  # container writes at startup (see helmrelease.yaml). /app/Start.ps1
+                  # would 404 on the same config-integrity check. Revert to
+                  # /app/Start.ps1 when the upstream workaround is removed.
                   exec kubectl -n media exec "$POD" -c app -- \
-                    pwsh /app/Start.ps1 -Mode run
+                    pwsh /tmp/Start.ps1 -Mode run

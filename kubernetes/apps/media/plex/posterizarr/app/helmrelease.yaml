@@ -50,6 +50,40 @@ spec:
             image:
               repository: ghcr.io/fscorrupt/posterizarr
               tag: v3.0.0@sha256:bddcf440514a2fc7552438658df6af25f7a6d90edac0c1020b34560ffbed801a
+            # Upstream workaround (remove once a fixed image is published).
+            #
+            # The v3.0.0 images report version 3.0.0, which is greater than the
+            # latest tagged release (2.2.x), so Start.ps1 flags them as an
+            # "InsiderBuild". The InsiderBuild branch of the config-integrity
+            # check fetches config.example.json from the git ref `v3.0.0`
+            # (github.com/fscorrupt/posterizarr/raw/v3.0.0/config.example.json),
+            # which does not exist upstream -> HTTP 404 -> the PowerShell
+            # process errors out and the container exits (CrashLoopBackOff).
+            # The bug is already fixed on the upstream `dev` branch (the
+            # InsiderBuild/v3.0.0 path was dropped) but no published image
+            # carries the fix yet.
+            #
+            # /app is root-owned and this container runs as uid 1000, so we
+            # can't patch /app/Start.ps1 in place. Instead we run a patched
+            # copy from /tmp that redirects the fetch to the `dev` ref (which
+            # serves the correct 3.0 example config, HTTP 200). Everything in
+            # Start.ps1 resolves via $env:APP_ROOT=/app, not the script's own
+            # location, so running the copy from /tmp is safe. The wrapper
+            # mirrors the image's /app/start.sh; port is hardcoded to 8000 to
+            # match the image default and the `http` service port (the HR sets
+            # neither APP_PORT nor DISABLE_UI), and to keep the script free of
+            # `$` so Flux envsubst leaves it untouched.
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -e
+                cp /app/Start.ps1 /tmp/Start.ps1
+                sed -i 's#raw/v3.0.0/config.example.json#raw/dev/config.example.json#' /tmp/Start.ps1
+                export PYTHONPATH=/app
+                echo "Starting FastAPI Web UI (API + Frontend) on port 8000..."
+                python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --log-level critical --no-access-log &
+                echo "Starting Posterizarr PowerShell automation..."
+                exec /usr/bin/catatonit -- pwsh -NoProfile /tmp/Start.ps1
             env:
               TZ: ${TIMEZONE}
             # NFS stale-handle watchdog: when the NAS export gets re-exported

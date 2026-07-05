@@ -20,7 +20,7 @@ spec:
           emptyDir: {}
       containers:
         - name: unlock-minio
-          image: docker.io/restic/restic:0.19.0
+          image: docker.io/restic/restic:0.19.1
           args: ["unlock", "--remove-all"]
           envFrom:
             - secretRef:
@@ -36,7 +36,7 @@ spec:
             capabilities:
               drop: ["ALL"]
         - name: unlock-r2
-          image: docker.io/restic/restic:0.19.0
+          image: docker.io/restic/restic:0.19.1
           args: ["unlock", "--remove-all"]
           envFrom:
             - secretRef:

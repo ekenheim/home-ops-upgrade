@@ -84,5 +84,11 @@ spec:
                   # container writes at startup (see helmrelease.yaml). /app/Start.ps1
                   # would 404 on the same config-integrity check. Revert to
                   # /app/Start.ps1 when the upstream workaround is removed.
+                  #
+                  # v3.0.0 renamed the run switch: Start.ps1 now takes -Run (or
+                  # --run), NOT `-Mode run`. With `-Mode run` the switch never
+                  # sets, so Start.ps1 falls through to the scheduler/watcher and
+                  # the monthly full run becomes a silent no-op (it just spawns a
+                  # duplicate watcher instead of walking every library item).
                   exec kubectl -n media exec "$POD" -c app -- \
-                    pwsh /tmp/Start.ps1 -Mode run
+                    pwsh /tmp/Start.ps1 -Run

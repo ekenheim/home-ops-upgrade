@@ -93,6 +93,25 @@ spec:
                 exec /usr/bin/catatonit -- pwsh -NoProfile /tmp/Start.ps1
             env:
               TZ: ${TIMEZONE}
+              # v3.0.0 run-path 404 workaround (remove once a fixed image ships).
+              #
+              # The image sets APP_VERSION=3.0.0-dev. modules/core/Variables.ps1
+              # gates the config-integrity check on `APP_VERSION -match "3.0.0"`,
+              # and on match fetches config.example.json from the git ref `v3.0.0`
+              # (github.com/fscorrupt/posterizarr/raw/v3.0.0/config.example.json),
+              # which does not exist -> HTTP 404. CheckJson throws, the exception
+              # skips the Plex library fetch, and every real run (scheduler, UI
+              # "run", -Run, watcher trigger) then dies in NormalMode with
+              # "0 libraries were found". The existing /tmp/Start.ps1 sed only
+              # patches the launcher's copy, NOT the run-path module, so the
+              # container/watcher look healthy while no run ever succeeds.
+              #
+              # Overriding APP_VERSION to a string that still contains `-dev`
+              # (so Variables.ps1:L3 keeps $Branch = "dev") but NOT `3.0.0`
+              # makes L133 take the else branch and fetch from raw/dev/
+              # (HTTP 200). This fixes both the launcher and the run path, so
+              # the /tmp/Start.ps1 sed above is now redundant belt-and-suspenders.
+              APP_VERSION: "3.0.1-dev"
             # NFS stale-handle watchdog: when the NAS export gets re-exported
             # (NAS reboot, share recreation), the existing kernel mount handle
             # for /config/watcher dies with ESTALE and the watcher loop silently

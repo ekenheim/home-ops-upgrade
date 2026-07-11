@@ -46,7 +46,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marimo-team/marimo
-              tag: 0.23.13
+              tag: 0.23.14
             command:
               - marimo
             args:

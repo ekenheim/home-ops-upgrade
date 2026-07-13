@@ -12,3 +12,7 @@ data:
   NODE_CIDR: "192.168.50.0/24"
   DEFAULT_CIDR: "192.168.1.0/24"
   CLUSTER_NAME: main
+  # LoadBalancer pool for Cilium. MUST stay outside the DHCP scope on the
+  # UniFi side, or DHCP will hand a client an address Cilium has assigned.
+  NETWORK_LB_START: "192.168.50.150"
+  NETWORK_LB_STOP: "192.168.50.199"

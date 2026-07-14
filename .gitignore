@@ -8,6 +8,10 @@ kubeconfig
 *.agekey
 *.pub
 *.key
+# etcd snapshots hold every cluster secret in plaintext. Never commit one.
+etcd-backup.db
+*.etcd-snapshot
+
 # Local docs (not committed)
 docs/
 # Ansible

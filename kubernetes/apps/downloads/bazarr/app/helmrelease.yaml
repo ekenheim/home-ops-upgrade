@@ -78,10 +78,6 @@ spec:
           subcleaner:
             image:
               repository: registry.k8s.io/git-sync/git-sync
-              # Pinned to v4.6.0: the v4.7.0 amd64 image fails with
-              # "exec /git-sync: exec format error" despite advertising a valid
-              # linux/amd64 manifest. Verified v4.6.0 runs, v4.7.0 does not.
-              # Do not bump until upstream republishes a working amd64 build.
               tag: v4.7.0@sha256:d232fd13474ba1b46dba431af2b1411b9d9afacda55ae644d2a32e43975128dd
             env:
               GITSYNC_REPO: https://github.com/KBlixt/subcleaner

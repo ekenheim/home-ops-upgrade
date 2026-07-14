@@ -250,6 +250,18 @@ controlPlane:
         etcd:
           extraArgs:
             listen-metrics-urls: http://0.0.0.0:2381
+            # etcd lives in /var/lib/etcd on the install disk (/dev/sda), which on
+            # these masters is a DRAM-less consumer SATA SSD (Kingston A400 /
+            # SanDisk SSD Plus). WAL fsync p99 measures 15-50ms where etcd wants
+            # <10ms, so the stock 100ms heartbeat / 1s election timeout was
+            # triggering ~400 leader elections a week. Each election stalls writes
+            # long enough for every leader-elected controller in the cluster
+            # (ceph-csi, kyverno, cilium-operator, ...) to drop its lease and
+            # crashloop. Widening the timeouts absorbs the disk's latency.
+            # These MUST stay identical on all three members.
+            # Revert to defaults if etcd is ever moved onto the NVMe.
+            heartbeat-interval: "250"
+            election-timeout: "2500"
           advertisedSubnets:
             - "192.168.50.0/24"
 

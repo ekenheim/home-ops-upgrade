@@ -9,14 +9,12 @@ resources:
   # Flux-Kustomizations
   - ./bazarr/ks.yaml
   - ./flaresolverr/ks.yaml
-  #- ./huntarr/ks.yaml
+  - ./kapowarr/ks.yaml
   - ./lingarr/ks.yaml
   - ./prowlarr/ks.yaml
   - ./radarr/ks.yaml
   - ./radarr4k/ks.yaml
-  #- ./readarr/ks.yaml
   - ./recyclarr/ks.yaml
-  #- ./suggestarr/ks.yaml
   - ./sabnzbd/ks.yaml
   - ./sonarr/ks.yaml
   - ./arr-mcp/ks.yaml

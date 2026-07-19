@@ -83,6 +83,10 @@ spec:
         existingClaim: *app
         globalMounts:
           - path: /app/db
+      logs:
+        type: emptyDir
+        globalMounts:
+          - path: /app/logs
       media:
         type: nfs
         server: ${NAS_IP:=temp}

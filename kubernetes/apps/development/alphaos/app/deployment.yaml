@@ -38,7 +38,7 @@ spec:
         # Existing data is untouched; the db-seed step below is bootstrap-once (won't reset sleeves).
         # Uses the DIRECT primary uri (DATABASE_URL) — DDL must not go through PgBouncer.
         - name: db-migrate
-          image: ghcr.io/ekenheim/alphaos:0.6.2
+          image: ghcr.io/ekenheim/alphaos:0.7.0
           command: ["alphaos", "db", "upgrade"]
           securityContext:
             allowPrivilegeEscalation: false
@@ -55,7 +55,7 @@ spec:
             limits: { cpu: 500m, memory: 512Mi }
         # Idempotent seed of the 5 sleeves.
         - name: db-seed
-          image: ghcr.io/ekenheim/alphaos:0.6.2
+          image: ghcr.io/ekenheim/alphaos:0.7.0
           command: ["alphaos", "db", "seed"]
           securityContext:
             allowPrivilegeEscalation: false
@@ -72,7 +72,7 @@ spec:
             limits: { cpu: 500m, memory: 512Mi }
       containers:
         - name: app
-          image: ghcr.io/ekenheim/alphaos:0.6.2
+          image: ghcr.io/ekenheim/alphaos:0.7.0
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false

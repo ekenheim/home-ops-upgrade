@@ -56,7 +56,7 @@ spec:
               # present in ghcr and is verified healthy with the wrapper below.
               # Renovate can't resolve the (now-missing) v3.0.0 tag, so it won't
               # bump this until upstream restores a tag.
-              tag: 3.0.3@sha256:eda382596f12de40ef459c262d069da677a0eec9b40e9124d868683c153ffef7
+              tag: 3.0.4@sha256:881dfdde97806aa8401aaaedfbbce8fc2bce15b01f0c4030cf541e2e5c6cb5a8
             # Upstream workaround (remove once a fixed image is published).
             #
             # The v3.0.0 images report version 3.0.0, which is greater than the

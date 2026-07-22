@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tuppr.home-operations.com/talosupgrade_v1alpha1.json
+apiVersion: tuppr.home-operations.com/v1alpha1
+kind: TalosUpgrade
+metadata:
+  name: talos
+spec:
+  talos:
+    # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
+    version: v1.13.6
+  policy:
+    # These nodes need a hard power-cycle: the graceful reboot deadlocks
+    # unmounting Ceph RBD volumes when the cluster is degraded.
+    rebootMode: powercycle
+  # tuppr version-swaps each node's own .machine.install.image, so the Intel
+  # (master*) and AMD (worker3) factory schematics are each preserved.
+  healthChecks:
+    - apiVersion: v1
+      kind: Node
+      expr: |-
+        status.conditions.exists(c, c.type == "Ready" && c.status == "True")
+      timeout: 10m
+    - apiVersion: ceph.rook.io/v1
+      kind: CephCluster
+      expr: |-
+        status.ceph.health in ['HEALTH_OK']
+      timeout: 10m
+    - apiVersion: volsync.backube/v1alpha1
+      kind: ReplicationSource
+      expr: |-
+        status.conditions.filter(c, c.type == "Synchronizing").all(c, c.status == "False")
+      timeout: 10m

@@ -22,7 +22,7 @@ nodes:
   - hostname: "master1"
     ipAddress: "192.168.50.31"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de:v1.12.6
+    talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de:v1.13.7
     controlPlane: true
     networkInterfaces:
       - deviceSelector:
@@ -37,7 +37,7 @@ nodes:
   - hostname: "master2"
     ipAddress: "192.168.50.33"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de:v1.12.6
+    talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de:v1.13.7
     controlPlane: true
     networkInterfaces:
       - deviceSelector:
@@ -52,7 +52,7 @@ nodes:
   - hostname: "master3"
     ipAddress: "192.168.50.34"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de:v1.12.6
+    talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de:v1.13.7
     controlPlane: true
     networkInterfaces:
       # 2x 2.5G bonded via LACP
@@ -82,7 +82,7 @@ nodes:
     ipAddress: "192.168.50.37"
     installDisk: "/dev/nvme1n1"
     # Schematic encodes node-specific addons; for Talos upgrade use a 1.12.x schematic with same addons and set e.g. .../NEW_SCHEMATIC:v1.12.3
-    talosImageURL: factory.talos.dev/metal-installer/96f8c146a67c80daad900d3fc1a6976fe11062321eee9ab6ae2a6aea88b2d26e:v1.12.6
+    talosImageURL: factory.talos.dev/metal-installer/96f8c146a67c80daad900d3fc1a6976fe11062321eee9ab6ae2a6aea88b2d26e:v1.13.7
     controlPlane: false
     networkInterfaces:
       # 2x 10G bonded via LACP

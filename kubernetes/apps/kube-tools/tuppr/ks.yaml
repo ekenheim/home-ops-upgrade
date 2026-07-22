@@ -3,16 +3,14 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app system-upgrade-controller
+  name: &app tuppr
   namespace: flux-system
 spec:
   targetNamespace: kube-tools
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-    - name: node-feature-discovery-rules
-  path: ./kubernetes/apps/kube-tools/system-upgrade-controller/app
+  path: ./kubernetes/apps/kube-tools/tuppr/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -26,7 +24,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app system-upgrade-controller-plans
+  name: &app tuppr-upgrades
   namespace: flux-system
 spec:
   targetNamespace: kube-tools
@@ -34,8 +32,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: system-upgrade-controller
-  path: ./kubernetes/apps/kube-tools/system-upgrade-controller/plans
+    - name: tuppr
+  path: ./kubernetes/apps/kube-tools/tuppr/upgrades
   prune: true
   sourceRef:
     kind: GitRepository
@@ -44,11 +42,3 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
-  postBuild:
-    substitute:
-      # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
-      TALOS_VERSION: v1.13.7
-      # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-      KUBERNETES_VERSION: v1.35.6
-      TALOS_SCHEMATIC: a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de
-      TALOS_SCHEMATIC_WORKER3: 96f8c146a67c80daad900d3fc1a6976fe11062321eee9ab6ae2a6aea88b2d26e

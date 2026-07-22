@@ -14,6 +14,12 @@ spec:
     rebootMode: powercycle
   # tuppr version-swaps each node's own .machine.install.image, so the Intel
   # (master*) and AMD (worker3) factory schematics are each preserved.
+  drain:
+    enabled: true
+    # Force-delete instead of evicting: rook-ceph-mon-pdb (maxUnavailable: 0)
+    # blocks eviction of the on-node mon, which otherwise stalls the drain
+    # until the job times out. Talos powercycles the node next anyway.
+    disableEviction: true
   healthChecks:
     - apiVersion: v1
       kind: Node

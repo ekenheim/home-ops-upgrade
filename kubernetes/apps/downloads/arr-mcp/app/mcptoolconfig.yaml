@@ -1,0 +1,178 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcptoolconfig_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPToolConfig
+metadata:
+  name: arr
+spec:
+  # Explicit allow list. mcp-arr-server is pulled at pod start via `npx -y
+  # mcp-arr-server@1.5.4`, so a version bump can change the tool surface; this
+  # list pins what reaches the LLM. New upstream tools stay hidden until added
+  # here. To expose a read-only server, delete the six entries marked WRITE.
+  toolsFilter:
+    - arr_status
+    - arr_search_all
+    # Sonarr (TV) — read
+    - sonarr_get_quality_profiles
+    - sonarr_get_health
+    - sonarr_get_root_folders
+    - sonarr_get_download_clients
+    - sonarr_get_naming
+    - sonarr_get_tags
+    - sonarr_review_setup
+    - sonarr_get_series
+    - sonarr_get_episodes
+    - sonarr_get_queue
+    - sonarr_get_calendar
+    - sonarr_search
+    # Sonarr (TV) — WRITE
+    - sonarr_add_series
+    - sonarr_search_missing
+    - sonarr_search_episode
+    # Radarr (Movies) — read
+    - radarr_get_quality_profiles
+    - radarr_get_health
+    - radarr_get_root_folders
+    - radarr_get_download_clients
+    - radarr_get_naming
+    - radarr_get_tags
+    - radarr_review_setup
+    - radarr_get_movies
+    - radarr_get_queue
+    - radarr_get_calendar
+    - radarr_search
+    # Radarr (Movies) — WRITE
+    - radarr_add_movie
+    - radarr_search_movie
+    # Prowlarr (Indexers) — read
+    - prowlarr_get_indexers
+    - prowlarr_get_stats
+    - prowlarr_search
+    # Prowlarr (Indexers) — WRITE
+    - prowlarr_test_indexers
+    # TRaSH Guides — read-only reference data, no *arr mutation
+    - trash_list_profiles
+    - trash_get_profile
+    - trash_list_custom_formats
+    - trash_get_naming
+    - trash_get_quality_sizes
+    - trash_compare_profile
+    - trash_compare_naming
+
+  toolsOverride:
+    # mcp-arr-server ships no tool annotations at all, so a client cannot tell
+    # radarr_get_health from radarr_add_movie without parsing prose. MCP has no
+    # server-level "instructions" field in the ToolHive CRDs, so arr_status
+    # doubles as the orientation tool — its description is the only place that
+    # states what this server is.
+    arr_status:
+      description: >-
+        Entry point for the "arr" MCP server, which fronts this cluster's media
+        automation stack: Sonarr (TV series), Radarr (movies) and Prowlarr
+        (indexers), plus read-only TRaSH Guides reference data for comparing
+        quality profiles and naming schemes against community recommendations.
+        Call this first to confirm which services are reachable and their
+        versions before using any sonarr_*, radarr_* or prowlarr_* tool. Tools
+        prefixed sonarr_/radarr_/prowlarr_ act on that service only; arr_* and
+        trash_* span all of them. Most tools are read-only; the six that change
+        state or start downloads are annotated readOnlyHint=false.
+      annotations:
+        title: Arr stack status
+        readOnlyHint: true
+        destructiveHint: false
+        idempotentHint: true
+        openWorldHint: true
+
+    arr_search_all:
+      annotations: { title: Search all arr services, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+
+    # --- Sonarr: read-only ---
+    sonarr_get_quality_profiles:
+      annotations: { title: Sonarr quality profiles, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    sonarr_get_health:
+      annotations: { title: Sonarr health, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    sonarr_get_root_folders:
+      annotations: { title: Sonarr root folders, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    sonarr_get_download_clients:
+      annotations: { title: Sonarr download clients, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    sonarr_get_naming:
+      annotations: { title: Sonarr naming config, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    sonarr_get_tags:
+      annotations: { title: Sonarr tags, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    sonarr_review_setup:
+      annotations: { title: Sonarr full config review, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    sonarr_get_series:
+      annotations: { title: Sonarr series library, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    sonarr_get_episodes:
+      annotations: { title: Sonarr episodes, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    sonarr_get_queue:
+      annotations: { title: Sonarr download queue, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    sonarr_get_calendar:
+      annotations: { title: Sonarr calendar, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    sonarr_search:
+      annotations: { title: Sonarr series lookup, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+
+    # --- Sonarr: WRITE ---
+    sonarr_add_series:
+      annotations: { title: Add series to Sonarr, readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+    sonarr_search_missing:
+      annotations: { title: Start search for missing episodes, readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+    sonarr_search_episode:
+      annotations: { title: Start search for episodes, readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+
+    # --- Radarr: read-only ---
+    radarr_get_quality_profiles:
+      annotations: { title: Radarr quality profiles, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    radarr_get_health:
+      annotations: { title: Radarr health, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    radarr_get_root_folders:
+      annotations: { title: Radarr root folders, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    radarr_get_download_clients:
+      annotations: { title: Radarr download clients, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    radarr_get_naming:
+      annotations: { title: Radarr naming config, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    radarr_get_tags:
+      annotations: { title: Radarr tags, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    radarr_review_setup:
+      annotations: { title: Radarr full config review, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    radarr_get_movies:
+      annotations: { title: Radarr movie library, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    radarr_get_queue:
+      annotations: { title: Radarr download queue, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    radarr_get_calendar:
+      annotations: { title: Radarr calendar, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    radarr_search:
+      annotations: { title: Radarr movie lookup, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+
+    # --- Radarr: WRITE ---
+    radarr_add_movie:
+      annotations: { title: Add movie to Radarr, readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+    radarr_search_movie:
+      annotations: { title: Start search for a movie, readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+
+    # --- Prowlarr ---
+    prowlarr_get_indexers:
+      annotations: { title: Prowlarr indexers, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    prowlarr_get_stats:
+      annotations: { title: Prowlarr statistics, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    prowlarr_search:
+      annotations: { title: Prowlarr indexer search, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    # WRITE-ish: mutates no local state but fires live requests at every indexer.
+    prowlarr_test_indexers:
+      annotations: { title: Test Prowlarr indexers, readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+
+    # --- TRaSH Guides: reference data only ---
+    trash_list_profiles:
+      annotations: { title: List TRaSH profiles, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    trash_get_profile:
+      annotations: { title: Get TRaSH profile, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    trash_list_custom_formats:
+      annotations: { title: List TRaSH custom formats, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    trash_get_naming:
+      annotations: { title: Get TRaSH naming scheme, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    trash_get_quality_sizes:
+      annotations: { title: Get TRaSH quality sizes, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    trash_compare_profile:
+      annotations: { title: Compare profile to TRaSH, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    trash_compare_naming:
+      annotations: { title: Compare naming to TRaSH, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }

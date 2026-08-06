@@ -206,6 +206,10 @@ spec:
       databases: ["home-assistant"]
       password:
         type: AlphaNumeric
+    - name: "docmost"
+      databases: ["docmost"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

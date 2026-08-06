@@ -1,6 +1,6 @@
 ---
-# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcpserver_v1alpha1.json
-apiVersion: toolhive.stacklok.dev/v1alpha1
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcpserver_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPServer
 metadata:
   name: arr
@@ -9,6 +9,12 @@ spec:
   transport: stdio
   proxyMode: streamable-http
   proxyPort: 8080
+  # stdio backends serve a single client connection and cannot be scaled.
+  backendReplicas: 1
+  toolConfigRef:
+    name: arr
+  audit:
+    enabled: true
   env:
     - name: HOME
       value: /tmp
@@ -30,6 +36,8 @@ spec:
     - name: toolhive-prowlarr
       key: PROWLARR_API_KEY
       targetEnvName: PROWLARR_API_KEY
+  # NOTE: spec.resources applies to the toolhive proxy container only, not to
+  # the MCP backend. Backend limits go on the `mcp` container below.
   resources:
     requests:
       cpu: 50m
@@ -46,6 +54,12 @@ spec:
           args:
             - -y
             - mcp-arr-server@1.5.4
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
           volumeMounts:
             - name: tmp
               mountPath: /tmp

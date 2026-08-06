@@ -13,6 +13,7 @@ resources:
   #- ./your-spotify/ks.yaml
   #- ./memos/ks.yaml
   - ./it-tools/ks.yaml
+  - ./docmost/ks.yaml
   - ./paperless/ks.yaml
   - ./syncthing/ks.yaml
   - ./pairdrop/ks.yaml

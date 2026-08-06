@@ -1,0 +1,49 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcptoolconfig_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPToolConfig
+metadata:
+  name: memory-mcp
+spec:
+  # Explicit allow list — pins the surface so an image bump cannot silently add
+  # tools. To make the graph read-only, delete the six write entries below.
+  toolsFilter:
+    # read
+    - read_graph
+    - search_nodes
+    - open_nodes
+    # write
+    - create_entities
+    - create_relations
+    - add_observations
+    - delete_entities
+    - delete_observations
+    - delete_relations
+
+  # Upstream (mcp-memory 0.6.3) already sets correct annotations on all nine
+  # tools — reads are readOnlyHint=true, the three delete_* are
+  # destructiveHint=true — so no annotation overrides are needed here.
+  # Only the thin descriptions are replaced, to state what this server is and
+  # what the graph is for. MCP's server-level "instructions" field is not
+  # settable through any ToolHive CRD, so read_graph carries that context.
+  toolsOverride:
+    read_graph:
+      description: >-
+        Read the entire knowledge graph from the memory MCP server — a
+        persistent, cluster-local store of entities, relations and observations
+        backed by a Ceph PVC and shared by every client that connects to this
+        server. Use it to recall facts established in earlier sessions. The
+        graph is durable but NOT automatically populated: if it returns empty,
+        nothing has been written yet, rather than the store being unavailable.
+        Prefer search_nodes or open_nodes once the graph is large; this returns
+        everything.
+    search_nodes:
+      description: >-
+        Search the persistent knowledge graph by query string, matching entity
+        names, types and observation text. The preferred way to recall prior
+        context — use this before read_graph, which returns the whole graph.
+    open_nodes:
+      description: >-
+        Fetch specific entities from the persistent knowledge graph by exact
+        name, including their observations and relations. Use after
+        search_nodes has identified the names you need.

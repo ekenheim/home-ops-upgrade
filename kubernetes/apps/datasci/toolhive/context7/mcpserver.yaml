@@ -1,0 +1,61 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcpserver_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: &name context7
+spec:
+  # ToolHive's own build of @upstash/context7-mcp. The npm package is baked
+  # into /app/node_modules, so the `npx` entrypoint resolves locally and does
+  # NOT fetch from the registry at pod start (unlike arr-mcp in downloads).
+  image: ghcr.io/stacklok/dockyard/npx/context7:3.2.5@sha256:9310b8bf1893e16cfa4899913a30cb83065100c9ddd07ee3d42d1f024dfee571
+  transport: stdio
+  proxyMode: streamable-http
+  proxyPort: 8080
+  # stdio backends serve a single client connection and cannot be scaled.
+  backendReplicas: 1
+  toolConfigRef:
+    name: *name
+  audit:
+    enabled: true
+  env:
+    # toolhive enforces readOnlyRootFilesystem; npx wants a writable HOME and
+    # cache even when it only resolves a local binary.
+    - name: HOME
+      value: /tmp
+    - name: NPM_CONFIG_CACHE
+      value: /tmp/.npm
+  # Context7 works anonymously. Registering at context7.com/dashboard yields an
+  # API key for higher rate limits — to use one, create a Bitwarden item and an
+  # ExternalSecret producing `toolhive-context7`, then uncomment:
+  # secrets:
+  #   - name: toolhive-context7
+  #     key: CONTEXT7_API_KEY
+  #     targetEnvName: CONTEXT7_API_KEY
+  #
+  # The CRD documents spec.resources as "the resource requirements for the MCP
+  # server container", but on operator v0.42.0 it is applied to the toolhive
+  # proxy Deployment instead — the backend StatefulSet's `mcp` container comes
+  # out with resources:{}. Set both here so limits hold either way.
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: mcp
+          resources:
+            requests:
+              cpu: 10m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

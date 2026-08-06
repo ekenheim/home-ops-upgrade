@@ -1,0 +1,44 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcptoolconfig_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPToolConfig
+metadata:
+  name: context7
+spec:
+  # Explicit allow list — pins the surface so an image bump cannot silently add
+  # tools.
+  toolsFilter:
+    - resolve-library-id
+    - query-docs
+
+  # Unlike arr-mcp, Context7 is well behaved: it publishes a server-level
+  # `instructions` block and correct annotations (both tools readOnlyHint=true),
+  # and those pass through untouched. resolve-library-id is left alone.
+  #
+  # Only query-docs is overridden, to pre-seed the library IDs that matter in
+  # this cluster. Without these the model has to guess via resolve-library-id,
+  # which returns several same-named entries of differing quality (e.g. four
+  # distinct "sonarr" libraries). Upstream's ordering and call-budget rules are
+  # preserved verbatim below — dropping them makes the model skip
+  # resolve-library-id for unknown libraries.
+  toolsOverride:
+    query-docs:
+      description: >-
+        Retrieves and queries up-to-date documentation and code examples from
+        Context7 for any programming library or framework.
+
+        You must call 'Resolve Context7 Library ID' tool first to obtain the
+        exact Context7-compatible library ID required to use this tool, UNLESS
+        the user explicitly provides a library ID in the format '/org/project'
+        or '/org/project/version' in their query.
+
+        Do not call this tool more than 3 times per question.
+
+        Known-good library IDs for this cluster — use these directly and skip
+        resolve-library-id: /servarr/wiki (Sonarr, Radarr, Prowlarr operation
+        and configuration), /websites/trash-guides_info (quality profiles,
+        custom formats, scoring and naming conventions),
+        /websites/sonarr_tv_api and /websites/radarr_video_api (REST API
+        reference), /recyclarr/recyclarr (automating TRaSH profile sync).
+        Consult these before proposing changes to *arr quality profiles,
+        custom formats or naming schemes.

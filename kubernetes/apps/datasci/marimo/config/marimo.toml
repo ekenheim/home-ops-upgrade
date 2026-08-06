@@ -1,0 +1,63 @@
+# Seeded to /home/marimo/.marimo.toml by the seed-notebooks init container.
+#
+# It must live on the PVC: marimo's config search walks CWD (/home/marimo)
+# upward before falling back to $HOME, and $HOME is the container's ephemeral
+# filesystem, so anything written there is lost on every pod restart.
+#
+# marimo rewrites this file when settings change in the UI, so the init
+# container only seeds it if absent.
+
+[ai]
+enabled = true
+
+[ai.ollama]
+# OpenAI-compatible endpoint on the workstation. The /v1 suffix is required.
+# Pin a DHCP reservation for this address: a lease change surfaces as a
+# generic "Connection error." that looks identical to Ollama being down.
+base_url = "http://192.168.1.182:11434/v1"
+
+[ai.models]
+# One model across all three roles on purpose. qwen3.6:35b occupies 23.3GB of
+# a ~24GB card, so a second model cannot be resident; mixing models makes
+# Ollama evict and reload on every role switch, costing 20-40s each time.
+# Warm latency on a resident model is ~0.7s.
+chat_model = "ollama/qwen3.6:35b"
+edit_model = "ollama/qwen3.6:35b"
+autocomplete_model = "ollama/qwen3.6:35b"
+custom_models = ["ollama/qwen3.6:35b"]
+displayed_models = [
+  "ollama/qwen3.6:35b",
+  "ollama/qwen3.6:35b-ctx24k",
+  "ollama/qwen3.5:9b",
+  "ollama/qwen3.5:9b-ctx32k",
+  "ollama/qwen2.5vl:7b",
+]
+
+[completion]
+activate_on_typing = true
+auto_close_pairs = true
+copilot = "custom"
+signature_hint_on_typing = false
+
+[package_management]
+# Must stay "uv". Under --sandbox only UvPackageManager implements
+# update_notebook_script_metadata; the base class is an explicit no-op. With
+# "pip", installing a package never writes it into the notebook's
+# `# /// script` block, and since sandbox venvs are ephemeral the package
+# disappears when the session restarts.
+manager = "uv"
+
+[display]
+theme = "light"
+
+[runtime]
+auto_instantiate = false
+
+# Credentials arrive as environment variables from the marimo-s3-creds
+# Secret (see externalsecret.yaml); sandboxed kernels inherit them because
+# ipc.py spawns them with base_env=os.environ.copy().
+#
+# `dotenv` is deliberately not set. marimo only resolves it when a
+# pyproject.toml is found (_resolve_dotenv returns early when
+# pyproject_path is None), so enabling it means seeding a pyproject.toml
+# at /home/marimo as well.

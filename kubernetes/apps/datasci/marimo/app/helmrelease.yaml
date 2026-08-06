@@ -49,6 +49,13 @@ spec:
                     cp "$f" "$dest"
                   fi
                 done
+                # marimo searches CWD upward for .marimo.toml before falling
+                # back to $HOME, which is ephemeral. Seed only if absent so
+                # settings changed in the UI are not clobbered on restart.
+                if [ ! -f /home/marimo/.marimo.toml ]; then
+                  echo "Seeding /home/marimo/.marimo.toml"
+                  cp /seed/marimo.toml /home/marimo/.marimo.toml
+                fi
         containers:
           app:
             image:
@@ -73,6 +80,16 @@ spec:
               # rebuilt every session, so the uv cache must survive restarts or
               # every notebook re-downloads from PyPI.
               UV_CACHE_DIR: /home/marimo/.cache/uv
+              # S3 endpoint for notebooks reading via boto3/s3fs/polars/duckdb.
+              # Credentials come from envFrom below; sandboxed kernels inherit
+              # them (ipc.py spawns with base_env=os.environ.copy()).
+              # s3-lan fronts the primary MinIO (LoadBalancer 192.168.50.190);
+              # same endpoint dagster and alphaos use.
+              AWS_ENDPOINT_URL: http://s3-lan.${SECRET_DOMAIN}:9000
+              AWS_REGION: us-east-1
+            envFrom:
+              - secretRef:
+                  name: marimo-s3-creds
             resources:
               requests:
                 cpu: 100m

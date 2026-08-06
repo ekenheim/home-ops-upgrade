@@ -9,9 +9,7 @@ resources:
   #- ./postgres/
   # Flux-Kustomizations
   - ./dagster/ks.yaml
-  #- ./dashclaw/ks.yaml
   - ./docat/ks.yaml
-  #- ./openclaw/ks.yaml
   - ./mlflow/ks.yaml
   - ./langflow/ks.yaml
   #- ./prefect/ks.yaml
@@ -24,10 +22,6 @@ resources:
   #- ./litellm/ks.yaml
   - ./agentmemory/ks.yaml
   - ./hermes/ks.yaml
-  # DISABLED: stale entry — open-webui tool gather times out on /sse, breaks
-  # chats that touch any tool server. Re-enable only after registering it
-  # in open-webui as Type: MCP (not OpenAPI) and verifying the handshake.
-  #- ./mcp-polygon/ks.yaml
   - ./toolhive/ks.yaml
   - ./searxng/ks.yaml
   - ./jupyter-lab/ks.yaml
@@ -38,17 +32,6 @@ resources:
   - ./bandit-demo/ks.yaml
   - ./banditweb/ks.yaml
   - ./seldon-core/ks.yaml
-  - ./kyverno-fixes
   - ./kubeflow/ks.yaml
-  # DeployKF (unmaintained) - DISABLED: Remove after new Kubeflow is verified
-  # See Section 8 of kubeflow_native_deployment plan for removal steps
-  # - ./deploykf-values/ks.yaml
-  # - ./deploykf-auth-overrides/ks.yaml
-  # - ./deploykf-dashboard-overrides/ks.yaml
-  # - ./kubeflow-authz-overrides/ks.yaml
-  # - ./kubeflow-routing-overrides/ks.yaml
-  # - ./kubeflow-profile-authz-relax/ks.yaml
-
-
   - ./kyverno-fixes/ks.yaml
   - ./kubeflow-secrets/ks.yaml

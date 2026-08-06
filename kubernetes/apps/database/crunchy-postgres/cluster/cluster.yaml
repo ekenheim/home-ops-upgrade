@@ -210,6 +210,10 @@ spec:
       databases: ["docmost"]
       password:
         type: AlphaNumeric
+    - name: "outline"
+      databases: ["outline"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

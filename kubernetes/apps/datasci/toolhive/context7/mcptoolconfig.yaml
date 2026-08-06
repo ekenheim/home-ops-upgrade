@@ -21,6 +21,18 @@ spec:
   # distinct "sonarr" libraries). Upstream's ordering and call-budget rules are
   # preserved verbatim below — dropping them makes the model skip
   # resolve-library-id for unknown libraries.
+  #
+  # The list is a shortcut, NOT a scope limit: Context7 serves documentation for
+  # any library, and resolve-library-id still handles everything unlisted.
+  #
+  # Deliberately NOT listed:
+  #   - Talos. The only well-populated entry is /websites/siderolabs_talos_v1_12,
+  #     pinned to v1.12 while this cluster runs v1.13.x; wrong-version docs on
+  #     .machine.install.image or upgrade flow are worse than none. The
+  #     unversioned /websites/talos_dev has ~5 snippets. Let resolve-library-id
+  #     surface the version choice explicitly instead.
+  #   - Postgres. This cluster runs Crunchy; searches for cloudnative-pg return
+  #     unrelated Ruby/Go client libraries. No usable entry found.
   toolsOverride:
     query-docs:
       description: >-
@@ -34,11 +46,30 @@ spec:
 
         Do not call this tool more than 3 times per question.
 
-        Known-good library IDs for this cluster — use these directly and skip
-        resolve-library-id: /servarr/wiki (Sonarr, Radarr, Prowlarr operation
-        and configuration), /websites/trash-guides_info (quality profiles,
-        custom formats, scoring and naming conventions),
-        /websites/sonarr_tv_api and /websites/radarr_video_api (REST API
-        reference), /recyclarr/recyclarr (automating TRaSH profile sync).
-        Consult these before proposing changes to *arr quality profiles,
-        custom formats or naming schemes.
+        This server covers any library or framework. The IDs below are simply
+        the ones already verified for this cluster's stack — use them directly
+        and skip resolve-library-id; for anything else, resolve-library-id as
+        normal.
+
+        Platform: /websites/kubernetes_io (Kubernetes),
+        /websites/fluxcd_control-plane_io (Flux GitOps),
+        /kubernetes-sigs/kustomize (Kustomize), /cilium/cilium (CNI, Gateway
+        API, network policy), /envoyproxy/gateway (Envoy Gateway),
+        /ceph/ceph (Ceph, as deployed by Rook),
+        /external-secrets/external-secrets (ExternalSecret, ClusterSecretStore),
+        /backube/volsync (backup and replication),
+        /websites/renovatebot (dependency automation).
+
+        Media automation: /servarr/wiki (Sonarr, Radarr, Prowlarr operation and
+        configuration), /websites/trash-guides_info (quality profiles, custom
+        formats, scoring and naming conventions), /websites/sonarr_tv_api and
+        /websites/radarr_video_api (REST API reference),
+        /recyclarr/recyclarr (automating TRaSH profile sync). Consult these
+        before proposing changes to *arr quality profiles, custom formats or
+        naming schemes.
+
+        Home automation: /home-assistant/home-assistant.io (entities, areas,
+        automations, templates) — pairs with the ha-mcp server.
+
+        Data and ML: /ray-project/ray (Ray, KubeRay),
+        /prefecthq/prefect (Prefect flows and deployments).

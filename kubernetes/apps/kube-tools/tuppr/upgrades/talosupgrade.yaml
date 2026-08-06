@@ -28,8 +28,14 @@ spec:
       timeout: 10m
     - apiVersion: ceph.rook.io/v1
       kind: CephCluster
+      # Must NOT require HEALTH_OK here: tuppr runs these checks *after* draining
+      # the node, and draining an OSD host always yields HEALTH_WARN (osd down,
+      # degraded PGs). Demanding HEALTH_OK deadlocks -- the drain is the reason
+      # the check fails, and tuppr never reboots or uncordons. Gating on "not
+      # HEALTH_ERR" still blocks on the case that matters (scrub errors /
+      # inconsistent PGs / data damage) while tolerating drain-induced warnings.
       expr: |-
-        status.ceph.health in ['HEALTH_OK']
+        status.ceph.health != 'HEALTH_ERR'
       timeout: 10m
     - apiVersion: volsync.backube/v1alpha1
       kind: ReplicationSource

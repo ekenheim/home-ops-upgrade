@@ -206,10 +206,6 @@ spec:
       databases: ["home-assistant"]
       password:
         type: AlphaNumeric
-    - name: "docmost"
-      databases: ["docmost"]
-      password:
-        type: AlphaNumeric
     - name: "outline"
       databases: ["outline"]
       password:

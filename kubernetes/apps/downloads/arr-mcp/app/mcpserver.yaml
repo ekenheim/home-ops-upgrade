@@ -36,8 +36,10 @@ spec:
     - name: toolhive-prowlarr
       key: PROWLARR_API_KEY
       targetEnvName: PROWLARR_API_KEY
-  # NOTE: spec.resources applies to the toolhive proxy container only, not to
-  # the MCP backend. Backend limits go on the `mcp` container below.
+  # The CRD documents spec.resources as "the resource requirements for the MCP
+  # server container", but on operator v0.42.0 it is applied to the toolhive
+  # proxy Deployment instead — the backend StatefulSet's `mcp` container comes
+  # out with resources:{}. Set both here so limits hold either way.
   resources:
     requests:
       cpu: 50m

@@ -46,6 +46,8 @@ spec:
             envFrom:
             - secretRef:
                 name: docmost-secret
+            - secretRef:
+                name: docmost-db-secret
             probes:
               # /api/health/live is a bare "ok" — restart only if the process
               # is truly wedged. /api/health also pings postgres and redis, so

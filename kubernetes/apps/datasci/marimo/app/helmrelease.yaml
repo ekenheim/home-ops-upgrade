@@ -24,6 +24,13 @@ spec:
       strategy: rollback
       retries: 3
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
     controllers:
       marimo:
         initContainers:
@@ -56,15 +63,23 @@ spec:
               - --port
               - "2718"
               - --no-token
+              # Each notebook gets its own uv venv, built from the PEP 723
+              # `# /// script` block in the notebook itself.
+              - --sandbox
             workingDir: /home/marimo
             env:
               TZ: ${TIMEZONE}
+              # Sandbox venvs are ephemeral (tempfile.mkdtemp under /tmp) and are
+              # rebuilt every session, so the uv cache must survive restarts or
+              # every notebook re-downloads from PyPI.
+              UV_CACHE_DIR: /home/marimo/.cache/uv
             resources:
               requests:
                 cpu: 100m
                 memory: 512Mi
               limits:
-                memory: 2Gi
+                # One kernel process per open notebook, each with its own venv.
+                memory: 8Gi
 
     service:
       app:
@@ -108,3 +123,9 @@ spec:
         globalMounts:
           - path: /seed
             readOnly: true
+      tmp:
+        enabled: true
+        type: emptyDir
+        sizeLimit: 20Gi
+        globalMounts:
+          - path: /tmp

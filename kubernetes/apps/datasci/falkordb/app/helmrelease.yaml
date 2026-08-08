@@ -1,0 +1,136 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app falkordb
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.0.1
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+      interval: 15m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      falkordb:
+        type: statefulset
+        strategy: RollingUpdate
+        initContainers:
+          # The bundled FalkorDB Browser is a NextAuth v5 app running with
+          # NODE_ENV=production, which refuses to sign anyone in unless
+          # AUTH_SECRET is set. Its own entrypoint auto-generates
+          # ENCRYPTION_KEY per container, but warns that stored credentials
+          # are lost when that happens. Generate both once and keep them on
+          # the data volume so restarts stay stable without putting secrets
+          # in git.
+          seed-secrets:
+            image:
+              repository: busybox
+              tag: 1.37.0
+            command:
+              - /bin/sh
+              - -c
+              - |
+                for f in .auth_secret .encryption_key; do
+                  dest="/var/lib/falkordb/data/$f"
+                  if [ ! -s "$dest" ]; then
+                    echo "Generating $dest"
+                    head -c 32 /dev/urandom | od -A n -t x1 | tr -d ' \n' > "$dest"
+                    chmod 600 "$dest"
+                  fi
+                done
+        containers:
+          app:
+            image:
+              repository: docker.io/falkordb/falkordb
+              tag: v4.20.1
+            # The image entrypoint is run.sh, which starts the Browser in the
+            # background and then execs redis-server. Wrap it so the generated
+            # secrets reach both processes via the environment.
+            command:
+              - /bin/sh
+              - -c
+            args:
+              - |
+                AUTH_SECRET="$(cat /var/lib/falkordb/data/.auth_secret)"
+                ENCRYPTION_KEY="$(cat /var/lib/falkordb/data/.encryption_key)"
+                export AUTH_SECRET ENCRYPTION_KEY
+                exec /var/lib/falkordb/bin/run.sh
+            env:
+              TZ: ${TIMEZONE}
+              # 1 = also serve the FalkorDB Browser UI on :3000.
+              BROWSER: "1"
+              TLS: "0"
+              # NextAuth v5 sits behind the internal ingress, which terminates
+              # TLS, so it has to be told its public origin and to trust the
+              # forwarded headers.
+              AUTH_URL: https://falkordb.${SECRET_DOMAIN}
+              AUTH_TRUST_HOST: "true"
+              ALLOWED_ORIGINS: https://falkordb.${SECRET_DOMAIN}
+              # Passed verbatim to redis-server ahead of --dir/--loadmodule.
+              # No requirepass: same posture as qdrant — reachable only from
+              # in-cluster and the internal ingress.
+              REDIS_ARGS: --save 3600 1 300 100 60 10000
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                # Graphs are held in memory as sparse matrices; the limit is
+                # the real cap on total graph size.
+                memory: 4Gi
+
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 3000
+          redis:
+            port: 6379
+
+    ingress:
+      app:
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: Data Science
+          gethomepage.dev/name: FalkorDB
+          gethomepage.dev/icon: database.png
+          gethomepage.dev/description: Graph database for knowledge graphs
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+        hosts:
+          - host: &host falkordb.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+              - *host
+
+    persistence:
+      data:
+        enabled: true
+        type: persistentVolumeClaim
+        existingClaim: falkordb-data
+        advancedMounts:
+          falkordb:
+            seed-secrets:
+              - path: /var/lib/falkordb/data
+            app:
+              - path: /var/lib/falkordb/data

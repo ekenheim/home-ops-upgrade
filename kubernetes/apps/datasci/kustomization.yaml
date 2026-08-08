@@ -27,6 +27,7 @@ resources:
   - ./jupyter-lab/ks.yaml
   - ./marimo/ks.yaml
   - ./qdrant/ks.yaml
+  - ./falkordb/ks.yaml
   #- ./flyte/ks.yaml
   - ./label-studio/ks.yaml
   - ./bandit-demo/ks.yaml

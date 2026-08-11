@@ -77,6 +77,16 @@ spec:
         config:
           osdsPerDevice: "1"
       placement:
+        # worker4 is a dedicated LLM node tainted llm-workload=true:NoSchedule,
+        # but it still carries osd.1 (the 2TB Kingston). Rook merges `all` with
+        # the per-daemon placement below, so this tolerates the taint for every
+        # Ceph daemon -- osd, prepareosd, crashcollector, exporter -- while mgr
+        # and mon stay pinned to the control plane by their own nodeAffinity.
+        all:
+          tolerations:
+            - key: llm-workload
+              operator: Exists
+              effect: NoSchedule
         mgr: &placement
           nodeAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:

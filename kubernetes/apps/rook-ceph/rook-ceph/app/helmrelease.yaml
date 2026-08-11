@@ -37,6 +37,15 @@ spec:
       enableLiveness: true
       serviceMonitor:
         enabled: true
+      # worker4 is a dedicated LLM node tainted llm-workload=true:NoSchedule.
+      # The CSI node plugins are DaemonSets, so without this they are evicted
+      # from it and nothing on that node can mount RBD or CephFS -- including
+      # LLMKube's RWX model cache, which lives on ceph-filesystem.
+      # Provisioners are Deployments and can run anywhere, so they need nothing.
+      pluginTolerations:
+        - key: llm-workload
+          operator: Exists
+          effect: NoSchedule
     monitoring:
       enabled: true
     resources:

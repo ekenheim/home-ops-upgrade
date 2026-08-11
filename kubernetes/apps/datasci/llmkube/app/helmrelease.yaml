@@ -52,5 +52,17 @@ spec:
     prometheus:
       inferencePodMonitor:
         enabled: true
-    # The controller only reconciles CRs and needs no GPU, so it is left to
-    # schedule on any untainted node rather than pinned to worker4.
+    controllerManager:
+      # The controller mounts the model-cache PVC itself (to stage downloaded
+      # weights), and that PVC is bound to a PV pinned to worker4, so it has to
+      # run there -- it is not free to schedule anywhere despite needing no GPU:
+      #   0/5 nodes are available: 1 node(s) had untolerated taint(s),
+      #   4 node(s) didn't match PersistentVolume's node affinity
+      # The four other nodes fail the PV's nodeAffinity and worker4 rejects it
+      # on the taint, so without both of these it stays Pending forever.
+      nodeSelector:
+        kubernetes.io/hostname: worker4
+      tolerations:
+        - key: llm-workload
+          operator: Exists
+          effect: NoSchedule

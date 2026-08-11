@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: llmkube
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: 0.9.16
+  url: oci://ghcr.io/defilantech/charts/llmkube
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: llmkube
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: llmkube
+  interval: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    modelCache:
+      enabled: true
+      # `shared` renders the single llmkube-model-cache PVC. Do not switch to
+      # perService: that mode provisions a PVC per InferenceService through the
+      # storage class, and no provisioner can service worker4 (see
+      # model-cache-pv.yaml). `shared` is also the only mode that renders a PVC
+      # we can bind statically.
+      mode: shared
+      # RWO is correct despite `shared`: only worker4 has a GPU, so every
+      # InferenceService lands on the same node. RWX would need CephFS, which
+      # cannot mount on the tainted node.
+      accessMode: ReadWriteOnce
+      size: 300Gi
+      # Deliberately a class that does NOT exist, so nothing tries to
+      # dynamically provision. The PVC binds to the pre-created PV instead.
+      storageClass: llmkube-local
+      mountPath: /models
+    prometheus:
+      inferencePodMonitor:
+        enabled: true
+    # The controller only reconciles CRs and needs no GPU, so it is left to
+    # schedule on any untainted node rather than pinned to worker4.

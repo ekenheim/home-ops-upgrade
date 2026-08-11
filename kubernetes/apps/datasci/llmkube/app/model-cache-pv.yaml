@@ -1,0 +1,49 @@
+---
+# Statically-provisioned model cache for LLMKube, pinned to worker4.
+#
+# Why static rather than a StorageClass:
+#
+#   ceph-filesystem (RWX) is unusable here -- worker4 is tainted
+#   llm-workload=true:NoSchedule and the Ceph CSI node plugins are DaemonSets
+#   with no toleration, so nothing on worker4 can mount an RBD or CephFS
+#   volume at all.
+#
+#   local-hostpath (openebs) is unusable for the same class of reason: the
+#   provisioner spawns a per-PVC helper pod to create the directory, and that
+#   helper has no toleration either, so provisioning would hang. LLMKube's own
+#   chart warns about exactly this: "On a hard-tainted node, the storage
+#   provisioner's helper path must also tolerate the taint; otherwise use a
+#   pre-provisioned claim."
+#
+# So: no provisioner at all. storageClassName names a class that does not
+# exist, which means no dynamic provisioning is attempted and the chart's
+# `llmkube-model-cache` PVC binds to this PV statically on size + accessMode.
+# nodeAffinity keeps it on worker4, which is where the only GPU is anyway.
+#
+# hostPath with DirectoryOrCreate so kubelet creates the directory -- Talos has
+# no shell to pre-create it. /var survives reboots (installed with
+# --preserve=true); worker4's EPHEMERAL partition is ~463Gi, so 300Gi leaves
+# headroom for the OS and container images.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: llmkube-model-cache-worker4
+spec:
+  capacity:
+    storage: 300Gi
+  accessModes:
+    - ReadWriteOnce
+  # Retain: model weights are large and slow to re-download. Deleting the
+  # HelmRelease should not silently bin them.
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: llmkube-local
+  hostPath:
+    path: /var/mnt/llmkube-cache
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: ["worker4"]

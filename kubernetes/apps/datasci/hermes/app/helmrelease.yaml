@@ -97,8 +97,8 @@ spec:
               TZ: "${TIMEZONE}"
               GATEWAY_HEALTH_URL: http://localhost:8642
             # The dashboard reads config.yaml too, so it needs the same secret
-            # as the app container -- without this it cannot expand
-            # ${DASHBOARD_PASSWORD_HASH} and the auth gate stays unregistered.
+            # as the app container -- without this it cannot expand the
+            # password-hash variable and the auth gate stays unregistered.
             envFrom:
               - secretRef:
                   name: hermes

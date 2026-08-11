@@ -7,10 +7,20 @@
 #   kubectl get resourceslices.resource.k8s.io
 #   -> node=worker4 driver=gpu.amd.com devices=['gpu-0-128']
 #
-# allocationMode: All with adminAccess -- Strix Halo presents a single iGPU
-# sharing system memory, so there is nothing to partition between workloads;
-# a serving pod takes the whole device. Mirrors the upstream reference config
-# for this hardware.
+# allocationMode: All -- Strix Halo presents a single iGPU sharing system
+# memory, so there is nothing to partition between workloads; a serving pod
+# takes the whole device.
+#
+# NO adminAccess, deliberately, despite the upstream reference config for this
+# hardware setting it. The API gates it on a namespace label:
+#   spec.devices.requests[0].adminAccess: Forbidden: admin access to devices
+#   requires the `resource.kubernetes.io/admin-access: true` label on the
+#   containing namespace
+# Applying that label to datasci would grant *every* workload in this shared
+# namespace (40+ pods) the ability to claim privileged device access, which is
+# a poor trade for a serving pod. adminAccess exists for monitoring agents that
+# need to see devices already allocated to others; a pod taking the whole GPU
+# via allocationMode All does not need it.
 apiVersion: resource.k8s.io/v1
 kind: ResourceClaimTemplate
 metadata:
@@ -22,5 +32,4 @@ spec:
         - name: gpu
           exactly:
             deviceClassName: gpu.amd.com
-            adminAccess: true
             allocationMode: All

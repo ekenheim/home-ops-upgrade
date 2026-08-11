@@ -1,0 +1,80 @@
+---
+# Qwen3.6-35B-A3B on worker4's Strix Halo iGPU.
+#
+# Why this rather than a dense 27B/30B: Strix Halo is an iGPU on shared LPDDR5X
+# at roughly 256 GB/s, an order of magnitude under a discrete card, so
+# throughput tracks *active* bytes per token rather than model size. This is a
+# Mixture-of-Experts (Qwen3_5MoeForConditionalGeneration) with ~3B of 35B params
+# active per token, so it reads a fraction of its 22GB per token while a dense
+# 27B reads all ~17GB. It ends up both larger and substantially faster here.
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen3-35b-a3b
+spec:
+  source: hf://unsloth/Qwen3.6-35B-A3B-GGUF
+  files:
+    - Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf
+  # Vision projector -- the model is multimodal. F16 rather than F32: half the
+  # size for no meaningful quality loss at Q4 weights.
+  mmproj: mmproj-F16.gguf
+  format: gguf
+  quantization: UD-Q4_K_XL
+  hardware:
+    accelerator: rocm
+    gpu:
+      enabled: true
+      vendor: amd
+      # 99 = offload every layer. Unified memory means there is no host/device
+      # copy to avoid, so partial offload only costs speed.
+      layers: 99
+      resourceClaims:
+        - name: gpu
+          resourceClaimTemplateName: llama-strix-gpu
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen3-35b-a3b
+  labels:
+    krr/ignore: "true"
+spec:
+  modelRef: qwen3-35b-a3b
+  modelCache:
+    claimName: llmkube-model-cache
+  runtime: llamacpp
+  # Purpose-built llama.cpp for Strix Halo. The stock runtime image does not
+  # carry a ROCm build tuned for gfx1151.
+  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-6.4.4
+  command:
+    - llama-server
+  replicas: 1
+  # worker4 is the only node with an AMD GPU, and it is tainted as a dedicated
+  # LLM node -- both are required or the pod cannot be placed.
+  nodeSelector:
+    topology.kubernetes.io/gpus: amd
+  tolerations:
+    - key: llm-workload
+      operator: Exists
+      effect: NoSchedule
+  # 65536 rather than the model's full ceiling: KV cache is unreclaimable GTT on
+  # this UMA part, and over-allocating it is how the reference deployment
+  # deadlocked its node. Raise once real usage is understood.
+  contextSize: 65536
+  parallelSlots: 2
+  flashAttention: true
+  jinja: true
+  cacheTypeK: q8_0
+  cacheTypeV: q8_0
+  batchSize: 2048
+  uBatchSize: 512
+  resources:
+    cpu: "500m"
+    memory: 32Gi
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  extraArgs:
+    - --alias
+    - qwen3-35b-a3b
+    - --cont-batching

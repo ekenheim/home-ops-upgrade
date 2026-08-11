@@ -42,13 +42,34 @@ spec:
               - -c
               - |
                 set -euo pipefail
-                cp /tmp/config.yaml /opt/data/config.yaml
+                # Substitute the dashboard password hash here rather than
+                # letting hermes do it. hermes expands the LITELLM_API_KEY
+                # placeholder in providers.*.api_key, but NOT the one in
+                # dashboard.basic_auth.password_hash -- it registers the auth
+                # provider and then compares submitted passwords against the
+                # literal placeholder text, so every login fails with "invalid
+                # username or password" while the container looks perfectly
+                # healthy. Only the hash placeholder is replaced here; the
+                # LITELLM_API_KEY one is deliberately left for hermes so the
+                # proxy key stays out of the on-disk config.
+                #
+                # Note the doubled $$ below: Flux runs envsubst in strict mode
+                # over this file too, so a single-$ reference fails the build
+                # on an unset variable. Same reason the match pattern uses
+                # character classes rather than a literal placeholder.
+                # `|` delimiter because bcrypt hashes contain `/`; bcrypt's
+                # alphabet has no `&`, so no further escaping is needed.
+                sed "s|[$][{]DASHBOARD_PASSWORD_HASH[}]|$${DASHBOARD_PASSWORD_HASH}|" \
+                  /tmp/config.yaml > /opt/data/config.yaml
                 chown 10000:10000 /opt/data/config.yaml
                 PLUGIN_DIR=/opt/data/plugins/agentmemory
                 mkdir -p "$PLUGIN_DIR"
                 cp /tmp/agentmemory-plugin/plugin.yaml "$PLUGIN_DIR/plugin.yaml"
                 cp /tmp/agentmemory-plugin/__init__.py "$PLUGIN_DIR/__init__.py"
                 chown -R 10000:10000 /opt/data/plugins
+            envFrom:
+              - secretRef:
+                  name: hermes
         containers:
           app:
             image: &image

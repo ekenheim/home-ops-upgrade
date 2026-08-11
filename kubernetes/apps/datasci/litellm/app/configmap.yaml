@@ -6,35 +6,46 @@ metadata:
 data:
   config.yaml: |
     model_list:
-      # --- Self-hosted via ollama-igpu (OpenAI-compatible /v1) ---
-      # Model names here MUST exist in ollama-igpu -- litellm does not pull them,
-      # so a name that is merely plausible 404s at request time rather than
-      # failing at startup. Check with:
-      #   kubectl -n datasci exec deploy/ollama-igpu -- ollama list
-      # Currently pulled: qwen3.5:latest, gemma4:e4b, all-minilm:latest.
-      # This previously pointed at llama3.1, which was never pulled.
+      # --- Chat: LLMKube on worker4's Strix Halo iGPU ---
+      # Qwen3.6-35B-A3B (MoE, ~3B of 35B active), served by llama.cpp/ROCm.
+      # Measured 50 tok/s generation, 148 tok/s prompt -- roughly 3-4x what the
+      # masters' Intel iGPUs manage, and a far more capable model.
       #
-      # INTERIM: these run on the masters' Intel iGPUs. Once worker4 (Strix Halo)
-      # serves via LLMKube, repoint api_base at that InferenceService.
+      # The served id must match the InferenceService's --alias. Verify with:
+      #   curl http://qwen3-35b-a3b.datasci:8080/v1/models
+      # litellm does not validate this at startup; a wrong name 404s per request
+      # while the proxy still reports healthy.
+      #
+      # NOTE this is a *reasoning* model: it emits reasoning_content and burns
+      # output tokens thinking before answering. Callers with a tight max_tokens
+      # get an empty content and finish_reason=length. drop_params below keeps
+      # litellm from choking on the extra field.
       - model_name: self-hosted
         model_info:
           mode: chat
           supports_function_calling: true
+          supports_vision: true
         litellm_params:
-          model: openai/qwen3.5:latest
-          api_base: http://ollama-igpu.datasci:11434/v1
-          api_key: ollama
+          model: openai/qwen3-35b-a3b
+          api_base: http://qwen3-35b-a3b.datasci:8080/v1
+          api_key: none
 
       # `review` is the alias agentmemory points ANTHROPIC_MODEL at.
       - model_name: review
         model_info:
           mode: chat
           supports_function_calling: true
+          supports_vision: true
         litellm_params:
-          model: openai/qwen3.5:latest
-          api_base: http://ollama-igpu.datasci:11434/v1
-          api_key: ollama
+          model: openai/qwen3-35b-a3b
+          api_base: http://qwen3-35b-a3b.datasci:8080/v1
+          api_key: none
 
+      # --- Embeddings: still ollama-igpu on the Intel masters ---
+      # Deliberately NOT moved. The Strix InferenceService reports capabilities
+      # ["completion","multimodal"] -- it does not serve embeddings, and
+      # agentmemory depends on this (OPENAI_EMBEDDING_MODEL=all-minilm, 384
+      # dimensions). Moving it would need a separate embedding InferenceService.
       - model_name: all-minilm
         model_info:
           mode: embedding

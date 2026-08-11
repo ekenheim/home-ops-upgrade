@@ -42,6 +42,10 @@ spec:
   modelRef: qwen3-35b-a3b
   modelCache:
     claimName: llmkube-model-cache
+  # The hf:// source is resolved by the runtime at startup, so the init
+  # container is redundant work -- the operator warns MissingSkipModelInit
+  # about exactly this. The weights are already in the cache PVC either way.
+  skipModelInit: true
   runtime: llamacpp
   # Purpose-built llama.cpp for Strix Halo. The stock runtime image does not
   # carry a ROCm build tuned for gfx1151.

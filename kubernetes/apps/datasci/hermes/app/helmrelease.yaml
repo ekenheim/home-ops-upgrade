@@ -54,13 +54,22 @@ spec:
             image: &image
               repository: docker.io/nousresearch/hermes-agent
               tag: v2026.8.3@sha256:16788311e2fa3035456bdc1bafb8ec2b1777db64ebf020af9bb7eb73c3712c9e
-            # No args, deliberately. The image's Entrypoint is
-            # entrypoint-dispatch.sh with Cmd unset, and its s6-overlay init
-            # already starts a supervised gateway during cont-init:
+            # The gateway is NOT started here. entrypoint-dispatch.sh execs
+            # s6-overlay's /init with main-wrapper.sh as the "main program",
+            # and s6's cont-init already brings up a supervised gateway:
             #   reconcile: profile=default prior_state=running action=started
-            # Passing `gateway run` here started a *second* one, which the
-            # binary refuses outright and so crashlooped the container:
-            #   A gateway is already running under s6 for this profile.
+            # So args only decide what runs in the *foreground*. Per
+            # main-wrapper.sh's own routing:
+            #   no args                       -> exec `hermes` (interactive CLI)
+            #   first arg is an executable    -> exec it directly (sleep, ...)
+            #   first arg is anything else    -> exec `hermes <args>`
+            # `gateway run --no-supervise` (the original) started a second
+            # gateway, which the binary refuses outright. No args at all ran
+            # the interactive CLI, which exits immediately with
+            # "Input is not a terminal (fd=0)". Both crashlooped the container.
+            # A blocking no-op is the correct main program here: s6 owns the
+            # gateway's lifecycle and its output still reaches kubectl logs.
+            args: ["sleep", "infinity"]
             env:
               HERMES_HOME: /opt/data
               HOME: /opt/data

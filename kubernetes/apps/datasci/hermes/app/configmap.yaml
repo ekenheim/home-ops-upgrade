@@ -5,6 +5,11 @@ metadata:
   name: hermes-config
 data:
   config.yaml: |
+    # Pin the schema version. Without it hermes treats this as pre-v12 config
+    # (~2 years old) and refuses to auto-migrate:
+    #   [config-migrate] WARNING: This config predates version 12 and can no
+    #   longer be auto-migrated. ... manually set _config_version: 12
+    _config_version: 12
     model:
       default: self-hosted
       provider: litellm-anthropic

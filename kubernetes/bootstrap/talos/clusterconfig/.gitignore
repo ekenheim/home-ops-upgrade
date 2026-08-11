@@ -3,3 +3,4 @@ home-kubernetes-master2.yaml
 home-kubernetes-master3.yaml
 home-kubernetes-worker3.yaml
 talosconfig
+home-kubernetes-worker4.yaml

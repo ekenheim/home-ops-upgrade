@@ -22,7 +22,7 @@ nodes:
   - hostname: "master1"
     ipAddress: "192.168.50.31"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de:v1.13.7
+    talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de
     controlPlane: true
     networkInterfaces:
       - deviceSelector:
@@ -37,7 +37,7 @@ nodes:
   - hostname: "master2"
     ipAddress: "192.168.50.33"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de:v1.13.7
+    talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de
     controlPlane: true
     networkInterfaces:
       - deviceSelector:
@@ -52,7 +52,7 @@ nodes:
   - hostname: "master3"
     ipAddress: "192.168.50.34"
     installDisk: "/dev/sda"
-    talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de:v1.13.7
+    talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de
     controlPlane: true
     networkInterfaces:
       # 2x 2.5G bonded via LACP
@@ -82,7 +82,7 @@ nodes:
     ipAddress: "192.168.50.37"
     installDisk: "/dev/nvme1n1"
     # Schematic encodes node-specific addons; for Talos upgrade use a 1.12.x schematic with same addons and set e.g. .../NEW_SCHEMATIC:v1.12.3
-    talosImageURL: factory.talos.dev/metal-installer/96f8c146a67c80daad900d3fc1a6976fe11062321eee9ab6ae2a6aea88b2d26e:v1.13.7
+    talosImageURL: factory.talos.dev/metal-installer/96f8c146a67c80daad900d3fc1a6976fe11062321eee9ab6ae2a6aea88b2d26e
     controlPlane: false
     networkInterfaces:
       # 2x 10G bonded via LACP
@@ -98,6 +98,49 @@ nodes:
             - hardwareAddr: "58:47:ca:7e:9f:cf"
             - hardwareAddr: "58:47:ca:7e:9f:d0"
         dhcp: true
+        mtu: 9000
+        routes:
+          - network: 0.0.0.0/0
+            gateway: "192.168.50.1"
+
+  - hostname: "worker4"
+    ipAddress: "192.168.50.38"
+    # Two NVMe drives, both matched by name-based selectors, so pin the OS disk
+    # by serial: a reordered enumeration would otherwise point the installer at
+    # the 2TB Kingston that Rook claims as an OSD (deviceFilter: nvme0n1).
+    # Samsung 970 EVO Plus 500GB, currently nvme1n1.
+    installDiskSelector:
+      serial: "S4EVNMFN814603N"
+    # AMD Ryzen AI MAX+ 395 "Strix Halo" (Radeon 8060S iGPU, 128GB unified).
+    # Its own schematic, NOT worker3's amd-ucode-only one: adds siderolabs/amdgpu
+    # plus the Strix Halo kernel args ROCm needs. amd_iommu=off is required for
+    # the iGPU to work at all; the gttsize/ttm values size the GPU's share of
+    # unified memory and assume a 128GB board.
+    talosImageURL: factory.talos.dev/metal-installer/c38bf6e76a549856d0962fdd930a8191bc419b19c83a21048ea2c33196534232
+    controlPlane: false
+    nodeLabels:
+      topology.kubernetes.io/gpus: amd
+      node-role.kubernetes.io/rocm-worker: "true"
+    nodeTaints:
+      # Dedicated LLM node. On this UMA part the amdgpu GTT pins system RAM that
+      # the kernel OOM killer cannot reclaim, so co-tenanting general workloads
+      # here risks deadlocking the node. Rook tolerates this taint (see the
+      # rook-ceph operator + cluster HelmReleases) so osd.1 stays put.
+      llm-workload: "true:NoSchedule"
+    networkInterfaces:
+      # Realtek dual-port card (r8169): enp97s0 is 2.5G, enp98s0 is 10G.
+      # Only the 10G port is cabled. Do NOT bond these -- mismatched speeds --
+      # and do not cable both: the Cilium L2 policy matches ^(ens|enp|bond).*,
+      # so a second addressed NIC on this L2 would answer ARP for LoadBalancer
+      # VIPs from a second MAC, the same failure that required bonding master3.
+      - deviceSelector:
+          hardwareAddr: "38:05:25:31:97:13"
+        dhcp: true
+        # Jumbo verified end-to-end: ping -M do -s 8972 worker3 -> worker4 is
+        # 0% loss. Note the first install stalled here for ~90s retrying the
+        # installer blob with "TLS handshake timeout" -- the LAN is 9000 but
+        # the internet path is 1500, so an external pull waits on PMTU
+        # discovery. It self-recovers; do not lower the MTU chasing it.
         mtu: 9000
         routes:
           - network: 0.0.0.0/0

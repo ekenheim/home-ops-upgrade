@@ -24,6 +24,16 @@ data:
         base_url: http://litellm.datasci:4000/
         api_mode: anthropic_messages
         api_key: $${LITELLM_API_KEY}
+    # The dashboard is published at hermes.${SECRET_DOMAIN}, and since
+    # v2026.8.3 the image refuses a non-loopback bind with no auth provider
+    # registered ("There is no unauthenticated public-bind option") -- the old
+    # --insecure flag is now inert. $$ escapes Flux substitution so hermes
+    # expands ${DASHBOARD_PASSWORD_HASH} from env itself, keeping the hash out
+    # of Git; it arrives via envFrom the `hermes` secret.
+    dashboard:
+      basic_auth:
+        username: admin
+        password_hash: $${DASHBOARD_PASSWORD_HASH}
     toolsets:
       - hermes-cli
     terminal:

@@ -37,15 +37,20 @@ spec:
       enableLiveness: true
       serviceMonitor:
         enabled: true
-      # worker4 is a dedicated LLM node tainted llm-workload=true:NoSchedule.
-      # The CSI node plugins are DaemonSets, so without this they are evicted
-      # from it and nothing on that node can mount RBD or CephFS -- including
-      # LLMKube's RWX model cache, which lives on ceph-filesystem.
-      # Provisioners are Deployments and can run anywhere, so they need nothing.
-      pluginTolerations:
-        - key: llm-workload
-          operator: Exists
-          effect: NoSchedule
+      # NOTE: do not add pluginTolerations here. This chart runs with
+      # csi.installCsiOperator=true, and rook-ceph v1.20.3 has no CSI toleration
+      # values at all -- the only toleration keys are the top-level `tolerations`
+      # (operator Deployment) and `discover.toleration*`. Helm silently ignores
+      # unknown values, so a csi.pluginTolerations block upgrades "successfully"
+      # while doing precisely nothing.
+      #
+      # The CSI node plugins are owned by Driver CRs (csi.ceph.io/v1), reconciled
+      # by ceph-csi-controller-manager, and Rook itself owns both those CRs and
+      # the OperatorConfig -- so a hand patch gets reverted on reconcile. If CSI
+      # ever needs to tolerate a taint, the field is nodePlugin.tolerations on
+      # OperatorConfig.spec.driverSpecDefaults, and Kyverno is the practical way
+      # to inject it. worker4 avoids the problem entirely by keeping LLMKube's
+      # model cache on local-hostpath rather than ceph-filesystem.
     monitoring:
       enabled: true
     resources:

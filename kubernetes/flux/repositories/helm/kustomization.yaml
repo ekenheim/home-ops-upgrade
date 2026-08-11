@@ -41,6 +41,7 @@ resources:
   - ./prefect.yaml
   - ./prometheus-community.yaml
   - ./ray.yaml
+  - ./rocm.yaml
   - ./rook-ceph.yaml
   - ./runix.yaml
   - ./spegel.yaml

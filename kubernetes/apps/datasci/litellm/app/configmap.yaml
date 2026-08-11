@@ -7,14 +7,21 @@ data:
   config.yaml: |
     model_list:
       # --- Self-hosted via ollama-igpu (OpenAI-compatible /v1) ---
-      # NOTE: the `llama3.1` model below must be pulled in ollama-igpu
-      # (`ollama pull llama3.1`) or swapped for a model you have.
+      # Model names here MUST exist in ollama-igpu -- litellm does not pull them,
+      # so a name that is merely plausible 404s at request time rather than
+      # failing at startup. Check with:
+      #   kubectl -n datasci exec deploy/ollama-igpu -- ollama list
+      # Currently pulled: qwen3.5:latest, gemma4:e4b, all-minilm:latest.
+      # This previously pointed at llama3.1, which was never pulled.
+      #
+      # INTERIM: these run on the masters' Intel iGPUs. Once worker4 (Strix Halo)
+      # serves via LLMKube, repoint api_base at that InferenceService.
       - model_name: self-hosted
         model_info:
           mode: chat
           supports_function_calling: true
         litellm_params:
-          model: openai/llama3.1
+          model: openai/qwen3.5:latest
           api_base: http://ollama-igpu.datasci:11434/v1
           api_key: ollama
 
@@ -24,7 +31,7 @@ data:
           mode: chat
           supports_function_calling: true
         litellm_params:
-          model: openai/llama3.1
+          model: openai/qwen3.5:latest
           api_base: http://ollama-igpu.datasci:11434/v1
           api_key: ollama
 

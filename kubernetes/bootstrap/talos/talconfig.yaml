@@ -121,12 +121,33 @@ nodes:
     nodeLabels:
       topology.kubernetes.io/gpus: amd
       node-role.kubernetes.io/rocm-worker: "true"
-    nodeTaints:
-      # Dedicated LLM node. On this UMA part the amdgpu GTT pins system RAM that
-      # the kernel OOM killer cannot reclaim, so co-tenanting general workloads
-      # here risks deadlocking the node. Rook tolerates this taint (see the
-      # rook-ceph operator + cluster HelmReleases) so osd.1 stays put.
-      llm-workload: "true:NoSchedule"
+    # Dedicated LLM node. On this UMA part the amdgpu GTT pins system RAM that
+    # the kernel OOM killer cannot reclaim, so co-tenanting general workloads
+    # here risks deadlocking the node. Rook tolerates this taint (see the
+    # rook-ceph cluster HelmRelease placement.all) so osd.1 stays put.
+    #
+    # registerWithTaints, NOT talhelper's `nodeTaints`. nodeTaints is applied
+    # post-registration by Talos's k8s.NodeApplyController using the *kubelet's*
+    # kubeconfig, and the NodeRestriction admission plugin forbids a kubelet
+    # from modifying its own node's taints:
+    #   nodes "worker4" is forbidden: node "worker4" is not allowed to modify taints
+    # That failure is atomic, so it also blocks nodeLabels from reconciling.
+    # A kubelet may only set taints when it first registers the node, which is
+    # what registerWithTaints does.
+    #
+    # Consequence: this has no effect on an already-registered node. If the Node
+    # object is ever deleted and re-registers, the taint comes back by itself;
+    # to taint an existing node, apply it with admin credentials:
+    #   kubectl taint node worker4 llm-workload=true:NoSchedule --overwrite
+    patches:
+      - |-
+        machine:
+          kubelet:
+            extraConfig:
+              registerWithTaints:
+                - key: llm-workload
+                  value: "true"
+                  effect: NoSchedule
     networkInterfaces:
       # Realtek dual-port card (r8169): enp97s0 is 2.5G, enp98s0 is 10G.
       # Only the 10G port is cabled. Do NOT bond these -- mismatched speeds --

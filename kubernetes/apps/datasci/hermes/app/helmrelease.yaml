@@ -54,7 +54,13 @@ spec:
             image: &image
               repository: docker.io/nousresearch/hermes-agent
               tag: v2026.8.3@sha256:16788311e2fa3035456bdc1bafb8ec2b1777db64ebf020af9bb7eb73c3712c9e
-            args: ["gateway", "run", "--no-supervise"]
+            # No args, deliberately. The image's Entrypoint is
+            # entrypoint-dispatch.sh with Cmd unset, and its s6-overlay init
+            # already starts a supervised gateway during cont-init:
+            #   reconcile: profile=default prior_state=running action=started
+            # Passing `gateway run` here started a *second* one, which the
+            # binary refuses outright and so crashlooped the container:
+            #   A gateway is already running under s6 for this profile.
             env:
               HERMES_HOME: /opt/data
               HOME: /opt/data

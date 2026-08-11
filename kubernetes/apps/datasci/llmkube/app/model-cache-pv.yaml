@@ -24,6 +24,19 @@
 # no shell to pre-create it. /var survives reboots (installed with
 # --preserve=true); worker4's EPHEMERAL partition is ~463Gi, so 300Gi leaves
 # headroom for the OS and container images.
+#
+# The path MUST live under /var/openebs/local. On Talos /var/mnt is read-only
+# (it is reserved for UserVolumeConfig mounts) and kubelet cannot mkdir there:
+#   MountVolume.SetUp failed for volume "llmkube-model-cache-worker4":
+#     mkdir /var/mnt/llmkube-cache: read-only file system
+# /var/openebs/local is the one path talconfig gives kubelet an explicit
+# read-write bind mount for:
+#   machine.kubelet.extraMounts:
+#     - destination: /var/openebs/local
+#       options: ["bind", "rshared", "rw"]
+# (openebs's own local-hostpath class uses /var/mnt/local-hostpath and works
+# regardless, because its privileged helper pod creates the directory rather
+# than kubelet -- that route is unavailable to us, see above.)
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -38,7 +51,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: llmkube-local
   hostPath:
-    path: /var/mnt/llmkube-cache
+    path: /var/openebs/local/llmkube-cache
     type: DirectoryOrCreate
   nodeAffinity:
     required:

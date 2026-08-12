@@ -41,6 +41,37 @@ data:
           api_base: http://qwen3-35b-a3b.datasci:8080/v1
           api_key: none
 
+      # `fast` is the same backend as `self-hosted` with thinking switched off.
+      #
+      # Qwen3.6 is a reasoning model and burns its output budget thinking before
+      # it answers. For mechanical work -- translation, extraction, classification
+      # -- that is pure overhead. Measured on this cluster, same prompt, same
+      # weights, translating one line to Swedish:
+      #
+      #   self-hosted (thinking on)   7.9s   300 completion tokens
+      #   fast        (thinking off)  0.4s     7 completion tokens
+      #
+      # Identical output ("Han är bakom dig."). ~20x faster for 43x fewer tokens.
+      #
+      # chat_template_kwargs is a server-side default here, so callers need not
+      # send anything -- point them at `fast` and they get the non-thinking path.
+      # It survives `drop_params: true` (verified) and reaches llama.cpp because
+      # the InferenceService runs with `jinja: true`.
+      #
+      # Use `self-hosted`/`review` when the reasoning is the point; use `fast`
+      # for bulk throughput.
+      - model_name: fast
+        model_info:
+          mode: chat
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          model: openai/qwen3-35b-a3b
+          api_base: http://qwen3-35b-a3b.datasci:8080/v1
+          api_key: none
+          chat_template_kwargs:
+            enable_thinking: false
+
       # --- Embeddings: still ollama-igpu on the Intel masters ---
       # Deliberately NOT moved. The Strix InferenceService reports capabilities
       # ["completion","multimodal"] -- it does not serve embeddings, and

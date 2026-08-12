@@ -69,8 +69,27 @@ spec:
   # 65536 rather than the model's full ceiling: KV cache is unreclaimable GTT on
   # this UMA part, and over-allocating it is how the reference deployment
   # deadlocked its node. Raise once real usage is understood.
-  contextSize: 65536
-  parallelSlots: 2
+  # 2 slots was below llama.cpp's own default of 4 and is the real ceiling on
+  # concurrency: each slot serves one request, so a third caller queued behind
+  # two in-flight ones -- and a Lingarr batch occupies a slot for ~90s. With
+  # several apps sharing this backend that reads as a multi-minute hang.
+  #
+  # contextSize is the total KV budget divided across slots, so it has to grow
+  # with the slot count to keep a usable per-slot window: 131072/8 = 16384 each,
+  # up from 65536/2 = 32768. Comfortably above Lingarr's ~1k-token batches.
+  #
+  # This stays far away from the GTT ceiling that deadlocked the reference
+  # deployment. Measured on the live pod at contextSize 65536: 22.7 GiB of
+  # 124 GiB GTT in use, of which the q8_0 KV cache is only ~1.7 GiB. Doubling
+  # the context adds ~1.7 GiB, not tens.
+  contextSize: 131072
+  parallelSlots: 8
+  # Restarting the server drops in-flight requests. waitForIdle holds the
+  # pod-template update until llama.cpp reports its slots idle, so a rollout
+  # does not kill a translation batch mid-flight.
+  rolloutPolicy:
+    waitForIdle: true
+    idleTimeoutSeconds: 600
   flashAttention: true
   jinja: true
   cacheTypeK: q8_0

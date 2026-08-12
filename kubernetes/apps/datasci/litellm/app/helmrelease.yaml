@@ -42,6 +42,13 @@ spec:
               # Lets the admin UI add/edit models at runtime and persist them
               # alongside the ones declared in config.yaml.
               STORE_MODEL_IN_DB: "True"
+              # Payloads written to LiteLLM_SpendLogs are truncated head+tail
+              # by default, which shows up as a "litellm_truncated skipped N
+              # chars" marker mid-string in the UI. Only the DB copy is cut,
+              # never the response handed back to the client. Raised so whole
+              # Lingarr subtitle batches stay readable when debugging.
+              # Watch the table size: this is the Crunchy `litellm` database.
+              MAX_STRING_LENGTH_PROMPT_IN_DB: "100000"
             envFrom:
               - secretRef:
                   name: litellm

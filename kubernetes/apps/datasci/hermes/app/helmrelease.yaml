@@ -95,6 +95,25 @@ spec:
               HERMES_HOME: /opt/data
               HOME: /opt/data
               TZ: "${TIMEZONE}"
+              # The dashboard runs HERE, in the same container as the gateway,
+              # rather than as its own container. gateway/status.py resolves
+              # status from {HERMES_HOME}/gateway.pid -- shared on the PVC, so
+              # every container reads the same PID -- and then checks liveness
+              # with os.kill, which is namespace-local. A separate container
+              # therefore read a valid PID, failed to find that process, and
+              # reported "Gateway Status: Stopped" permanently while the gateway
+              # was up and serving Discord. Its Restart button failed too:
+              # /run is per-container, so gateway-default was missing from its
+              # s6 scandir ("no such gateway 'default'").
+              # Co-locating fixes both. Containers share the pod network
+              # namespace, so the `dashboard` Service still reaches :9119
+              # unchanged. The s6 slot is already declared in the image and
+              # merely gated on HERMES_DASHBOARD.
+              # NOT fixable with shareProcessNamespace: that makes the pause
+              # container PID 1, and s6-overlay's /init requires PID 1.
+              HERMES_DASHBOARD: "1"
+              HERMES_DASHBOARD_PORT: "9119"
+              GATEWAY_HEALTH_URL: http://localhost:8642
               AGENTMEMORY_URL: http://agentmemory.datasci:3111
               AGENTMEMORY_PROJECT: hermes
               AGENTMEMORY_SECRET:
@@ -108,38 +127,19 @@ spec:
             resources:
               requests:
                 cpu: 500m
+              # Absorbs the dashboard, which had its own 1Gi limit before it
+              # moved in here.
               limits:
-                memory: 2Gi
+                memory: 3Gi
             ports:
               - name: http
                 containerPort: 8642
                 protocol: TCP
+              - name: dashboard
+                containerPort: 9119
+                protocol: TCP
               - name: codeserver
                 containerPort: 12321
-                protocol: TCP
-          dashboard:
-            image: *image
-            args:
-              - dashboard
-              - --host
-              - "0.0.0.0"
-            env:
-              TZ: "${TIMEZONE}"
-              GATEWAY_HEALTH_URL: http://localhost:8642
-            # The dashboard reads config.yaml too, so it needs the same secret
-            # as the app container -- without this it cannot expand the
-            # password-hash variable and the auth gate stays unregistered.
-            envFrom:
-              - secretRef:
-                  name: hermes
-            resources:
-              requests:
-                cpu: 100m
-              limits:
-                memory: 1Gi
-            ports:
-              - name: http
-                containerPort: 9119
                 protocol: TCP
           codeserver:
             image:

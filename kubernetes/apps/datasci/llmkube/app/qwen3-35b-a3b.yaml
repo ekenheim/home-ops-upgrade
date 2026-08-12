@@ -83,13 +83,22 @@ spec:
   #   request (28368 tokens) exceeds the available context size (16384 tokens)
   # 524288/8 = 65536 each, 4x the failing request and room for MCP toolsets.
   #
-  # Cost is linear and small: measured 22.7 GiB GTT at contextSize 65536 and
-  # 23.8 GiB at 131072, i.e. ~1.1 GiB per extra 65536 tokens, so this lands
-  # near 30 GiB of the 124 GiB GTT budget.
+  # 524288/8 = 65536 each held Lingarr fine but was still under Hermes's
+  # agentic loop: a coding turn carries ~28k of system prompt and tool schemas
+  # before any work, so the usable conversation budget was ~37k and a few
+  # whole-file writes exhausted it:
+  #   request (65572 tokens) exceeds the available context size (65536 tokens)
+  # 1048576/8 = 131072 each doubles it. Keep hermes's model.context_length in
+  # lockstep with this number -- hermes cannot discover it through litellm and
+  # silently assumes 256k otherwise.
   #
-  # Per-slot stays far under the model's native window (gguf metadata:
+  # Cost is linear and small: measured 22.7 GiB GTT at contextSize 65536 and
+  # 23.8 GiB at 131072, i.e. ~1.1 GiB per extra 65536 tokens. Measured 28.6 GiB
+  # at 524288, so this lands near 37 GiB -- worker4 reports 124 GiB of GTT.
+  #
+  # Per-slot stays under the model's native window (gguf metadata:
   # qwen35moe.context_length = 262144), so no RoPE scaling and no quality loss.
-  contextSize: 524288
+  contextSize: 1048576
   parallelSlots: 8
   # Restarting the server drops in-flight requests. waitForIdle holds the
   # pod-template update until llama.cpp reports its slots idle, so a rollout

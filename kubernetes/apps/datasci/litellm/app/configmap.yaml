@@ -20,11 +20,20 @@ data:
       # output tokens thinking before answering. Callers with a tight max_tokens
       # get an empty content and finish_reason=length. drop_params below keeps
       # litellm from choking on the extra field.
+      # max_input_tokens is the InferenceService's *per-slot* window
+      # (contextSize / parallelSlots), not the total KV budget. openai/<custom>
+      # is absent from litellm's cost map, so without this litellm has no idea
+      # how big the window is and enable_pre_call_checks below is inert -- it
+      # forwards a doomed request and surfaces the backend's 400 instead of
+      # catching it. Note hermes does NOT learn the window from this: it reads
+      # /v1/models, which returns bare ids. Set model.context_length in the
+      # hermes ConfigMap too, and move all three with contextSize.
       - model_name: self-hosted
         model_info:
           mode: chat
           supports_function_calling: true
           supports_vision: true
+          max_input_tokens: 131072
         litellm_params:
           model: openai/qwen3-35b-a3b
           api_base: http://qwen3-35b-a3b.datasci:8080/v1
@@ -36,6 +45,7 @@ data:
           mode: chat
           supports_function_calling: true
           supports_vision: true
+          max_input_tokens: 131072
         litellm_params:
           model: openai/qwen3-35b-a3b
           api_base: http://qwen3-35b-a3b.datasci:8080/v1
@@ -65,6 +75,7 @@ data:
           mode: chat
           supports_function_calling: true
           supports_vision: true
+          max_input_tokens: 131072
         litellm_params:
           model: openai/qwen3-35b-a3b
           api_base: http://qwen3-35b-a3b.datasci:8080/v1

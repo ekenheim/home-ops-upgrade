@@ -1,0 +1,93 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: dispatch
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: dispatch
+  interval: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      main:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          main:
+            env:
+              DISPATCH_EXCLUDED_LABELS: renovate
+              # --- Grooming: rewrite raw issues into agent-ready specs --------
+              DISPATCH_HOSTED_GROOMER_ENABLED: "true"
+              DISPATCH_GROOMER_DRY_RUN: "false"
+              DISPATCH_GROOMER_REPO_CONTEXT_ENABLED: "true"
+              DISPATCH_LLM_BASE_URL: http://litellm.datasci:4000/v1
+              # `self-hosted`, not `fast`: grooming is the one step where the
+              # reasoning is load-bearing -- it has to judge scope and write
+              # acceptance criteria. `fast` is the same weights with thinking
+              # off, which is right for extraction, not for this.
+              DISPATCH_GROOMER_MODEL: self-hosted
+              DISPATCH_SCHEDULER_ENABLED: "true"
+              # --- Lanes ------------------------------------------------------
+              # Two lanes, not upstream's three. Upstream's `frontier` lane is
+              # an escalation target backed by a cloud model (MiniMax-M3 via
+              # litellm); this cluster serves only qwen3-35b-a3b, so there is
+              # nothing to escalate TO and a claimable frontier lane would just
+              # re-run the same model. Add it here (and ESCALATION_LANE in
+              # ../bridge/helmrelease.yaml) if a cloud model is ever enabled in
+              # ../../litellm/app/configmap.yaml.
+              DISPATCH_LANE_CONFIG_JSON: >-
+                {"lanes":[{"id":"local","title":"Local","claimable":true,"role":"default","description":"Local
+                model lane (qwen3-35b-a3b on worker4) — all groomed, ready work
+                starts here.","color":"#3b82f6"},{"id":"backlog","title":"Backlog","claimable":false,"description":"Needs
+                grooming before work can start. Not directly
+                claimable.","color":"#6b7280"}],"laneAliases":{"normal":"local","escalated":"local","cloud":"local","frontier":"local"}}
+              # The chart never creates this Secret; ../app/externalsecret.yaml
+              # renders it from the crunchy cluster's pguser Secret.
+              DATABASE_URL: &dburl
+                valueFrom:
+                  secretKeyRef:
+                    name: dispatch-db-secret
+                    key: uri
+            envFrom:
+              - secretRef:
+                  name: dispatch
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
+    ingress:
+      main:
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: Data Science
+          gethomepage.dev/name: Dispatch
+          gethomepage.dev/icon: mdi-clipboard-list
+          gethomepage.dev/description: GitHub issue assignment queue for coding agents
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+        hosts:
+          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                service:
+                  identifier: main
+                  port: http
+    # Pre-install/pre-upgrade hook Job that runs `prisma migrate deploy`, so the
+    # server pods never migrate (they always start with SKIP_DB_MIGRATIONS=true).
+    # It needs DATABASE_URL of its own -- the container env above does not reach
+    # the hook.
+    migrations:
+      env:
+        DATABASE_URL: *dburl

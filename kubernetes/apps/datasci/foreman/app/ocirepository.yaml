@@ -1,0 +1,18 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: foreman
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    # Keep in lockstep with the llmkube chart tag in ../../llmkube/app/helmrelease.yaml
+    # and with the coder image tag in ./helmrelease.yaml -- foreman's operator
+    # talks to llmkube's InferenceService CRs and the coder image ships the
+    # matching `foreman-agent run-task` binary.
+    tag: 0.9.16
+  url: oci://ghcr.io/defilantech/charts/foreman

@@ -1,0 +1,123 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app foreman-dispatch-bridge
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.0.1
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    defaultPodOptions:
+      # app-template defaults this off; the bridge needs its SA token to create
+      # Workload CRs through the in-cluster API (load_incluster_config).
+      automountServiceAccountToken: true
+    controllers:
+      foreman-dispatch-bridge:
+        type: cronjob
+        cronjob:
+          schedule: "*/15 * * * *"
+          timeZone: "${TIMEZONE}"
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 1
+          failedJobsHistory: 1
+        serviceAccount:
+          identifier: *app
+        containers:
+          app:
+            image:
+              repository: ghcr.io/misospace/foreman-dispatch-bridge
+              tag: 0.6.22@sha256:9d5746bdbf3b775152c0208f0a60e605fb27f3637976ada9ad10184943cafa7b
+            env:
+              DISPATCH_URL: http://dispatch.datasci:3000
+              # Dash, not slash: agents auto-register, but a "/" splits the queue
+              # URL path (/api/agents/{name}/queue) and 404s.
+              DISPATCH_AGENT_NAME: foreman-coder
+              # Single lane -- see DISPATCH_LANE_CONFIG_JSON in
+              # ../app/helmrelease.yaml for why upstream's `frontier` escalation
+              # lane is dropped. ESCALATION_LANE is deliberately unset: with no
+              # second model to escalate to, re-laning an exhausted issue would
+              # just re-run qwen3-35b-a3b. Exhausted issues tombstone instead.
+              DISPATCH_LANES: local
+              # One coder Agent, so no round-robin list (upstream rotates across
+              # coder/coder-strix/coder-frontier, which were model variants this
+              # cluster does not have).
+              LANE_CODER_AGENTS: '{"*":"coder"}'
+              REVISION_CODER_AGENTS: '{"*":"coder-revision"}'
+              FOREMAN_NAMESPACE: datasci
+              # Concurrent issues in flight. Each one occupies a FleetNode per
+              # pipeline step, so keep this at or below
+              # ../../foreman/app/helmrelease.yaml's agent.replicaCount.
+              MAX_IN_PROGRESS: "2"
+              VERIFY_ENABLED: "false"
+              VERDICT_SELF_GO: "code-fix,docs,packaging,config,ci-policy"
+              # Per-repo gate commands (fmt/lint/build/test) the deterministic
+              # `gate` Agent runs. Only the "*" fallback is set: a no-op gate, so
+              # the pipeline works on any repo out of the box and the coder's own
+              # in-workspace self-gate is what actually catches breakage.
+              #
+              # Add a real profile per repo you point the loop at, e.g.:
+              #   "ekenheim/some-python-repo": {
+              #     "language": "python", "image": "python:3.13",
+              #     "commands": {
+              #       "format": "true",
+              #       "lint": "pip install -q ruff && ruff check .",
+              #       "build": "pip install -q -r requirements.txt && python -m compileall -q .",
+              #       "test": "pip install -q -r requirements.txt && python -m pytest -q"
+              #     }
+              #   }
+              GATEPROFILE_MAP: >-
+                {"*":{"language":"generic","image":"python:3.13","commands":{"format":"true","lint":"true","build":"true","test":"true"}}}
+              # Drains the pr-fix queue: review comments on an open PR come back
+              # as a revision task rather than a new issue.
+              PR_FIX_ENABLED: "true"
+              PR_FIX_MAX_ATTEMPTS: "3"
+              PR_FIX_LANE_AGENTS: '{"NORMAL":"coder","ESCALATED":"coder"}'
+            envFrom:
+              - secretRef:
+                  name: *app
+            resources:
+              requests:
+                cpu: 25m
+              limits:
+                memory: 128Mi
+    serviceAccount:
+      foreman-dispatch-bridge: {}
+    rbac:
+      roles:
+        # The bridge creates Workloads and reconciles failed ones: list/get to
+        # find Failed Workloads, delete + create to retry them (bounded). No
+        # update/patch -- retry is delete-then-recreate, not in-place mutation.
+        foreman-dispatch-bridge:
+          type: Role
+          rules:
+            - apiGroups: ["foreman.llmkube.dev"]
+              resources: ["workloads"]
+              verbs: ["create", "get", "list", "delete"]
+            # Reads a failed Workload's task results (reviewer NO-GO findings,
+            # coder errors) to build feedback-carrying retries.
+            - apiGroups: ["foreman.llmkube.dev"]
+              resources: ["agentictasks"]
+              verbs: ["get", "list"]
+      bindings:
+        foreman-dispatch-bridge:
+          type: RoleBinding
+          roleRef:
+            identifier: foreman-dispatch-bridge
+          subjects:
+            - identifier: foreman-dispatch-bridge
+              serviceAccount: foreman-dispatch-bridge

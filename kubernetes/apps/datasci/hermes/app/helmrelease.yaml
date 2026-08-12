@@ -67,6 +67,17 @@ spec:
                 cp /tmp/agentmemory-plugin/plugin.yaml "$PLUGIN_DIR/plugin.yaml"
                 cp /tmp/agentmemory-plugin/__init__.py "$PLUGIN_DIR/__init__.py"
                 chown -R 10000:10000 /opt/data/plugins
+                # code-server runs as uid 1000 (coder) with supplementary
+                # group 10000, but /opt/data is mode 700 -- mode 700 grants the
+                # group nothing, not even traversal, so the IDE rendered an
+                # empty tree with "Permission denied". fsGroup alone does not
+                # fix it: fsGroupChangePolicy is OnRootMismatch and the gid
+                # already matched, so Kubernetes skipped the chmod.
+                # 0750, not 0770: the group needs traversal and listing, not
+                # write. Everything sensitive under here keeps its own mode --
+                # .env is 600 and logs/ is 700, both owned by hermes -- so they
+                # stay unreadable to coder even with the directory opened up.
+                chmod 0750 /opt/data
             envFrom:
               - secretRef:
                   name: hermes
@@ -154,7 +165,13 @@ spec:
               - /home/node/.vscode
               - --port
               - "12321"
-              - /opt/data
+              # Open the agent's workspace (hermes' own terminal.cwd), not
+              # /opt/data. This IDE runs --auth none behind an internal-only
+              # ingress, so opening hermes' home would put .env -- which holds
+              # DISCORD_BOT_TOKEN -- one click away for anyone on the LAN.
+              # File modes still deny it, but there is no reason to point the
+              # editor at the secret in the first place.
+              - /opt/data/workspace
             env:
               TZ: "${TIMEZONE}"
             resources:

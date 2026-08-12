@@ -69,6 +69,22 @@ data:
 
     general_settings:
       health_check_endpoint: /v1/health
+      # Store prompt and completion bodies in LiteLLM_SpendLogs.messages /
+      # .response so the admin UI's Logs view can show request + response.
+      # Off by default: without it litellm redacts every prompt-carrying field
+      # before the row is written, and the UI renders "Request/Response Data
+      # Not Available". Read from general_settings -- see
+      # get_store_prompts_in_spend_logs() in spend_tracking_utils.py.
+      #
+      # Only affects requests made after this lands; existing rows stay empty.
+      #
+      # Note this writes full subtitle text (and every other caller's prompts)
+      # into the shared postgres cluster. If that grows uncomfortably, cap it
+      # with -- these delete whole spend rows, not just the bodies, so they
+      # trade history for space:
+      #   maximum_spend_logs_retention_period: "30d"
+      #   maximum_spend_logs_retention_interval: "24h"
+      store_prompts_in_spend_logs: true
 
     router_settings:
       enable_pre_call_checks: true

@@ -74,6 +74,11 @@ spec:
               # --- Server / viewer ---
               III_REST_PORT: "3111"
               RUST_LOG: "warn"
+              # The viewer defaults to a 127.0.0.1 bind, which the ingress
+              # cannot reach (502). Binding it cluster-wide is only allowed
+              # when AGENTMEMORY_SECRET is set (inbound Bearer is then
+              # required) and VIEWER_ALLOWED_HOSTS pins the Host header.
+              AGENTMEMORY_VIEWER_HOST: "0.0.0.0"
               VIEWER_ALLOWED_HOSTS: "agentmemory.${SECRET_DOMAIN}"
               VIEWER_ALLOWED_ORIGINS: "https://agentmemory.${SECRET_DOMAIN}"
               TZ: "${TIMEZONE}"

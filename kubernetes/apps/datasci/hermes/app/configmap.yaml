@@ -67,13 +67,45 @@ data:
     platform_toolsets:
       cli:
         - hermes-cli
-    # mcp_servers:
-    #   # TODO: toolhive exposes each MCPServer as its own in-cluster service
-    #   # (there is no single vmcp gateway here like jory's). Verify the name/port:
-    #   #   kubectl -n datasci get svc | grep mcp
-    #   # then point hermes at it, e.g.:
-    #   toolhive:
-    #     url: http://mcp-ha-mcp.datasci:8080/mcp
+    # toolhive exposes each MCPServer on its own in-cluster service (there is
+    # no single vmcp gateway here). The MCP endpoint is on the `-proxy`
+    # service, NOT the bare workload service -- `mcp-ha-mcp` also exists and
+    # would connect to the wrong thing rather than fail cleanly. Confirm with:
+    #   kubectl get mcpserver -A          # the URL column is authoritative
+    #
+    # `url` selects Streamable HTTP, which is what toolhive serves. No
+    # skip_preflight needed: hermes content-type-probes the endpoint first and
+    # these answer HEAD/GET with 405/400 text/plain, so the probe -- which only
+    # rejects a 2xx carrying a non-MCP type -- fails open and hands off to the
+    # SDK.
+    #
+    # Deliberately NOT enabled here, though both are verified working:
+    #   ha-mcp      http://mcp-ha-mcp-proxy.datasci:8080/mcp      (78 tools)
+    #   memory-mcp  http://mcp-memory-mcp-proxy.datasci:8080/mcp   (9 tools)
+    # ha-mcp's 78 tool schemas are a large slice of the window next to a ~28k
+    # base prompt, and models degrade at tool selection well before they run
+    # out of context. memory-mcp overlaps with the agentmemory provider above
+    # -- running both invites the agent to write to one and read from the
+    # other. Add either by pasting its url below; add `enabled: false` to park
+    # one without deleting it.
+    # This is the ONLY durable home for MCP servers. Adding them through the
+    # dashboard (or `hermes mcp add`) writes /opt/data/config.yaml, which the
+    # init container regenerates from this ConfigMap on every pod start -- so a
+    # UI-added server survives gateway restarts but never a pod restart.
+    # Volsync does not save it either: it backs up the PVC faithfully, but the
+    # regeneration runs after any restore.
+    #
+    # Format mirrors what `hermes mcp add` emits (url + enabled). Extra keys
+    # such as `timeout` are preserved fine -- they are simply omitted here to
+    # keep this identical to what the tool itself writes.
+    mcp_servers:
+      context7:
+        url: http://mcp-context7-proxy.datasci:8080/mcp
+        enabled: true
+      # Cross-namespace: this one lives in `downloads`, not `datasci`.
+      arr:
+        url: http://mcp-arr-proxy.downloads:8080/mcp
+        enabled: true
     auxiliary:
       vision:
         provider: litellm-anthropic

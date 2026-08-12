@@ -39,9 +39,17 @@ spec:
               LITELLM_LOG: INFO
               LITELLM_MODE: PRODUCTION
               TZ: "${TIMEZONE}"
+              # Lets the admin UI add/edit models at runtime and persist them
+              # alongside the ones declared in config.yaml.
+              STORE_MODEL_IN_DB: "True"
             envFrom:
               - secretRef:
                   name: litellm
+              # DATABASE_URL. Without it the UI still serves HTML but
+              # /health/readiness reports db "Not connected" and every login,
+              # virtual key, and spend view fails.
+              - secretRef:
+                  name: litellm-db-secret
             resources:
               requests:
                 cpu: 100m
@@ -49,6 +57,21 @@ spec:
               limits:
                 memory: 2Gi
             probes:
+              # Prisma applies its migrations against the freshly-created
+              # `litellm` database on first boot, which takes well over the
+              # ~45s the liveness probe alone would allow. The startup probe
+              # holds liveness/readiness off for up to 5m so that first run
+              # cannot crashloop.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health/liveliness
+                    port: 4000
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  failureThreshold: 30
               liveness:
                 enabled: true
                 custom: true

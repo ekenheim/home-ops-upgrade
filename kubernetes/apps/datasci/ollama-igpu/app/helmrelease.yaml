@@ -43,8 +43,13 @@ spec:
               OLLAMA_KEEP_ALIVE: 30m
               OLLAMA_NUM_PARALLEL: "1"
               OLLAMA_CONTEXT_LENGTH: "32768"
+              # llama.cpp refuses to load ANY model when the V cache is
+              # quantized without flash attention ("quantized V cache requires
+              # flash_attn to be enabled"), so these two must move together.
+              # Verified working on the Intel iGPU backend for both embeddings
+              # (all-minilm) and generation (qwen3.5).
               OLLAMA_KV_CACHE_TYPE: q8_0
-              OLLAMA_FLASH_ATTENTION: "0"
+              OLLAMA_FLASH_ATTENTION: "1"
               no_proxy: localhost,127.0.0.1
               OLLAMA_HOST: 0.0.0.0
             resources:

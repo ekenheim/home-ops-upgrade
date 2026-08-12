@@ -13,6 +13,25 @@ data:
     model:
       default: self-hosted
       provider: litellm-anthropic
+      # MUST match the InferenceService's per-slot window (contextSize /
+      # parallelSlots). hermes reads context length from the provider's
+      # /v1/models, but litellm answers with bare ids only --
+      #   {"id":"self-hosted","object":"model","created":...}
+      # -- so nothing in hermes's _CONTEXT_LENGTH_KEYS matches and it logs
+      #   Could not determine context length for model 'self-hosted'
+      #   ... falling back to 256,000 tokens
+      # It then budgets against 256k while llama.cpp rejects at the real
+      # window, so compression.threshold (0.50 -> 128k) is a line it can never
+      # cross. Compaction only ever fires *reactively*, after a 400:
+      #   request (65572 tokens) exceeds the available context size (65536)
+      # and three consecutive compactions failed to get back under the limit.
+      # The model also starts dropping tool arguments as it nears the unknown
+      # ceiling -- hermes flags this itself as "missing required field
+      # 'content' ... almost always a dropped-arg bug under context pressure",
+      # which is why repeated write_file calls produced no file.
+      # Raise this and contextSize together or the reactive-compaction loop
+      # comes straight back.
+      context_length: 131072
     fallback_providers:
       - provider: litellm
         model: self-hosted

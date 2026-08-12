@@ -1,0 +1,18 @@
+---
+apiVersion: foreman.llmkube.dev/v1alpha1
+kind: Agent
+metadata:
+  name: gate
+spec:
+  role: verifier
+  # Deterministic Agent: no provider/providerConfig and no model at all. The
+  # executor's executeDeterministic() branch runs run_gate_job directly, so this
+  # one costs nothing on the InferenceService.
+  tools:
+    - run_gate_job
+  requiredCapability:
+    roles:
+      - verifier
+    accelerator: any
+  maxRetries: 3
+  requestTimeoutSeconds: 3900

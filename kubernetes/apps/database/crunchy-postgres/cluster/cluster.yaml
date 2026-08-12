@@ -214,6 +214,14 @@ spec:
       databases: ["litellm"]
       password:
         type: AlphaNumeric
+    # Uncomment together with ./../../../datasci/dispatch/ks.yaml -- the dispatch
+    # chart's pre-upgrade `prisma migrate deploy` hook fails the HelmRelease
+    # without this user, and until dispatch is enabled it would just be an empty
+    # unused database.
+    #- name: "dispatch"
+    #  databases: ["dispatch"]
+    #  password:
+    #    type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

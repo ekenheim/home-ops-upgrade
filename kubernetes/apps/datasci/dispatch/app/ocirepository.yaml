@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: dispatch
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    tag: 0.5.38
+  # Chart wraps the bjw-s common library (v5.0.1), so the values below are the
+  # same shape as an app-template HelmRelease, plus a dispatch-specific
+  # `migrations:` block.
+  url: oci://ghcr.io/misospace/charts/dispatch

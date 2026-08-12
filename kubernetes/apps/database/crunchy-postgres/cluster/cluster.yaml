@@ -210,6 +210,10 @@ spec:
       databases: ["outline"]
       password:
         type: AlphaNumeric
+    - name: "litellm"
+      databases: ["litellm"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

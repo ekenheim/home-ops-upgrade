@@ -5,5 +5,7 @@ kind: Kustomization
 resources:
   - ./model-cache-pv.yaml
   - ./helmrelease.yaml
+  - ./rbac.yaml
   - ./resourceclaim.yaml
   - ./qwen3-35b-a3b.yaml
+  - ./qwen38-27b.yaml

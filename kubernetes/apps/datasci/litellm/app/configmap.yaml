@@ -8,8 +8,21 @@ data:
     model_list:
       # --- Chat: LLMKube on worker4's Strix Halo iGPU ---
       # Qwen3.6-35B-A3B (MoE, ~3B of 35B active), served by llama.cpp/ROCm.
-      # Measured 50 tok/s generation, 148 tok/s prompt -- roughly 3-4x what the
-      # masters' Intel iGPUs manage, and a far more capable model.
+      #
+      # Throughput, re-measured 2026-08-14 on worker4 (llama.cpp build
+      # 0b1bad14f, gfx1151):
+      #   llama-bench, no serving config   pp512 762 t/s   tg128 33.8 t/s
+      #   this endpoint, as configured                     ~24-28 t/s gen
+      #
+      # An earlier note here claimed 50 tok/s generation. That number does not
+      # reproduce under the current configuration and should not be used to
+      # reason about headroom -- it is what made a dense replacement look
+      # cheap. The ~20% gap between llama-bench and this endpoint is the cost
+      # of the serving config itself (q8_0 KV, 8 slots, 1M allocated context);
+      # the remaining difference from 50 is unexplained and is the thing to
+      # chase before swapping models, since it is free performance on a model
+      # that already works. See qwen38-27b.yaml for why the newer Qwen is not
+      # the answer here.
       #
       # The served id must match the InferenceService's --alias. Verify with:
       #   curl http://qwen3-35b-a3b.datasci:8080/v1/models

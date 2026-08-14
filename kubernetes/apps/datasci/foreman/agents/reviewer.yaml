@@ -9,7 +9,7 @@ spec:
   providerConfig:
     baseURL: http://litellm.datasci:4000/v1
     # `review` is this cluster's reviewer alias (upstream calls it `reviewer`).
-    # Same qwen3-35b-a3b weights as `self-hosted`, thinking left ON -- reviewing
+    # Same ornith-35b weights as `self-hosted`, thinking left ON -- reviewing
     # a diff is exactly the case where the reasoning is the point.
     model: review
     apiKeySecretRef:

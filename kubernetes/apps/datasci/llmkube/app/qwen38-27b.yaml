@@ -1,0 +1,111 @@
+---
+# Qwen3.8-27B -- evaluated 2026-08-14, deliberately NOT made the default.
+# Weights are declared here so an A/B is one InferenceService away, but nothing
+# serves this today.
+#
+# WHY NOT THE DEFAULT
+#
+# Qwen3.8's published numbers are a large jump over Qwen3.6 in the same
+# parameter class (TerminalBench 63.4 -> 73.0, SWE-bench Pro 53.5 -> 61.7), and
+# the obvious read is "swap the daily driver". That read ignores what actually
+# limits this node.
+#
+# The 3.8 generation ships no MoE in the 30B class -- it is either the dense
+# 27B below or Qwen3.8-2.4T-A95B, which is far out of reach here. So "move to
+# 3.8" necessarily means "move from a sparse model to a dense one", and this
+# box is memory-bandwidth-bound, not capacity-bound:
+#
+#   incumbent  Ornith-1.0-35B UD-Q4_K_XL   ~21 GiB file, ~3B of 35B active
+#              -> only the routed experts are read per token
+#   this model Qwen3.8-27B    UD-Q4_K_XL   17.9 GB file, dense
+#              -> the ENTIRE file is read per generated token
+#
+# Measured on worker4 (llama-bench, build 0b1bad14f, ROCm, gfx1151, -fa 1) on
+# Qwen3.6-35B-A3B, which the incumbent Ornith-1.0-35B is architecturally
+# identical to, so the figures carry over:
+#                pp512 762 t/s   tg128 33.8 t/s
+# and through the live server with this repo's serving config, ~24-28 t/s.
+#
+# The dense penalty is not a projection. kyuz0's public Strix Halo table runs
+# both shapes on this same silicon, and across five dense Q4-Q8 models from
+# 13.5B to 30.7B the effective memory bandwidth is a tight 184-217 GiB/s --
+# generation speed is simply that number divided by the file size. Directly
+# comparable entries:
+#
+#   Qwen3.6-27B-UD-Q8_K_XL      dense  33.3 GiB   ->   6.4 t/s
+#   gemma-4-31B-it-UD-Q4_K_XL   dense  17.5 GiB   ->  10.6 t/s
+#   Qwen3.6-35B-A3B-UD-Q4_K_XL  MoE    21.3 GiB   ->  51.1 t/s
+#
+# Qwen3.8-27B UD-Q4_K_XL is 16.7 GiB dense, which puts it at ~11-13 t/s before
+# speculation -- consistent with gemma-4-31B at nearly the same file size.
+#
+# MTP does not rescue it, because MTP helps the incumbent too. Same source,
+# same harness, self-speculative decoding at n-max 3:
+#   dense Qwen3.6-27B   6.4 -> 13.7 t/s  (2.14x)
+#   MoE   35B-A3B      51.1 -> 70.3 t/s  (1.38x)
+# So the honest comparison is ~25 t/s for a dense 3.8 against ~70 t/s for a
+# sparse 35B-A3B. Speculation widens the absolute gap rather than closing it.
+#
+# The consumers make that trade a bad one: `fast` is bulk translation
+# (Lingarr) where throughput IS the product, and `self-hosted` is Hermes,
+# whose agentic loop carries ~28k tokens of prompt before it does any work.
+# Tripling latency there is felt on every turn.
+#
+# Revisit if either of these lands:
+#   - a 3.8-generation MoE in the ~30B-A3B class (the 3.8 line is dense 27B or
+#     2.4T-A95B; nothing in between)
+#   - proven MTP self-speculative decoding for 3.8 in the Strix Halo llama.cpp
+#     builds, measured at >2x on this node
+#
+# WHY prefetch IS OFF
+#
+# prefetch: true is the documented way to pull weights into the shared cache
+# ahead of serving, and it is exactly what this node wants -- swapping models
+# is an outage (see below), so paying for an ~18GB download inside that window
+# is avoidable. It does not work here, for two independent reasons:
+#
+#   1. The chart's ClusterRole grants no `batch` rule, so the controller cannot
+#      create Jobs at all. Fixed in rbac.yaml -- prefetch reaches "Downloading"
+#      with that applied.
+#   2. The prefetch Job's pod template carries no tolerations and no
+#      nodeSelector, so it cannot schedule onto worker4:
+#        0/5 nodes are available: 1 node(s) had untolerated taint(s),
+#        4 node(s) didn't match PersistentVolume's node affinity
+#      There is no way to express our taint through the API: the only knob,
+#      spec.hardware.gpu.tolerationKey, is validated against
+#      '^[a-z0-9.\-]+/[a-z0-9._\-]+$' and rejects a bare key like
+#      "llm-workload".
+#
+# (2) is not fixable from this repo, so prefetch stays off and a future swap
+# pays the download in its init container, which DOES inherit the
+# InferenceService's tolerations.
+#
+# WHY THERE IS NO InferenceService HERE
+#
+# worker4 advertises one DRA device (gpu-0-128) and resourceclaim.yaml takes it
+# with allocationMode: All, so a second serving pod cannot run alongside
+# ornith-35b -- it sits Pending on the claim. Models are swap-in/swap-out on
+# this node, never resident side by side.
+#
+# WHY UD-Q4_K_XL
+#
+# The common advice for a 128GB box is to size the quant up because there is
+# headroom (UD-Q5_K_XL, 20.2GB). That optimises the wrong axis: capacity is not
+# the constraint, bytes-read-per-token is, and on a dense model Q5 reads ~13%
+# more of them for marginal quality. Q4_K_XL also matches the incumbent's quant
+# level, which keeps any A/B against the incumbent honest.
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen38-27b
+spec:
+  source: hf://unsloth/Qwen3.8-27B-GGUF
+  files:
+    - Qwen3.8-27B-UD-Q4_K_XL.gguf
+  # Multimodal, like the incumbent -- litellm advertises supports_vision on
+  # these aliases, so a swap has to keep the projector.
+  mmproj: mmproj-F16.gguf
+  format: gguf
+  # See "WHY prefetch IS OFF". Turning this on creates a Job that never
+  # schedules and never surfaces an error on the Model CR.
+  prefetch: false

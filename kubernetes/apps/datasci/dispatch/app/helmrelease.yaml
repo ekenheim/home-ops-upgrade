@@ -40,14 +40,14 @@ spec:
               # --- Lanes ------------------------------------------------------
               # Two lanes, not upstream's three. Upstream's `frontier` lane is
               # an escalation target backed by a cloud model (MiniMax-M3 via
-              # litellm); this cluster serves only qwen3-35b-a3b, so there is
+              # litellm); this cluster serves only ornith-35b, so there is
               # nothing to escalate TO and a claimable frontier lane would just
               # re-run the same model. Add it here (and ESCALATION_LANE in
               # ../bridge/helmrelease.yaml) if a cloud model is ever enabled in
               # ../../litellm/app/configmap.yaml.
               DISPATCH_LANE_CONFIG_JSON: >-
                 {"lanes":[{"id":"local","title":"Local","claimable":true,"role":"default","description":"Local
-                model lane (qwen3-35b-a3b on worker4) — all groomed, ready work
+                model lane (ornith-35b on worker4) — all groomed, ready work
                 starts here.","color":"#3b82f6"},{"id":"backlog","title":"Backlog","claimable":false,"description":"Needs
                 grooming before work can start. Not directly
                 claimable.","color":"#6b7280"}],"laneAliases":{"normal":"local","escalated":"local","cloud":"local","frontier":"local"}}

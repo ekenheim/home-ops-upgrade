@@ -77,6 +77,20 @@
 # unchanged, only the api_base and served id behind them moved, and the
 # ConfigMap change rolls out with the litellm pod on its own reconcile.
 #
+# ROLLOUT RESULT (2026-08-14) -- verified on the live endpoint after the first
+# rollout, so this is history rather than a plan:
+#   /v1/models                      -> ["ornith-35b"]
+#   tool-call probe                 -> finish_reason "tool_calls", correct args
+#   enable_thinking:false           -> 7 completion tokens, "Han ar bakom dig."
+#   generation                      -> 50.5 t/s, three runs, variance <0.1
+#   GTT                             -> 34 GiB of 124 GiB
+#   litellm self-hosted / fast      -> both answer end to end
+#
+# The download took ~9 minutes for 22.3GB. Note that curl's progress meter
+# never reaches the pod log -- it sits at a 1042-byte redirect hop the whole
+# time and looks stalled. Track it by watching the node's disk grow instead:
+#   kubectl get --raw /api/v1/nodes/worker4/proxy/stats/summary | jq .node.fs
+#
 # VERIFY TOOL CALLING BEFORE TRUSTING THIS
 #
 # Ornith shipped with a chat template carrying two hard raise_exception

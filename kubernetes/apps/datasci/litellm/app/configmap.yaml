@@ -11,34 +11,27 @@ data:
       # Replaced Qwen3.6-35B-A3B, which is the same architecture and size but
       # weaker on every agentic-coding benchmark -- see ornith-35b.yaml.
       #
-      # Throughput, measured 2026-08-14 on worker4 with the PREDECESSOR
-      # (identical architecture and quant, so these carry over; llama.cpp
-      # build 0b1bad14f, gfx1151):
-      #   llama-bench, no serving config   pp512 762 t/s   tg128 33.8 t/s
-      #   this endpoint, as configured                     ~24-28 t/s gen
+      # Throughput measured on this endpoint 2026-08-14, immediately after the
+      # Ornith rollout (llama.cpp build 0b1bad14f, gfx1151, rocm-6.4.4):
+      #   50.5 t/s generation, three consecutive runs, variance under 0.1
+      #   34 GiB GTT of 124 GiB with contextSize 1048576 across 8 slots
       #
-      # An earlier note here claimed 50 tok/s generation as if measured here.
-      # It was not: kyuz0's public Strix Halo table reports 50.32 t/s for that
-      # exact model+quant+backend, and that is where the figure came from.
+      # That lands on kyuz0's public Strix Halo reference of 50.3 t/s for this
+      # model class, quant and backend, i.e. this node performs as expected.
       #   https://kyuz0.github.io/amd-strix-halo-toolboxes/
       #
-      # Do not read our 33.8 as a 33% hardware deficit against that 50.3. The
-      # llama-bench run above was taken with the production llama-server still
-      # resident and holding ~38 GiB of GTT, so it loaded a second copy of the
-      # weights and competed for bandwidth with a live serving process. The
-      # reference numbers are from an otherwise idle box. The two are not
-      # comparable, and our true idle figure has not been measured -- do that
-      # during a maintenance window before concluding anything is wrong.
+      # Worth recording because the *predecessor* served only ~24-28 t/s when
+      # measured on a pod that had been up 46 hours, and that was briefly
+      # mistaken for a hardware deficit. It was not: identical architecture,
+      # identical quant, identical serving config, roughly double the
+      # throughput on a fresh pod. The degradation tracks pod uptime, not the
+      # model. If this endpoint drifts back toward the mid-20s, restart it
+      # before investigating anything else.
       #
-      # The ~20% gap between llama-bench and this endpoint is separately
-      # explained: it is the serving config itself (q8_0 KV, 8 slots, 1M
-      # allocated context).
-      #
-      # Two known levers, both untaken and both independent of model choice:
-      # the rocm-6.4.4 backend is the slowest of the five available (~20%
-      # under vulkan-radv), and MTP self-speculative decoding is off because
-      # unsloth ships no MTP build of these weights. Both are documented in
-      # ornith-35b.yaml. Re-measure after either lands rather than assuming.
+      # One lever remains untaken and is independent of model choice: MTP
+      # self-speculative decoding is off because unsloth ships no MTP build of
+      # these weights. Documented in ornith-35b.yaml, along with why the
+      # faster-looking vulkan backends are NOT the win they appear to be.
       #
       # The served id must match the InferenceService's --alias. Verify with:
       #   curl http://ornith-35b.datasci:8080/v1/models

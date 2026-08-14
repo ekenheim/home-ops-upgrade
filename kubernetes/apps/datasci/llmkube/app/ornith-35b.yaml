@@ -77,6 +77,36 @@
 # unchanged, only the api_base and served id behind them moved, and the
 # ConfigMap change rolls out with the litellm pod on its own reconcile.
 #
+# VERIFY TOOL CALLING BEFORE TRUSTING THIS
+#
+# Ornith shipped with a chat template carrying two hard raise_exception
+# assertions -- one requiring the system message to be first, one requiring a
+# user query in multi-step tool contexts. Tool-calling runtimes probe
+# templates with synthetic message sequences and trip both, so llama.cpp
+# under --jinja (which is what `jinja: true` sets) returned
+#   400 Unable to generate parser for this template
+# and tool calling was dead on arrival. That would take out Hermes and the
+# foreman agents, which are the whole point of this model.
+#
+# unsloth patched their template to merge/tolerate leading system messages in
+# line with their Qwen3.6 GGUFs, which is why this points at unsloth rather
+# than deepreinforce-ai's own GGUF -- the upstream one still embeds the old
+# template and needs a runtime --chat-template-file override.
+#   https://huggingface.co/unsloth/Ornith-1.0-35B-GGUF/discussions/1
+#
+# Confirm on the live endpoint before considering the rollout done. A bare
+# /v1/models check is NOT sufficient -- the template failure surfaces per
+# request, not at startup:
+#   curl -s http://ornith-35b.datasci:8080/v1/chat/completions \
+#     -H 'Content-Type: application/json' -d '{
+#       "model":"ornith-35b",
+#       "messages":[{"role":"user","content":"What is the weather in Oslo?"}],
+#       "tools":[{"type":"function","function":{"name":"get_weather",
+#         "parameters":{"type":"object","properties":{"city":{"type":"string"}},
+#         "required":["city"]}}}]}' | jq '.choices[0].finish_reason'
+# Expect "tool_calls". A 400 mentioning the parser means the template
+# regressed and this must be rolled back.
+#
 # The frontier models of this generation (GLM-5.2 at 744B/40B active,
 # DeepSeek-V4-Flash at 284B/13B, Kimi K2.6 at 1T/32B) are all out of reach --
 # not on capacity but on active parameters, which is what sets the read
@@ -129,24 +159,31 @@ spec:
   # Purpose-built llama.cpp for Strix Halo. The stock runtime image does not
   # carry a ROCm build tuned for gfx1151.
   #
-  # rocm-6.4.4 is the SLOWEST of the five backends this image family ships.
-  # kyuz0's numbers for exactly this model and quant:
+  # rocm-6.4.4 is the slowest of the five backends this image family ships,
+  # by kyuz0's llama-bench numbers for this model class and quant:
   #   vulkan_radv      tg 60.4   pp 1114
   #   vulkan_amdvlk    tg 59.6   pp  697
   #   rocm-7_2_3       tg 51.5   pp 1120
   #   rocm7-nightlies  tg 51.5   pp 1085
   #   rocm6_4_4        tg 50.3   pp 1117   <- us
-  # vulkan-radv is ~20% faster at generation with prompt processing intact
-  # (amdvlk gives up 40% of pp, so radv specifically, not Vulkan generally).
   #
-  # Not switched yet, because the backend is load-bearing in ways the
-  # benchmark does not cover, and each needs checking on this cluster first:
-  #   - the DRA claim is deviceClassName gpu.amd.com from the ROCm driver;
-  #     a Vulkan build still needs that device to resolve to /dev/dri here
-  #   - q8_0 KV cache quantization (cacheTypeK/V) is not equally supported
-  #     across backends
+  # DO NOT take the obvious ~20% win by moving to vulkan-radv. Throughput is
+  # not the whole story and llama-bench cannot see the failure: users running
+  # Ornith on AMD under Vulkan report reasoning degrading into incoherence and
+  # looping, plus tool-call failures, from around 70-80k context and worsening
+  # past 90k. It was initially filed as a model defect; the reporter traced it
+  # to the Vulkan driver producing subtle numerical errors on AMD, reproduced
+  # it across several unrelated models, and had it disappear entirely on ROCm.
+  #   https://huggingface.co/deepreinforce-ai/Ornith-1.0-35B-GGUF/discussions/22
+  # Our per-slot window is 131072, well inside the broken range, and the
+  # symptom is degraded output rather than an error -- the worst kind to ship.
+  #
+  # rocm-7_2_3 is the upgrade actually worth taking: +1.2 t/s is negligible,
+  # but it is the backend that thread landed on as correct, and it is a newer
+  # ROCm than we run. Still needs a window to verify on this cluster:
+  #   - the DRA claim is deviceClassName gpu.amd.com from the ROCm driver
+  #   - q8_0 KV cache quantization (cacheTypeK/V) has to keep working
   #   - the mmproj vision path has to keep working
-  # Worth a maintenance window to test, and independent of model choice.
   image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-6.4.4
   command:
     - llama-server

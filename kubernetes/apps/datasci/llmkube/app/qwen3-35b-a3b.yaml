@@ -7,6 +7,35 @@
 # Mixture-of-Experts (Qwen3_5MoeForConditionalGeneration) with ~3B of 35B params
 # active per token, so it reads a fraction of its 22GB per token while a dense
 # 27B reads all ~17GB. It ends up both larger and substantially faster here.
+#
+# Surveyed against every model in kyuz0's Strix Halo set that fits in GTT
+# (2026-08-14). This one is Pareto-optimal: nothing benchmarked is both faster
+# and better.
+#
+#   model                          GiB    tg     pp    verdict
+#   Qwen3.6-35B-A3B UD-Q4_K_XL    21.3  60.4   1114    incumbent
+#   gpt-oss-120b MXFP4            59.0  56.6    720    dominated, see below
+#   gemma-4-26B-A4B UD-Q4_K_XL    15.9  54.7   1325    smaller, weaker
+#   GLM-4.7-Flash UD-Q8_K_XL      32.7  41.2   1092    slower
+#   MiniMax-M2.7 UD-Q3_K_S        87.2  31.1    243    pp is disqualifying
+#   Qwen3.5-122B-A10B UD-Q5_K_XL  85.6  22.3    339    slower, older gen
+#   Nemotron-3-Super-120B-A12B    78.0  14.9    276    slower
+#
+# gpt-oss-120b is the tempting one -- a 120B model at nearly the same
+# throughput, and it gets recommended for 128GB boxes constantly. It loses on
+# every axis that matters here: Artificial Analysis puts it at 24 on the
+# Intelligence Index against this model's 32, and 11.5 points BEHIND on coding
+# specifically. It also caps at 130k context against 260k, and is text-only
+# where this is multimodal. Bigger is not better when the extra parameters buy
+# a sparser, weaker model.
+#
+# MiniMax-M2.7's 243 t/s prompt processing is the disqualifier, not its
+# generation speed: Hermes opens every turn with ~28k tokens of system prompt
+# and tool schemas, which is ~115s of prompt processing before it emits a
+# single token, against ~25s here.
+#
+# The wins available on this node are in the runtime, not the model -- see the
+# backend note on `image` and the MTP flags in extraArgs.
 apiVersion: inference.llmkube.dev/v1alpha1
 kind: Model
 metadata:
@@ -60,6 +89,25 @@ spec:
   runtime: llamacpp
   # Purpose-built llama.cpp for Strix Halo. The stock runtime image does not
   # carry a ROCm build tuned for gfx1151.
+  #
+  # rocm-6.4.4 is the SLOWEST of the five backends this image family ships.
+  # kyuz0's numbers for exactly this model and quant:
+  #   vulkan_radv      tg 60.4   pp 1114
+  #   vulkan_amdvlk    tg 59.6   pp  697
+  #   rocm-7_2_3       tg 51.5   pp 1120
+  #   rocm7-nightlies  tg 51.5   pp 1085
+  #   rocm6_4_4        tg 50.3   pp 1117   <- us
+  # vulkan-radv is ~20% faster at generation with prompt processing intact
+  # (amdvlk gives up 40% of pp, so radv specifically, not Vulkan generally).
+  #
+  # Not switched yet, because the backend is load-bearing in ways the
+  # benchmark does not cover, and each needs checking on this cluster first:
+  #   - the DRA claim is deviceClassName gpu.amd.com from the ROCm driver;
+  #     a Vulkan build still needs that device to resolve to /dev/dri here
+  #   - q8_0 KV cache quantization (cacheTypeK/V) is not equally supported
+  #     across backends
+  #   - the mmproj vision path and --spec-type draft-mtp both need to work
+  # Worth a maintenance window to test, and independent of model choice.
   image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-6.4.4
   command:
     - llama-server

@@ -16,11 +16,16 @@ data:
       #
       # An earlier note here claimed 50 tok/s generation as if measured here.
       # It was not: kyuz0's public Strix Halo table reports 50.32 t/s for this
-      # exact model+quant+backend, and that is where the figure came from. Our
-      # own hardware lands ~33% under that reference on an identical
-      # configuration, which is a real and unexplained gap -- treat 50 as
-      # somebody else's box, not as headroom on ours.
+      # exact model+quant+backend, and that is where the figure came from.
       #   https://kyuz0.github.io/amd-strix-halo-toolboxes/
+      #
+      # Do not read our 33.8 as a 33% hardware deficit against that 50.3. The
+      # llama-bench run above was taken with the production llama-server still
+      # resident and holding ~38 GiB of GTT, so it loaded a second copy of the
+      # weights and competed for bandwidth with a live serving process. The
+      # reference numbers are from an otherwise idle box. The two are not
+      # comparable, and our true idle figure has not been measured -- do that
+      # during a maintenance window before concluding anything is wrong.
       #
       # The ~20% gap between llama-bench and this endpoint is separately
       # explained: it is the serving config itself (q8_0 KV, 8 slots, 1M

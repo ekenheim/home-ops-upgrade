@@ -7,15 +7,18 @@ data:
   config.yaml: |
     model_list:
       # --- Chat: LLMKube on worker4's Strix Halo iGPU ---
-      # Qwen3.6-35B-A3B (MoE, ~3B of 35B active), served by llama.cpp/ROCm.
+      # Ornith-1.0-35B (MoE, ~3B of 35B active), served by llama.cpp/ROCm.
+      # Replaced Qwen3.6-35B-A3B, which is the same architecture and size but
+      # weaker on every agentic-coding benchmark -- see ornith-35b.yaml.
       #
-      # Throughput, re-measured 2026-08-14 on worker4 (llama.cpp build
-      # 0b1bad14f, gfx1151):
+      # Throughput, measured 2026-08-14 on worker4 with the PREDECESSOR
+      # (identical architecture and quant, so these carry over; llama.cpp
+      # build 0b1bad14f, gfx1151):
       #   llama-bench, no serving config   pp512 762 t/s   tg128 33.8 t/s
       #   this endpoint, as configured                     ~24-28 t/s gen
       #
       # An earlier note here claimed 50 tok/s generation as if measured here.
-      # It was not: kyuz0's public Strix Halo table reports 50.32 t/s for this
+      # It was not: kyuz0's public Strix Halo table reports 50.32 t/s for that
       # exact model+quant+backend, and that is where the figure came from.
       #   https://kyuz0.github.io/amd-strix-halo-toolboxes/
       #
@@ -31,13 +34,14 @@ data:
       # explained: it is the serving config itself (q8_0 KV, 8 slots, 1M
       # allocated context).
       #
-      # These numbers predate enabling MTP self-speculative decoding on the
-      # InferenceService; expect them to improve once that rolls out, by up to
-      # ~1.38x at low concurrency. Re-measure rather than assuming.
-      # See qwen38-27b.yaml for why the newer, denser Qwen is not the answer.
+      # Two known levers, both untaken and both independent of model choice:
+      # the rocm-6.4.4 backend is the slowest of the five available (~20%
+      # under vulkan-radv), and MTP self-speculative decoding is off because
+      # unsloth ships no MTP build of these weights. Both are documented in
+      # ornith-35b.yaml. Re-measure after either lands rather than assuming.
       #
       # The served id must match the InferenceService's --alias. Verify with:
-      #   curl http://qwen3-35b-a3b.datasci:8080/v1/models
+      #   curl http://ornith-35b.datasci:8080/v1/models
       # litellm does not validate this at startup; a wrong name 404s per request
       # while the proxy still reports healthy.
       #
@@ -60,8 +64,8 @@ data:
           supports_vision: true
           max_input_tokens: 131072
         litellm_params:
-          model: openai/qwen3-35b-a3b
-          api_base: http://qwen3-35b-a3b.datasci:8080/v1
+          model: openai/ornith-35b
+          api_base: http://ornith-35b.datasci:8080/v1
           api_key: none
 
       # `review` is the alias agentmemory points ANTHROPIC_MODEL at.
@@ -72,16 +76,18 @@ data:
           supports_vision: true
           max_input_tokens: 131072
         litellm_params:
-          model: openai/qwen3-35b-a3b
-          api_base: http://qwen3-35b-a3b.datasci:8080/v1
+          model: openai/ornith-35b
+          api_base: http://ornith-35b.datasci:8080/v1
           api_key: none
 
       # `fast` is the same backend as `self-hosted` with thinking switched off.
       #
-      # Qwen3.6 is a reasoning model and burns its output budget thinking before
-      # it answers. For mechanical work -- translation, extraction, classification
-      # -- that is pure overhead. Measured on this cluster, same prompt, same
-      # weights, translating one line to Swedish:
+      # Ornith is a reasoning model -- its chat template opens the assistant
+      # turn with a <think> block -- so it burns output budget thinking before
+      # it answers. For mechanical work (translation, extraction,
+      # classification) that is pure overhead. Measured on this cluster on the
+      # predecessor, same prompt and same weights, translating one line to
+      # Swedish:
       #
       #   self-hosted (thinking on)   7.9s   300 completion tokens
       #   fast        (thinking off)  0.4s     7 completion tokens
@@ -102,8 +108,8 @@ data:
           supports_vision: true
           max_input_tokens: 131072
         litellm_params:
-          model: openai/qwen3-35b-a3b
-          api_base: http://qwen3-35b-a3b.datasci:8080/v1
+          model: openai/ornith-35b
+          api_base: http://ornith-35b.datasci:8080/v1
           api_key: none
           chat_template_kwargs:
             enable_thinking: false

@@ -7,7 +7,7 @@ spec:
   role: coder
   provider: cloud-proxy
   providerConfig:
-    # litellm's `self-hosted` alias -> qwen3-35b-a3b on worker4's Strix iGPU.
+    # litellm's `self-hosted` alias -> ornith-35b on worker4's Strix iGPU.
     # A *reasoning* model: it spends output tokens thinking before answering, so
     # maxOutputTokens has to leave room for both (see ../../litellm/app/configmap.yaml).
     baseURL: http://litellm.datasci:4000/v1

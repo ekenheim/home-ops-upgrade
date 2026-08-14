@@ -1,19 +1,46 @@
 ---
-# Qwen3.6-35B-A3B on worker4's Strix Halo iGPU.
+# Ornith-1.0-35B on worker4's Strix Halo iGPU.
 #
-# Why this rather than a dense 27B/30B: Strix Halo is an iGPU on shared LPDDR5X
-# at roughly 256 GB/s, an order of magnitude under a discrete card, so
-# throughput tracks *active* bytes per token rather than model size. This is a
-# Mixture-of-Experts (Qwen3_5MoeForConditionalGeneration) with ~3B of 35B params
-# active per token, so it reads a fraction of its 22GB per token while a dense
-# 27B reads all ~17GB. It ends up both larger and substantially faster here.
+# WHY MoE AND NOT A DENSE MODEL
 #
-# Surveyed against every model in kyuz0's Strix Halo set that fits in GTT
-# (2026-08-14). This one is Pareto-optimal: nothing benchmarked is both faster
-# and better.
+# Strix Halo is an iGPU on shared LPDDR5X at roughly 256 GB/s, an order of
+# magnitude under a discrete card, so throughput tracks *active* bytes per
+# token rather than model size. This is a Mixture-of-Experts
+# (Qwen3_5MoeForConditionalGeneration, 256 experts with 8 active per token,
+# ~3B of 35B) so it reads a fraction of its 22GB per token, while a dense 27B
+# reads all ~17GB of itself every single token. On this hardware that is the
+# whole ballgame -- generation speed is effective bandwidth (a measured
+# 184-217 GiB/s) divided by bytes-read-per-token. See qwen38-27b.yaml for the
+# worked example of why a newer, denser model loses badly here.
+#
+# WHY ORNITH RATHER THAN Qwen3.6-35B-A3B
+#
+# Ornith-1.0-35B (DeepReinforce, MIT, 2026-06-25) is architecturally identical
+# to the Qwen3.6-35B-A3B this replaced -- same model class, 40 layers, 256
+# experts, 8 active per token, same 262144 native context, same 3:1 linear-to-
+# full attention interleave, same ~22GB at UD-Q4_K_XL. Identical shape means
+# identical throughput characteristics, so this swap costs nothing in speed.
+#
+# It is a purpose-built agentic coding model and it beats Qwen3.6-35B on every
+# benchmark either party publishes -- which matters because Hermes, the main
+# consumer of this endpoint, is an agentic coding loop:
+#
+#   benchmark                    Qwen3.6-35B   Ornith-1.0-35B
+#   Terminal-Bench 2.1 (Term-2)         52.5             64.2
+#   SWE-bench Verified                  73.4             75.6
+#   SWE-bench Pro                       49.5             50.4
+#   SWE-bench Multilingual              67.2             69.3
+#   NL2Repo                             29.4             34.6
+#   Claw-eval average                   68.7             69.8
+#
+# Still multimodal despite the model card implying otherwise: config.json
+# carries a 27-layer vision tower and unsloth ships the same 899MB mmproj, so
+# litellm's supports_vision stays honest.
+#
+# ALTERNATIVES CONSIDERED (kyuz0's Strix Halo set, everything that fits GTT)
 #
 #   model                          GiB    tg     pp    verdict
-#   Qwen3.6-35B-A3B UD-Q4_K_XL    21.3  60.4   1114    incumbent
+#   Qwen3.6-35B-A3B UD-Q4_K_XL    21.3  60.4   1114    same shape, weaker
 #   gpt-oss-120b MXFP4            59.0  56.6    720    dominated, see below
 #   gemma-4-26B-A4B UD-Q4_K_XL    15.9  54.7   1325    smaller, weaker
 #   GLM-4.7-Flash UD-Q8_K_XL      32.7  41.2   1092    slower
@@ -24,32 +51,44 @@
 # gpt-oss-120b is the tempting one -- a 120B model at nearly the same
 # throughput, and it gets recommended for 128GB boxes constantly. It loses on
 # every axis that matters here: Artificial Analysis puts it at 24 on the
-# Intelligence Index against this model's 32, and 11.5 points BEHIND on coding
-# specifically. It also caps at 130k context against 260k, and is text-only
-# where this is multimodal. Bigger is not better when the extra parameters buy
-# a sparser, weaker model.
+# Intelligence Index against Qwen3.6-35B's 32, and 11.5 points BEHIND on
+# coding. It also caps at 130k context against 260k and is text-only. Bigger
+# is not better when the extra parameters buy a sparser, weaker model.
 #
 # MiniMax-M2.7's 243 t/s prompt processing is the disqualifier, not its
 # generation speed: Hermes opens every turn with ~28k tokens of system prompt
 # and tool schemas, which is ~115s of prompt processing before it emits a
 # single token, against ~25s here.
 #
-# The wins available on this node are in the runtime, not the model -- see the
-# backend note on `image` and the MTP flags in extraArgs.
+# ROLLING THIS OUT
+#
+# The rename from qwen3-35b-a3b is a delete-and-recreate, not an edit, and the
+# node has exactly one GPU. Expect this sequence on the first reconcile:
+#   1. Flux applies ornith-35b; its pod sits Pending on the DRA claim, which
+#      the outgoing qwen3-35b-a3b pod still holds.
+#   2. Flux prunes qwen3-35b-a3b (ks.yaml has prune: true), freeing the claim.
+#   3. ornith-35b schedules and its init container downloads ~22.3GB.
+# The Kustomization has wait: true with timeout: 5m, so it WILL report
+# NotReady while step 3 runs -- that is the download, not a failure, and it
+# clears on the next reconcile. Watch the pod, not the Kustomization:
+#   kubectl -n datasci logs -f deploy/ornith-35b -c model-downloader
+#
+# litellm needs no restart: the aliases (self-hosted / review / fast) are
+# unchanged, only the api_base and served id behind them moved, and the
+# ConfigMap change rolls out with the litellm pod on its own reconcile.
+#
+# The frontier models of this generation (GLM-5.2 at 744B/40B active,
+# DeepSeek-V4-Flash at 284B/13B, Kimi K2.6 at 1T/32B) are all out of reach --
+# not on capacity but on active parameters, which is what sets the read
+# volume per token. ~3B active is the shape this node wants.
 apiVersion: inference.llmkube.dev/v1alpha1
 kind: Model
 metadata:
-  name: qwen3-35b-a3b
+  name: ornith-35b
 spec:
-  # The -MTP- repo, not the plain one: same model, same quant, ~0.5GB larger
-  # because it retains the multi-token-prediction head. That head is what
-  # --spec-type draft-mtp needs (see extraArgs below); the plain GGUF carries
-  # no MTP tensors at all, so the flag is inert against it. Verified on the
-  # previously-served file:
-  #   llama-gguf <file> r n | grep -icE "nextn|mtp"  ->  0
-  source: hf://unsloth/Qwen3.6-35B-A3B-MTP-GGUF
+  source: hf://unsloth/Ornith-1.0-35B-GGUF
   files:
-    - Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf
+    - Ornith-1.0-35B-UD-Q4_K_XL.gguf
   # Vision projector -- the model is multimodal. F16 rather than F32: half the
   # size for no meaningful quality loss at Q4 weights.
   mmproj: mmproj-F16.gguf
@@ -70,11 +109,11 @@ spec:
 apiVersion: inference.llmkube.dev/v1alpha1
 kind: InferenceService
 metadata:
-  name: qwen3-35b-a3b
+  name: ornith-35b
   labels:
     krr/ignore: "true"
 spec:
-  modelRef: qwen3-35b-a3b
+  modelRef: ornith-35b
   modelCache:
     claimName: llmkube-model-cache
   # Do NOT set skipModelInit here, despite the operator logging
@@ -106,7 +145,7 @@ spec:
   #     a Vulkan build still needs that device to resolve to /dev/dri here
   #   - q8_0 KV cache quantization (cacheTypeK/V) is not equally supported
   #     across backends
-  #   - the mmproj vision path and --spec-type draft-mtp both need to work
+  #   - the mmproj vision path has to keep working
   # Worth a maintenance window to test, and independent of model choice.
   image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-6.4.4
   command:
@@ -151,7 +190,8 @@ spec:
   # at 524288, so this lands near 37 GiB -- worker4 reports 124 GiB of GTT.
   #
   # Per-slot stays under the model's native window (gguf metadata:
-  # qwen35moe.context_length = 262144), so no RoPE scaling and no quality loss.
+  # qwen35moe.context_length = 262144 -- Ornith shares the arch), so no RoPE
+  # scaling and no quality loss.
   contextSize: 1048576
   parallelSlots: 8
   # Restarting the server drops in-flight requests. waitForIdle holds the
@@ -174,30 +214,26 @@ spec:
     type: ClusterIP
   extraArgs:
     - --alias
-    - qwen3-35b-a3b
+    - ornith-35b
     - --cont-batching
-    # Multi-token prediction, i.e. self-speculative decoding off the model's
-    # own MTP head -- no separate draft model to load or keep in sync.
+    # NO --spec-type draft-mtp here, deliberately, even though this model has
+    # an MTP head (config.json: mtp_num_hidden_layers: 1) and the flag would
+    # be worth ~1.38x. unsloth publishes MTP tensors in a separate -MTP-
+    # repo, and no such repo exists for Ornith -- their plain GGUF strips
+    # them, exactly as it did for Qwen3.6 (verified there with
+    # `llama-gguf <file> r n | grep -icE "nextn|mtp"` -> 0). Passing the flag
+    # against weights with no MTP head risks failing startup for no gain.
     #
-    # This is the single largest win available on this node and it costs only
-    # a flag plus the MTP build of the weights. Reference numbers for exactly
-    # this model+quant on Strix Halo (kyuz0's llama-bench harness, rocm-7.2.3):
-    #   baseline  51.1 t/s
-    #   n-max 2   67.5 t/s   accept 0.82
-    #   n-max 3   70.3 t/s   accept 0.74   <- chosen
-    # n-max 3 wins despite the lower acceptance rate: the extra accepted token
-    # outweighs the wasted drafts.
+    # Community MTP conversions of Ornith do exist and are widely downloaded,
+    # but they are unvetted third-party requants for a production endpoint,
+    # and most carry "APEX"/"Heretic"/"AEON" tags that mean the model itself
+    # was modified. Not worth it without evaluation.
     #
-    # Worth knowing before reading too much into that 1.38x: those runs are
-    # single-stream. Speculative decoding spends compute to save memory
-    # bandwidth, and with parallelSlots: 8 under real concurrent load the
-    # draft passes compete with the other slots, so the speedup shrinks as
-    # concurrency rises. It should never be negative -- rejected drafts cost
-    # compute this box has spare, not bandwidth it does not.
-    #
-    # Cheap to revert: drop these two flags and the model still serves
-    # normally from the same file.
-    - --spec-type
-    - draft-mtp
-    - --spec-draft-n-max
-    - "3"
+    # To enable later: confirm the cached file actually carries the tensors
+    #   llama-gguf /models/<cacheKey>/Ornith-1.0-35B-UD-Q4_K_XL.gguf r n | \
+    #     grep -icE "nextn|mtp"
+    # and if non-zero, append: --spec-type draft-mtp --spec-draft-n-max 3
+    # (n-max 3 beat n-max 2 on this hardware, 70.3 vs 67.5 t/s, despite a
+    # lower acceptance rate.) Note those reference runs are single-stream;
+    # with parallelSlots: 8 the draft passes compete with other slots, so
+    # expect less than 1.38x under real concurrency.

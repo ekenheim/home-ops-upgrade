@@ -51,7 +51,7 @@ spec:
               # ../app/helmrelease.yaml for why upstream's `frontier` escalation
               # lane is dropped. ESCALATION_LANE is deliberately unset: with no
               # second model to escalate to, re-laning an exhausted issue would
-              # just re-run qwen3-35b-a3b. Exhausted issues tombstone instead.
+              # just re-run ornith-35b. Exhausted issues tombstone instead.
               DISPATCH_LANES: local
               # One coder Agent, so no round-robin list (upstream rotates across
               # coder/coder-strix/coder-frontier, which were model variants this

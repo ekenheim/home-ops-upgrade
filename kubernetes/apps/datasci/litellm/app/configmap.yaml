@@ -14,15 +14,22 @@ data:
       #   llama-bench, no serving config   pp512 762 t/s   tg128 33.8 t/s
       #   this endpoint, as configured                     ~24-28 t/s gen
       #
-      # An earlier note here claimed 50 tok/s generation. That number does not
-      # reproduce under the current configuration and should not be used to
-      # reason about headroom -- it is what made a dense replacement look
-      # cheap. The ~20% gap between llama-bench and this endpoint is the cost
-      # of the serving config itself (q8_0 KV, 8 slots, 1M allocated context);
-      # the remaining difference from 50 is unexplained and is the thing to
-      # chase before swapping models, since it is free performance on a model
-      # that already works. See qwen38-27b.yaml for why the newer Qwen is not
-      # the answer here.
+      # An earlier note here claimed 50 tok/s generation as if measured here.
+      # It was not: kyuz0's public Strix Halo table reports 50.32 t/s for this
+      # exact model+quant+backend, and that is where the figure came from. Our
+      # own hardware lands ~33% under that reference on an identical
+      # configuration, which is a real and unexplained gap -- treat 50 as
+      # somebody else's box, not as headroom on ours.
+      #   https://kyuz0.github.io/amd-strix-halo-toolboxes/
+      #
+      # The ~20% gap between llama-bench and this endpoint is separately
+      # explained: it is the serving config itself (q8_0 KV, 8 slots, 1M
+      # allocated context).
+      #
+      # These numbers predate enabling MTP self-speculative decoding on the
+      # InferenceService; expect them to improve once that rolls out, by up to
+      # ~1.38x at low concurrency. Re-measure rather than assuming.
+      # See qwen38-27b.yaml for why the newer, denser Qwen is not the answer.
       #
       # The served id must match the InferenceService's --alias. Verify with:
       #   curl http://qwen3-35b-a3b.datasci:8080/v1/models

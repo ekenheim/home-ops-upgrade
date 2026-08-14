@@ -12,7 +12,13 @@ kind: Model
 metadata:
   name: qwen3-35b-a3b
 spec:
-  source: hf://unsloth/Qwen3.6-35B-A3B-GGUF
+  # The -MTP- repo, not the plain one: same model, same quant, ~0.5GB larger
+  # because it retains the multi-token-prediction head. That head is what
+  # --spec-type draft-mtp needs (see extraArgs below); the plain GGUF carries
+  # no MTP tensors at all, so the flag is inert against it. Verified on the
+  # previously-served file:
+  #   llama-gguf <file> r n | grep -icE "nextn|mtp"  ->  0
+  source: hf://unsloth/Qwen3.6-35B-A3B-MTP-GGUF
   files:
     - Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf
   # Vision projector -- the model is multimodal. F16 rather than F32: half the
@@ -122,3 +128,28 @@ spec:
     - --alias
     - qwen3-35b-a3b
     - --cont-batching
+    # Multi-token prediction, i.e. self-speculative decoding off the model's
+    # own MTP head -- no separate draft model to load or keep in sync.
+    #
+    # This is the single largest win available on this node and it costs only
+    # a flag plus the MTP build of the weights. Reference numbers for exactly
+    # this model+quant on Strix Halo (kyuz0's llama-bench harness, rocm-7.2.3):
+    #   baseline  51.1 t/s
+    #   n-max 2   67.5 t/s   accept 0.82
+    #   n-max 3   70.3 t/s   accept 0.74   <- chosen
+    # n-max 3 wins despite the lower acceptance rate: the extra accepted token
+    # outweighs the wasted drafts.
+    #
+    # Worth knowing before reading too much into that 1.38x: those runs are
+    # single-stream. Speculative decoding spends compute to save memory
+    # bandwidth, and with parallelSlots: 8 under real concurrent load the
+    # draft passes compete with the other slots, so the speedup shrinks as
+    # concurrency rises. It should never be negative -- rejected drafts cost
+    # compute this box has spare, not bandwidth it does not.
+    #
+    # Cheap to revert: drop these two flags and the model still serves
+    # normally from the same file.
+    - --spec-type
+    - draft-mtp
+    - --spec-draft-n-max
+    - "3"

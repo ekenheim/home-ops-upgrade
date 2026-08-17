@@ -7,9 +7,42 @@
 #   kubectl get resourceslices.resource.k8s.io
 #   -> node=worker4 driver=gpu.amd.com devices=['gpu-0-128']
 #
+# WHY A ResourceClaim AND NOT A ResourceClaimTemplate
+#
+# This was a ResourceClaimTemplate, and that is what made the node
+# single-model: a template mints a *fresh, pod-scoped* claim for every pod
+# that references it, so the second serving pod asked for a device the first
+# pod's claim already held and sat Pending forever. That was read as "the GPU
+# is exclusive"; it is not. allocationMode governs how many *devices* land in
+# the claim, and says nothing about how many pods may use one. Sharing is
+# governed by reservedFor, which the API caps at 256 consumers:
+#   kubectl explain resourceclaims.status.reservedFor
+#   -> "There can be at most 256 such reservations."
+#
+# So: one long-lived claim, allocated once, reserved by every serving pod that
+# names it. ornith-35b and qwen38-27b now run side by side on gpu-0-128.
+#
+# Verify after any change here -- both pods must appear under one claim:
+#   kubectl -n datasci get resourceclaims.resource.k8s.io -o json | jq -r \
+#     '.items[] | "\(.metadata.name) reservedFor=\([.status.reservedFor[]?.name])"'
+#
+# WHAT THIS DOES NOT BUY
+#
+# Nothing arbitrates between the two llama-server processes once they are both
+# on the device. They contend for one LPDDR5X pool at a measured 184-217 GiB/s
+# effective, so concurrent generation splits that bandwidth and a prompt-
+# processing burst on one stalls the other. Worse, GTT is unreclaimable on this
+# UMA part -- if the two of them together over-allocate it, the node deadlocks
+# rather than OOM-killing a pod. Both models are therefore sized from measured
+# footprints with deliberate headroom, not from their context ceilings. Check
+# before adding a third:
+#   kubectl -n datasci exec deploy/ornith-35b -- \
+#     cat /sys/class/drm/card0/device/mem_info_gtt_used \
+#         /sys/class/drm/card0/device/mem_info_gtt_total
+#
 # allocationMode: All -- Strix Halo presents a single iGPU sharing system
-# memory, so there is nothing to partition between workloads; a serving pod
-# takes the whole device.
+# memory, so there is nothing to partition between workloads; the claim takes
+# the whole device and the pods share the claim.
 #
 # NO adminAccess, deliberately, despite the upstream reference config for this
 # hardware setting it. The API gates it on a namespace label:
@@ -19,17 +52,16 @@
 # Applying that label to datasci would grant *every* workload in this shared
 # namespace (40+ pods) the ability to claim privileged device access, which is
 # a poor trade for a serving pod. adminAccess exists for monitoring agents that
-# need to see devices already allocated to others; a pod taking the whole GPU
-# via allocationMode All does not need it.
+# need to see devices already allocated to others; pods sharing a claim that
+# holds the whole GPU do not need it.
 apiVersion: resource.k8s.io/v1
-kind: ResourceClaimTemplate
+kind: ResourceClaim
 metadata:
   name: llama-strix-gpu
 spec:
-  spec:
-    devices:
-      requests:
-        - name: gpu
-          exactly:
-            deviceClassName: gpu.amd.com
-            allocationMode: All
+  devices:
+    requests:
+      - name: gpu
+        exactly:
+          deviceClassName: gpu.amd.com
+          allocationMode: All

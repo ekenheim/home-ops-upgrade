@@ -139,14 +139,59 @@ data:
     fallback_providers:
       - provider: litellm
         model: self-hosted
+    # stale_timeout_seconds is REQUIRED on both providers, and the reason is
+    # subtle enough to be worth writing down.
+    #
+    # hermes arms a time-to-first-byte watchdog on non-streaming calls and
+    # kills the request when it fires:
+    #   RuntimeError: Non-streaming API call timed out after 90s with no
+    #   response (threshold: 90s)
+    # 90s is its default for *cloud* providers (run_agent.py
+    # _resolved_api_call_stale_timeout_base). For local endpoints it is
+    # supposed to disable the watchdog entirely:
+    #   if uses_implicit_default and is_local_endpoint(base_url):
+    #       return float("inf")
+    #
+    # It does not fire here, because is_local_endpoint (model_metadata.py)
+    # only treats a hostname as local when it is loopback, an RFC-1918/CGNAT
+    # literal, or has NO DOT in it:
+    #   if host and "." not in host: return True
+    # `litellm.datasci` has a dot and is not an IP, so our in-cluster proxy is
+    # classified as a remote cloud provider and gets the 90s cloud default.
+    #
+    # Do NOT "fix" this by shortening base_url to http://litellm:4000 -- that
+    # resolves identically (same namespace) and would make the check pass, but
+    # it buys an INFINITE watchdog, so a genuinely dead connection would hang
+    # the agent forever. An explicit, bounded value is the better answer, and
+    # setting it also takes the local-endpoint branch out of play entirely
+    # (it only applies to the implicit default).
+    #
+    # WHY 900
+    #
+    # This is a whole-call budget, not an idle timer: `streaming.enabled` is
+    # false, so nothing arrives until generation finishes. The floor is set by
+    # the slowest thing behind these aliases -- `deep` (Qwen3.8-27B, dense) is
+    # a measured 8-9 t/s, so a 2k-token reasoning answer is ~4 minutes before
+    # prompt processing, and `self-hosted` drops to ~24 t/s when the node is
+    # busy. 90s could not cover either.
+    #
+    # 900 deliberately sits ABOVE litellm's own `request_timeout: 600` so the
+    # ceiling is enforced in exactly one place. litellm gives up at 600 and
+    # returns a real error; this watchdog then only ever catches a genuinely
+    # dead connection rather than racing its own upstream.
+    #
+    # hermes scales its own floor for big contexts (240s over 100k tokens,
+    # 150s over 50k) but never above an explicit setting, so this wins.
     providers:
       litellm:
         base_url: http://litellm.datasci:4000/v1
         api_key: $${LITELLM_API_KEY}
+        stale_timeout_seconds: 900
       litellm-anthropic:
         base_url: http://litellm.datasci:4000/
         api_mode: anthropic_messages
         api_key: $${LITELLM_API_KEY}
+        stale_timeout_seconds: 900
     # The dashboard is published at hermes.${SECRET_DOMAIN}, and since
     # v2026.8.3 the image refuses a non-loopback bind with no auth provider
     # registered ("There is no unauthenticated public-bind option") -- the old

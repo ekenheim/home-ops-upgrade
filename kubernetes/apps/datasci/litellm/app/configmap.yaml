@@ -134,15 +134,26 @@ data:
       # alias, and the router fallback below already catches an outage. Verify
       # tool calling on the live endpoint first -- see qwen38-27b.yaml.
       #
-      # max_input_tokens is the per-slot window (contextSize 262144 /
-      # parallelSlots 2), which is deliberately the same 131072 as ornith so
-      # callers do not have to care which backend they landed on.
+      # max_input_tokens is the per-slot window (contextSize 524288 /
+      # parallelSlots 2) and is DELIBERATELY not the 131072 the ornith aliases
+      # advertise. `deep` runs Qwen3.8-27B at its full native 262144 -- gguf
+      # `qwen35.context_length = 262144`, no rope_scaling -- because the jobs
+      # routed here are the ones that want the whole window and can wait.
+      #
+      # ornith is also a 262144-native model and is also running at half, but
+      # raising it costs ~13 GiB of shared GTT across its 8 slots and its
+      # consumers are latency-sensitive, so it stays at 131072 for now.
+      #
+      # Consequence: the two backends no longer share one context number. Do
+      # not "tidy" these to match. Anything that hardcodes a window per
+      # endpoint (hermes' model.context_length, currently 131072 for its
+      # default self-hosted model) has to name which alias it means.
       - model_name: deep
         model_info:
           mode: chat
           supports_function_calling: true
           supports_vision: true
-          max_input_tokens: 131072
+          max_input_tokens: 262144
         litellm_params:
           model: openai/qwen38-27b
           api_base: http://qwen38-27b.datasci:8080/v1

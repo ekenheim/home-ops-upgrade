@@ -243,17 +243,39 @@ spec:
     - key: llm-workload
       operator: Exists
       effect: NoSchedule
-  # 262144 / 2 = 131072 per slot, matching ornith-35b's per-slot window so the
-  # two endpoints have the same usable context and litellm can advertise one
-  # max_input_tokens for both. Under the model's 262144 native window, so no
-  # RoPE scaling.
+  # 524288 / 2 = 262144 per slot, which is this model's FULL native window --
+  # gguf metadata `qwen35.context_length = 262144`, and config.json carries no
+  # rope_scaling, so 262144 is trained rather than extended. There is nothing
+  # left to give: raising contextSize further would only add idle KV, and
+  # asking a slot for more than 262144 would need RoPE scaling and cost
+  # quality.
+  #
+  # This was 262144/2 = 131072 per slot, chosen to match ornith. Matching is no
+  # longer the priority -- `deep` exists for the jobs where the answer matters
+  # more than the latency, and those are exactly the jobs that want the whole
+  # window. ornith stays at 131072 per slot (it is also a 262144-native model,
+  # so it is likewise at half) because its 8 slots make the same change cost
+  # ~13 GiB rather than ~9, and its consumers are latency-sensitive.
+  #
+  # litellm's `deep` alias advertises max_input_tokens: 262144 to match. The
+  # two backends no longer share one number -- self-hosted/review/fast stay at
+  # 131072, deep is 262144.
   #
   # 2 slots, not ornith's 8, on purpose. This endpoint serves cron jobs and
   # one-shot hard questions, not a fan-out of chatty agents, so concurrency is
   # not the requirement -- and every slot's KV is GTT taken from a pool now
-  # shared with ornith-35b. Raising either number spends that shared budget;
-  # re-measure both pods first.
-  contextSize: 262144
+  # shared with ornith-35b.
+  #
+  # COST, measured rather than projected. At 262144 total this pod held 27.1
+  # GiB (62 GiB combined, of 124): 16.7 weights + ~0.9 mmproj + ~9.5 KV, i.e.
+  # ~38 KB per token of context. Doubling the KV to 524288 tokens adds ~9.5
+  # GiB, so expect ~36.6 GiB here and ~72 GiB combined, leaving ~52 GiB free.
+  #
+  # That per-token cost is 3-4x ornith's (~10 KB/token) and it is architectural,
+  # not a mistake: this model runs 64 layers on a 3:1 linear-to-full interleave
+  # (16 full-attention layers) at num_key_value_heads 4, against ornith's 40
+  # layers / 10 full / 2 KV heads. Budget from this number, not from ornith's.
+  contextSize: 524288
   parallelSlots: 2
   # Restarting the server drops in-flight requests, and a `deep` request can
   # run for minutes at ~12 t/s. Hold the pod-template update until llama.cpp

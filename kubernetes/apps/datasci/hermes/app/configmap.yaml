@@ -76,7 +76,7 @@ data:
         snapshot()
 
     # The dashboard hash is substituted here rather than by hermes. hermes
-    # expands ${VAR} in providers.*.api_key but NOT in
+    # expands $${VAR} in providers.*.api_key but NOT in
     # dashboard.basic_auth.password_hash -- it registers the auth provider with
     # the literal placeholder as the hash, so every login fails with "invalid
     # username or password" while the container looks perfectly healthy. The

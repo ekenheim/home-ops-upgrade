@@ -147,8 +147,17 @@ spec:
       # copy to avoid, so partial offload only costs speed.
       layers: 99
       resourceClaims:
+        # resourceClaimName, NOT resourceClaimTemplateName -- a template mints
+        # a pod-scoped claim and would take gpu-0-128 exclusively, leaving
+        # qwen38-27b Pending forever. See resourceclaim.yaml.
+        #
+        # This field is immutable on a Pod, so switching it is a pod
+        # *recreate*, not an edit. The Deployment strategy is Recreate (not
+        # RollingUpdate), so the old pod releases the device before the new one
+        # asks for it -- no deadlock. Weights are already in the cache PV, so
+        # the restart costs a model load, not a 22GB download.
         - name: gpu
-          resourceClaimTemplateName: llama-strix-gpu
+          resourceClaimName: llama-strix-gpu
 ---
 apiVersion: inference.llmkube.dev/v1alpha1
 kind: InferenceService
@@ -239,6 +248,14 @@ spec:
   # Cost is linear and small: measured 22.7 GiB GTT at contextSize 65536 and
   # 23.8 GiB at 131072, i.e. ~1.1 GiB per extra 65536 tokens. Measured 28.6 GiB
   # at 524288, so this lands near 37 GiB -- worker4 reports 124 GiB of GTT.
+  # Confirmed live 2026-08-17 at this setting: mem_info_gtt_used 37,492,838,400
+  # (34.9 GiB) of 133,143,986,176 (124 GiB).
+  #
+  # That 124 GiB is no longer this pod's alone. qwen38-27b shares the device
+  # (see resourceclaim.yaml) at roughly 27 GiB, so the pair sits near 62 GiB
+  # and the free pool is ~62 GiB rather than ~89. Growing contextSize here now
+  # spends a shared budget -- re-measure both pods before raising it, because
+  # over-allocating GTT deadlocks the node instead of OOM-killing a pod.
   #
   # Per-slot stays under the model's native window (gguf metadata:
   # qwen35moe.context_length = 262144 -- Ornith shares the arch), so no RoPE

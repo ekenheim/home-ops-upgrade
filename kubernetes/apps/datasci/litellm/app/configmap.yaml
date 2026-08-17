@@ -107,6 +107,47 @@ data:
           chat_template_kwargs:
             enable_thinking: false
 
+      # `deep` is the OTHER model on worker4 -- Qwen3.8-27B, dense, served by a
+      # second llama.cpp pod sharing the same iGPU. See qwen38-27b.yaml.
+      #
+      # This is the slow-and-smarter endpoint, and the speed difference is not
+      # marginal: ~12 t/s here against ornith-35b's measured 50.5, because a
+      # dense model reads its entire 16.7 GiB per generated token while
+      # ornith reads only its routed experts. Both numbers degrade further if
+      # the two are generating at once -- they share one LPDDR5X pool.
+      #
+      # So route by task, not by preference:
+      #   deep         cron jobs, hard one-shots, second-opinion review of
+      #                ornith's output -- anywhere a 90s answer is fine
+      #   self-hosted  interactive/agentic turns (hermes, foreman coder)
+      #   fast         bulk mechanical work (Lingarr translation)
+      #
+      # Qwen3.8 beats Ornith on the published agentic-coding benchmarks
+      # (Terminal Bench 2.1 73.0 vs 64.2, SWE-bench Pro 61.7 vs 50.4), though
+      # those runs use different harnesses and are not apples-to-apples.
+      #
+      # NOTHING IN THIS REPO POINTS HERE YET, deliberately -- it is available
+      # in Open WebUI's model picker and to anything you aim at it by hand. To
+      # move the reviewer workloads over, change `model:` and `api_base:` on
+      # the `review` block above to this backend; agentmemory
+      # (ANTHROPIC_MODEL=review) and foreman's reviewer Agent both follow that
+      # alias, and the router fallback below already catches an outage. Verify
+      # tool calling on the live endpoint first -- see qwen38-27b.yaml.
+      #
+      # max_input_tokens is the per-slot window (contextSize 262144 /
+      # parallelSlots 2), which is deliberately the same 131072 as ornith so
+      # callers do not have to care which backend they landed on.
+      - model_name: deep
+        model_info:
+          mode: chat
+          supports_function_calling: true
+          supports_vision: true
+          max_input_tokens: 131072
+        litellm_params:
+          model: openai/qwen38-27b
+          api_base: http://qwen38-27b.datasci:8080/v1
+          api_key: none
+
       # --- Embeddings: still ollama-igpu on the Intel masters ---
       # Deliberately NOT moved. The Strix InferenceService reports capabilities
       # ["completion","multimodal"] -- it does not serve embeddings, and
@@ -156,6 +197,13 @@ data:
       enable_pre_call_checks: true
       fallbacks:
         - review: ["self-hosted"]
+        # Both models live on the same node and the same GPU, so this covers
+        # one pod being down or mid-rollout -- NOT the node being down. Note it
+        # silently swaps a slower, stronger model for a faster, weaker one:
+        # the caller gets an answer rather than an error, but not the answer it
+        # asked for. Acceptable for cron work; check the litellm logs before
+        # concluding `deep` produced a given output.
+        - deep: ["self-hosted"]
 
     litellm_settings:
       drop_params: true

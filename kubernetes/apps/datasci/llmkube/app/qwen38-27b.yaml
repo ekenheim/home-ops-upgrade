@@ -1,19 +1,25 @@
 ---
-# Qwen3.8-27B -- evaluated 2026-08-14, deliberately NOT made the default.
-# Weights are declared here so an A/B is one InferenceService away, but nothing
-# serves this today.
+# Qwen3.8-27B -- the "slow but smarter" endpoint on worker4, co-resident with
+# ornith-35b. Reached through litellm's `deep` alias.
 #
-# WHY NOT THE DEFAULT
+# Evaluated 2026-08-14 and deliberately NOT made the default; deployed
+# alongside the default on 2026-08-17 once the GPU was shown to be shareable.
+# Read the two sections below in that order -- the first is why this is not
+# the daily driver, the second is why it is nonetheless worth running.
+#
+# WHY THIS IS NOT THE DEFAULT
 #
 # Qwen3.8's published numbers are a large jump over Qwen3.6 in the same
 # parameter class (TerminalBench 63.4 -> 73.0, SWE-bench Pro 53.5 -> 61.7), and
 # the obvious read is "swap the daily driver". That read ignores what actually
 # limits this node.
 #
-# The 3.8 generation ships no MoE in the 30B class -- it is either the dense
-# 27B below or Qwen3.8-2.4T-A95B, which is far out of reach here. So "move to
-# 3.8" necessarily means "move from a sparse model to a dense one", and this
-# box is memory-bandwidth-bound, not capacity-bound:
+# The 3.8 generation ships no MoE in the 30B class -- it is either this dense
+# 27B or Qwen3.8-2.4T-A95B, which is far out of reach here. (Re-confirmed
+# 2026-08-17 against ollama's library: all 12 qwen3.8 tags are the same dense
+# 27B; there is no a3b-style entry.) So "move to 3.8" necessarily means "move
+# from a sparse model to a dense one", and this box is memory-bandwidth-bound,
+# not capacity-bound:
 #
 #   incumbent  Ornith-1.0-35B UD-Q4_K_XL   ~21 GiB file, ~3B of 35B active
 #              -> only the routed experts are read per token
@@ -24,7 +30,7 @@
 # Qwen3.6-35B-A3B, which the incumbent Ornith-1.0-35B is architecturally
 # identical to, so the figures carry over:
 #                pp512 762 t/s   tg128 33.8 t/s
-# and through the live server with this repo's serving config, ~24-28 t/s.
+# and through the live server with this repo's serving config, 50.5 t/s.
 #
 # The dense penalty is not a projection. kyuz0's public Strix Halo table runs
 # both shapes on this same silicon, and across five dense Q4-Q8 models from
@@ -37,32 +43,86 @@
 #   Qwen3.6-35B-A3B-UD-Q4_K_XL  MoE    21.3 GiB   ->  51.1 t/s
 #
 # Qwen3.8-27B UD-Q4_K_XL is 16.7 GiB dense, which puts it at ~11-13 t/s before
-# speculation -- consistent with gemma-4-31B at nearly the same file size.
+# speculation -- consistent with gemma-4-31B at nearly the same file size, and
+# with third-party Strix reports of 10.5 t/s at Q5 and 7.5 t/s at Q8.
 #
-# MTP does not rescue it, because MTP helps the incumbent too. Same source,
+# MTP does not rescue it, because MTP helps a sparse model too. Same source,
 # same harness, self-speculative decoding at n-max 3:
 #   dense Qwen3.6-27B   6.4 -> 13.7 t/s  (2.14x)
 #   MoE   35B-A3B      51.1 -> 70.3 t/s  (1.38x)
-# So the honest comparison is ~25 t/s for a dense 3.8 against ~70 t/s for a
+# So the honest ceiling is ~25 t/s for a dense 3.8 against ~70 t/s for a
 # sparse 35B-A3B. Speculation widens the absolute gap rather than closing it.
 #
-# The consumers make that trade a bad one: `fast` is bulk translation
-# (Lingarr) where throughput IS the product, and `self-hosted` is Hermes,
-# whose agentic loop carries ~28k tokens of prompt before it does any work.
-# Tripling latency there is felt on every turn.
+# The latency-sensitive consumers make that trade a bad one: `fast` is bulk
+# translation (Lingarr) where throughput IS the product, and `self-hosted` is
+# Hermes, whose agentic loop carries ~28k tokens of prompt before it does any
+# work. Those stay on ornith-35b.
 #
-# Revisit if either of these lands:
-#   - a 3.8-generation MoE in the ~30B-A3B class (the 3.8 line is dense 27B or
-#     2.4T-A95B; nothing in between)
-#   - proven MTP self-speculative decoding for 3.8 in the Strix Halo llama.cpp
-#     builds, measured at >2x on this node
+# WHY IT IS WORTH RUNNING ANYWAY
+#
+# Because the two constraints are different. Speed is the constraint on the
+# chatty, agentic, per-turn work; it is not the constraint on a nightly cron
+# job or a hard one-shot question, where the answer arriving in 90s instead of
+# 15s costs nothing and being right matters. The benchmark gap is real even
+# after discounting it for harness differences (Ornith's SWE-Pro number is
+# under OpenHands, Qwen3.8's under Claude Code, so the table is not
+# apples-to-apples):
+#
+#   benchmark            Ornith-1.0-35B   Qwen3.8-27B
+#   Terminal Bench 2.1             64.2          73.0
+#   SWE-bench Pro                  50.4          61.7
+#   NL2Repo                        34.6          42.3
+#
+# Under identical evaluation against its own predecessor the jump is
+# generational rather than a refresh: DeepSWE 13.3 -> 42.2, OSWorld
+# 63.9 -> 84.3, LiveCodeBench 83.9 -> 90.3.
+#
+# So this serves `deep`: cron work, hard one-shots, and second-opinion review
+# of ornith's output. It is idle most of the time, which is what makes
+# co-residency cheap -- see "WHY BOTH FIT" below.
+#
+# WHY UD-Q4_K_XL AND NOT Q6/Q8
+#
+# The common advice for a 128GB box is to size the quant up because there is
+# headroom (UD-Q5_K_XL is 20.2GB, UD-Q8_K_XL far more). That optimises the
+# wrong axis twice over. Capacity is not the constraint, bytes-read-per-token
+# is, and on a dense model every extra byte is paid on every token -- the same
+# reference set that gives 10.5 t/s at Q5 gives 7.5 t/s at Q8. And now that
+# the GPU is shared, the quant also sets how much of a 124 GiB pool this model
+# takes away from ornith-35b permanently, awake or not. Q4_K_XL also matches
+# the incumbent's quant level, which keeps any A/B against it honest.
+#
+# WHY BOTH FIT
+#
+# The GPU is shared through a single long-lived ResourceClaim rather than a
+# per-pod template; the mechanism and its caveats are in resourceclaim.yaml.
+# The budget, measured rather than projected:
+#
+#   ornith-35b   live 2026-08-17                        34.9 GiB
+#   this model   16.7 weights + ~0.9 mmproj + ~9 KV     ~27   GiB
+#   -------------------------------------------------------------
+#   total                                               ~62   GiB of 124 GiB
+#
+# The KV figure comes from the architecture, not a guess. config.json is 64
+# layers on a 3:1 linear-to-full attention interleave, so only 16 layers carry
+# a cache that grows with context, at num_key_value_heads 4 x head_dim 256:
+#   2 (K+V) x 4 x 256 x 16 layers = 32768 B/token at q8_0, ~34 KB/token
+#   x 262144 tokens = ~8.5 GiB
+# The linear layers hold a fixed-size recurrent state per slot instead (~150
+# MB/slot across 48 layers), which is why context is cheap here relative to a
+# fully-quadratic model.
+#
+# VERIFY that estimate on the first rollout rather than trusting it, because
+# over-allocating GTT deadlocks the node instead of OOM-killing a pod:
+#   kubectl -n datasci exec deploy/qwen38-27b -- \
+#     cat /sys/class/drm/card0/device/mem_info_gtt_used
+# (that path is the whole device, so read it with both pods up and compare
+# against the 34.9 GiB ornith-only baseline).
 #
 # WHY prefetch IS OFF
 #
 # prefetch: true is the documented way to pull weights into the shared cache
-# ahead of serving, and it is exactly what this node wants -- swapping models
-# is an outage (see below), so paying for an ~18GB download inside that window
-# is avoidable. It does not work here, for two independent reasons:
+# ahead of serving. It does not work here, for two independent reasons:
 #
 #   1. The chart's ClusterRole grants no `batch` rule, so the controller cannot
 #      create Jobs at all. Fixed in rbac.yaml -- prefetch reaches "Downloading"
@@ -76,24 +136,44 @@
 #      '^[a-z0-9.\-]+/[a-z0-9._\-]+$' and rejects a bare key like
 #      "llm-workload".
 #
-# (2) is not fixable from this repo, so prefetch stays off and a future swap
-# pays the download in its init container, which DOES inherit the
-# InferenceService's tolerations.
+# (2) is not fixable from this repo, so prefetch stays off and the ~18GB
+# download happens in the InferenceService's init container, which DOES
+# inherit its tolerations. /models had 371GB free at 21% use when this landed.
 #
-# WHY THERE IS NO InferenceService HERE
+# NO MTP, FOR NOW
 #
-# worker4 advertises one DRA device (gpu-0-128) and resourceclaim.yaml takes it
-# with allocationMode: All, so a second serving pod cannot run alongside
-# ornith-35b -- it sits Pending on the claim. Models are swap-in/swap-out on
-# this node, never resident side by side.
+# config.json carries mtp_num_hidden_layers: 1 and ollama now publishes
+# 27b-mtp-* tags, so unlike Ornith this model genuinely has a shipping MTP
+# head -- and at the dense 2.14x it is the single biggest lever available
+# here, worth roughly 12 t/s -> 25 t/s.
 #
-# WHY UD-Q4_K_XL
+# It is still off because unsloth/Qwen3.8-27B-GGUF carries no MTP tensors (9
+# UD- quants, two mmproj, nothing matching MTP or nextn), and the repos that
+# do -- Jackrong/Qwen3.8-27B-MTP-GGUF, esatapedico/Qwen3.8-27B-NVFP4-MTP-GGUF
+# -- are unvetted third-party requants. Same call as Ornith's.
 #
-# The common advice for a 128GB box is to size the quant up because there is
-# headroom (UD-Q5_K_XL, 20.2GB). That optimises the wrong axis: capacity is not
-# the constraint, bytes-read-per-token is, and on a dense model Q5 reads ~13%
-# more of them for marginal quality. Q4_K_XL also matches the incumbent's quant
-# level, which keeps any A/B against the incumbent honest.
+# To enable once a trustworthy build exists, confirm the tensors are really
+# there and then add the flags:
+#   llama-gguf /models/<cacheKey>/Qwen3.8-27B-UD-Q4_K_XL.gguf r n | \
+#     grep -icE "nextn|mtp"
+#   -> non-zero, then append: --spec-type draft-mtp --spec-draft-n-max 3
+# Note the reference 2.14x is single-stream. With parallelSlots 2 and a second
+# model contending for the same bandwidth, expect less.
+#
+# VERIFY TOOL CALLING BEFORE POINTING ANYTHING AT THIS
+#
+# A bare /v1/models check is NOT sufficient -- llama.cpp's --jinja template
+# parser fails per request, not at startup, so a bad chat template leaves the
+# pod 1/1 Running and Ready while every tool call 400s. This bit us on Ornith.
+#   curl -s http://qwen38-27b.datasci:8080/v1/chat/completions \
+#     -H 'Content-Type: application/json' -d '{
+#       "model":"qwen38-27b",
+#       "messages":[{"role":"user","content":"What is the weather in Oslo?"}],
+#       "tools":[{"type":"function","function":{"name":"get_weather",
+#         "parameters":{"type":"object","properties":{"city":{"type":"string"}},
+#         "required":["city"]}}}]}' | jq '.choices[0].finish_reason'
+# Expect "tool_calls". A 400 mentioning the parser means the template is
+# incompatible and `deep` must stay unrouted.
 apiVersion: inference.llmkube.dev/v1alpha1
 kind: Model
 metadata:
@@ -103,9 +183,98 @@ spec:
   files:
     - Qwen3.8-27B-UD-Q4_K_XL.gguf
   # Multimodal, like the incumbent -- litellm advertises supports_vision on
-  # these aliases, so a swap has to keep the projector.
+  # this alias, so the projector has to be here.
   mmproj: mmproj-F16.gguf
   format: gguf
+  quantization: UD-Q4_K_XL
   # See "WHY prefetch IS OFF". Turning this on creates a Job that never
   # schedules and never surfaces an error on the Model CR.
   prefetch: false
+  hardware:
+    accelerator: rocm
+    gpu:
+      enabled: true
+      vendor: amd
+      # 99 = offload every layer. Unified memory means there is no host/device
+      # copy to avoid, so partial offload only costs speed.
+      layers: 99
+      resourceClaims:
+        # The SAME claim ornith-35b names, by design -- that is what puts both
+        # pods on gpu-0-128 instead of leaving this one Pending. Must be
+        # resourceClaimName; a template would mint a second, conflicting claim.
+        - name: gpu
+          resourceClaimName: llama-strix-gpu
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen38-27b
+  labels:
+    krr/ignore: "true"
+spec:
+  modelRef: qwen38-27b
+  modelCache:
+    claimName: llmkube-model-cache
+  # Both serving pods mount this one PVC. That is legal because its accessMode
+  # is ReadWriteOnce, which is node-scoped, and both pods are pinned to
+  # worker4 -- ReadWriteOncePod would forbid it, RWO does not.
+  #
+  # Do NOT set skipModelInit here, despite the operator logging
+  # MissingSkipModelInit and advising it. With it enabled the operator drops
+  # the model-downloader init container and passes an empty --model, and
+  # llama.cpp serves nothing while the pod stays 1/1 Running and the
+  # InferenceService reports Ready.
+  runtime: llamacpp
+  # Same purpose-built llama.cpp image as ornith-35b, and specifically NOT a
+  # vulkan-radv variant despite it benchmarking ~20% faster. Vulkan on AMD
+  # produces subtle numerical errors that degrade reasoning into incoherence
+  # and break tool calls from ~70-80k context; our per-slot window is 131072,
+  # inside that range, and the symptom is bad output rather than an error.
+  # Full citation in ornith-35b.yaml.
+  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-6.4.4
+  command:
+    - llama-server
+  replicas: 1
+  # worker4 is the only node with an AMD GPU, and it is tainted as a dedicated
+  # LLM node -- both are required or the pod cannot be placed.
+  nodeSelector:
+    topology.kubernetes.io/gpus: amd
+  tolerations:
+    - key: llm-workload
+      operator: Exists
+      effect: NoSchedule
+  # 262144 / 2 = 131072 per slot, matching ornith-35b's per-slot window so the
+  # two endpoints have the same usable context and litellm can advertise one
+  # max_input_tokens for both. Under the model's 262144 native window, so no
+  # RoPE scaling.
+  #
+  # 2 slots, not ornith's 8, on purpose. This endpoint serves cron jobs and
+  # one-shot hard questions, not a fan-out of chatty agents, so concurrency is
+  # not the requirement -- and every slot's KV is GTT taken from a pool now
+  # shared with ornith-35b. Raising either number spends that shared budget;
+  # re-measure both pods first.
+  contextSize: 262144
+  parallelSlots: 2
+  # Restarting the server drops in-flight requests, and a `deep` request can
+  # run for minutes at ~12 t/s. Hold the pod-template update until llama.cpp
+  # reports its slots idle.
+  rolloutPolicy:
+    waitForIdle: true
+    idleTimeoutSeconds: 600
+  flashAttention: true
+  jinja: true
+  cacheTypeK: q8_0
+  cacheTypeV: q8_0
+  batchSize: 2048
+  uBatchSize: 512
+  resources:
+    cpu: "500m"
+    memory: 32Gi
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  extraArgs:
+    # Must match litellm's `model: openai/<id>` for the `deep` alias.
+    - --alias
+    - qwen38-27b
+    - --cont-batching

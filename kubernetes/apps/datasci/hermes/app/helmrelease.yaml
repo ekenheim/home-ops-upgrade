@@ -34,34 +34,28 @@ spec:
           reloader.stakater.com/auto: "true"
         initContainers:
           init:
-            image:
-              repository: docker.io/library/alpine
-              tag: "3.24"
+            # The hermes image, not alpine: rendering config.yaml is a YAML
+            # merge now (see merge-config.py in the ConfigMap), and this image
+            # already carries python3 + PyYAML. It is also the image the app
+            # container runs, so it is on the node either way -- alpine plus a
+            # `pip install pyyaml` would be a second pull and a network
+            # dependency on every pod start. Anchored here rather than on the
+            # app container below because a YAML alias must follow its anchor.
+            image: &image
+              repository: docker.io/nousresearch/hermes-agent
+              tag: v2026.8.16@sha256:f8f548d87d16634d1ad9e3777280f3f577ba2358703f04e18e74007ffd3621bf
             command:
               - sh
               - -c
               - |
                 set -euo pipefail
-                # Substitute the dashboard password hash here rather than
-                # letting hermes do it. hermes expands the LITELLM_API_KEY
-                # placeholder in providers.*.api_key, but NOT the one in
-                # dashboard.basic_auth.password_hash -- it registers the auth
-                # provider and then compares submitted passwords against the
-                # literal placeholder text, so every login fails with "invalid
-                # username or password" while the container looks perfectly
-                # healthy. Only the hash placeholder is replaced here; the
-                # LITELLM_API_KEY one is deliberately left for hermes so the
-                # proxy key stays out of the on-disk config.
-                #
-                # Note the doubled $$ below: Flux runs envsubst in strict mode
-                # over this file too, so a single-$ reference fails the build
-                # on an unset variable. Same reason the match pattern uses
-                # character classes rather than a literal placeholder.
-                # `|` delimiter because bcrypt hashes contain `/`; bcrypt's
-                # alphabet has no `&`, so no further escaping is needed.
-                sed "s|[$][{]DASHBOARD_PASSWORD_HASH[}]|$${DASHBOARD_PASSWORD_HASH}|" \
-                  /tmp/config.yaml > /opt/data/config.yaml
-                chown 10000:10000 /opt/data/config.yaml
+                # Renders /opt/data/config.yaml from the ConfigMap while
+                # carrying over MCP servers that exist only on the PVC. This
+                # used to be a plain `sed > /opt/data/config.yaml`, which
+                # discarded anything hermes had written there: an `outline`
+                # server added from the dashboard on 2026-08-14 was gone after
+                # the 08-16 restart, with no backup to recover it from.
+                python3 /tmp/merge-config.py
                 PLUGIN_DIR=/opt/data/plugins/agentmemory
                 mkdir -p "$PLUGIN_DIR"
                 cp /tmp/agentmemory-plugin/plugin.yaml "$PLUGIN_DIR/plugin.yaml"
@@ -83,9 +77,7 @@ spec:
                   name: hermes
         containers:
           app:
-            image: &image
-              repository: docker.io/nousresearch/hermes-agent
-              tag: v2026.8.16@sha256:f8f548d87d16634d1ad9e3777280f3f577ba2358703f04e18e74007ffd3621bf
+            image: *image
             # The gateway is NOT started here. entrypoint-dispatch.sh execs
             # s6-overlay's /init with main-wrapper.sh as the "main program",
             # and s6's cont-init already brings up a supervised gateway:
@@ -232,6 +224,8 @@ spec:
         globalMounts:
           - path: /tmp/config.yaml
             subPath: config.yaml
+          - path: /tmp/merge-config.py
+            subPath: merge-config.py
       plugin:
         type: configMap
         name: hermes-agentmemory-plugin

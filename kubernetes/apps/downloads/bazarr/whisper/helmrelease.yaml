@@ -28,15 +28,34 @@ spec:
           reloader.stakater.com/auto: "true"
         pod:
           affinity:
-            podAffinity:
+            # This used to be a hard podAffinity onto ollama-igpu, which
+            # bought nothing: whisper never requested gpu.intel.com/i915, and
+            # the image cannot drive an Intel iGPU anyway (app/config.py picks
+            # a device with `"cuda" if torch.cuda.is_available() else "cpu"`,
+            # and the only accelerated variant upstream is Dockerfile.gpu,
+            # which is CUDA). All it actually did was pin a CPU-saturating
+            # transcription service onto a control-plane node.
+            nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
-                - topologyKey: kubernetes.io/hostname
-                  namespaces: ["datasci"]
-                  labelSelector:
+                nodeSelectorTerms:
+                  # Never worker4. It is the ROCm node and hosts ornith-35b;
+                  # its CPU and iGPU share one memory controller, so a
+                  # bandwidth-hungry neighbour costs LLM decode throughput.
+                  # Whisper cannot use that GPU regardless -- there is no
+                  # ROCm build of this image, and the GPU is handed out
+                  # through DRA rather than as an extended resource.
+                  - matchExpressions:
+                      - key: node-role.kubernetes.io/rocm-worker
+                        operator: DoesNotExist
+              # Preferred, not required: worker3 is the only non-master,
+              # non-rocm node, so requiring this would leave whisper Pending
+              # whenever it is drained. Subtitles are not worth that.
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
                     matchExpressions:
-                      - key: app.kubernetes.io/name
-                        operator: In
-                        values: ["ollama-igpu"]
+                      - key: node-role.kubernetes.io/control-plane
+                        operator: DoesNotExist
         containers:
           app:
             image:
@@ -45,13 +64,38 @@ spec:
             env:
               TZ: ${TIMEZONE}
               ASR_MODEL: turbo # tiny, base, small, medium, large, large-v1, large-v2, large-v3 and turbo
-              ASR_ENGINEL: faster_whisper # openai_whisper, faster_whisper
+              # Was ASR_ENGINEL -- a typo the image silently ignored, so this
+              # ran the reference `openai_whisper` implementation (the default
+              # in app/config.py) rather than faster-whisper, for as long as
+              # the typo existed.
+              ASR_ENGINE: faster_whisper # openai_whisper, faster_whisper
+              # Explicit rather than inherited. app/config.py derives the
+              # default from `torch.cuda.is_available()`, so it is int8 today
+              # only because there is no CUDA device; naming it keeps the
+              # quantization from silently changing to float32 if this ever
+              # lands somewhere with a GPU.
+              ASR_QUANTIZATION: int8
+              # The real throughput knob. FasterWhisperASR builds WhisperModel
+              # without a `cpu_threads` argument, so faster-whisper leaves
+              # CTranslate2's intra_threads at 0, which means "use
+              # OMP_NUM_THREADS, else 4". Unset, this pegs at 4 threads on a
+              # 32-core node. Raise together with the cpu request below.
+              OMP_NUM_THREADS: "8"
             resources:
               requests:
-                cpu: 500m
+                # Matches OMP_NUM_THREADS closely enough for the scheduler to
+                # place this honestly; 500m badly understated a service that
+                # saturates every thread it is given while transcribing.
+                cpu: "2"
                 memory: 2Gi
+              # No cpu limit on purpose: cgroup throttling against a fixed
+              # OpenMP thread pool wastes far more time in context switches
+              # than it saves. OMP_NUM_THREADS is the bound.
               limits:
-                memory: 8Gi
+                # Down from 8Gi. int8 turbo under faster-whisper is a fraction
+                # of what fp32 turbo under openai_whisper held resident (~4.1
+                # GiB observed before this change).
+                memory: 6Gi
     # defaultPodOptions:
     #   securityContext:
     #     runAsNonRoot: true

@@ -40,6 +40,30 @@
 #     cat /sys/class/drm/card0/device/mem_info_gtt_used \
 #         /sys/class/drm/card0/device/mem_info_gtt_total
 #
+# SURVIVING A worker4 REBOOT -- THIS CLAIM DOES NOT SELF-HEAL
+#
+# The claim is long-lived, but the CDI spec that actually injects the device
+# into a container is not: the ROCm driver writes it under CDI_ROOT=/var/run/cdi,
+# which is tmpfs and therefore empty after every reboot. Kubelet's DRA checkpoint
+# under /var/lib/kubelet DOES survive, so kubelet still believes these pods'
+# claim is prepared and never calls NodePrepareResources again. Nothing
+# regenerates the spec, and containerd fails every start with:
+#
+#   failed to create containerd container: CDI device injection failed:
+#   unresolvable CDI devices k8s.gpu.amd.com/gpu=<claim-uid>-gpu-0-128
+#
+# The pods sit in CreateContainerError and retry forever -- observed 954 attempts
+# over 3.5h with zero progress. Restarting the driver DaemonSet does not help;
+# it only writes specs when kubelet asks it to, and kubelet never asks.
+#
+# The fix is a new pod UID, which forces a fresh NodePrepareResources:
+#   kubectl -n datasci delete pod -l 'app in (qwen38-27b,ornith-35b)'
+#
+# Do not "fix" this by deleting the claim -- the claim is fine, and deleting it
+# forces a reallocation this file exists to avoid. Confirm the device is still
+# advertised before suspecting anything deeper; gpu-0-128 normally survives:
+#   kubectl get resourceslices.resource.k8s.io
+#
 # allocationMode: All -- Strix Halo presents a single iGPU sharing system
 # memory, so there is nothing to partition between workloads; the claim takes
 # the whole device and the pods share the claim.

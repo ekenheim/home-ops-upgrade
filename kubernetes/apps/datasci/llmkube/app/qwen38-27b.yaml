@@ -234,7 +234,39 @@ spec:
   image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-6.4.4
   command:
     - llama-server
-  replicas: 1
+  # PARKED AT 0 -- 2026-08-19. This is a bisect, not a capacity decision.
+  #
+  # worker4 ran 6 days 10h 43m without incident on Ornith alone, then started
+  # hard-crashing 11h after this model reached full size, and crashed four times
+  # in the next 34h. Every boot of the node lines up:
+  #
+  #   08-14 19:52  Ornith replaces Qwen3.6-35B (#6377) -- one model, ~35 GiB GTT
+  #   08-11 20:25 -> 08-18 07:07   6d10h uptime, zero crashes
+  #   08-17 15:45  this model lands beside it (#6396)   -- ~62 GiB GTT
+  #   08-17 19:53  contextSize doubled to 524288 (#6402) -- ~72 GiB GTT
+  #   08-18 07:07  crash 1 (+11h14m).  Then 08-18 14:04, 08-19 11:19, 08-19 17:27.
+  #
+  # Heat, host RAM exhaustion and the GTT *ceiling* are all ruled out with data:
+  # 70-72C flat, MemAvailable flat, and GTT peaks at 72.07 of 124 GiB (58%) --
+  # sampled every 30s for 6.5h. What actually halves is host headroom:
+  # MemAvailable ~62 GiB with one model vs ~26 GiB with two. GTT is pinned and
+  # is not charged to the pod cgroup, so the kernel cannot OOM-kill its way out
+  # and panics instead -- exactly what ornith-35b.yaml warns about ("over-
+  # allocating GTT deadlocks the node instead of OOM-killing a pod"), and it
+  # matches the signature: no precursor in any metric, then the box is gone.
+  #
+  # Scaling the Deployment does NOT hold -- the llmkube controller restores
+  # spec.replicas from this CR within ~70s. It has to be parked here.
+  #
+  # While parked, litellm's `deep` alias has no backend and falls through to
+  # `deep: ["self-hosted"]`, i.e. ornith. Callers get a weaker answer, not an
+  # error; check litellm logs before attributing any output to `deep`.
+  #
+  # TO RESTORE: if worker4 survives 48h+ on Ornith alone the hypothesis holds,
+  # and the way back is to cut contextSize to 262144 (recovers ~9.5 GiB) rather
+  # than returning to 524288. If it crashes anyway, this model is exonerated --
+  # set this to 1 and go after the panic itself with netconsole.
+  replicas: 0
   # worker4 is the only node with an AMD GPU, and it is tainted as a dedicated
   # LLM node -- both are required or the pod cannot be placed.
   nodeSelector:

@@ -166,7 +166,7 @@ data:
     # setting it also takes the local-endpoint branch out of play entirely
     # (it only applies to the implicit default).
     #
-    # WHY 900
+    # WHY 3900
     #
     # This is a whole-call budget, not an idle timer: `streaming.enabled` is
     # false, so nothing arrives until generation finishes. The floor is set by
@@ -175,10 +175,24 @@ data:
     # prompt processing, and `self-hosted` drops to ~24 t/s when the node is
     # busy. 90s could not cover either.
     #
-    # 900 deliberately sits ABOVE litellm's own `request_timeout: 600` so the
-    # ceiling is enforced in exactly one place. litellm gives up at 600 and
-    # returns a real error; this watchdog then only ever catches a genuinely
-    # dead connection rather than racing its own upstream.
+    # The value must sit ABOVE litellm's whole budget so the ceiling is enforced
+    # in exactly one place: litellm gives up first and returns a real error, and
+    # this watchdog then only ever catches a genuinely dead connection rather
+    # than racing its own upstream. THE NUMBER TO BEAT IS NOT `request_timeout`
+    # ON ITS OWN -- it is `request_timeout * (1 + num_retries)`, because a
+    # timed-out attempt is itself retryable.
+    #
+    # The previous 900 got this wrong. litellm was 600 x (1 + 2) = 1800, so this
+    # watchdog was *under* its upstream, not above it, and fired mid-retry. On
+    # 2026-08-19 that killed a PyMC Teacher run 2h42m in with
+    # `Non-streaming API call timed out after 900s`, after the job had already
+    # done most of its work. Successful runs of that job take 1h35m-2h41m
+    # wall-clock, so a single call needing more than 10 minutes is ordinary
+    # here, not pathological.
+    #
+    # litellm is now 1800 x (1 + 1) = 3600; 3900 clears it with margin. If you
+    # touch `request_timeout` or `num_retries` in the litellm ConfigMap, redo
+    # this arithmetic -- the two files only work as a pair.
     #
     # hermes scales its own floor for big contexts (240s over 100k tokens,
     # 150s over 50k) but never above an explicit setting, so this wins.
@@ -186,12 +200,12 @@ data:
       litellm:
         base_url: http://litellm.datasci:4000/v1
         api_key: $${LITELLM_API_KEY}
-        stale_timeout_seconds: 900
+        stale_timeout_seconds: 3900
       litellm-anthropic:
         base_url: http://litellm.datasci:4000/
         api_mode: anthropic_messages
         api_key: $${LITELLM_API_KEY}
-        stale_timeout_seconds: 900
+        stale_timeout_seconds: 3900
     # The dashboard is published at hermes.${SECRET_DOMAIN}, and since
     # v2026.8.3 the image refuses a non-loopback bind with no auth provider
     # registered ("There is no unauthenticated public-bind option") -- the old

@@ -218,6 +218,25 @@ data:
 
     litellm_settings:
       drop_params: true
-      request_timeout: 600
-      num_retries: 2
+      # WHOLE-CALL BUDGET, and it multiplies by num_retries.
+      #
+      # The real ceiling litellm imposes is request_timeout * (1 + num_retries),
+      # because a timed-out attempt is itself a retryable error. That product is
+      # the number hermes' `stale_timeout_seconds` has to sit above -- see the
+      # long comment in the hermes ConfigMap. At 600 * 3 = 1800 it did not, so
+      # hermes' watchdog fired at 900s mid-retry and killed a PyMC Teacher run
+      # 2h42m in (2026-08-19). Change either value and re-check that pairing.
+      #
+      # 1800 per attempt is sized for the slowest real request: `deep`
+      # (Qwen3.8-27B dense, ~8-9 t/s) answering with a long reasoning block on
+      # top of prompt processing for a six-figure context. streaming.enabled is
+      # false in hermes, so nothing comes back until the whole answer is done.
+      #
+      # num_retries dropped 2 -> 1 deliberately. Retries earn their keep against
+      # the fast connection-error class (worker4 rebooting mid-call, which is
+      # what killed the 12:00 run the same day); one is enough for that. Keeping
+      # 2 here would push the product to 5400s and force a 90-minute watchdog,
+      # which is far too long to notice a genuinely dead connection.
+      request_timeout: 1800
+      num_retries: 1
       set_verbose: false

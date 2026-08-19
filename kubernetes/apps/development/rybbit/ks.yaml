@@ -56,6 +56,8 @@ spec:
     - name: crunchy-postgres-stores
     - name: rybbit-clickhouse
   postBuild:
+    substitute:
+      APP: rybbit
     substituteFrom:
       - kind: ConfigMap
         name: cluster-settings

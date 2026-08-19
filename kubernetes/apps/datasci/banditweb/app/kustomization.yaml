@@ -7,3 +7,4 @@ resources:
   - ./ingress-bandit-api.yaml
   - ./ingress-analysis.yaml
   - ./authorizationpolicy.yaml
+  - ../../../../templates/gatus/guarded

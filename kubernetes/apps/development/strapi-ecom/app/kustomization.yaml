@@ -6,3 +6,4 @@ resources:
   - ./externalsecret.yaml
   - ./cms
   - ./pvc.yaml
+  - ../../../../templates/gatus/external

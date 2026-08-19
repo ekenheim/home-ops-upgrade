@@ -20,6 +20,8 @@ spec:
   timeout: 5m
   wait: true
   postBuild:
+    substitute:
+      APP: *app
     substituteFrom:
       - kind: ConfigMap
         name: cluster-settings

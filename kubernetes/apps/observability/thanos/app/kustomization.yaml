@@ -6,6 +6,7 @@ resources:
   - ./objectbucketclaim.yaml
   - ./helmrelease.yaml
   # - ./pushsecret.yaml
+  - ../../../../templates/gatus/infra
 configMapGenerator:
   - name: thanos-cache-configmap
     files:

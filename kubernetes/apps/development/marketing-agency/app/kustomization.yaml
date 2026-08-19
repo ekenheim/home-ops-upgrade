@@ -6,3 +6,4 @@ resources:
   - ./externalsecret.yaml
   - ./externalsecret-google.yaml
   - ./website
+  - ./gatus.yaml

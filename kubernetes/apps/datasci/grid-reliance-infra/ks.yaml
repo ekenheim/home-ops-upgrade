@@ -28,6 +28,9 @@ spec:
     - name: spark-operator
     - name: ray
   postBuild:
+    substitute:
+      APP: grid-reliance-infra
+      GATUS_SUBDOMAIN: grid-reliance
     substituteFrom:
       - kind: ConfigMap
         name: cluster-settings

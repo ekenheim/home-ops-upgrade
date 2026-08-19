@@ -124,6 +124,19 @@ spec:
                   secretKeyRef:
                     name: hermes
                     key: AGENTMEMORY_SECRET
+              # Auth for the marimo MCP server declared in hermes-config.
+              # Read straight from marimo's own Secret (same namespace) rather
+              # than copied into the `hermes` Bitwarden item, so the token has
+              # exactly one source and rotating it there is enough.
+              # Note hermes does NOT fail loudly without this: its
+              # _interpolate_env_vars keeps the literal placeholder when a var
+              # is unset, so the server is registered but every call sends
+              # "Bearer ${MCP_MARIMO_API_KEY}" and marimo answers 403.
+              MCP_MARIMO_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: marimo-token
+                    key: token
             envFrom:
               - secretRef:
                   name: hermes

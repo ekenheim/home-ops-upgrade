@@ -43,6 +43,31 @@ spec:
                 enabled: true
               readiness:
                 enabled: true
+              # unpoller does not bind :9130 at startup. It logs "Prometheus is
+              # enabled", then fills its scrape cache with one full controller
+              # poll and only binds afterwards -- measured at 59s against this
+              # controller, i.e. one whole [prometheus] interval (default 60s):
+              #   17:22:51 Prometheus is enabled
+              #   17:23:50 Prometheus exported at http://0.0.0.0:9130/
+              # The default liveness probe gives up long before that
+              # (initialDelay 0 + period 10 x failureThreshold 3 = 30s), so the
+              # container is killed mid-warmup and never serves a scrape --
+              # "connect: connection refused" on every probe, CrashLoopBackOff,
+              # exit 2. A startup probe suspends liveness/readiness until the
+              # listener is actually up. 36 x 5s = 180s leaves room for a slow
+              # controller; lowering the cache interval instead would work but
+              # would poll the UniFi API far harder than the 2m ServiceMonitor
+              # needs.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 9130
+                  initialDelaySeconds: 10
+                  periodSeconds: 5
+                  failureThreshold: 36
+                  timeoutSeconds: 2
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true

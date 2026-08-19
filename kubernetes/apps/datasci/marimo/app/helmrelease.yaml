@@ -25,6 +25,10 @@ spec:
       retries: 3
   values:
     defaultPodOptions:
+      annotations:
+        # A second container is present (shutdown-guard); keep bare
+        # `kubectl logs`/`exec` on the marimo process.
+        kubectl.kubernetes.io/default-container: app
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -133,12 +137,66 @@ spec:
                 # One kernel process per open notebook, each with its own venv.
                 memory: 8Gi
 
+          # POST /api/kernel/shutdown tears down the whole uvicorn process --
+          # not just one kernel -- whenever it cannot resolve a live session
+          # for the request. In _server/api/endpoints/execution.py both a
+          # missing Marimo-Session-Id header and a close_session() that
+          # returns False (session already gone) fall through to
+          # shutdown_server(). So a browser tab left open past its session
+          # kills every other notebook on its way out; that is what happened
+          # on 2026-08-19 20:23 UTC, and the process exits 0 with marimo's
+          # normal goodbye banner, so it reads as a clean shutdown rather
+          # than a crash.
+          #
+          # marimo exposes no flag to disable the endpoint and no server
+          # config key covers it, and a `server-snippet` on the Ingress is
+          # rejected by the admission webhook (snippets are Critical risk,
+          # the internal controller allows only High). So the Ingress routes
+          # that one exact path to this stub instead.
+          #
+          # Shutting down a single notebook still works from the home page:
+          # that uses POST /api/home/shutdown_session, which only ever closes
+          # the session it names. The in-notebook "Shut down" button now
+          # no-ops -- it shows its shutdown screen while the kernel keeps
+          # running.
+          #
+          # Same image as the app container so this pulls nothing extra.
+          shutdown-guard:
+            image:
+              repository: ghcr.io/marimo-team/marimo
+              tag: 0.24.0
+            command:
+              - python
+              - -c
+              - |
+                from http.server import BaseHTTPRequestHandler, HTTPServer
+
+
+                class Guard(BaseHTTPRequestHandler):
+                    def do_POST(self):
+                        self.send_response(204)
+                        self.end_headers()
+
+                    def log_message(self, *args):
+                        pass
+
+
+                HTTPServer(("0.0.0.0", 2719), Guard).serve_forever()
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 64Mi
+
     service:
       app:
         controller: *app
         ports:
           http:
             port: &port 2718
+          shutdown-guard:
+            port: 2719
 
     ingress:
       app:
@@ -153,6 +211,13 @@ spec:
         hosts:
           - host: &host marimo.${SECRET_DOMAIN}
             paths:
+              # Exact match, so nginx emits `location = /api/kernel/shutdown`,
+              # which wins over the `location /` below regardless of order.
+              - path: /api/kernel/shutdown
+                pathType: Exact
+                service:
+                  identifier: app
+                  port: shutdown-guard
               - path: /
                 service:
                   identifier: app
@@ -172,9 +237,13 @@ spec:
         enabled: true
         type: secret
         name: marimo-token
-        globalMounts:
-          - path: /secrets
-            readOnly: true
+        # advancedMounts, not globalMounts: only marimo itself needs the auth
+        # token. shutdown-guard is a stdlib HTTP stub that never reads it.
+        advancedMounts:
+          marimo:
+            app:
+              - path: /secrets
+                readOnly: true
       seed:
         enabled: true
         type: configMap

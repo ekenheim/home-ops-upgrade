@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: misc-gatus-ep
+  labels:
+    gatus.io/enabled: "true"
+data:
+  config.yaml: |
+    endpoints:
+      # Ingresses owned by misc-ingress, which has no app of its own to hang a
+      # gatus template off.
+      - name: tdarr
+        group: guarded
+        url: 1.1.1.1
+        interval: 1m
+        ui:
+          hide-hostname: true
+          hide-url: true
+        dns:
+          query-name: "tdarr.${SECRET_DOMAIN}"
+          query-type: A
+        conditions:
+          - "[DNS_RCODE] == NOERROR"
+        alerts:
+          - type: discord
+      - name: supermicro
+        group: infra
+        url: 1.1.1.1
+        interval: 1m
+        ui:
+          hide-hostname: true
+          hide-url: true
+        dns:
+          query-name: "supermicro.${SECRET_DOMAIN}"
+          query-type: A
+        conditions:
+          - "[DNS_RCODE] == NOERROR"
+        alerts:
+          - type: discord

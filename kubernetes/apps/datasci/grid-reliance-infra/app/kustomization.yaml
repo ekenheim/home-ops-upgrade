@@ -9,3 +9,4 @@ resources:
   - ./rayjob-inference.yaml
   - ./spark-era5-ingest.yaml
   - ./spark-entsoe-ingest.yaml
+  - ../../../../templates/gatus/guarded

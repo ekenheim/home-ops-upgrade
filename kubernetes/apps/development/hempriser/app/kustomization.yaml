@@ -6,3 +6,4 @@ resources:
   - ./externalsecret.yaml
   - ./pipeline
   - ./website
+  - ../../../../templates/gatus/external

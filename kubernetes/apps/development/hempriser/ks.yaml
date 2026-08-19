@@ -25,6 +25,8 @@ spec:
     - name: crunchy-postgres-operator-cluster
     - name: crunchy-postgres-stores
   postBuild:
+    substitute:
+      APP: hempriser
     substituteFrom:
       - kind: ConfigMap
         name: cluster-settings

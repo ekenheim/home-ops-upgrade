@@ -6,3 +6,4 @@ resources:
   - ./cephobjectstoreuser.yaml
   - ./helmrelease.yaml
   - ./networkpolicy-rgw-allow-datasci.yaml
+  - ./gatus.yaml

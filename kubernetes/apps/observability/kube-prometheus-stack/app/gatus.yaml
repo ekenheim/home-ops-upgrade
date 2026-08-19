@@ -1,0 +1,38 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-prometheus-stack-gatus-ep
+  labels:
+    gatus.io/enabled: "true"
+data:
+  config.yaml: |
+    endpoints:
+      - name: prometheus
+        group: infra
+        url: 1.1.1.1
+        interval: 1m
+        ui:
+          hide-hostname: true
+          hide-url: true
+        dns:
+          query-name: "prometheus.${SECRET_DOMAIN}"
+          query-type: A
+        conditions:
+          - "[DNS_RCODE] == NOERROR"
+        alerts:
+          - type: discord
+      - name: alertmanager
+        group: infra
+        url: 1.1.1.1
+        interval: 1m
+        ui:
+          hide-hostname: true
+          hide-url: true
+        dns:
+          query-name: "alertmanager.${SECRET_DOMAIN}"
+          query-type: A
+        conditions:
+          - "[DNS_RCODE] == NOERROR"
+        alerts:
+          - type: discord

@@ -18,6 +18,10 @@ spec:
   wait: true
   interval: 30m
   timeout: 15m
+  postBuild:
+    substitute:
+      # the endpoint tracks the hubble UI ingress, not cilium itself
+      APP: hubble
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1

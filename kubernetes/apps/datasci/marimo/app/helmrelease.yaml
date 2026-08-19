@@ -69,10 +69,29 @@ spec:
               - "0.0.0.0"
               - --port
               - "2718"
-              - --no-token
+              # Replaces --no-token. The same value gates the web UI (login form
+              # at /auth/login, then a 14-day cookie) and the MCP endpoint
+              # (Authorization: Bearer <token>). marimo .strip()s the file, so
+              # the Secret's trailing newline is harmless. Without a token,
+              # AuthBackend hands every caller the "edit" scope, which the MCP
+              # mount requires — i.e. --no-token leaves execute_code wide open.
+              - --token-password-file
+              - /secrets/token
               # Each notebook gets its own uv venv, built from the PEP 723
               # `# /// script` block in the notebook itself.
               - --sandbox
+              # Mounts the streamable-HTTP MCP endpoint at /mcp/server with the
+              # list_sessions + execute_code tools, letting an agent drive the
+              # live kernel scratchpad. Bare --mcp would instead give the
+              # read-only "tools" set. Note marimo forces watch mode on and
+              # skew protection off whenever --mcp is set (_server/start.py);
+              # the latter is what otherwise 401s MCP calls with
+              # {"error":"Missing server token"} for a Marimo-Server-Token header.
+              - --mcp
+              - code-mode
+              # The MCP SDK's DNS-rebinding protection rejects the Host header
+              # arriving through the ingress. Required for any non-localhost use.
+              - --mcp-allow-remote
             workingDir: /home/marimo
             env:
               TZ: ${TIMEZONE}
@@ -133,6 +152,13 @@ spec:
         existingClaim: marimo-notebooks
         globalMounts:
           - path: /home/marimo
+      token:
+        enabled: true
+        type: secret
+        name: marimo-token
+        globalMounts:
+          - path: /secrets
+            readOnly: true
       seed:
         enabled: true
         type: configMap

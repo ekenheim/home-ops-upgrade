@@ -280,6 +280,26 @@ data:
       arr:
         url: http://mcp-arr-proxy.downloads:8080/mcp
         enabled: true
+      # marimo's own MCP endpoint (`marimo edit --mcp code-mode`), not a
+      # toolhive proxy -- so unlike the two above it is authenticated, with the
+      # same token that gates the marimo web UI. It arrives as
+      # MCP_MARIMO_API_KEY from the marimo-token Secret; the doubled $$ escapes
+      # Flux's envsubst so hermes does the expansion itself.
+      #
+      # In-cluster URL on purpose: marimo is also published at
+      # marimo.${SECRET_DOMAIN}, but routing hermes -> marimo through the
+      # ingress adds TLS and external DNS to a call that never leaves the
+      # namespace. Requires --mcp-allow-remote on marimo either way, since the
+      # MCP SDK's DNS-rebinding check rejects any non-loopback Host header.
+      #
+      # Tools: list_sessions + execute_code. execute_code returns nothing
+      # useful until a notebook is actually open in a browser -- the kernel
+      # scratchpad it targets only exists for a live session.
+      marimo:
+        url: http://marimo.datasci:2718/mcp/server
+        enabled: true
+        headers:
+          Authorization: Bearer $${MCP_MARIMO_API_KEY}
     auxiliary:
       vision:
         provider: litellm-anthropic

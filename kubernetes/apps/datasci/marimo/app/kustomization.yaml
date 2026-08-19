@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - pvc.yaml
   - externalsecret.yaml
+  - secret.sops.yaml
   - helmrelease.yaml
   - ../../../../templates/gatus/guarded
 

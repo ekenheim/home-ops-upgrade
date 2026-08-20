@@ -56,7 +56,7 @@ spec:
           app:
             image:
               repository: docker.io/falkordb/falkordb
-              tag: v4.20.3
+              tag: v4.20.4
             # The image entrypoint is run.sh, which starts the Browser in the
             # background and then execs redis-server. Wrap it so the generated
             # secrets reach both processes via the environment.

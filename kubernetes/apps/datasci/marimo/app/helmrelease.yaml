@@ -254,6 +254,10 @@ spec:
       tmp:
         enabled: true
         type: emptyDir
-        sizeLimit: 20Gi
+        # Each --sandbox session builds its own uv venv under /tmp, and a
+        # pymc + pymc-marketing + numba set weighs ~920Mi. At 20Gi the ceiling
+        # was ~21 concurrent sessions; this gives room for a full collection of
+        # notebooks to be open at once. Counts against node ephemeral storage.
+        sizeLimit: 60Gi
         globalMounts:
           - path: /tmp

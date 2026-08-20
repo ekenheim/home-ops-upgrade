@@ -10,4 +10,11 @@ spec:
   storageClassName: ceph-filesystem
   resources:
     requests:
-      storage: 10Gi
+      # HOME is /home/marimo, so this volume holds ~/.cache/uv as well as the
+      # notebooks themselves. The notebooks are trivial (tens of KB); the uv
+      # cache is what grows -- every distinct PEP 723 dependency set a notebook
+      # declares gets cached here, and a single pymc/pymc-marketing set is
+      # ~1.6Gi on its own. Sized for a collection of notebooks with varied
+      # dependency sets rather than for the .py files.
+      # ceph-filesystem is 3x replicated, so this costs 120Gi raw.
+      storage: 40Gi

@@ -14,5 +14,5 @@ spec:
     # and with the coder image tag in ./helmrelease.yaml -- foreman's operator
     # talks to llmkube's InferenceService CRs and the coder image ships the
     # matching `foreman-agent run-task` binary.
-    tag: 0.9.18
+    tag: 0.9.19
   url: oci://ghcr.io/defilantech/charts/foreman

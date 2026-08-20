@@ -136,6 +136,72 @@ data:
       # Raise this and contextSize together or the reactive-compaction loop
       # comes straight back.
       context_length: 131072
+      # NOTE this window belongs to the *default* model only. agent_init.py
+      # clears the override the moment a run starts with `-m`/`--model`, and
+      # lets provider metadata resolve the active model's window instead, so
+      # the ChatGPT models below are NOT clamped to 131072 by this line.
+    # --- ChatGPT subscription (OpenAI Codex OAuth) ---
+    #
+    # Deliberately NOT the default. hermes reaches OpenAI over the built-in
+    # `openai-codex` provider plugin, which carries its own base_url
+    # (https://chatgpt.com/backend-api/codex) and `codex_responses` api_mode,
+    # so there is nothing to declare under `providers:` and no API key
+    # anywhere -- auth_type is `oauth_external`. Adding a providers entry for
+    # it is not just unnecessary, it would shadow the plugin profile.
+    #
+    # Opt in per run:
+    #   hermes -m gpt-5.5 --provider openai-codex
+    # or pick it from the dashboard model picker. Everything left alone --
+    # the Discord gateway, cron jobs, and every `auxiliary.*` helper below --
+    # stays on the local Ornith through litellm and burns no subscription
+    # quota.
+    #
+    # WHERE THE CREDENTIAL LIVES, AND WHY IT IS NOT IN THIS FILE
+    #
+    # The OAuth grant is in /opt/data/auth.json under `providers.openai-codex`,
+    # written by a device-code login run inside the pod on 2026-08-20:
+    #   hermes auth add openai-codex --type oauth --no-browser
+    # That is on the PVC and merge-config.py never touches auth.json, so it
+    # survives pod restarts and is backed up by volsync with the rest of
+    # /opt/data. It is NOT reconstructible from Bitwarden -- a refresh token
+    # is single-use and rotates on every use, so there is no static value to
+    # store. If the PVC is ever rebuilt, re-run the device login above.
+    # Confirm with `hermes auth status openai-codex`.
+    #
+    # DO NOT import the Codex CLI's ~/.codex/auth.json instead. hermes offers
+    # it and then argues against it in the same breath ("a separate login is
+    # recommended", default N) because both clients rotate the same single-use
+    # refresh token and whichever one refreshes second is logged out. hermes
+    # holds its own independent session; the `codex` CLI installed at
+    # /opt/data/.npm-global/bin (also on the PVC, and on PATH from the
+    # code-server terminal) keeps its own.
+    #
+    # RUNNING `hermes model` AND PICKING CODEX DOES NOT STICK. That path calls
+    # _update_config_for_provider(), which writes model.provider into
+    # /opt/data/config.yaml -- and merge-config.py re-renders that file from
+    # this ConfigMap on every pod start, so the choice silently reverts. Same
+    # trap as the MCP servers that vanished on 2026-08-16. To make ChatGPT the
+    # default for real, change `model.provider`/`model.default` HERE.
+    #
+    # MODELS AND THEIR REAL WINDOWS (verified by hermes against the live
+    # backend; see _CODEX_OAUTH_CONTEXT_FALLBACK in agent/model_metadata.py):
+    #   gpt-5.5             272k  <- the one we use
+    #   gpt-5.4             900k
+    #   gpt-5.6-sol/terra/luna
+    #                       900k
+    #   gpt-5.3-codex       272k
+    #   gpt-5.3-codex-spark 128k  (ChatGPT Pro entitlement only)
+    # Codex OAuth advertises 272k for all of them, but the backend accepts far
+    # more for the 5.4 and 5.6 families. gpt-5.5 was probed and genuinely
+    # ENFORCES 272k, so it really is the smaller window -- pick gpt-5.4 or a
+    # 5.6 slug when a run needs the room.
+    #
+    # gpt-5.4-pro is reachable but hermes refuses to select it
+    # non-interactively: it prices models from models.dev and guards anything
+    # over USD 100/M output (USD 180/M here). The guard is about API list price
+    # and
+    # does not know the subscription makes the call free; confirm it
+    # interactively if you actually want it.
     fallback_providers:
       - provider: litellm
         model: self-hosted

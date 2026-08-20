@@ -46,8 +46,15 @@ spec:
               - /bin/sh
               - -c
               - |
+                # Seed demos into scratch/, not the top level. The top level is
+                # a browsable index of notebook collections (pymc-marketing/,
+                # scratch/), and a stray demo .py beside those directories
+                # reads as one of them. Seeding into the top level also silently
+                # undoes any tidying: move a seeded demo into a folder and the
+                # next restart recreates it where it was.
+                mkdir -p /home/marimo/scratch
                 for f in /seed/*.py; do
-                  dest="/home/marimo/$(basename $f)"
+                  dest="/home/marimo/scratch/$(basename $f)"
                   if [ ! -f "$dest" ]; then
                     echo "Seeding $dest"
                     cp "$f" "$dest"

@@ -41,7 +41,7 @@ spec:
           app:
             image:
               repository: ghcr.io/misospace/foreman-dispatch-bridge
-              tag: 0.6.31@sha256:5c6fe00365126870aeaf79505a50f455d9a32671207cb6c49bf1b91944fbe0e0
+              tag: 0.7.0@sha256:8d43d9c26e17ff9ebaf3f982018e079406c57ea5f0514ff35397a6e711edcd32
             env:
               DISPATCH_URL: http://dispatch.datasci:3000
               # Dash, not slash: agents auto-register, but a "/" splits the queue

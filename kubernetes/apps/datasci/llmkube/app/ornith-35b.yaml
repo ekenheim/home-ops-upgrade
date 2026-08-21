@@ -110,7 +110,8 @@
 # and tool schemas, which is ~115s of prompt processing before it emits a
 # single token, against ~25s here.
 #
-# ROLLING THIS OUT
+# ROLLING THIS OUT (historical -- describes the 1.0 rename, NOT the 1.5
+# upgrade, which was an in-place spec edit with no rename; see ROLLING BACK)
 #
 # The rename from qwen3-35b-a3b is a delete-and-recreate, not an edit, and the
 # node has exactly one GPU. Expect this sequence on the first reconcile:
@@ -127,10 +128,38 @@
 # unchanged, only the api_base and served id behind them moved, and the
 # ConfigMap change rolls out with the litellm pod on its own reconcile.
 #
-# ROLLOUT RESULT (2026-08-14, Ornith-1.0) -- verified on the live endpoint
-# after the first rollout, so this is history rather than a plan. The 1.5
-# rollout must be re-verified the same way -- these numbers are the baseline
-# to beat, not a claim about what is running now:
+# ROLLOUT RESULT (2026-08-21, Ornith-1.5) -- verified on the live endpoint,
+# so this is history rather than a plan:
+#   /v1/models                      -> ["ornith-35b"], Q4_K - Medium,
+#                                      n_params 35,505,251,456, size 22.23GB,
+#                                      n_ctx 131072, n_ctx_train 262144
+#   tool-call probe                 -> finish_reason "tool_calls", correct args
+#                                      ({"city":"Oslo"}). The template did NOT
+#                                      trip -- see the analysis above.
+#   capabilities                    -> ["completion","multimodal"] -- VISION IS
+#                                      LIVE despite the card's "Removed Vision
+#                                      Capabilities". litellm's supports_vision
+#                                      stays honest; discussions/7 is wrong.
+#   litellm self-hosted/review/fast -> all three answer end to end; `fast`
+#                                      returned 2 completion tokens against 35
+#                                      and 24 for the thinking aliases, so
+#                                      enable_thinking:false still works
+#   GTT                             -> 34.3 GiB of 124 GiB, i.e. unchanged from
+#                                      1.0's 34 GiB. qwen38-27b was Stopped, so
+#                                      the rest of the pool was free.
+#   pod ready                       -> ~495s from scale-up, including the
+#                                      22.24GB download
+#
+# NOT verified: generation throughput. A single 66-token probe reported 53.6
+# t/s against 1.0's 50.5, but that is far too small a sample to call an
+# improvement -- redo the three-run measurement before believing it.
+#
+# ALSO NOT verified, and the thing that actually matters: whether 1.5 is worse
+# at agentic coding than the 1.0 it replaced (see PROBATION above). Mechanical
+# checks passing says nothing about that. Watch Hermes and the foreman agents.
+#
+# ROLLOUT RESULT (2026-08-14, Ornith-1.0) -- the previous baseline, retained
+# for comparison:
 #   /v1/models                      -> ["ornith-35b"]
 #   tool-call probe                 -> finish_reason "tool_calls", correct args
 #   enable_thinking:false           -> 7 completion tokens, "Han ar bakom dig."

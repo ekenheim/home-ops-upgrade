@@ -1,5 +1,5 @@
 ---
-# Ornith-1.0-35B on worker4's Strix Halo iGPU.
+# Ornith-1.5-35B-A3B on worker4's Strix Halo iGPU.
 #
 # WHY MoE AND NOT A DENSE MODEL
 #
@@ -36,6 +36,56 @@
 # Still multimodal despite the model card implying otherwise: config.json
 # carries a 27-layer vision tower and unsloth ships the same 899MB mmproj, so
 # litellm's supports_vision stays honest.
+#
+# UPGRADE 1.0 -> 1.5 (2026-08-21)
+#
+# Same argument again: Ornith-1.5-35B-A3B is architecturally identical to the
+# 1.0 it replaces. Verified against its config.json, not the model card:
+#   architectures        Qwen3_5MoeForConditionalGeneration   (same)
+#   num_hidden_layers    40                                   (same)
+#   num_experts / _tok   256 / 8                              (same)
+#   full_attention_int.  4  -> 3:1 linear-to-full interleave  (same)
+#   max_position_emb.    262144                               (same)
+#   vision_config.depth  27                                   (same)
+#   license              MIT                                  (same)
+# Identical shape means identical bytes-read-per-token, so this swap should
+# cost nothing in speed. Expect the same ~50 t/s and ~35 GiB GTT.
+#
+# WHY bartowski AND NOT unsloth
+#
+# unsloth has published no Ornith-1.5 GGUF -- their org still carries only the
+# six 1.0 repos, last touched 2026-07-18. For 1.0 their GGUF landed 26 days
+# after the weights (2026-06-21 -> 2026-07-17); 1.5 dropped 2026-08-18, so on
+# that cadence theirs is ~mid-September. We are not waiting for it.
+#
+# bartowski's Q4_K_L is the closest available match to the UD-Q4_K_XL this
+# replaces: 22.24GB against 22.3GB, imatrix-calibrated, and it ships an f16
+# mmproj. The vendor's own GGUF is plain Q4_K_M with no imatrix at all.
+#
+# THIS UPGRADE IS ON PROBATION -- WATCH FOR REGRESSION, NOT JUST FOR ERRORS
+#
+# 1.5 was three days old when this landed and the early reports are bad in
+# exactly the area this endpoint exists to serve:
+#   discussions/8   fails basic read/write tool calls across harnesses; one
+#                   report of replace_file chosen over edit_file destroying an
+#                   800-line file repeatedly
+#   discussions/13  ~25% worse than 1.0 on long-horizon coding; burned ~140k
+#                   tokens researching instead of executing
+#   discussions/5   excessive CoT on simple tasks -- aimed at the `fast` alias,
+#                   where Lingarr runs with enable_thinking: false
+# None of that is fixable by a different quant or a different repacker; it is
+# the weights. If Hermes or the foreman agents get visibly worse at tool use,
+# the fix is to revert this file, not to chase quants.
+#
+# ROLLING BACK
+#
+# The k8s resource name is deliberately UNCHANGED at ornith-35b, so this is an
+# in-place spec edit, not the delete-and-recreate the qwen3-35b-a3b -> ornith
+# rename was. Nothing in litellm changes either: --alias below is still
+# ornith-35b, so the served id and api_base the three aliases point at are the
+# same. Revert = `git revert` this commit and let Flux reconcile. The 1.0
+# weights stay in the cache PV, so rolling back costs a model load, not
+# another 22GB download.
 #
 # ALTERNATIVES CONSIDERED (kyuz0's Strix Halo set, everything that fits GTT)
 #
@@ -77,8 +127,10 @@
 # unchanged, only the api_base and served id behind them moved, and the
 # ConfigMap change rolls out with the litellm pod on its own reconcile.
 #
-# ROLLOUT RESULT (2026-08-14) -- verified on the live endpoint after the first
-# rollout, so this is history rather than a plan:
+# ROLLOUT RESULT (2026-08-14, Ornith-1.0) -- verified on the live endpoint
+# after the first rollout, so this is history rather than a plan. The 1.5
+# rollout must be re-verified the same way -- these numbers are the baseline
+# to beat, not a claim about what is running now:
 #   /v1/models                      -> ["ornith-35b"]
 #   tool-call probe                 -> finish_reason "tool_calls", correct args
 #   enable_thinking:false           -> 7 completion tokens, "Han ar bakom dig."
@@ -102,10 +154,25 @@
 # and tool calling was dead on arrival. That would take out Hermes and the
 # foreman agents, which are the whole point of this model.
 #
-# unsloth patched their template to merge/tolerate leading system messages in
-# line with their Qwen3.6 GGUFs, which is why this points at unsloth rather
-# than deepreinforce-ai's own GGUF -- the upstream one still embeds the old
-# template and needs a runtime --chat-template-file override.
+# 1.5's template still carries both assertions, at lines 79 and 85 of
+# chat_template.jinja, with the same messages. But rendering it against the
+# sequences llama.cpp probes with under --jinja shows they are NARROWER than
+# the 1.0 incident implied -- these render clean:
+#   plain user / system+user / user+tools
+#   user -> tool_call -> tool -> assistant
+#   trailing tool result (an agent mid-loop)
+# and only these raise:
+#   system NOT first                    -> 'System message must be at the...'
+#   no user message at all              -> 'No user query found in messages.'
+#   every user turn <tool_response>-wrapped -> same
+# So the normal Hermes shape is fine on paper. That is NOT proof it works:
+# the 1.0 failure was llama.cpp's tool-call *parser generation*, a separate
+# mechanism from plain rendering that cannot be tested without the runtime.
+# Hence the live probe below is mandatory, not optional.
+#
+# If it does trip, the escape hatch is a --chat-template-file override with
+# the two raise_exception blocks stripped, mounted from a ConfigMap -- or wait
+# for unsloth, who patched exactly this for 1.0:
 #   https://huggingface.co/unsloth/Ornith-1.0-35B-GGUF/discussions/1
 #
 # Confirm on the live endpoint before considering the rollout done. A bare
@@ -130,14 +197,20 @@ kind: Model
 metadata:
   name: ornith-35b
 spec:
-  source: hf://unsloth/Ornith-1.0-35B-GGUF
+  source: hf://bartowski/Ornith-1.5-35B-A3B-GGUF
   files:
-    - Ornith-1.0-35B-UD-Q4_K_XL.gguf
-  # Vision projector -- the model is multimodal. F16 rather than F32: half the
-  # size for no meaningful quality loss at Q4 weights.
-  mmproj: mmproj-F16.gguf
+    - Ornith-1.5-35B-A3B-Q4_K_L.gguf
+  # Vision projector -- f16 not bf16 (both are 0.90GB; f16 is what 1.0 ran).
+  #
+  # NOTE the 1.5 model card says "Removed Vision Capabilities", yet config.json
+  # still carries the 27-layer tower (vision_config.depth: 27) and bartowski
+  # still ships an mmproj. Upstream has not resolved the contradiction:
+  #   https://huggingface.co/ornith-ai/Ornith-1.5-35B-A3B/discussions/7
+  # litellm advertises supports_vision: true on all three aliases, so probe an
+  # image once after rollout and drop that flag if it is now a lie.
+  mmproj: mmproj-Ornith-1.5-35B-A3B-f16.gguf
   format: gguf
-  quantization: UD-Q4_K_XL
+  quantization: Q4_K_L
   hardware:
     accelerator: rocm
     gpu:
@@ -286,11 +359,16 @@ spec:
     - --cont-batching
     # NO --spec-type draft-mtp here, deliberately, even though this model has
     # an MTP head (config.json: mtp_num_hidden_layers: 1) and the flag would
-    # be worth ~1.38x. unsloth publishes MTP tensors in a separate -MTP-
-    # repo, and no such repo exists for Ornith -- their plain GGUF strips
-    # them, exactly as it did for Qwen3.6 (verified there with
+    # be worth ~1.38x. bartowski's plain GGUF strips the MTP tensors, exactly
+    # as unsloth's did for 1.0 and for Qwen3.6 (verified there with
     # `llama-gguf <file> r n | grep -icE "nextn|mtp"` -> 0). Passing the flag
     # against weights with no MTP head risks failing startup for no gain.
+    #
+    # Unlike 1.0, dedicated MTP repacks of 1.5 DO now exist (shisa-ai/*-MTP,
+    # scottlowry/*-mtp, several -APEX-MTP). Do not reach for them yet:
+    # discussions/10 reports the upstream mtp.* tensors "look like random
+    # init, not trained weights", so the speculative head may be worthless
+    # even where it is shipped.
     #
     # Community MTP conversions of Ornith do exist and are widely downloaded,
     # but they are unvetted third-party requants for a production endpoint,

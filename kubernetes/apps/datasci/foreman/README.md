@@ -61,8 +61,11 @@ Work only arrives if something creates `Workload` CRs. That is
 
 Bitwarden Secrets Manager item **`github_token`**, field `GITHUB_TOKEN` — the
 PAT the coder pushes branches with and the reviewer opens PRs with. Classic PAT
-needs `repo` + `workflow`; fine-grained needs Contents and Pull requests
-read/write on every repo the loop is pointed at. Shared with `../dispatch`.
+needs `repo` + `workflow`; fine-grained needs Contents read/write, Pull requests
+read/write, **Issues read/write** and Metadata read on every repo the loop is
+pointed at. Issues is required because the same token does dispatch's issue sync
+and label/state writes -- omit it and pushes succeed while sync fails. Shared
+with `../dispatch`.
 
 `LITELLM_API_KEY` is a **scoped litellm virtual key**, stored as a field of that
 name on a `foreman` item of its own. It is deliberately not litellm's

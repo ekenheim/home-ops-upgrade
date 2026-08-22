@@ -59,7 +59,7 @@ Work only arrives if something creates `Workload` CRs. That is
 
 ## Required secrets
 
-Bitwarden Secrets Manager item **`github-agents`**, field `GITHUB_TOKEN` — the
+Bitwarden Secrets Manager item **`github_token`**, field `GITHUB_TOKEN` — the
 PAT the coder pushes branches with and the reviewer opens PRs with. Classic PAT
 needs `repo` + `workflow`; fine-grained needs Contents and Pull requests
 read/write on every repo the loop is pointed at. Shared with `../dispatch`.

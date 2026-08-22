@@ -64,4 +64,8 @@ PAT the coder pushes branches with and the reviewer opens PRs with. Classic PAT
 needs `repo` + `workflow`; fine-grained needs Contents and Pull requests
 read/write on every repo the loop is pointed at. Shared with `../dispatch`.
 
-`LITELLM_API_KEY` reuses `LITELLM_MASTER_KEY` from the existing `litellm` item.
+`LITELLM_API_KEY` is a **scoped litellm virtual key**, stored as a field of that
+name on a `foreman` item of its own. It is deliberately not litellm's
+`LITELLM_MASTER_KEY`: that is the proxy's admin credential, so it bypasses every
+team and model restriction, and one shared field means rotating it rotates every
+consumer at once -- each only noticing at its next container restart.

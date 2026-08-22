@@ -37,6 +37,13 @@ resources:
   #                             random string. Shared by dispatch and the bridge.
   #     DISPATCH_AUTH_USERNAME  operator UI Basic Auth username.
   #     DISPATCH_AUTH_PASSWORD  operator UI Basic Auth password.
+  #     LITELLM_API_KEY         scoped litellm virtual key for issue grooming
+  #                             (model `self-hosted`). Mint one per app in
+  #                             litellm; do NOT reuse the master key.
+  #   item `foreman`
+  #     LITELLM_API_KEY         scoped litellm virtual key for the coder /
+  #                             gate / review Agents. Separate from dispatch's
+  #                             so either can be revoked alone.
   #
   # ./foreman/ks.yaml stands alone (it just idles with no Workloads); dispatch
   # additionally needs the `dispatch` Postgres user, which is already declared in

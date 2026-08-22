@@ -66,6 +66,22 @@ spec:
       mon:
         count: 3
         allowMultiplePerNode: false
+      healthCheck:
+        livenessProbe:
+          mon:
+            disabled: false
+            probe:
+              # Rook's default mon probe (5s timeout, 3 failures on a 10s period)
+              # is too tight for master1: its install disk is 111G against 222G on
+              # master2/master3, runs at ~83% full, and the fsync-heavy mon cannot
+              # answer `ceph --admin-daemon ... mon_status` inside 5s under I/O
+              # contention. The probe was SIGKILLing a *healthy* mon.a (exit 137),
+              # dropping Ceph to 2/3 quorum -- which is what makes a control-plane
+              # reboot during an upgrade dangerous. Widen the window so only a
+              # genuinely wedged mon is restarted.
+              timeoutSeconds: 15
+              periodSeconds: 30
+              failureThreshold: 5
       network:
         provider: host
         connections:

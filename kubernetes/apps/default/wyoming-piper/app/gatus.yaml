@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "${APP}-gatus-ep"
+  labels:
+    gatus.io/enabled: "true"
+data:
+  config.yaml: |
+    endpoints:
+      # Same reasoning as wyoming-whisper: the shared guarded/infra templates
+      # only resolve <app>.$${SECRET_DOMAIN} over DNS, and this service has no
+      # ingress and no DNS record, so they would either fail forever or pass
+      # against an unrelated hostname. Wyoming is raw TCP.
+      - name: "${APP}"
+        group: guarded
+        url: "tcp://${APP}.default.svc.cluster.local:10200"
+        interval: 1m
+        ui:
+          hide-hostname: true
+          hide-url: true
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord

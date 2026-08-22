@@ -11,8 +11,10 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
+    # No namespace: every Flux Kustomization lives in flux-system, so naming
+    # `rook-ceph` here (as a HelmRelease dependsOn would) makes Flux look for
+    # a Kustomization that does not exist and the whole thing never applies.
     - name: rook-ceph-cluster
-      namespace: rook-ceph
   path: ./kubernetes/apps/default/wyoming-whisper/app
   prune: true
   sourceRef:

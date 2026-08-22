@@ -300,6 +300,17 @@ controlPlane:
         controllerManager:
           extraArgs:
             bind-address: 0.0.0.0
+            # The stock 40s grace period is far too twitchy for this cluster. etcd
+            # on the consumer SATA install disk (see the etcd block below) stalls
+            # long enough that a kubelet's status POST through KubePrism exceeds its
+            # 10s timeout; at 40s the node is marked NotReady, and 5 minutes later
+            # the taint manager evicts every pod on it (~85). That mass deletion
+            # floods the API, slows etcd further, and flaps the next node -- a
+            # self-feeding spiral that took out Postgres, MariaDB and most of
+            # datasci on 2026-08-22. Widening the grace period lets a node ride out
+            # a stall instead of triggering an eviction storm.
+            # Revert to the default if etcd is ever moved onto the NVMe.
+            node-monitor-grace-period: 2m
         coreDNS:
           disabled: true
         proxy:

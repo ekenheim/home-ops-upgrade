@@ -33,7 +33,7 @@ spec:
           app:
             image:
               repository: quay.io/minio/minio
-              tag: RELEASE.2025-03-12T18-04-18Z
+              tag: RELEASE.2025-09-07T16-13-09Z
             securityContext:
               runAsUser: 0
               runAsGroup: 0

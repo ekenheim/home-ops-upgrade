@@ -7,5 +7,6 @@ resources:
   - ./helmrelease.yaml
   - ./rbac.yaml
   - ./resourceclaim.yaml
+  - ./cdi-stale-watchdog.yaml
   - ./ornith-35b.yaml
   - ./qwen38-27b.yaml

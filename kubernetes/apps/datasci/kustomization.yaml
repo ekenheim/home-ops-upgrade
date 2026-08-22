@@ -36,8 +36,11 @@ resources:
   #                   revoked alone.
   #
   # foreman stands alone (it idles with no Workloads); dispatch additionally
-  # needs the `dispatch` Postgres user from
-  # apps/database/crunchy-postgres/cluster/cluster.yaml.
+  # needs the `dispatch` Postgres user, which is declared alongside this in
+  # apps/database/crunchy-postgres/cluster/cluster.yaml -- it was commented out
+  # there, so enabling dispatch without it leaves dispatch-db-secret unable to
+  # render (postgres-pguser-dispatch does not exist) and the chart's
+  # `prisma migrate deploy` pre-upgrade hook failing the HelmRelease.
   - ./foreman/ks.yaml
   - ./dispatch/ks.yaml
   - ./agentmemory/ks.yaml

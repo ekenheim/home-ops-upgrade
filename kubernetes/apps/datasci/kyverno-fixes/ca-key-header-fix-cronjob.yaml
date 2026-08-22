@@ -24,10 +24,10 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: fix
-              image: docker.io/bitnami/kubectl:latest
+              image: docker.io/alpine/kubectl:1.35.4@sha256:9ccd823647622b620dce092d0f1406b8b41d152ce08ac963e3d4683770b14dfd
               imagePullPolicy: IfNotPresent
               command:
-                - /bin/bash
+                - /bin/sh
                 - -ec
                 - |
                   set -euo pipefail

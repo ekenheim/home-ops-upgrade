@@ -42,8 +42,9 @@ comments on an open PR come back as a revision task). Both `Workload` and
 - Gateway API `route:` → nginx `ingress:` with `className: internal`, matching
   the rest of this repo, plus homepage annotations and a gatus endpoint.
 - Database is Crunchy, not CNPG: `app/externalsecret.yaml` builds the URL from
-  `postgres-pguser-dispatch` and writes it as key `uri`. The `dispatch` user is
-  declared in `apps/database/crunchy-postgres/cluster/cluster.yaml`. Direct
+  `postgres-pguser-dispatch` and writes it as key `uri`. The `dispatch` user must be
+  declared in `apps/database/crunchy-postgres/cluster/cluster.yaml` -- it ships
+  commented out there and is uncommented together with this app's ks.yaml. Direct
   primary with `sslmode=require`, not pgbouncer — the chart's pre-upgrade
   `prisma migrate deploy` hook takes session-scoped advisory locks that
   pgbouncer's transaction pooling drops (same trap as litellm).

@@ -1,0 +1,151 @@
+---
+# Recovers the GPU serving pods after a worker4 reboot.
+#
+# WHY THIS EXISTS
+#
+# resourceclaim.yaml documents the failure in full; the short version is that
+# the CDI spec which injects the iGPU into a container lives under
+# CDI_ROOT=/var/run/cdi, which is tmpfs and therefore empty after every boot,
+# while kubelet's DRA checkpoint under /var/lib/kubelet survives. Kubelet still
+# believes the claim is prepared, never calls NodePrepareResources again, and
+# containerd fails every container start with:
+#
+#   failed to create containerd container: CDI device injection failed:
+#   unresolvable CDI devices k8s.gpu.amd.com/gpu=<claim-uid>-gpu-0-128
+#
+# Nothing self-heals. The pod is in CreateContainerError, which is NOT a
+# terminal pod phase, so the Deployment keeps it and never rolls a replacement
+# -- the ReplicaSet is satisfied at 1/1 desired while the only pod is dead.
+# Kubelet just retries the same broken CDI reference forever. Measured twice:
+# 954 attempts over 3.5h, then 1826 attempts over 6h39m on 2026-08-22, when
+# ornith-35b was down from 02:04 to 08:46 and nothing alerted.
+#
+# The documented fix is a new pod UID, which forces a fresh
+# NodePrepareResources and makes the driver write the spec again. That is all
+# this does -- it is the `kubectl delete pod` from resourceclaim.yaml on a
+# timer, so a reboot costs ~5 minutes plus a model load instead of however long
+# it takes someone to notice.
+#
+# WHY NOT FIX IT AT THE SOURCE
+#
+# The clean fix is to point the driver's CDI root at a persistent directory
+# (the chart exposes cdi.dynamicPath) so the spec survives the reboot. That
+# only works if containerd also scans that directory, and its cdi_spec_dirs
+# defaults to ["/etc/cdi", "/var/run/cdi"]. Changing it means patching
+# containerd's config through the Talos machine config, which does not live in
+# this repo. Revisit if that config ever moves here -- then this file goes away.
+#
+# SCOPE
+#
+# It matches on the CDI message specifically, not on a model name, so a third
+# InferenceService is covered without touching this file. It deliberately does
+# NOT match bare CreateContainerError: that reason covers plenty of genuine
+# config errors (bad mounts, missing ConfigMaps) where deleting the pod on a
+# loop would hide the problem rather than fix it.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cdi-stale-watchdog
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cdi-stale-watchdog
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cdi-stale-watchdog
+roleRef:
+  kind: Role
+  name: cdi-stale-watchdog
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: cdi-stale-watchdog
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cdi-stale-watchdog
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          annotations:
+            descheduler.alpha.kubernetes.io/evict: "false"
+        spec:
+          serviceAccountName: cdi-stale-watchdog
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: watchdog
+              image: docker.io/bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              command:
+                - /bin/bash
+                - -ec
+                - |
+                  set -euo pipefail
+
+                  NS="${POD_NAMESPACE}"
+
+                  # Two passes rather than one jsonpath over the message: the
+                  # CDI text is long and the reason field is the cheap filter,
+                  # so shortlist on reason and only then read the message. It
+                  # also keeps the message out of a delimiter-parsed line.
+                  TMPL='{range .items[*]}{.metadata.name}{"\t"}{.status.containerStatuses[*].state.waiting.reason}{" "}{.status.initContainerStatuses[*].state.waiting.reason}{"\n"}{end}'
+
+                  # grep exits 1 with no matches, which under pipefail kills the
+                  # script on the happy path of "nothing is broken".
+                  { kubectl -n "$NS" get pods -o jsonpath="$TMPL" \
+                      | grep "CreateContainerError" || true; } \
+                    | cut -f1 \
+                    | while read -r pod; do
+                        [ -z "$pod" ] && continue
+
+                        MSG=$(kubectl -n "$NS" get pod "$pod" -o jsonpath='{.status.containerStatuses[*].state.waiting.message}{" "}{.status.initContainerStatuses[*].state.waiting.message}' 2>/dev/null || true)
+
+                        case "$MSG" in
+                          *"unresolvable CDI devices"*|*"CDI device injection failed"*) ;;
+                          *) continue ;;
+                        esac
+
+                        echo "[cdi-watchdog] $NS/$pod has a stale CDI reference; deleting so kubelet re-prepares the claim"
+                        kubectl -n "$NS" delete pod "$pod" --ignore-not-found --wait=false
+                      done
+
+                  echo "[cdi-watchdog] scan complete"
+              env:
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace

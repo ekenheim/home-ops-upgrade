@@ -75,8 +75,11 @@ Bitwarden Secrets Manager item **`dispatch`**:
 | `DISPATCH_AUTH_USERNAME` | Operator UI Basic Auth username |
 | `DISPATCH_AUTH_PASSWORD` | Operator UI Basic Auth password |
 
-Plus `GITHUB_TOKEN` from the shared **`github-agents`** item (see
-`../foreman/README.md`) and `LITELLM_MASTER_KEY` from the existing `litellm` item.
+Plus `GITHUB_TOKEN` from the shared **`github_token`** item (see
+`../foreman/README.md`), and `LITELLM_API_KEY` on this item -- a scoped litellm
+virtual key, not litellm's `LITELLM_MASTER_KEY`. The master key is the proxy's
+admin credential: it bypasses every team and model restriction, and sharing one
+field across apps means a rotation hits all of them at once.
 
 `DISPATCH_AUTH_MODE=disabled` is deliberately not used: it removes auth from the
 mutating API too, so anything that reaches the ingress could queue coder Jobs

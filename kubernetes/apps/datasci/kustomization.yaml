@@ -21,28 +21,25 @@ resources:
   - ./open-webui/ks.yaml
   - ./llmkube/ks.yaml
   - ./litellm/ks.yaml
-  # DISABLED: the agentic coding loop (dispatch -> bridge -> foreman) needs two
-  # Bitwarden Secrets Manager items that do not exist yet. Create them, then
-  # uncomment ./foreman/ks.yaml and ./dispatch/ks.yaml below:
+  # The agentic coding loop: dispatch grooms GitHub issues into a queue, the
+  # bridge CronJob turns claimed ones into foreman Workload CRs, and foreman
+  # runs coder -> gate -> reviewer and opens the PR.
   #
-  #   item `github-agents`
-  #     GITHUB_TOKEN            PAT the coder pushes branches with and the
-  #                             reviewer opens PRs with, and dispatch writes
-  #                             issue labels with. Classic PAT needs `repo` +
-  #                             `workflow`; fine-grained needs Contents and
-  #                             Pull requests read/write on every repo the loop
-  #                             is pointed at.
-  #   item `dispatch`
-  #     DISPATCH_AGENT_TOKEN    bearer token for dispatch's agent API; any long
-  #                             random string. Shared by dispatch and the bridge.
-  #     DISPATCH_AUTH_USERNAME  operator UI Basic Auth username.
-  #     DISPATCH_AUTH_PASSWORD  operator UI Basic Auth password.
+  # Enabled 2026-08-22, once these Bitwarden Secrets Manager items existed:
+  #   `github_token`  GITHUB_TOKEN -- the one agent PAT. Commits, PRs and issue
+  #                   labels all come from this identity, on EVERY repo the loop
+  #                   is pointed at, so scope it deliberately.
+  #   `dispatch`      DISPATCH_AGENT_TOKEN (shared with the bridge -- one field
+  #                   on purpose, two values means every tick 401s),
+  #                   DISPATCH_AUTH_USERNAME / _PASSWORD, LITELLM_API_KEY.
+  #   `foreman`       LITELLM_API_KEY, separate from dispatch's so either can be
+  #                   revoked alone.
   #
-  # ./foreman/ks.yaml stands alone (it just idles with no Workloads); dispatch
-  # additionally needs the `dispatch` Postgres user, which is already declared in
+  # foreman stands alone (it idles with no Workloads); dispatch additionally
+  # needs the `dispatch` Postgres user from
   # apps/database/crunchy-postgres/cluster/cluster.yaml.
-  #- ./foreman/ks.yaml
-  #- ./dispatch/ks.yaml
+  - ./foreman/ks.yaml
+  - ./dispatch/ks.yaml
   - ./agentmemory/ks.yaml
   - ./hermes/ks.yaml
   - ./toolhive/ks.yaml

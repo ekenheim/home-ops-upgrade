@@ -17,8 +17,17 @@ spec:
     remediation:
       retries: 3
   values:
-    # Run two replicas; leader election keeps a single active controller.
-    replicaCount: 2
+    # Single replica with leader election OFF. Two replicas + leader election
+    # deadlocked every upgrade: this cluster's API server latency spikes during
+    # a drain (mass pod eviction), the lease renewal misses its deadline, and the
+    # manager exits(1) *mid-drain* -- leaving the node cordoned and un-upgraded.
+    # On restart it picks a different node and cordons that one too, so
+    # `parallelism: 1` ended up with two nodes cordoned and zero upgraded.
+    # With one replica there is nothing to elect, and no lease to lose.
+    replicaCount: 1
+    controller:
+      leaderElection:
+        enabled: false
     monitoring:
       serviceMonitor:
         enabled: true

@@ -120,7 +120,12 @@ spec:
                 - |
                   set -euo pipefail
 
-                  NS="${POD_NAMESPACE}"
+                  # $$ escapes the brace form so Flux's envsubst leaves it
+                  # for the shell. postBuild.substitute runs in strict mode
+                  # and fails the whole Kustomization on an unset variable:
+                  #   post build failed for 'CronJob.v1.batch/cdi-stale-watchdog':
+                  #   variable not set (strict mode): "POD_NAMESPACE"
+                  NS="$${POD_NAMESPACE}"
 
                   # Two passes rather than one jsonpath over the message: the
                   # CDI text is long and the reason field is the cheap filter,

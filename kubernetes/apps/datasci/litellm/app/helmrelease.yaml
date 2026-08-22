@@ -27,7 +27,18 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         replicas: 1
-        strategy: RollingUpdate
+        # Recreate, NOT RollingUpdate, since the ChatGPT OAuth grant landed on
+        # an RWO PVC. Two reasons, and the second is the one that matters:
+        #   1. RollingUpdate surges the new pod before the old one exits, and
+        #      ceph-block RWO cannot multi-attach across nodes -- the new pod
+        #      hangs in ContainerCreating until the old one is reaped.
+        #   2. More importantly, a Codex refresh token is SINGLE-USE and
+        #      rotates on every use. Two pods sharing auth.json (which an RWX
+        #      volume would have permitted) would race to refresh it and
+        #      whichever landed second would be logged out. A single writer is
+        #      a correctness requirement here, not a storage-class detail.
+        # Cost is a few seconds of proxy downtime per rollout.
+        strategy: Recreate
         containers:
           app:
             image:
@@ -49,6 +60,11 @@ spec:
               # Lingarr subtitle batches stay readable when debugging.
               # Watch the table size: this is the Crunchy `litellm` database.
               MAX_STRING_LENGTH_PROMPT_IN_DB: "100000"
+              # Where the `chatgpt/` provider keeps its OAuth grant. Defaults
+              # to $HOME/.config/litellm/chatgpt, i.e. /root -- inside the
+              # container layer, so it would not survive a restart. Points at
+              # the PVC instead; see pvc.yaml.
+              CHATGPT_TOKEN_DIR: /chatgpt-auth
             envFrom:
               - secretRef:
                   name: litellm
@@ -134,3 +150,10 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /app/cache
+      # Read-WRITE: litellm rewrites auth.json on every token refresh, not just
+      # at login. Mounting this read-only would work until the access token
+      # expired (~1h) and then fail permanently.
+      chatgpt-auth:
+        existingClaim: litellm-chatgpt-auth
+        globalMounts:
+          - path: /chatgpt-auth

@@ -204,6 +204,43 @@ data:
       # 5.3-instant, 5.3-chat-latest, 5.2, 5.2-codex, 5.1-codex-max,
       # 5.1-codex-mini (128000). 5.4 is both registered and the larger window.
       #
+      # STREAMING IS MANDATORY ON /chat/completions, AND THIS IS THE ONE THING
+      # MOST LIKELY TO BITE. Verified against the live backend 2026-08-22 on
+      # litellm v1.97.0:
+      #
+      #   /v1/responses          stream or not   OK
+      #   /chat/completions      stream=True     OK  ("PONG", tool calls fine)
+      #   /chat/completions      stream=False    FAILS, 2 of 2 attempts
+      #     APIConnectionError: ChatgptException - Unknown items in responses
+      #     API response: []
+      #
+      # The cause is a gap in litellm, not a backend limit. The Codex endpoint
+      # only speaks SSE, so responses/transformation.py:84 hard-sets
+      # request["stream"] = True and then reassembles the event stream back
+      # into a whole response (transform_response, ~137-204). The chat bridge
+      # does NOT do that -- chat/transformation.py:74 leaves
+      # optional_params.setdefault("stream", False) while common_utils still
+      # sends `accept: text/event-stream`, so it asks for a non-stream, gets
+      # SSE back, and parses an empty output list out of it.
+      #
+      # Consequence for this cluster: hermes runs streaming.enabled false (see
+      # its ConfigMap, where that is load-bearing for the watchdog timing), so
+      # pointing hermes at THIS alias would fail every call. hermes reaches
+      # ChatGPT through its own `openai-codex` plugin instead and is unaffected
+      # -- keep it that way. Open WebUI streams by default and is fine. Any new
+      # non-streaming caller (cron jobs, anything calling litellm.completion
+      # without stream=True) has to use /v1/responses, which is why model_info
+      # declares mode: responses rather than chat.
+      #
+      # supports_function_calling / supports_vision below are not aspirational:
+      # both are True in litellm's own registry for this model, and a streaming
+      # tool call was exercised end to end (get_weather -> {"city":"Malmo"}).
+      #
+      # Unrelated: issue #27175 reports Cloudflare 403s on this provider. It
+      # does NOT reproduce here -- filed against v1.83.14, several releases
+      # older than the v1.97.0 we pin. Both the auth endpoint and inference
+      # answered normally from inside the cluster.
+      #
       # DELIBERATELY ABSENT FROM router_settings.fallbacks below. Every other
       # alias here is free, local compute; this one spends a metered human
       # subscription shared with hermes and the codex CLI. A `deep` outage

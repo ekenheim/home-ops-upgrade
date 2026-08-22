@@ -7,8 +7,9 @@ spec:
   role: coder
   provider: cloud-proxy
   providerConfig:
+    # See ./coder.yaml -- `chatgpt` primary, falls back to `self-hosted`.
     baseURL: http://litellm.datasci:4000/v1
-    model: self-hosted
+    model: chatgpt
     apiKeySecretRef:
       name: foreman-agent
       key: LITELLM_API_KEY
@@ -31,10 +32,11 @@ spec:
   maxRetries: 3
   maxOutputTokens: 20480
   stuckLoopDetection:
-    # See ./coder.yaml -- 65536 per-request window (contextSize 524288 / 8 slots).
+    # See ./coder.yaml -- 131072 per-request window (contextSize 1048576 / 8
+    # slots), less maxOutputTokens 20480. Keep in lockstep with coder.yaml.
     editFreeTurnsLimit: 100
-    contextSoftCap: 48000
-    contextHardCap: 60000
+    contextSoftCap: 96000
+    contextHardCap: 104000
   requestTurnTimeoutSeconds: 1800
   requestTimeoutSeconds: 7200
   bashTimeoutSeconds: 60

@@ -7,11 +7,22 @@ spec:
   role: coder
   provider: cloud-proxy
   providerConfig:
-    # litellm's `self-hosted` alias -> ornith-35b on worker4's Strix iGPU.
-    # A *reasoning* model: it spends output tokens thinking before answering, so
-    # maxOutputTokens has to leave room for both (see ../../litellm/app/configmap.yaml).
+    # litellm's `chatgpt` alias -> chatgpt/gpt-5.4 on the ChatGPT subscription,
+    # with a fallback to `self-hosted` (ornith-35b on worker4's Strix iGPU).
+    #
+    # Safe in both directions. llmkube gives no way to force streaming (the
+    # Agent CRD's providerConfig is only {apiKeySecretRef, baseURL, model}), and
+    # chatgpt/ can only serve /chat/completions when stream=True -- see the long
+    # note in ../../litellm/app/configmap.yaml. Verified against the live router
+    # on 2026-08-22: stream=False returns model "ornith-35b" (the fallback
+    # caught it), stream=True returns model "chatgpt". So a non-streaming coder
+    # silently lands on ornith, exactly where it ran before; a streaming one
+    # gets gpt-5.4's 1050000-token window. Subscription calls price at $0.
+    #
+    # The fallback itself is currently declared in litellm's *UI* (Postgres),
+    # not in configmap.yaml -- see the drift note in this PR.
     baseURL: http://litellm.datasci:4000/v1
-    model: self-hosted
+    model: chatgpt
     apiKeySecretRef:
       name: foreman-agent
       key: LITELLM_API_KEY
@@ -41,12 +52,20 @@ spec:
   stuckLoopDetection:
     # Sized to this cluster's actual per-request window, which is NOT the
     # model's 262144 native context: the InferenceService runs contextSize
-    # 524288 across parallelSlots 8, so each request gets 65536. llama.cpp
+    # 1048576 across parallelSlots 8, so each request gets 131072. llama.cpp
     # rejects anything over that outright ("request exceeds the available
-    # context size"), so cap well under it.
+    # context size"), so cap well under it -- and note the window has to hold
+    # maxOutputTokens (20480) as well, leaving ~110k for input.
+    #
+    # These were 48000/60000, sized against the OLD contextSize 524288 (=65536
+    # per slot) and never revisited when #6402 doubled it on 2026-08-17. That
+    # stale 48000 is what killed nordic-housing#8: the coder was terminated by
+    # ContextSoftCap at turn 18 after 76s ("wire-token count 49631 >= soft cap
+    # 48000"), having read a 1665-line h3ZoneData.ts, and the escalation read
+    # as "too hard" when it was simply out of budget.
     editFreeTurnsLimit: 100
-    contextSoftCap: 48000
-    contextHardCap: 60000
+    contextSoftCap: 96000
+    contextHardCap: 104000
   requestTurnTimeoutSeconds: 1800
   requestTimeoutSeconds: 7200
   bashTimeoutSeconds: 60

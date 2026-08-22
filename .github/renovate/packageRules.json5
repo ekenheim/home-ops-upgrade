@@ -78,11 +78,24 @@
       // Hold Kubernetes < 1.36 until Talos 1.13 GAs — talosctl 1.12.x
       // refuses the 1.35 -> 1.36 upgrade path. Lift this rule in the same
       // PR that bumps ghcr.io/siderolabs/installer to v1.13.x.
+      //
+      // NOTE: talconfig.yaml is now on talosVersion v1.13.9, so that lift
+      // condition has been met — this hold is stale. Lifting it starts a
+      // 1.35 -> 1.36 cluster upgrade via tuppr, so it is left in place
+      // deliberately until someone decides to run that upgrade.
+      //
+      // alpine/kubectl is held here too. It is only a client binary in
+      // cronjobs, not a cluster component, but kubectl is supported only
+      // within one minor of the API server — so left free it would reach
+      // 1.37 while the cluster sits at 1.35 and quietly go out of skew.
+      // Holding it here keeps every kubectl in the repo moving with the
+      // cluster, in the single PR that lifts this rule.
       "description": ["Pin kubelet/kubectl to <1.36 (awaiting Talos 1.13 GA)"],
       "matchDatasources": ["docker"],
       "matchPackageNames": [
         "ghcr.io/siderolabs/kubelet",
-        "registry.k8s.io/kubectl"
+        "registry.k8s.io/kubectl",
+        "docker.io/alpine/kubectl"
       ],
       "allowedVersions": "<1.36.0"
     },

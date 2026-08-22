@@ -110,7 +110,23 @@ spec:
                 - matchExpressions:
                     - key: node-role.kubernetes.io/control-plane
                       operator: Exists
-        mon: *placement
+        # mon must NOT reuse mgr's *hard* control-plane affinity. There are
+        # exactly 3 control-plane nodes and allowMultiplePerNode is false, so
+        # once a mon drops out of quorum Rook has nowhere to place its
+        # replacement and failover fails forever:
+        #   "failed to failover mon a: failed to place new mon on a node:
+        #    failed to schedule mons"
+        # That is what stranded mon.a out of quorum indefinitely. Prefer the
+        # control plane, but allow a worker as a fallback so failover can
+        # actually complete.
+        mon:
+          nodeAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                preference:
+                  matchExpressions:
+                    - key: node-role.kubernetes.io/control-plane
+                      operator: Exists
       resources:
         mgr:
           requests:

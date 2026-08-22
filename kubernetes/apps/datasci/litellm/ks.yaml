@@ -17,6 +17,9 @@ spec:
     name: home-kubernetes
   dependsOn:
     - name: external-secrets-stores
+    # litellm-chatgpt-auth is a ceph-block PVC (pvc.yaml). Without this the
+    # Kustomization can reconcile before the storage class exists.
+    - name: rook-ceph-cluster
   wait: true
   interval: 30m
   retryInterval: 1m

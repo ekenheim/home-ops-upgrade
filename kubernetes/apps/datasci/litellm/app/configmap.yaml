@@ -159,6 +159,64 @@ data:
           api_base: http://qwen38-27b.datasci:8080/v1
           api_key: none
 
+      # --- ChatGPT subscription (OpenAI Codex OAuth) ---
+      #
+      # Same backend hermes reaches through its `openai-codex` provider plugin
+      # -- https://chatgpt.com/backend-api/codex, originator codex_cli_rs --
+      # but via litellm's own first-class `chatgpt/` provider, which has
+      # shipped since well before the v1.97.0 we pin. No API key exists or is
+      # needed: auth is an OAuth device-code grant on the PVC (see pvc.yaml),
+      # and litellm prices these at cost None, so subscription calls correctly
+      # land at $0 in LiteLLM_SpendLogs rather than at API list price.
+      #
+      # THIS IS A THIRD, INDEPENDENT LOGIN. Do NOT copy hermes'
+      # /opt/data/auth.json here, and do not copy the codex CLI's either. A
+      # Codex refresh token is single-use and rotates on every use, so two
+      # clients sharing one grant means whichever refreshes second is logged
+      # out -- the same trap hermes' own ConfigMap documents at length. Three
+      # separate device logins (codex CLI, hermes, litellm) is the supported
+      # arrangement; OpenAI allows concurrent sessions per account.
+      #
+      # HOW TO LOG IN. There is no `litellm auth` subcommand -- the flow is
+      # lazy and fires inside the first request that routes here, printing the
+      # code to the pod's stdout and blocking up to 15 minutes while it polls.
+      # Left to happen on its own that means a client request hanging while
+      # nobody is reading `kubectl logs`. Seed it deliberately instead:
+      #
+      #   kubectl -n datasci exec -it deploy/litellm -c app -- \
+      #     python -c "from litellm.llms.chatgpt.authenticator import \
+      #     Authenticator; print(Authenticator().get_access_token()[:12])"
+      #
+      # It prints a code and a URL (https://auth.openai.com/codex/device);
+      # enter the code there, and the grant is written to
+      # /chatgpt-auth/auth.json. Confirm with `hermes auth status`-equivalent:
+      #   kubectl -n datasci exec deploy/litellm -c app -- \
+      #     sh -c "python -c \"import json;d=json.load(open('/chatgpt-auth/auth.json'));print(d.get('account_id'),d.get('expires_at'))\""
+      # Re-run the login after a PVC rebuild; there is nothing in Bitwarden to
+      # restore, by design.
+      #
+      # MODEL CHOICE. gpt-5.4, not the gpt-5.5 hermes defaults to: 5.5 and the
+      # 5.6 family are absent from litellm's registry, so they would arrive
+      # with no context metadata and make enable_pre_call_checks inert for
+      # this entry -- the same blind spot the openai/ornith-35b entries above
+      # have to work around with a hand-set max_input_tokens. Registered here
+      # are 5.4 and 5.4-pro (1050000), and 5.3-codex, 5.3-codex-spark,
+      # 5.3-instant, 5.3-chat-latest, 5.2, 5.2-codex, 5.1-codex-max,
+      # 5.1-codex-mini (128000). 5.4 is both registered and the larger window.
+      #
+      # DELIBERATELY ABSENT FROM router_settings.fallbacks below. Every other
+      # alias here is free, local compute; this one spends a metered human
+      # subscription shared with hermes and the codex CLI. A `deep` outage
+      # must not silently start drawing it down. Anything that wants this has
+      # to name `chatgpt` explicitly.
+      - model_name: chatgpt
+        model_info:
+          mode: responses
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          model: chatgpt/gpt-5.4
+
       # --- Embeddings: still ollama-igpu on the Intel masters ---
       # Deliberately NOT moved. The Strix InferenceService reports capabilities
       # ["completion","multimodal"] -- it does not serve embeddings, and

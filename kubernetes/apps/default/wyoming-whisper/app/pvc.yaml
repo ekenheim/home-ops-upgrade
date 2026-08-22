@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wyoming-whisper
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      # Only holds the downloaded CTranslate2 model (small-int8 is ~500MB).
+      # Deliberately no volsync: the contents are re-downloadable from
+      # HuggingFace on demand, so backing them up buys nothing.
+      storage: 5Gi
+  storageClassName: ceph-block

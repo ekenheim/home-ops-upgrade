@@ -1,0 +1,168 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app wyoming-whisper
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.1.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      wyoming-whisper:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        pod:
+          affinity:
+            # Same placement reasoning as the `whisper` deployment that serves
+            # Bazarr (kubernetes/apps/downloads/bazarr/whisper): this is a
+            # CPU-only transcriber, so keep it off the ROCm node and off the
+            # control plane.
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  # Never worker4. It hosts ornith-35b, and its CPU and iGPU
+                  # share one memory controller, so a bandwidth-hungry
+                  # neighbour costs LLM decode throughput. This image is CPU
+                  # faster-whisper and cannot use that GPU anyway.
+                  - matchExpressions:
+                      - key: node-role.kubernetes.io/rocm-worker
+                        operator: DoesNotExist
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node-role.kubernetes.io/control-plane
+                        operator: DoesNotExist
+        containers:
+          app:
+            image:
+              repository: rhasspy/wyoming-whisper
+              tag: 3.6.0@sha256:b7da5869ac9caba5f8db1c0dec373fb46a58d31f4aee1855faa7b49b7c0d4b49
+            args:
+              # small-int8, NOT the large-v3-turbo the Bazarr whisper runs.
+              # Whisper always pads its input to a fixed 30s mel window, so
+              # encoder cost is constant and short utterances cost the same as
+              # long ones. turbo only shrinks the *decoder* (4 layers vs 32)
+              # and keeps large-v3's full 32-layer encoder -- which is exactly
+              # the half that matters here. Measured on worker3, 3s of audio:
+              #   large-v3-turbo  ~2100ms
+              #   small-int8       ~700ms  <- this, and it transcribed correctly
+              #   base-int8        ~225ms  (misheard words the others got right)
+              # Latency was flat across 2s/3s/5s/10s inputs, confirming the
+              # fixed-window behaviour above.
+              - --model
+              - small-int8
+              - --language
+              - en
+              - --uri
+              - tcp://0.0.0.0:10300
+              - --data-dir
+              - /data
+              - --download-dir
+              - /data
+            env:
+              TZ: ${TIMEZONE}
+              # The real throughput knob, same as the Bazarr whisper: without
+              # it CTranslate2 falls back to 4 threads on a 32-core node.
+              OMP_NUM_THREADS: "8"
+              # Required to run non-root. huggingface_hub resolves its cache
+              # under $HOME before --download-dir is consulted, and the image's
+              # default HOME (/root) is not writable as uid 568, so the model
+              # download fails without this.
+              HOME: /data
+            probes:
+              # The Wyoming protocol is raw TCP, not HTTP, so these are
+              # tcpSocket checks rather than the chart's default httpGet.
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 10300
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 3
+                  failureThreshold: 3
+              readiness: *probe
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 10300
+                  # The model is downloaded on first start, before the socket
+                  # is bound. 30 x 10s covers a cold PVC on a slow HF day.
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              # Requires the `tmp` emptyDir below. wyoming-faster-whisper
+              # buffers each incoming utterance to a temp wav under /tmp before
+              # handing it to CTranslate2, and with a read-only root it fails
+              # there *silently* -- the process stays up, the tcpSocket probe
+              # keeps passing, and every transcribe request simply hangs until
+              # the client times out. Verified: read-only root with no /tmp
+              # mount hangs; with the mount it returns in ~700ms.
+              readOnlyRootFilesystem: true
+            resources:
+              requests:
+                cpu: "2"
+                memory: 1Gi
+              # No cpu limit on purpose: cgroup throttling against a fixed
+              # OpenMP thread pool costs more in context switches than it
+              # saves, and this is a latency-sensitive path.
+              limits:
+                # Observed 632Mi resident with small-int8 loaded. This is
+                # ~6x that on purpose -- the Bazarr whisper was OOMKilled for
+                # weeks because its limit was set at 1.45x a short-clip
+                # measurement (see 814140a3b). Headroom here is free.
+                memory: 4Gi
+    defaultPodOptions:
+      # Verified working non-root: uid 568 downloads the model into the PVC and
+      # transcribes identically (~700ms), so there is no reason to run this as
+      # root the way the older Bazarr whisper does.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      # Point Home Assistant's Wyoming Protocol integration at:
+      #   host: wyoming-whisper.default.svc.cluster.local   port: 10300
+      # No ingress: Wyoming is a raw TCP protocol, not HTTP.
+      app:
+        controller: *app
+        ports:
+          wyoming:
+            port: 10300
+            protocol: TCP
+    persistence:
+      data:
+        existingClaim: *app
+        globalMounts:
+          - path: /data
+      # Not optional -- see readOnlyRootFilesystem above.
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

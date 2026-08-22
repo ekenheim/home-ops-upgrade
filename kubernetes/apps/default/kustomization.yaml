@@ -16,6 +16,7 @@ resources:
   - ./outline/ks.yaml
   - ./paperless/ks.yaml
   - ./syncthing/ks.yaml
+  - ./wyoming-whisper/ks.yaml
   - ./pairdrop/ks.yaml
   - ./filebrowser/ks.yaml
   #- ./zigbee2mqtt/ks.yaml

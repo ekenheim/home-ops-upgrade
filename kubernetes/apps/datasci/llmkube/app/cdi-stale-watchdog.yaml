@@ -32,8 +32,12 @@
 # (the chart exposes cdi.dynamicPath) so the spec survives the reboot. That
 # only works if containerd also scans that directory, and its cdi_spec_dirs
 # defaults to ["/etc/cdi", "/var/run/cdi"]. Changing it means patching
-# containerd's config through the Talos machine config, which does not live in
-# this repo. Revisit if that config ever moves here -- then this file goes away.
+# containerd's config through the Talos machine config, which DOES live here:
+# kubernetes/bootstrap/talos/talconfig.yaml carries worker4's node block. That
+# path is real but not cheap -- it needs `talhelper genconfig` (the checked-in
+# clusterconfig/talosconfig is still a 25-byte stub) and a config rollout to the
+# node. Worth taking if this watchdog ever proves insufficient; then this file
+# goes away.
 #
 # SCOPE
 #

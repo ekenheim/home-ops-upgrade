@@ -16,6 +16,7 @@ resources:
   - ./outline/ks.yaml
   - ./paperless/ks.yaml
   - ./syncthing/ks.yaml
+  - ./wyoming-kokoro/ks.yaml
   - ./wyoming-piper/ks.yaml
   - ./wyoming-whisper/ks.yaml
   - ./pairdrop/ks.yaml

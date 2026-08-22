@@ -39,7 +39,7 @@ spec:
           setup-prisma:
             image:
               repository: ghcr.io/umami-software/umami
-              tag: postgresql-v2.20.2
+              tag: postgresql-3.0.0
             env:
               DATABASE_TYPE: postgresql
               DATABASE_URL:
@@ -59,7 +59,7 @@ spec:
           app:
             image:
               repository: ghcr.io/umami-software/umami
-              tag: postgresql-v2.20.2
+              tag: postgresql-3.0.0
             command: ["/bin/sh", "-c"]
             args:
               - "npm run update-tracker && npm run set-routes-manifest && npm run start-server"

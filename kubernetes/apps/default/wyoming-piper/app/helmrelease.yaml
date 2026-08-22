@@ -1,0 +1,145 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app wyoming-piper
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.1.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      wyoming-piper:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        pod:
+          affinity:
+            # Same placement reasoning as wyoming-whisper: CPU-only, so keep it
+            # off the ROCm node and off the control plane.
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: node-role.kubernetes.io/rocm-worker
+                        operator: DoesNotExist
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node-role.kubernetes.io/control-plane
+                        operator: DoesNotExist
+        containers:
+          app:
+            image:
+              repository: rhasspy/wyoming-piper
+              tag: 2.4.2@sha256:72ee1b06b062cb14f4a70de002eb420a068efd5a7a8cb7620be6bf600307f867
+            args:
+              # HA's configured language is `en` (country SE), so an English
+              # voice. `medium` rather than `high`: measured on worker3 for the
+              # same 4.3s utterance, medium synthesised in ~100ms (35-45x
+              # realtime) and high in ~381ms (11.7x). Both are fast enough, but
+              # medium is the piper default and the quality gap at 22050Hz does
+              # not justify 4x the latency. Swapping to en_US-lessac-high, or
+              # any of the 163 voices the server advertises, is a one-line
+              # change -- the voice downloads to the PVC on first use.
+              - --voice
+              - en_US-lessac-medium
+              - --uri
+              - tcp://0.0.0.0:10200
+              - --data-dir
+              - /data
+              - --download-dir
+              - /data
+            env:
+              TZ: ${TIMEZONE}
+              # Required to run non-root, same as wyoming-whisper: the download
+              # helper resolves its cache under $HOME, and the image's default
+              # /root is not writable as uid 568.
+              HOME: /data
+            probes:
+              # Wyoming is raw TCP, not HTTP, so tcpSocket rather than the
+              # chart's default httpGet.
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 10200
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 3
+                  failureThreshold: 3
+              readiness: *probe
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 10200
+                  # The voice is downloaded on first start, before the socket
+                  # is bound.
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              # Verified with the `tmp` emptyDir below present. wyoming-whisper
+              # hangs *silently* under a read-only root without one (see
+              # a8aef752c); piper was tested the same way rather than assumed,
+              # and synthesises fine at ~70ms warm.
+              readOnlyRootFilesystem: true
+            resources:
+              requests:
+                cpu: "1"
+                memory: 512Mi
+              limits:
+                # Piper is small -- a medium voice is ~60MB and synthesis is
+                # cheap. Still generous rather than tight, for the reason
+                # recorded in 814140a3b.
+                memory: 2Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      # Add in HA via Settings -> Devices & Services -> Add Integration ->
+      # Wyoming Protocol (the built-in `piper` integration is a virtual one,
+      # `"supported_by": "wyoming"`, so it routes to the same place):
+      #   host: wyoming-piper.default.svc.cluster.local   port: 10200
+      # No ingress: Wyoming is a raw TCP protocol, not HTTP.
+      app:
+        controller: *app
+        ports:
+          wyoming:
+            port: 10200
+            protocol: TCP
+    persistence:
+      data:
+        existingClaim: *app
+        globalMounts:
+          - path: /data
+      # Not optional -- see readOnlyRootFilesystem above.
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

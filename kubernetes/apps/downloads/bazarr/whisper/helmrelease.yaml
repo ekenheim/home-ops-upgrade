@@ -92,10 +92,18 @@ spec:
               # OpenMP thread pool wastes far more time in context switches
               # than it saves. OMP_NUM_THREADS is the bound.
               limits:
-                # Down from 8Gi. int8 turbo under faster-whisper is a fraction
-                # of what fp32 turbo under openai_whisper held resident (~4.1
-                # GiB observed before this change).
-                memory: 6Gi
+                # Back up, and past the 8Gi this was before 4a89cb798. That
+                # commit cut the limit to 6Gi on a ~4.1 GiB observation, and
+                # the pod has been OOMKilled ever since -- worker3's kernel log
+                # records constraint=CONSTRAINT_MEMCG with anon-rss:6250312kB
+                # (5.96 GiB), i.e. it hit this cgroup limit, not node pressure.
+                #
+                # Do NOT re-tune this from a short test transcription. Peak RSS
+                # scales with the length of the file Bazarr submits: a 30s clip
+                # and a 600s clip both peak at only ~2.0 GiB, so a short-clip
+                # benchmark will wrongly justify a low limit. The 6 GiB peaks
+                # come from full-length submissions.
+                memory: 12Gi
     # defaultPodOptions:
     #   securityContext:
     #     runAsNonRoot: true

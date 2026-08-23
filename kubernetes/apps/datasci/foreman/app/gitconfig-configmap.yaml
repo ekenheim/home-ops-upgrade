@@ -27,5 +27,23 @@ data:
     # Re-check it when bumping the image tag in ./helmrelease.yaml.
     [safe]
     	directory = *
+    # Two token names, because two different callers run git here and neither
+    # can see the other's environment:
+    #   GITHUB_TOKEN       -- the model's bash tool. It is on that tool's env
+    #                         allowlist; GIT_CONFIG_* is not, which is why this
+    #                         is a file.
+    #   FOREMAN_GIT_TOKEN  -- foreman's own git calls. repo.runGit builds the
+    #                         subprocess env from scratch (PATH + repo.Auth.Env()
+    #                         only), so GITHUB_TOKEN is NOT there.
+    #
+    # The `exit 0` on an empty token is load-bearing. A helper that answers with
+    # an empty password is still an answer: git stops looking and never falls
+    # back to the GIT_ASKPASS scaffolding repo.Auth sets up, and GitHub rejects
+    # the request with "Invalid username or token" -- which is how a first cut of
+    # this ConfigMap broke the coder's clone outright. Printing nothing means
+    # "no credential", so git carries on to askpass exactly as it does today.
+    #
+    # Bare $VAR throughout, never ${VAR}: this file is rendered through Flux's
+    # postBuild envsubst, which parses ${...} as its own syntax.
     [credential]
-    	helper = "!f() { echo username=x-access-token; echo \"password=$GITHUB_TOKEN\"; }; f"
+    	helper = "!f() { t=\"$GITHUB_TOKEN\"; [ -n \"$t\" ] || t=\"$FOREMAN_GIT_TOKEN\"; [ -n \"$t\" ] || exit 0; echo username=x-access-token; echo \"password=$t\"; }; f"

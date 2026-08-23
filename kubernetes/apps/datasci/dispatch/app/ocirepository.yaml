@@ -10,7 +10,15 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.5.41
+    # HELD at 0.5.40. 0.5.41's middleware tightened the CSP to
+    # `script-src 'self'` -- it dropped 'unsafe-inline' without adding a nonce,
+    # and Next.js App Router streams its RSC payload through inline
+    # `self.__next_f.push(...)` scripts (plus dispatch's own inline theme
+    # script). Browsers block all of them, so nothing hydrates: /automation
+    # renders its "Loading..." shell forever and the rest of the UI is inert.
+    # Matching hold in .github/renovate/packageRules.json5 -- lift both together
+    # once upstream restores 'unsafe-inline' or emits a nonce.
+    tag: 0.5.40
   # Chart wraps the bjw-s common library (v5.0.1), so the values below are the
   # same shape as an app-template HelmRelease, plus a dispatch-specific
   # `migrations:` block.

@@ -282,6 +282,50 @@ data:
 
     general_settings:
       health_check_endpoint: /v1/health
+      # Coordination Redis -- Dragonfly, db 3.
+      #
+      # Silences the admin-UI "No Redis configured" banner, but the banner
+      # overstates the problem for THIS deployment and it is worth writing down
+      # why, so nobody later "fixes" it by scaling out. The banner warns that
+      # rate limits, budgets and router state are per-worker without Redis.
+      # litellm here runs one pod (`ps` in the container shows a single
+      # uvicorn worker, no --num_workers), and it can never run more than one:
+      # the chatgpt/ OAuth grant lives on an RWO PVC and a Codex refresh token
+      # is single-use, so a second writer logs the first one out. See the long
+      # comment on `strategy: Recreate` in helmrelease.yaml. There is no
+      # cross-worker inconsistency to fix.
+      #
+      # What Redis actually buys us at one worker is PERSISTENCE. Key/team
+      # budget counters and tpm/rpm windows are in-memory otherwise, and this
+      # pod restarts on every config change (reloader.stakater.com/auto). Every
+      # restart silently resets them. With Dragonfly they survive.
+      #
+      # `coordination_redis` rather than `litellm_settings.cache` on purpose:
+      # this is the coordination store ONLY. Enabling the response cache would
+      # also start serving cached *completions*, which is wrong for an
+      # interactive proxy. _init_coordination_redis() runs before cache init and
+      # is independent of it (proxy_server.py ~4658), so no cache block is
+      # needed -- and litellm_settings.cache stays deliberately absent.
+      #
+      # db 3 is unclaimed. Dragonfly runs --cluster_mode=emulated but still
+      # serves numbered DBs: db 0 is searxng/open-webui/medusa/dagster, db 1 is
+      # authentik, db 2 is shared by outline/immich/thanos. `db` is not a
+      # declared field on CoordinationRedisParams; it rides through on
+      # extra="allow" into RedisCache(**params). Verified against the live
+      # instance from inside this pod (ping, set/get, async_increment).
+      #
+      # No password: the dragonfly Dragonfly CR sets none, same as every other
+      # consumer in this repo.
+      #
+      # NOT also set as router_settings.redis_host. That would move the router's
+      # cooldown state for the fallbacks below into Redis, where a cooldown
+      # entered just before a restart would outlive the restart. At one worker
+      # in-memory cooldowns are already correct and fail open on restart, which
+      # is what we want.
+      coordination_redis:
+        host: dragonfly.database.svc.cluster.local
+        port: 6379
+        db: 3
       # Store prompt and completion bodies in LiteLLM_SpendLogs.messages /
       # .response so the admin UI's Logs view can show request + response.
       # Off by default: without it litellm redacts every prompt-carrying field

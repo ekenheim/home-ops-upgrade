@@ -20,6 +20,8 @@ spec:
     # litellm-chatgpt-auth is a ceph-block PVC (pvc.yaml). Without this the
     # Kustomization can reconcile before the storage class exists.
     - name: rook-ceph-cluster
+    # general_settings.coordination_redis points at db 3 on this instance.
+    - name: dragonfly-cluster
   wait: true
   interval: 30m
   retryInterval: 1m

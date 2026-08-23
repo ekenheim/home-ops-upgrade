@@ -177,23 +177,32 @@ data:
       # separate device logins (codex CLI, hermes, litellm) is the supported
       # arrangement; OpenAI allows concurrent sessions per account.
       #
-      # HOW TO LOG IN. There is no `litellm auth` subcommand -- the flow is
-      # lazy and fires inside the first request that routes here, printing the
-      # code to the pod's stdout and blocking up to 15 minutes while it polls.
-      # Left to happen on its own that means a client request hanging while
-      # nobody is reading `kubectl logs`. Seed it deliberately instead:
+      # HOW TO LOG IN, AND WHY IT IS NOT AN `exec` COMMAND. There is no
+      # `litellm auth` subcommand, and -- corrected after watching it happen --
+      # the flow is NOT lazy per-request. litellm resolves this model while
+      # loading config.yaml, so with no auth.json on the PVC the device login
+      # runs during STARTUP and the proxy never binds :4000 until it finishes.
+      # You therefore cannot exec into a running pod to seed it: there is no
+      # running pod to exec into. The procedure is:
       #
-      #   kubectl -n datasci exec -it deploy/litellm -c app -- \
-      #     python -c "from litellm.llms.chatgpt.authenticator import \
-      #     Authenticator; print(Authenticator().get_access_token()[:12])"
+      #   1. Let the pod start. Once per container start it prints:
+      #        Sign in with ChatGPT using device code:
+      #        1) Visit https://auth.openai.com/codex/device
+      #        2) Enter code: XXXX-XXXXX
+      #      Read it with:
+      #        kubectl -n datasci logs -l app.kubernetes.io/name=litellm \
+      #          --tail=40 | grep -a "Enter code"
+      #   2. Enter that code at the URL within 15 minutes. The SAME container
+      #      then finishes booting -- no restart needed. The startup probe is
+      #      sized at 20 minutes precisely so this can complete; see the
+      #      comment on it in helmrelease.yaml.
+      #   3. Confirm the grant landed on the PVC:
+      #        kubectl -n datasci exec deploy/litellm -c app -- \
+      #          ls -la /chatgpt-auth/auth.json
       #
-      # It prints a code and a URL (https://auth.openai.com/codex/device);
-      # enter the code there, and the grant is written to
-      # /chatgpt-auth/auth.json. Confirm with `hermes auth status`-equivalent:
-      #   kubectl -n datasci exec deploy/litellm -c app -- \
-      #     sh -c "python -c \"import json;d=json.load(open('/chatgpt-auth/auth.json'));print(d.get('account_id'),d.get('expires_at'))\""
-      # Re-run the login after a PVC rebuild; there is nothing in Bitwarden to
-      # restore, by design.
+      # Do NOT edit the pod template while a code is pending -- that rolls the
+      # pod and invalidates the code. Re-run this after any PVC rebuild; there
+      # is nothing in Bitwarden to restore, by design.
       #
       # MODEL CHOICE. gpt-5.4, not the gpt-5.5 hermes defaults to: 5.5 and the
       # 5.6 family are absent from litellm's registry, so they would arrive

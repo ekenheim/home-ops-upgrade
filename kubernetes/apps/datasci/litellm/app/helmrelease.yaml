@@ -85,6 +85,31 @@ spec:
               # ~45s the liveness probe alone would allow. The startup probe
               # holds liveness/readiness off for up to 5m so that first run
               # cannot crashloop.
+              # 120 * 10s = 20 minutes, and the extra runway is NOT about
+              # Prisma. It exists because a missing ChatGPT OAuth grant blocks
+              # proxy STARTUP, not the first request.
+              #
+              # litellm resolves the `chatgpt` model at config-load time, and
+              # Authenticator.get_access_token() with no auth.json on the PVC
+              # starts a device-code login and polls for up to 15 minutes
+              # (DEVICE_CODE_TIMEOUT_SECONDS). The listener never binds :4000
+              # while that runs. At the old threshold of 30 (5 minutes) the
+              # kubelet killed the container a third of the way into the flow,
+              # every time -- an unbreakable CrashLoop taking the whole gateway
+              # (hermes, agentmemory, foreman, Lingarr, Open WebUI) with it,
+              # for a reason nothing in the events makes obvious. Observed
+              # 2026-08-22 on the very first rollout of this feature.
+              #
+              # Normal starts are unaffected: with the grant on the PVC this
+              # pod goes ready in ~25s. The window only matters when the grant
+              # is absent, and then it is exactly what lets you recover -- read
+              # the code from the pod log and authorize it, and the same
+              # container proceeds to boot. See the runbook in configmap.yaml.
+              #
+              # This does not weaken failure detection meaningfully: liveness
+              # below (failureThreshold 3) still kills a hung *running* proxy
+              # in 30s. Only slow-start detection is relaxed, and a litellm
+              # that cannot start in 5 minutes is already a page either way.
               startup:
                 enabled: true
                 custom: true
@@ -94,7 +119,7 @@ spec:
                     port: 4000
                   initialDelaySeconds: 10
                   periodSeconds: 10
-                  failureThreshold: 30
+                  failureThreshold: 120
               liveness:
                 enabled: true
                 custom: true

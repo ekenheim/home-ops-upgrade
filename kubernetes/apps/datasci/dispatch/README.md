@@ -31,6 +31,29 @@ The bridge also retries failed `Workload`s and drains the pr-fix queue (review
 comments on an open PR come back as a revision task). Both `Workload` and
 `FleetNode` CRs are ephemeral runtime state and are not committed.
 
+## Held at chart 0.5.40
+
+`app/ocirepository.yaml` pins 0.5.40 and `.github/renovate/packageRules.json5`
+holds it there. **0.5.41 ships a CSP that breaks its own UI**: the middleware
+tightened `script-src` from `'self' 'unsafe-inline'` to `'self'` without adding
+a nonce, and Next.js App Router streams its RSC payload through inline
+`self.__next_f.push(...)` scripts (plus dispatch's own inline theme script).
+Every browser blocks them, so the app never hydrates.
+
+The symptom is not an error page. Server-side everything is healthy — pages and
+API routes answer in 10–35 ms — but nothing on the client works: `/automation`
+renders only its `Loading...` shell forever, client-side navigation falls back to
+full page loads, and the UI reads as "slow" rather than broken.
+
+Confirm which side a future version is on without deploying it:
+
+```sh
+kubectl run csp --rm -i --restart=Never -n datasci --image=ghcr.io/misospace/dispatch:<tag> \
+  --command -- sh -c 'grep -rho "Content-Security-Policy\":\"[^\"]*\"" .next/server/edge/chunks/'
+```
+
+Lift both holds together once that prints `'unsafe-inline'` again, or a nonce.
+
 ## Deltas from upstream
 
 - Namespace `llm` → `datasci`; `DISPATCH_URL: http://dispatch.datasci:3000`,

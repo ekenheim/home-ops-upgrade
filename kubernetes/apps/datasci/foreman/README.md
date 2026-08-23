@@ -13,7 +13,7 @@ llmkube's `InferenceService` CRs.
 
 | Path      | Flux Kustomization | Contents |
 |-----------|--------------------|----------|
-| `app/`    | `foreman`          | OCIRepository, HelmRelease (operator + webhook + agent fleet + coder SA), ExternalSecret |
+| `app/`    | `foreman`          | OCIRepository, HelmRelease (operator + webhook + agent fleet + coder SA), ExternalSecret, the git-credential ConfigMap + Kyverno policy |
 | `agents/` | `foreman-agents`   | The `Agent` CRs the operator schedules against |
 
 They are split because `agents/` applies CRs whose CRD the `app/` HelmRelease
@@ -37,6 +37,33 @@ and a Job-mode coder holds its node for the whole Job.
 
 Work only arrives if something creates `Workload` CRs. That is
 `../dispatch/bridge` — foreman on its own just idles.
+
+## Git credentials
+
+`app/gitconfig-configmap.yaml` + `app/git-credentials-policy.yaml` mount a
+`/etc/gitconfig` carrying a credential helper into every pod running under the
+`foreman-coder` or `foreman-agent` ServiceAccount. Without it, **nothing that
+talks to a private remote works** — and the visible symptom is not a git error,
+it is issues tombstoning as `needs-human`:
+
+- the reviewer's step 1 is `git fetch origin <branch> && git checkout`; it fails,
+  the reviewer submits `ERROR`, `normalizeModelVerdict` maps that to
+  `INCOMPLETE`, and `maybeOpenPullRequest` only fires on a reviewer `GO`. The
+  coder's branch is pushed and correct, and no PR is ever opened.
+- `repo.BaseBranchSHA` fetches the upstream base with no auth at all, so the
+  reviewer silently diffs against a stale local `main`.
+
+It is a *file* and not an env var because foreman's bash tool — the one the model
+drives — scrubs the shell env down to a fixed allowlist
+(`pkg/foreman/agent/tools/bash.go`, `defaultBashEnvAllowlist`) that carries
+`GITHUB_TOKEN` but **not** `GIT_CONFIG_COUNT` / `GIT_CONFIG_KEY_0` /
+`GIT_CONFIG_VALUE_0`. `/etc/gitconfig` is read by every git process regardless of
+environment, and the helper body expands the allowlisted `$GITHUB_TOKEN` at run
+time, so the token never lands in a config value or a remote URL.
+
+Kyverno mutates at admission only: **after changing either file, restart the
+agent Deployment** (`kubectl rollout restart -n datasci deploy/foreman-agent`).
+Coder Jobs are created per task and pick it up on their own.
 
 ## Deltas from upstream
 

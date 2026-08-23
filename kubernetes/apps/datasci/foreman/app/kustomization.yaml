@@ -4,5 +4,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./externalsecret.yaml
+  # Applied here rather than in ../agents so the ConfigMap and the policy that
+  # mounts it exist before the HelmRelease's agent Deployment creates pods --
+  # ../agents only reconciles after this Kustomization is already Ready.
+  - ./gitconfig-configmap.yaml
+  - ./git-credentials-policy.yaml
   - ./ocirepository.yaml
   - ./helmrelease.yaml

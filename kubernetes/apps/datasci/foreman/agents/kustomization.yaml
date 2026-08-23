@@ -7,4 +7,3 @@ resources:
   - ./coder-revision.yaml
   - ./gate.yaml
   - ./reviewer.yaml
-  - ./git-credentials-policy.yaml

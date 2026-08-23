@@ -1,0 +1,31 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/v1/configmap.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foreman-git-config
+data:
+  # Mounted over /etc/gitconfig in every foreman pod that runs git -- the coder
+  # Jobs and the agent Deployment -- by ./git-credentials-policy.yaml.
+  #
+  # Why the *system* config and not an env var: foreman's bash tool (the one the
+  # model drives) hands the shell a fixed env allowlist,
+  # pkg/foreman/agent/tools/bash.go:defaultBashEnvAllowlist =
+  #   PATH HOME USER LANG LC_ALL TZ GIT_ASKPASS GIT_AUTHOR_* GIT_COMMITTER_*
+  #   GITHUB_TOKEN
+  # Everything else is scrubbed. GIT_CONFIG_COUNT/KEY/VALUE (what #6509 used) is
+  # not on that list, so the credential never reached the model's git. A file at
+  # /etc/gitconfig is read by every git process regardless of environment, and
+  # GITHUB_TOKEN -- which the helper body expands at run time -- *is* allowlisted.
+  #
+  # The token stays out of config values and remote URLs, so it cannot leak into
+  # `git remote -v`, error output, or the agent's own logs.
+  gitconfig: |
+    # safe.directory is copied from the image's own /etc/gitconfig
+    # (ghcr.io/misospace/llmkube-coder). This mount SHADOWS that file, so
+    # anything the image ships there has to be repeated here or it is lost.
+    # Re-check it when bumping the image tag in ./helmrelease.yaml.
+    [safe]
+    	directory = *
+    [credential]
+    	helper = "!f() { echo username=x-access-token; echo \"password=$GITHUB_TOKEN\"; }; f"

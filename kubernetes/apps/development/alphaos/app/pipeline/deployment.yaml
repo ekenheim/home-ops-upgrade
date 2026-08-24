@@ -35,7 +35,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: grpc
-          image: ghcr.io/ekenheim/alphaos:0.9.0
+          image: ghcr.io/ekenheim/alphaos:0.9.1
           command:
             ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-m", "marketdata.dagster_defs"]
           securityContext:
@@ -57,8 +57,13 @@ spec:
             - name: DAGSTER_HOME
               value: "/tmp/dagster"
             # Run pods inherit this image (K8sRunLauncher uses DAGSTER_CURRENT_IMAGE).
+            # KEEP IN SYNC WITH THE image: ABOVE BY HAND. Renovate does not bump this line --
+            # it is a quoted env value, not an `image:` key, and none of the customManagers in
+            # .github/renovate/ match it. #6534 bumped the other four references in this app and
+            # left this one behind, which would have run the code server on one version and its
+            # run pods on another.
             - name: DAGSTER_CURRENT_IMAGE
-              value: "ghcr.io/ekenheim/alphaos:0.8.6"
+              value: "ghcr.io/ekenheim/alphaos:0.9.1"
           resources:
             requests:
               cpu: 100m

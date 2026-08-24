@@ -101,6 +101,12 @@ spec:
             # Postgres (DATABASE_URL direct + DATABASE_URL_POOLED).
             - secretRef:
                 name: alphaos-postgres
+            # ALPHAOS_API_KEY -- static bearer for the read-only /api/v1 surface.
+            # Optional so a lagging Bitwarden item can't take the dashboard down:
+            # without it /api/v1 fails closed with 503 while /api/* keeps serving.
+            - secretRef:
+                name: alphaos-api
+                optional: true
           resources:
             requests:
               cpu: 100m

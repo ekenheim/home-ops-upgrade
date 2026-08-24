@@ -1,0 +1,38 @@
+---
+# Data-freshness dead-man for AlphaOS (gatus picks this up via the gatus.io/enabled
+# label). Polls the app's UNAUTHENTICATED, values-free probe /api/health/data and
+# alerts to Discord when:
+#   minio_stale    - the newest MinIO stocks-us close on the book is older than the
+#                    previous weekday: the market-data fetch (Dagster market_data_daily,
+#                    07:00 UTC) did not land a new partition by the next business morning.
+# snapshot_stale is reported by the probe too but NOT alerted on yet: the daily NAV
+# snapshot CronJob is not deployed in this repo (add it to the conditions when it is).
+# Interval 30m with a 3-poll failure threshold -> fires ~1.5h after the fetch should
+# have landed; a US exchange holiday is a tolerable false alarm (the check only
+# knows weekends).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "${APP}-gatus-data"
+  labels:
+    gatus.io/enabled: "true"
+data:
+  config.yaml: |
+    endpoints:
+      - name: "${APP}-data-freshness"
+        group: guarded
+        url: "http://${APP}.development.svc.cluster.local:8503/api/health/data"
+        interval: 30m
+        ui:
+          hide-hostname: true
+          hide-url: true
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].ok == true"
+          - "[BODY].minio_stale == false"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 1
+            send-on-resolved: true
+            description: "AlphaOS stocks-us closes are stale — the MinIO market-data fetch did not land a new partition (check the Dagster market_data_daily run / Massive credentials)"

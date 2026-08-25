@@ -63,25 +63,40 @@ spec:
               # pipeline step, so keep this at or below
               # ../../foreman/app/helmrelease.yaml's agent.replicaCount.
               MAX_IN_PROGRESS: "2"
-              VERIFY_ENABLED: "false"
+              # Emits the `verify` step, so the pipeline is the documented
+              # code -> verify -> review rather than code -> review. False (as
+              # this shipped, carried over from the initial port) drops the
+              # deterministic `gate` Agent from every workload, which leaves the
+              # coder's own self-gate as the only thing between the model and a
+              # PR -- and a coder that writes an impossible test also self-gates
+              # it green. Costs one extra FleetNode occupancy per workload,
+              # which agent.replicaCount: 3 against MAX_IN_PROGRESS: 2 covers.
+              VERIFY_ENABLED: "true"
               VERDICT_SELF_GO: "code-fix,docs,packaging,config,ci-policy"
               # Per-repo gate commands (fmt/lint/build/test) the deterministic
-              # `gate` Agent runs. Only the "*" fallback is set: a no-op gate, so
-              # the pipeline works on any repo out of the box and the coder's own
-              # in-workspace self-gate is what actually catches breakage.
+              # `gate` Agent runs, keyed by owner/repo with a "*" fallback.
               #
-              # Add a real profile per repo you point the loop at, e.g.:
-              #   "ekenheim/some-python-repo": {
-              #     "language": "python", "image": "python:3.13",
-              #     "commands": {
-              #       "format": "true",
-              #       "lint": "pip install -q ruff && ruff check .",
-              #       "build": "pip install -q -r requirements.txt && python -m compileall -q .",
-              #       "test": "pip install -q -r requirements.txt && python -m pytest -q"
-              #     }
-              #   }
+              # A profile has to mirror that repo's CI, because CI is what
+              # decides whether the PR foreman opens is actually mergeable. The
+              # "*" fallback is a no-op (every command `true`) -- fine for a repo
+              # with no CI, useless for one with tests: alphaos#3 was opened on a
+              # reviewer GO carrying a self-written test that could never pass,
+              # because nothing between the coder and GitHub Actions ran pytest.
+              #
+              # `format`/`lint` stay `true` where the repo configures no formatter
+              # or linter -- inventing one here red-gates code its own CI accepts.
+              # The install is repeated in `build` and `test` because the two
+              # commands are not guaranteed to share a container; the agent's
+              # gateCache PVC (../../foreman/app/helmrelease.yaml) holds the pip
+              # cache across invocations, so the second install is nearly free.
+              #
+              # alphaos: .github/workflows/test.yml is `pip install -e ".[dev]"`
+              # then `python -m pytest -q` on python 3.12. Match that minor
+              # version -- the dependency set drags in pandas/pyarrow/duckdb/
+              # dagster wheels and 3.13 is not what the suite is resolved against.
               GATEPROFILE_MAP: >-
-                {"*":{"language":"generic","image":"python:3.13","commands":{"format":"true","lint":"true","build":"true","test":"true"}}}
+                {"ekenheim/alphaos":{"language":"python","image":"python:3.12","commands":{"format":"true","lint":"true","build":"pip install -q -e '.[dev]'","test":"pip install -q -e '.[dev]' && python -m pytest -q"}},
+                "*":{"language":"generic","image":"python:3.13","commands":{"format":"true","lint":"true","build":"true","test":"true"}}}
               # Drains the pr-fix queue: review comments on an open PR come back
               # as a revision task rather than a new issue.
               PR_FIX_ENABLED: "true"
@@ -100,14 +115,20 @@ spec:
     rbac:
       roles:
         # The bridge creates Workloads and reconciles failed ones: list/get to
-        # find Failed Workloads, delete + create to retry them (bounded). No
-        # update/patch -- retry is delete-then-recreate, not in-place mutation.
+        # find Failed Workloads, delete + create to retry them (bounded) --
+        # retry is delete-then-recreate, never in-place mutation. No `update`.
+        #
+        # `patch` is for something else: once a Workload's issue reaches a
+        # terminal state in dispatch, the bridge stamps the CR so it stops
+        # reconsidering it. Without it every 15m tick logs
+        # `stamp-terminal-since-failed status=403` and re-reports the same
+        # finished Workload forever.
         foreman-dispatch-bridge:
           type: Role
           rules:
             - apiGroups: ["foreman.llmkube.dev"]
               resources: ["workloads"]
-              verbs: ["create", "get", "list", "delete"]
+              verbs: ["create", "get", "list", "delete", "patch"]
             # Reads a failed Workload's task results (reviewer NO-GO findings,
             # coder errors) to build feedback-carrying retries.
             - apiGroups: ["foreman.llmkube.dev"]

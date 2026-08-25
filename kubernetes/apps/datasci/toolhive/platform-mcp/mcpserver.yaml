@@ -12,7 +12,7 @@ spec:
   # entrypoint would need both egress and a writable HOME. Mounting the script
   # from a ConfigMap instead means no image to build, publish or renovate, and
   # the whole server is reviewable in git as one .py file.
-  image: docker.io/library/python:3.13-slim@sha256:7e3a6aca9d74f93cca21a91d86a8dad8c34749afd5b4a98ee481c9c47b9f5ed4
+  image: docker.io/library/python:3.14-slim@sha256:83ff1d245a3d57d04152252d3ef9cb361494d0b3395abd65a5ebe91c401c8e83
   transport: stdio
   proxyMode: streamable-http
   proxyPort: 8080

@@ -8,7 +8,7 @@ spec:
   # ToolHive's own build of @upstash/context7-mcp. The npm package is baked
   # into /app/node_modules, so the `npx` entrypoint resolves locally and does
   # NOT fetch from the registry at pod start (unlike arr-mcp in downloads).
-  image: ghcr.io/stacklok/dockyard/npx/context7:4.0.0@sha256:3f888ce4ec43e927caad16a4fbe1e7ade3effd67063641d466ef16841244cde8
+  image: ghcr.io/stacklok/dockyard/npx/context7:4.0.3@sha256:04c45e334d6c293cf4d2836f5b0843d3da835eba032ec9b0107323a7113c260e
   transport: stdio
   proxyMode: streamable-http
   proxyPort: 8080

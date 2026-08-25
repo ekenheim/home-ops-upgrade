@@ -52,6 +52,32 @@ spec:
       ; end of ceph.conf
 
     cephClusterSpec:
+      # Ceph v20.2.4 regression workaround (remove once a fixed release ships).
+      #
+      # v20.2.4 carries the fix for CVE-2026-54330, which makes RGW reject
+      # SigV4 requests whose `host`/`x-amz-*` headers are not in the signed
+      # subset. Upstream documents this as breaking only the multisite REST
+      # client, but on this single-zone cluster it rejects *every* PUT that
+      # carries a body -- from any client, any user, any bucket -- with a
+      # bare `AccessDenied` (empty message).
+      #
+      # The tell: reads (GET/HEAD/LIST/DELETE) and a zero-byte PUT all return
+      # 200, so the bucket, OBC, RGW user, ACL and quotas all look healthy.
+      # In the RGW access log a denied PUT shows an empty user field and
+      # `bucket=` at latency=0, because auth fails before bucket resolution.
+      #
+      # Effect of leaving this unset: thanos-compact CrashLoopBackOff on
+      # "retention failed: ... Access Denied" and thanos-rule silently unable
+      # to upload blocks, i.e. no Thanos long-term storage at all.
+      #
+      # Trade-off: this re-opens CVE-2026-54330 (a holder of a presigned PUT
+      # URL can attach arbitrary x-amz-* headers -> privilege escalation).
+      # Accepted here because RGW is published only on the `internal` ingress
+      # class (the rgw host is LAN-only, not the external class) and nothing
+      # in this cluster hands out presigned PUT URLs.
+      cephConfig:
+        client.rgw:
+          rgw_sigv4_insecure: "true"
       crashCollector:
         disable: false
       dashboard:

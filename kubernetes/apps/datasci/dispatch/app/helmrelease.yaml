@@ -37,6 +37,59 @@ spec:
               # off, which is right for extraction, not for this.
               DISPATCH_GROOMER_MODEL: self-hosted
               DISPATCH_SCHEDULER_ENABLED: "true"
+              # --- PR follow-up: CI failures / review comments -> pr-fix queue -
+              # The `pr-followup` scheduler job drops every PR whose author is
+              # not in this list before it looks at anything, and the default is
+              # exactly ["github-actions[bot]"]. foreman opens its PRs with the
+              # shared agent PAT, so today they are authored by `ekenheim` and
+              # every one of them is filtered out: the sync reports
+              # `prsScanned: 0` and the whole pr-fix half of the loop -- CI
+              # failures, CHANGES_REQUESTED reviews, merge conflicts -- has
+              # never run, no matter what ../bridge/helmrelease.yaml's
+              # PR_FIX_ENABLED says.
+              #
+              # Deliberately NOT set to `ekenheim`. That identity is also the
+              # human's, so it would make every hand-opened PR in a synced repo
+              # eligible for an agent to amend on a red check. The fix is a
+              # dedicated machine account. A GitHub App is not a substitute:
+              # dispatch supports one, but *foreman* is what opens the PR and
+              # its agent binary understands nothing but a static GITHUB_TOKEN,
+              # so App auth moves who syncs issues while PR authorship -- the
+              # only thing this filter reads -- stays put.
+              #
+              # To switch:
+              #   1. Register the account, invite it with write access to every
+              #      synced repo (alphaos, marketing-agency, nordic-housing),
+              #      and accept from that account.
+              #   2. Signed in as it, mint a PAT -- classic needs `repo` +
+              #      `workflow`; fine-grained needs Contents r/w, Pull requests
+              #      r/w, Issues r/w and Metadata read on every synced repo
+              #      (Issues because the same token does dispatch's issue sync).
+              #      Replace field `GITHUB_TOKEN` on the `github_token`
+              #      Bitwarden item with it -- one item feeds both the
+              #      `dispatch` and `foreman-agent` Secrets, so sync, commits,
+              #      PRs and label writes move identity together. Keep the field
+              #      name exact: a renamed field renders empty and the
+              #      ExternalSecret still reports SecretSynced.
+              #   3. Point commitAuthorName / commitAuthorEmail in
+              #      ../../foreman/app/helmrelease.yaml at the new account.
+              #   4. Uncomment PR_FOLLOWUP_BOT_IDENTITIES below, set to its login.
+              #   5. Force-sync and restart. dispatch self-reloads via
+              #      reloader.stakater.com/auto; foreman does NOT -- the chart
+              #      exposes only agent.podAnnotations and Reloader watches
+              #      Deployment annotations, so the restart is manual:
+              #        kubectl annotate externalsecret -n datasci dispatch \
+              #          foreman-agent force-sync=<any-new-value> --overwrite
+              #        kubectl rollout restart -n datasci deploy/foreman-agent
+              #   6. Verify: the next PR foreman opens should make `prsScanned`
+              #      non-zero in POST /api/pr-followup/sync. PRs opened before
+              #      the switch stay invisible -- still the old author.
+              #
+              # PR_FOLLOWUP_BOT_IDENTITIES: ekenheim-agent
+              #
+              # Note PR_FOLLOWUP_BRANCH_OWNERS is not a way around this: despite
+              # the name it is matched against the repo owner, not the branch
+              # prefix, so it cannot scope follow-up to `foreman/*` branches.
               # --- Lanes ------------------------------------------------------
               # Two lanes, not upstream's three. Upstream's `frontier` lane is
               # an escalation target backed by a cloud model (MiniMax-M3 via

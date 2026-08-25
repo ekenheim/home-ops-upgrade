@@ -1,0 +1,66 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcpserver_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: &name platform-mcp
+spec:
+  # A stock Python image, not a purpose-built one. The server is pure stdlib
+  # (MCP over stdio is line-delimited JSON-RPC 2.0), so there is nothing to
+  # install at start -- which matters because toolhive enforces
+  # readOnlyRootFilesystem and runs the backend as uid 1000, so a `pip install`
+  # entrypoint would need both egress and a writable HOME. Mounting the script
+  # from a ConfigMap instead means no image to build, publish or renovate, and
+  # the whole server is reviewable in git as one .py file.
+  image: docker.io/library/python:3.13-slim@sha256:7e3a6aca9d74f93cca21a91d86a8dad8c34749afd5b4a98ee481c9c47b9f5ed4
+  transport: stdio
+  proxyMode: streamable-http
+  proxyPort: 8080
+  # stdio backends serve a single client connection and cannot be scaled.
+  backendReplicas: 1
+  toolConfigRef:
+    name: *name
+  audit:
+    enabled: true
+  env:
+    - name: PYTHONUNBUFFERED
+      value: "1"
+    # Nothing should ever be written next to the script, but a stray .pyc write
+    # against the read-only ConfigMap mount would be a confusing failure.
+    - name: PYTHONDONTWRITEBYTECODE
+      value: "1"
+  # The CRD documents spec.resources as "the resource requirements for the MCP
+  # server container", but on operator v0.44.0 it is applied to the toolhive
+  # proxy Deployment instead -- the backend StatefulSet's `mcp` container comes
+  # out with resources:{}. Set both here so limits hold either way.
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: mcp
+          # toolhive leaves command/args empty and relies on the image
+          # entrypoint, which for python:3.13-slim is an interactive REPL.
+          # Override it here -- this is the one field that makes a stock image
+          # usable as an MCP backend.
+          command:
+            - python3
+            - /srv/platform_mcp.py
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: server
+              mountPath: /srv
+              readOnly: true
+      volumes:
+        - name: server
+          configMap:
+            name: platform-mcp-server

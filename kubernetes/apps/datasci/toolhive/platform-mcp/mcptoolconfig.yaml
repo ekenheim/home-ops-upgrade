@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcptoolconfig_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPToolConfig
+metadata:
+  name: platform-mcp
+spec:
+  # Explicit allow list, matching the convention set by context7: the surface
+  # is pinned here so a change to the script cannot silently publish a new tool
+  # to every agent connected to this server.
+  toolsFilter:
+    - service_map
+    - credentials
+    - storage_map
+    - runtime_matrix
+    - pipeline_patterns
+    - compute_limits
+    - probe
+    - mlflow_experiments
+    - ray_status

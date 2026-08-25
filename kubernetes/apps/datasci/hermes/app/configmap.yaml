@@ -353,6 +353,24 @@ data:
     # such as `timeout` and `headers` are preserved fine -- they are simply
     # omitted here to keep this identical to what the tool itself writes.
     mcp_servers:
+      # The sanctioned service map for this cluster's data-science stack:
+      # MLflow / Ray / Spark / both MinIO servers / Postgres / marimo / Dagster,
+      # plus the credential pattern and the runtime-version matrix.
+      #
+      # It exists because hermes could already REACH all of these -- there are
+      # no NetworkPolicies in `datasci` or `storage` -- but had no way to
+      # DISCOVER them, so it invented tracking URIs and wrote notebooks against
+      # a Ray client that cannot connect (cluster is Python 3.10, marimo is
+      # 3.13). Facts are served as tools rather than pasted into the system
+      # prompt so they cost nothing on turns that do not need them, which
+      # matters at a 131,072-token window.
+      #
+      # Unauthenticated like context7 and arr: it is a toolhive proxy inside the
+      # namespace, it holds no credential, and it never touches the Kubernetes
+      # API -- so there is no Secret for it to leak.
+      platform:
+        url: http://mcp-platform-mcp-proxy.datasci:8080/mcp
+        enabled: true
       context7:
         url: http://mcp-context7-proxy.datasci:8080/mcp
         enabled: true

@@ -40,7 +40,20 @@
       "matchPackageNames": [
         "ghcr.io/misospace/llmkube-coder",
         "ghcr.io/fscorrupt/posterizarr",
-        "ghcr.io/linuxserver/mariadb"
+        "ghcr.io/linuxserver/mariadb",
+        // docker.io/library/python is here for a slightly different reason:
+        // the Docker official images re-push the *patch* tag on every Debian
+        // base rebuild, so pinning tighter does not help. Verified 2026-08-27:
+        // 3.14.7-slim was rebuilt that day (83ff1d24 -> cae66f2) while
+        // 3.14.6-slim had not moved since Aug 5, i.e. both 3.14-slim and
+        // 3.14.7-slim are mutable. Version-only is the only way to stop the
+        // churn. Note the trade-off bites harder here than above: for a base
+        // image the digest bump IS the CPython/Debian security rebuild, so
+        // platform-mcp now holds today's build until the tag moves to
+        // 3.15-slim. Acceptable because that server is pure stdlib over stdio
+        // with readOnlyRootFilesystem, uid 1000 and no egress -- revisit if it
+        // ever grows dependencies or a network path.
+        "docker.io/library/python"
       ],
       "matchUpdateTypes": ["digest"],
       "enabled": false

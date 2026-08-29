@@ -1,0 +1,51 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: litellm-operator
+spec:
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: litellm-operator
+  install:
+    # The chart ships six CRDs under crds/. Helm only installs those on FIRST
+    # install and never touches them again, so CreateReplace on upgrade is what
+    # actually picks up schema changes when the chart version bumps.
+    crds: Create
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  values:
+    controller:
+      logLevel: info
+      leaderElection:
+        # Single replica, so nothing to elect -- but unlike tuppr this manager
+        # does no draining, so a missed lease renewal is cheap. Left on to match
+        # upstream defaults and to make scaling to 2 safe later.
+        enabled: true
+    llmkube:
+      # Watch inference.llmkube.dev InferenceServices and mint a matching
+      # LiteLLMModel when one goes Ready. This is the reason the operator earns
+      # its keep here: ornith-35b and qwen38-27b currently have to be
+      # hand-mirrored into litellm's config.yaml model_list, and the api_base
+      # in that file silently rots whenever an InferenceService is renamed.
+      #
+      # Registration is a no-op until a LiteLLMProxy exists to adopt the models,
+      # which is deliberate -- see ks.yaml.
+      autoRegister: true
+    webhook:
+      # Self-managed serving cert; no cert-manager Certificate needed. The
+      # operator patches its own CA bundle into the ValidatingWebhookConfiguration.
+      enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 128Mi
+      limits:
+        memory: 512Mi

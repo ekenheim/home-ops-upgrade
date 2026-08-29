@@ -1,0 +1,182 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app memini
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: *app
+  interval: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    fullnameOverride: *app
+    controllers:
+      main:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          main:
+            env:
+              TZ: "${TIMEZONE}"
+              MEMINI_BACKEND: sqlite
+              MEMINI_DEFAULT_NAMESPACE: default
+              MEMINI_API_KEYS_FILE: /etc/memini/api-keys.yaml
+
+              # --- Embeddings -------------------------------------------------
+              # Through litellm, NOT straight at ollama-igpu. litellm already
+              # publishes `all-minilm` as a model (see ../../litellm/app/configmap.yaml)
+              # and proxying keeps this app on one auth path and one set of
+              # spend/latency metrics now that the prometheus callbacks are on.
+              #
+              # 384 dims because that is what all-minilm emits. Upstream's own
+              # example uses Qwen3-Embedding-0.6B at 1024 dims served by a
+              # dedicated InferenceService; that is NOT portable here -- it asks
+              # for an Intel GPU through DRA, and the only DeviceClass on this
+              # cluster is gpu.amd.com (Intel iGPUs are exposed via the
+              # gpu.intel.com/i915 device plugin instead). Recall quality is
+              # lower than Qwen3-Embedding's; the trade is that this schedules
+              # today and adds nothing to worker4's GPU.
+              #
+              # Changing the model or dims later is not free: memini stores
+              # vectors, so see MEMINI_REEMBED_ON_MODEL_CHANGE below.
+              MEMINI_EMBED_BASE_URL: http://litellm.llm:4000/v1
+              MEMINI_EMBED_MODEL: all-minilm
+              MEMINI_EMBED_DIMS: "384"
+              # Deliberately NOT set to upstream's "Instruct: ... Query: "
+              # prefix. That is a Qwen3-Embedding instruction format; all-minilm
+              # is a plain sentence-transformer with no instruct mode, so the
+              # prefix would just be embedded as literal text and pollute every
+              # query vector.
+              MEMINI_EMBED_MAX_CONCURRENCY: "2"
+              MEMINI_RECALL_EMBED_TIMEOUT: 5s
+              # Re-embeds the whole store if the model or dims change, instead
+              # of silently mixing incompatible vectors and returning nonsense
+              # for anything written before the switch.
+              MEMINI_REEMBED_ON_MODEL_CHANGE: "true"
+
+              # --- Rerank -----------------------------------------------------
+              # Deliberately absent. Upstream runs a Qwen3-Reranker-0.6B
+              # InferenceService on its AMD GPU; here that would be a third pod
+              # sharing worker4's single `llama-strix-gpu` ResourceClaim with
+              # ornith-35b and qwen38-27b, on the node that hard-resets
+              # silently. Recall falls back to pure vector similarity.
+              # MEMINI_RERANK / MEMINI_RERANK_MODEL: see llmkube/app for the
+              # InferenceService pattern if this is ever revisited.
+
+              # --- Assessment / dedup ----------------------------------------
+              # `fast` is ornith-35b with thinking off. That is the right shape
+              # for extraction and scoring -- the same reasoning that made
+              # dispatch pick `self-hosted` for grooming and NOT `fast` applies
+              # in reverse here: judging scope needs reasoning, turning a
+              # transcript into memory rows does not.
+              MEMINI_LLM_BASE_URL: http://litellm.llm:4000/v1
+              MEMINI_LLM_MODEL: fast
+              MEMINI_ASSESS_BATCH: "5"
+              MEMINI_WRITE_DEDUP_SCORE: "0.80"
+              MEMINI_WRITE_DEDUP_ACTION: coalesce
+              MEMINI_DEDUP_TIERS: episodic,semantic,procedural
+              MEMINI_DEDUP_SIMILARITY: "0.80"
+              MEMINI_SHORT_TERM_CAP: "300"
+            envFrom:
+              - secretRef:
+                  name: memini
+            probes:
+              # sqlite opens and any pending migration runs before the listener
+              # binds. Generous, in the same spirit as litellm's: a slow first
+              # boot should not crashloop.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: 8080
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  failureThreshold: 180
+            resources:
+              requests:
+                cpu: 25m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+      # Nightly consistency pass over the store. Needs MEMINI_API_KEY because it
+      # calls memini's own authenticated /v1/fsck.
+      fsck:
+        enabled: true
+        cronjob:
+          schedule: "0 5 * * *"
+          timeZone: "${TIMEZONE}"
+        containers:
+          fsck:
+            env:
+              MEMINI_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: memini
+                    key: MEMINI_API_KEY
+    persistence:
+      data:
+        # Provisioned by ../../../../templates/volsync (claim.yaml renders a PVC
+        # named ${APP}), so this app restores from restic on a rebuild rather
+        # than starting empty. sqlite is single-writer; keep replicas at 1.
+        existingClaim: *app
+      api-keys:
+        # MUST be set explicitly. The chart's own default is false and helm
+        # merges chart values UNDER ours, so an omitted flag wins as false and
+        # the keys file silently never mounts.
+        enabled: true
+        name: memini-api-keys
+    ingress:
+      main:
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: LLM
+          gethomepage.dev/name: Memini
+          gethomepage.dev/icon: mdi-brain
+          gethomepage.dev/description: Memory service for AI agents (REST + MCP)
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+        hosts:
+          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths:
+              # Admin SPA on the dedicated `ui` port. Internal ingress only: the
+              # shell itself is credential-free, but a signed-in token is
+              # same-origin-readable, so this must not go on the external class.
+              - path: /
+                service:
+                  identifier: main
+                  port: ui
+              # /v1 and /mcp are bearer-gated by MEMINI_API_KEY.
+              - path: /v1
+                service:
+                  identifier: main
+                  port: http
+              - path: /mcp
+                service:
+                  identifier: main
+                  port: http
+    serviceMonitor:
+      main:
+        # Scrapes the dedicated `metrics` port (9090), which is unauthenticated
+        # and attached to no route, so no bearer token is needed here -- unlike
+        # litellm, where /metrics shares the proxy port.
+        enabled: true
+    grafanaDashboards:
+      # Renders the bundled dashboard as a ConfigMap labelled
+      # grafana_dashboard: "1". Our Grafana runs the k8s-sidecar with
+      # searchNamespace ALL and an empty labelValue, so it is picked up with no
+      # further wiring and no grafana-operator. The `folder` key sets a
+      # `grafana_dashboard_folder` annotation, which our sidecar does NOT read
+      # (it looks for `grafana_folder`), so the dashboard lands in the default
+      # folder -- cosmetic.
+      enabled: true

@@ -1,0 +1,31 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/servicemonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: &app litellm
+  labels: &labels
+    app.kubernetes.io/instance: *app
+    app.kubernetes.io/name: *app
+spec:
+  # Matches the labels app-template puts on the Service. Verified against the
+  # live object rather than assumed -- the chart also stamps
+  # app.kubernetes.io/service and helm.toolkit.fluxcd.io/*, so selecting on the
+  # instance+name pair is the stable subset.
+  selector:
+    matchLabels:
+      <<: *labels
+  namespaceSelector:
+    matchNames:
+      - llm
+  targetLabels:
+    - app.kubernetes.io/instance
+    - app.kubernetes.io/name
+  endpoints:
+    # Same port the proxy serves on; litellm has no separate metrics listener.
+    # Scrape works only because litellm_settings.require_auth_for_metrics_endpoint
+    # is false in ../app/configmap.yaml -- otherwise this target 401s.
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

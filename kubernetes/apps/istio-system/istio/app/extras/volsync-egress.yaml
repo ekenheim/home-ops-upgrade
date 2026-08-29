@@ -18,12 +18,23 @@ spec:
   location: MESH_EXTERNAL
   resolution: DNS
 ---
-# AuthorizationPolicy to allow VolSync pods to access S3
+# AuthorizationPolicy to allow VolSync pods to access S3.
+#
+# istio-system is the mesh ROOT namespace (meshConfig.rootNamespace), so this
+# one policy applies mesh-wide -- every namespace, including `llm`. There is
+# deliberately no per-namespace copy: the istio-extras Kustomization sets
+# targetNamespace: istio-system, which rewrites every resource under this path
+# into istio-system regardless of what `metadata.namespace` says. A second copy
+# differing only by namespace therefore collapses onto this same name and fails
+# the whole build with "namespace transformation produces ID conflict".
+#
+# This field used to read `datasci` for that reason, which was misleading: it
+# never took effect, and the live object has been in istio-system all along.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
   name: volsync-s3-access
-  namespace: datasci
+  namespace: istio-system
 spec:
   action: ALLOW
   rules:

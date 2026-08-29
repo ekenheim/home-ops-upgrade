@@ -1,0 +1,414 @@
+---
+# Ornith-1.5-35B-A3B on worker4's Strix Halo iGPU.
+#
+# WHY MoE AND NOT A DENSE MODEL
+#
+# Strix Halo is an iGPU on shared LPDDR5X at roughly 256 GB/s, an order of
+# magnitude under a discrete card, so throughput tracks *active* bytes per
+# token rather than model size. This is a Mixture-of-Experts
+# (Qwen3_5MoeForConditionalGeneration, 256 experts with 8 active per token,
+# ~3B of 35B) so it reads a fraction of its 22GB per token, while a dense 27B
+# reads all ~17GB of itself every single token. On this hardware that is the
+# whole ballgame -- generation speed is effective bandwidth (a measured
+# 184-217 GiB/s) divided by bytes-read-per-token. See qwen38-27b.yaml for the
+# worked example of why a newer, denser model loses badly here.
+#
+# WHY ORNITH RATHER THAN Qwen3.6-35B-A3B
+#
+# Ornith-1.0-35B (DeepReinforce, MIT, 2026-06-25) is architecturally identical
+# to the Qwen3.6-35B-A3B this replaced -- same model class, 40 layers, 256
+# experts, 8 active per token, same 262144 native context, same 3:1 linear-to-
+# full attention interleave, same ~22GB at UD-Q4_K_XL. Identical shape means
+# identical throughput characteristics, so this swap costs nothing in speed.
+#
+# It is a purpose-built agentic coding model and it beats Qwen3.6-35B on every
+# benchmark either party publishes -- which matters because Hermes, the main
+# consumer of this endpoint, is an agentic coding loop:
+#
+#   benchmark                    Qwen3.6-35B   Ornith-1.0-35B
+#   Terminal-Bench 2.1 (Term-2)         52.5             64.2
+#   SWE-bench Verified                  73.4             75.6
+#   SWE-bench Pro                       49.5             50.4
+#   SWE-bench Multilingual              67.2             69.3
+#   NL2Repo                             29.4             34.6
+#   Claw-eval average                   68.7             69.8
+#
+# Still multimodal despite the model card implying otherwise: config.json
+# carries a 27-layer vision tower and unsloth ships the same 899MB mmproj, so
+# litellm's supports_vision stays honest.
+#
+# UPGRADE 1.0 -> 1.5 (2026-08-21)
+#
+# Same argument again: Ornith-1.5-35B-A3B is architecturally identical to the
+# 1.0 it replaces. Verified against its config.json, not the model card:
+#   architectures        Qwen3_5MoeForConditionalGeneration   (same)
+#   num_hidden_layers    40                                   (same)
+#   num_experts / _tok   256 / 8                              (same)
+#   full_attention_int.  4  -> 3:1 linear-to-full interleave  (same)
+#   max_position_emb.    262144                               (same)
+#   vision_config.depth  27                                   (same)
+#   license              MIT                                  (same)
+# Identical shape means identical bytes-read-per-token, so this swap should
+# cost nothing in speed. Expect the same ~50 t/s and ~35 GiB GTT.
+#
+# WHY bartowski AND NOT unsloth
+#
+# unsloth has published no Ornith-1.5 GGUF -- their org still carries only the
+# six 1.0 repos, last touched 2026-07-18. For 1.0 their GGUF landed 26 days
+# after the weights (2026-06-21 -> 2026-07-17); 1.5 dropped 2026-08-18, so on
+# that cadence theirs is ~mid-September. We are not waiting for it.
+#
+# bartowski's Q4_K_L is the closest available match to the UD-Q4_K_XL this
+# replaces: 22.24GB against 22.3GB, imatrix-calibrated, and it ships an f16
+# mmproj. The vendor's own GGUF is plain Q4_K_M with no imatrix at all.
+#
+# THIS UPGRADE IS ON PROBATION -- WATCH FOR REGRESSION, NOT JUST FOR ERRORS
+#
+# 1.5 was three days old when this landed and the early reports are bad in
+# exactly the area this endpoint exists to serve:
+#   discussions/8   fails basic read/write tool calls across harnesses; one
+#                   report of replace_file chosen over edit_file destroying an
+#                   800-line file repeatedly
+#   discussions/13  ~25% worse than 1.0 on long-horizon coding; burned ~140k
+#                   tokens researching instead of executing
+#   discussions/5   excessive CoT on simple tasks -- aimed at the `fast` alias,
+#                   where Lingarr runs with enable_thinking: false
+# None of that is fixable by a different quant or a different repacker; it is
+# the weights. If Hermes or the foreman agents get visibly worse at tool use,
+# the fix is to revert this file, not to chase quants.
+#
+# ROLLING BACK
+#
+# The k8s resource name is deliberately UNCHANGED at ornith-35b, so this is an
+# in-place spec edit, not the delete-and-recreate the qwen3-35b-a3b -> ornith
+# rename was. Nothing in litellm changes either: --alias below is still
+# ornith-35b, so the served id and api_base the three aliases point at are the
+# same. Revert = `git revert` this commit and let Flux reconcile. The 1.0
+# weights stay in the cache PV, so rolling back costs a model load, not
+# another 22GB download.
+#
+# ALTERNATIVES CONSIDERED (kyuz0's Strix Halo set, everything that fits GTT)
+#
+#   model                          GiB    tg     pp    verdict
+#   Qwen3.6-35B-A3B UD-Q4_K_XL    21.3  60.4   1114    same shape, weaker
+#   gpt-oss-120b MXFP4            59.0  56.6    720    dominated, see below
+#   gemma-4-26B-A4B UD-Q4_K_XL    15.9  54.7   1325    smaller, weaker
+#   GLM-4.7-Flash UD-Q8_K_XL      32.7  41.2   1092    slower
+#   MiniMax-M2.7 UD-Q3_K_S        87.2  31.1    243    pp is disqualifying
+#   Qwen3.5-122B-A10B UD-Q5_K_XL  85.6  22.3    339    slower, older gen
+#   Nemotron-3-Super-120B-A12B    78.0  14.9    276    slower
+#
+# gpt-oss-120b is the tempting one -- a 120B model at nearly the same
+# throughput, and it gets recommended for 128GB boxes constantly. It loses on
+# every axis that matters here: Artificial Analysis puts it at 24 on the
+# Intelligence Index against Qwen3.6-35B's 32, and 11.5 points BEHIND on
+# coding. It also caps at 130k context against 260k and is text-only. Bigger
+# is not better when the extra parameters buy a sparser, weaker model.
+#
+# MiniMax-M2.7's 243 t/s prompt processing is the disqualifier, not its
+# generation speed: Hermes opens every turn with ~28k tokens of system prompt
+# and tool schemas, which is ~115s of prompt processing before it emits a
+# single token, against ~25s here.
+#
+# ROLLING THIS OUT (historical -- describes the 1.0 rename, NOT the 1.5
+# upgrade, which was an in-place spec edit with no rename; see ROLLING BACK)
+#
+# The rename from qwen3-35b-a3b is a delete-and-recreate, not an edit, and the
+# node has exactly one GPU. Expect this sequence on the first reconcile:
+#   1. Flux applies ornith-35b; its pod sits Pending on the DRA claim, which
+#      the outgoing qwen3-35b-a3b pod still holds.
+#   2. Flux prunes qwen3-35b-a3b (ks.yaml has prune: true), freeing the claim.
+#   3. ornith-35b schedules and its init container downloads ~22.3GB.
+# The Kustomization has wait: true with timeout: 5m, so it WILL report
+# NotReady while step 3 runs -- that is the download, not a failure, and it
+# clears on the next reconcile. Watch the pod, not the Kustomization:
+#   kubectl -n llm logs -f deploy/ornith-35b -c model-downloader
+#
+# litellm needs no restart: the aliases (self-hosted / review / fast) are
+# unchanged, only the api_base and served id behind them moved, and the
+# ConfigMap change rolls out with the litellm pod on its own reconcile.
+#
+# ROLLOUT RESULT (2026-08-21, Ornith-1.5) -- verified on the live endpoint,
+# so this is history rather than a plan:
+#   /v1/models                      -> ["ornith-35b"], Q4_K - Medium,
+#                                      n_params 35,505,251,456, size 22.23GB,
+#                                      n_ctx 131072, n_ctx_train 262144
+#   tool-call probe                 -> finish_reason "tool_calls", correct args
+#                                      ({"city":"Oslo"}). The template did NOT
+#                                      trip -- see the analysis above.
+#   capabilities                    -> ["completion","multimodal"] -- VISION IS
+#                                      LIVE despite the card's "Removed Vision
+#                                      Capabilities". litellm's supports_vision
+#                                      stays honest; discussions/7 is wrong.
+#   litellm self-hosted/review/fast -> all three answer end to end; `fast`
+#                                      returned 2 completion tokens against 35
+#                                      and 24 for the thinking aliases, so
+#                                      enable_thinking:false still works
+#   GTT                             -> 34.3 GiB of 124 GiB, i.e. unchanged from
+#                                      1.0's 34 GiB. qwen38-27b was Stopped, so
+#                                      the rest of the pool was free.
+#   pod ready                       -> ~495s from scale-up, including the
+#                                      22.24GB download
+#
+# NOT verified: generation throughput. A single 66-token probe reported 53.6
+# t/s against 1.0's 50.5, but that is far too small a sample to call an
+# improvement -- redo the three-run measurement before believing it.
+#
+# ALSO NOT verified, and the thing that actually matters: whether 1.5 is worse
+# at agentic coding than the 1.0 it replaced (see PROBATION above). Mechanical
+# checks passing says nothing about that. Watch Hermes and the foreman agents.
+#
+# ROLLOUT RESULT (2026-08-14, Ornith-1.0) -- the previous baseline, retained
+# for comparison:
+#   /v1/models                      -> ["ornith-35b"]
+#   tool-call probe                 -> finish_reason "tool_calls", correct args
+#   enable_thinking:false           -> 7 completion tokens, "Han ar bakom dig."
+#   generation                      -> 50.5 t/s, three runs, variance <0.1
+#   GTT                             -> 34 GiB of 124 GiB
+#   litellm self-hosted / fast      -> both answer end to end
+#
+# The download took ~9 minutes for 22.3GB. Note that curl's progress meter
+# never reaches the pod log -- it sits at a 1042-byte redirect hop the whole
+# time and looks stalled. Track it by watching the node's disk grow instead:
+#   kubectl get --raw /api/v1/nodes/worker4/proxy/stats/summary | jq .node.fs
+#
+# VERIFY TOOL CALLING BEFORE TRUSTING THIS
+#
+# Ornith shipped with a chat template carrying two hard raise_exception
+# assertions -- one requiring the system message to be first, one requiring a
+# user query in multi-step tool contexts. Tool-calling runtimes probe
+# templates with synthetic message sequences and trip both, so llama.cpp
+# under --jinja (which is what `jinja: true` sets) returned
+#   400 Unable to generate parser for this template
+# and tool calling was dead on arrival. That would take out Hermes and the
+# foreman agents, which are the whole point of this model.
+#
+# 1.5's template still carries both assertions, at lines 79 and 85 of
+# chat_template.jinja, with the same messages. But rendering it against the
+# sequences llama.cpp probes with under --jinja shows they are NARROWER than
+# the 1.0 incident implied -- these render clean:
+#   plain user / system+user / user+tools
+#   user -> tool_call -> tool -> assistant
+#   trailing tool result (an agent mid-loop)
+# and only these raise:
+#   system NOT first                    -> 'System message must be at the...'
+#   no user message at all              -> 'No user query found in messages.'
+#   every user turn <tool_response>-wrapped -> same
+# So the normal Hermes shape is fine on paper. That is NOT proof it works:
+# the 1.0 failure was llama.cpp's tool-call *parser generation*, a separate
+# mechanism from plain rendering that cannot be tested without the runtime.
+# Hence the live probe below is mandatory, not optional.
+#
+# If it does trip, the escape hatch is a --chat-template-file override with
+# the two raise_exception blocks stripped, mounted from a ConfigMap -- or wait
+# for unsloth, who patched exactly this for 1.0:
+#   https://huggingface.co/unsloth/Ornith-1.0-35B-GGUF/discussions/1
+#
+# Confirm on the live endpoint before considering the rollout done. A bare
+# /v1/models check is NOT sufficient -- the template failure surfaces per
+# request, not at startup:
+#   curl -s http://ornith-35b.llm:8080/v1/chat/completions \
+#     -H 'Content-Type: application/json' -d '{
+#       "model":"ornith-35b",
+#       "messages":[{"role":"user","content":"What is the weather in Oslo?"}],
+#       "tools":[{"type":"function","function":{"name":"get_weather",
+#         "parameters":{"type":"object","properties":{"city":{"type":"string"}},
+#         "required":["city"]}}}]}' | jq '.choices[0].finish_reason'
+# Expect "tool_calls". A 400 mentioning the parser means the template
+# regressed and this must be rolled back.
+#
+# The frontier models of this generation (GLM-5.2 at 744B/40B active,
+# DeepSeek-V4-Flash at 284B/13B, Kimi K2.6 at 1T/32B) are all out of reach --
+# not on capacity but on active parameters, which is what sets the read
+# volume per token. ~3B active is the shape this node wants.
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: ornith-35b
+spec:
+  source: hf://bartowski/Ornith-1.5-35B-A3B-GGUF
+  files:
+    - Ornith-1.5-35B-A3B-Q4_K_L.gguf
+  # Vision projector -- f16 not bf16 (both are 0.90GB; f16 is what 1.0 ran).
+  #
+  # NOTE the 1.5 model card says "Removed Vision Capabilities", yet config.json
+  # still carries the 27-layer tower (vision_config.depth: 27) and bartowski
+  # still ships an mmproj. Upstream has not resolved the contradiction:
+  #   https://huggingface.co/ornith-ai/Ornith-1.5-35B-A3B/discussions/7
+  # litellm advertises supports_vision: true on all three aliases, so probe an
+  # image once after rollout and drop that flag if it is now a lie.
+  mmproj: mmproj-Ornith-1.5-35B-A3B-f16.gguf
+  format: gguf
+  quantization: Q4_K_L
+  hardware:
+    accelerator: rocm
+    gpu:
+      enabled: true
+      vendor: amd
+      # 99 = offload every layer. Unified memory means there is no host/device
+      # copy to avoid, so partial offload only costs speed.
+      layers: 99
+      resourceClaims:
+        # resourceClaimName, NOT resourceClaimTemplateName -- a template mints
+        # a pod-scoped claim and would take gpu-0-128 exclusively, leaving
+        # qwen38-27b Pending forever. See resourceclaim.yaml.
+        #
+        # This field is immutable on a Pod, so switching it is a pod
+        # *recreate*, not an edit. The Deployment strategy is Recreate (not
+        # RollingUpdate), so the old pod releases the device before the new one
+        # asks for it -- no deadlock. Weights are already in the cache PV, so
+        # the restart costs a model load, not a 22GB download.
+        - name: gpu
+          resourceClaimName: llama-strix-gpu
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: ornith-35b
+  labels:
+    krr/ignore: "true"
+spec:
+  modelRef: ornith-35b
+  modelCache:
+    claimName: llmkube-model-cache
+  # Do NOT set skipModelInit here, despite the operator logging
+  # MissingSkipModelInit and advising it. With it enabled the operator drops
+  # the model-downloader init container and passes an empty --model:
+  #   args: ["--model", "", ...]
+  #   srv load_models: Loaded 0 cached model presets
+  #   srv llama_server: starting server in router mode
+  # llama.cpp then serves nothing -- /v1/models returns {"data":[]} -- while
+  # the pod stays 1/1 Running and the InferenceService reports Ready, so the
+  # breakage is invisible until a client gets "model not found".
+  runtime: llamacpp
+  # Purpose-built llama.cpp for Strix Halo. The stock runtime image does not
+  # carry a ROCm build tuned for gfx1151.
+  #
+  # rocm-6.4.4 is the slowest of the five backends this image family ships,
+  # by kyuz0's llama-bench numbers for this model class and quant:
+  #   vulkan_radv      tg 60.4   pp 1114
+  #   vulkan_amdvlk    tg 59.6   pp  697
+  #   rocm-7_2_3       tg 51.5   pp 1120
+  #   rocm7-nightlies  tg 51.5   pp 1085
+  #   rocm6_4_4        tg 50.3   pp 1117   <- us
+  #
+  # DO NOT take the obvious ~20% win by moving to vulkan-radv. Throughput is
+  # not the whole story and llama-bench cannot see the failure: users running
+  # Ornith on AMD under Vulkan report reasoning degrading into incoherence and
+  # looping, plus tool-call failures, from around 70-80k context and worsening
+  # past 90k. It was initially filed as a model defect; the reporter traced it
+  # to the Vulkan driver producing subtle numerical errors on AMD, reproduced
+  # it across several unrelated models, and had it disappear entirely on ROCm.
+  #   https://huggingface.co/deepreinforce-ai/Ornith-1.0-35B-GGUF/discussions/22
+  # Our per-slot window is 131072, well inside the broken range, and the
+  # symptom is degraded output rather than an error -- the worst kind to ship.
+  #
+  # rocm-7_2_3 is the upgrade actually worth taking: +1.2 t/s is negligible,
+  # but it is the backend that thread landed on as correct, and it is a newer
+  # ROCm than we run. Still needs a window to verify on this cluster:
+  #   - the DRA claim is deviceClassName gpu.amd.com from the ROCm driver
+  #   - q8_0 KV cache quantization (cacheTypeK/V) has to keep working
+  #   - the mmproj vision path has to keep working
+  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-7.14
+  command:
+    - llama-server
+  replicas: 1
+  # worker4 is the only node with an AMD GPU, and it is tainted as a dedicated
+  # LLM node -- both are required or the pod cannot be placed.
+  nodeSelector:
+    topology.kubernetes.io/gpus: amd
+  tolerations:
+    - key: llm-workload
+      operator: Exists
+      effect: NoSchedule
+  # KV cache is unreclaimable GTT on this UMA part, and over-allocating it is
+  # how the reference deployment deadlocked its node -- so this is sized from
+  # measurement, not from the model's ceiling.
+  #
+  # 2 slots was below llama.cpp's own default of 4 and is the real ceiling on
+  # concurrency: each slot serves one request, so a third caller queued behind
+  # two in-flight ones -- and a Lingarr batch occupies a slot for ~90s. With
+  # several apps sharing this backend that reads as a multi-minute hang.
+  #
+  # contextSize is the total KV budget divided across slots, so it has to grow
+  # with the slot count to keep a usable per-slot window. 131072/8 left only
+  # 16384 per slot, which Lingarr's ~1k-token batches never noticed but Hermes
+  # blew straight through -- a single chat turn is ~28k tokens of system prompt
+  # and tools, and llama.cpp rejects it outright:
+  #   request (28368 tokens) exceeds the available context size (16384 tokens)
+  # 524288/8 = 65536 each, 4x the failing request and room for MCP toolsets.
+  #
+  # 524288/8 = 65536 each held Lingarr fine but was still under Hermes's
+  # agentic loop: a coding turn carries ~28k of system prompt and tool schemas
+  # before any work, so the usable conversation budget was ~37k and a few
+  # whole-file writes exhausted it:
+  #   request (65572 tokens) exceeds the available context size (65536 tokens)
+  # 1048576/8 = 131072 each doubles it. Keep hermes's model.context_length in
+  # lockstep with this number -- hermes cannot discover it through litellm and
+  # silently assumes 256k otherwise.
+  #
+  # Cost is linear and small: measured 22.7 GiB GTT at contextSize 65536 and
+  # 23.8 GiB at 131072, i.e. ~1.1 GiB per extra 65536 tokens. Measured 28.6 GiB
+  # at 524288, so this lands near 37 GiB -- worker4 reports 124 GiB of GTT.
+  # Confirmed live 2026-08-17 at this setting: mem_info_gtt_used 37,492,838,400
+  # (34.9 GiB) of 133,143,986,176 (124 GiB).
+  #
+  # That 124 GiB is no longer this pod's alone. qwen38-27b shares the device
+  # (see resourceclaim.yaml) at roughly 27 GiB, so the pair sits near 62 GiB
+  # and the free pool is ~62 GiB rather than ~89. Growing contextSize here now
+  # spends a shared budget -- re-measure both pods before raising it, because
+  # over-allocating GTT deadlocks the node instead of OOM-killing a pod.
+  #
+  # Per-slot stays under the model's native window (gguf metadata:
+  # qwen35moe.context_length = 262144 -- Ornith shares the arch), so no RoPE
+  # scaling and no quality loss.
+  contextSize: 1048576
+  parallelSlots: 8
+  # Restarting the server drops in-flight requests. waitForIdle holds the
+  # pod-template update until llama.cpp reports its slots idle, so a rollout
+  # does not kill a translation batch mid-flight.
+  rolloutPolicy:
+    waitForIdle: true
+    idleTimeoutSeconds: 600
+  flashAttention: true
+  jinja: true
+  cacheTypeK: q8_0
+  cacheTypeV: q8_0
+  batchSize: 2048
+  uBatchSize: 512
+  resources:
+    cpu: "500m"
+    memory: 32Gi
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  extraArgs:
+    - --alias
+    - ornith-35b
+    - --cont-batching
+    # NO --spec-type draft-mtp here, deliberately, even though this model has
+    # an MTP head (config.json: mtp_num_hidden_layers: 1) and the flag would
+    # be worth ~1.38x. bartowski's plain GGUF strips the MTP tensors, exactly
+    # as unsloth's did for 1.0 and for Qwen3.6 (verified there with
+    # `llama-gguf <file> r n | grep -icE "nextn|mtp"` -> 0). Passing the flag
+    # against weights with no MTP head risks failing startup for no gain.
+    #
+    # Unlike 1.0, dedicated MTP repacks of 1.5 DO now exist (shisa-ai/*-MTP,
+    # scottlowry/*-mtp, several -APEX-MTP). Do not reach for them yet:
+    # discussions/10 reports the upstream mtp.* tensors "look like random
+    # init, not trained weights", so the speculative head may be worthless
+    # even where it is shipped.
+    #
+    # Community MTP conversions of Ornith do exist and are widely downloaded,
+    # but they are unvetted third-party requants for a production endpoint,
+    # and most carry "APEX"/"Heretic"/"AEON" tags that mean the model itself
+    # was modified. Not worth it without evaluation.
+    #
+    # To enable later: confirm the cached file actually carries the tensors
+    #   llama-gguf /models/<cacheKey>/Ornith-1.0-35B-UD-Q4_K_XL.gguf r n | \
+    #     grep -icE "nextn|mtp"
+    # and if non-zero, append: --spec-type draft-mtp --spec-draft-n-max 3
+    # (n-max 3 beat n-max 2 on this hardware, 70.3 vs 67.5 t/s, despite a
+    # lower acceptance rate.) Note those reference runs are single-stream;
+    # with parallelSlots: 8 the draft passes compete with other slots, so
+    # expect less than 1.38x under real concurrency.

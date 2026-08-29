@@ -231,7 +231,7 @@ spec:
   # and break tool calls from ~70-80k context; our per-slot window is 131072,
   # inside that range, and the symptom is bad output rather than an error.
   # Full citation in ornith-35b.yaml.
-  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-7.14
+  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-10.0
   command:
     - llama-server
   # PARKED AT 0 -- 2026-08-19. This is a bisect, not a capacity decision.

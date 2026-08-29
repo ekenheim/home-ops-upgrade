@@ -6,6 +6,7 @@ resources:
   - ./agentmemory-plugin.yaml
   - ./configmap.yaml
   - ./externalsecret.yaml
+  - ./marimo-token.sops.yaml
   - ./helmrelease.yaml
   - ../../../../templates/gatus/guarded
   - ../../../../templates/volsync

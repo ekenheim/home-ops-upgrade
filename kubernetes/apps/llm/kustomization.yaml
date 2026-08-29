@@ -1,0 +1,57 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Pre Flux-Kustomizations
+  - ./namespace.yaml
+  # Flux-Kustomizations | Gateway
+  #
+  # litellm-operator renders LiteLLM proxy config from CRDs (LiteLLMProxy,
+  # LiteLLMModel, LiteLLMVirtualKey, LiteLLMTeam, LiteLLMGuardrail,
+  # LiteLLMMCPServer). It is installed here but currently drives NOTHING: the
+  # litellm below is still the bjw-s app-template HelmRelease with its
+  # hand-written config.yaml ConfigMap. Adopting the CRDs is a separate change.
+  - ./litellm-operator/ks.yaml
+  - ./litellm/ks.yaml
+  # Flux-Kustomizations | Inference
+  - ./llmkube/ks.yaml
+  - ./ollama-igpu/ks.yaml
+  # Flux-Kustomizations | Tooling & memory
+  - ./toolhive/ks.yaml
+  # Two memory services on purpose, for now. agentmemory is what hermes' plugin
+  # talks to and is unchanged; memini is being evaluated alongside it and shares
+  # no data with it. Upstream (whose image agentmemory actually is) has moved to
+  # memini, so this is the trial before deciding whether to follow.
+  - ./agentmemory/ks.yaml
+  - ./memini/ks.yaml
+  - ./searxng/ks.yaml
+  # Flux-Kustomizations | Frontends
+  - ./open-webui/ks.yaml
+  - ./hermes/ks.yaml
+  - ./langflow/ks.yaml
+  # Flux-Kustomizations | The agentic coding loop
+  #
+  # dispatch grooms GitHub issues into a queue, the bridge CronJob turns claimed
+  # ones into foreman Workload CRs, and foreman runs coder -> gate -> reviewer
+  # and opens the PR.
+  #
+  # Enabled 2026-08-22, once these Bitwarden Secrets Manager items existed:
+  #   `github_token`  GITHUB_TOKEN -- the one agent PAT. Commits, PRs and issue
+  #                   labels all come from this identity, on EVERY repo the loop
+  #                   is pointed at, so scope it deliberately.
+  #   `dispatch`      DISPATCH_AGENT_TOKEN (shared with the bridge -- one field
+  #                   on purpose, two values means every tick 401s),
+  #                   DISPATCH_AUTH_USERNAME / _PASSWORD, LITELLM_API_KEY.
+  #   `foreman`       LITELLM_API_KEY, separate from dispatch's so either can be
+  #                   revoked alone.
+  #
+  # foreman stands alone (it idles with no Workloads); dispatch additionally
+  # needs the `dispatch` Postgres user, which is declared alongside this in
+  # apps/database/crunchy-postgres/cluster/cluster.yaml.
+  #
+  # Moved out of `datasci` on 2026-08-29. foreman's Workloads now land in `llm`
+  # (foreman.taskNamespace) and the git-credentials Kyverno policy follows them,
+  # so a Workload scheduled into `datasci` will no longer get its credentials.
+  - ./foreman/ks.yaml
+  - ./dispatch/ks.yaml

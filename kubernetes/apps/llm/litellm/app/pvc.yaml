@@ -1,0 +1,28 @@
+---
+# ChatGPT subscription OAuth grant (litellm's `chatgpt/` provider).
+#
+# litellm's Authenticator keeps the whole grant -- access_token, refresh_token,
+# account_id, expires_at -- in a single auth.json under CHATGPT_TOKEN_DIR, and
+# rewrites it on EVERY refresh, not just at login (_write_auth_file() in
+# llms/chatgpt/authenticator.py). Without a volume the grant dies on the next
+# rollout and the next request silently blocks for 15 minutes waiting for a
+# device-code login nobody is watching for. Hence a real PVC.
+#
+# Deliberately NOT volsync-backed, unlike agentmemory. A Codex refresh token is
+# single-use and rotates on every use, so a restored snapshot is an ALREADY
+# SPENT token -- the restore would look successful and then fail to refresh.
+# The recovery path is a fresh device login, not a backup; see the runbook in
+# configmap.yaml. 1Gi is the practical floor for ceph-block, not a size
+# estimate: the payload is one ~2KB JSON file.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: litellm-chatgpt-auth
+  namespace: llm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ceph-block
+  resources:
+    requests:
+      storage: 1Gi

@@ -1,0 +1,120 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: foreman
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: foreman
+  interval: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    foreman:
+      # Foreman CRD status metrics via kube-state-metrics Custom Resource State.
+      #
+      # This used to be off, with a note saying KSM cannot mount a ConfigMap
+      # from another namespace so turning it on would mean editing
+      # kube-prometheus-stack too. Half of that is still true -- KSM really can
+      # only mount ConfigMaps from its own namespace -- but the chart has had
+      # `crs.namespace` since 0.9.17 (LLMKube#1492), so the ConfigMap simply
+      # renders into observability instead. The note predated that and was
+      # never revisited; this needed no chart bump to switch on (it was already
+      # true at 0.9.20, before renovate moved this chart to 0.9.24).
+      #
+      # The other half of the wiring IS in kube-prometheus-stack and had to be
+      # added alongside this: `kube-state-metrics.customResourceState` with
+      # `create: false` pointing at the ConfigMap below, plus `rbac.extraRules`
+      # granting KSM list/watch on foreman.llmkube.dev. Both live in
+      # apps/observability/kube-prometheus-stack/app/helmrelease.yaml. Turning
+      # this on without them yields a ConfigMap nothing reads; turning them on
+      # without this leaves KSM pointing at a ConfigMap that does not exist.
+      crs:
+        enabled: true
+        # KSM runs in observability (kube-prometheus-stack's targetNamespace),
+        # not here. Empty would render into the release namespace (llm), where
+        # KSM cannot reach it.
+        namespace: observability
+        # Must match `key` on the kube-prometheus-stack side.
+        configMapKey: foreman-crs.yaml
+        # Ships a PrometheusRule for the two failure modes worth paging on: a
+        # Workload stuck Pending (scheduling or capability mismatch) and a
+        # FleetNode whose heartbeat went stale (agent crash / partition). It
+        # renders into THIS namespace, not crs.namespace -- fine, because
+        # prometheusSpec.ruleSelectorNilUsesHelmValues is false, so Prometheus
+        # picks up rules from every namespace.
+        alerts:
+          enabled: true
+    operator:
+      # Audit-record ConfigMaps (foreman.llmkube.dev/audit) are written WITHOUT
+      # ownerReferences so they outlive the AgenticTask, and are only GC'd by
+      # the operator's reaper. The 7d chart default piles up hundreds of CMs in
+      # llm under task churn; 48h is plenty for a homelab.
+      audit:
+        retention: 48h
+    agent:
+      # One task per FleetNode, and a Job-mode coder holds its node for the
+      # whole Job -- so this is the cap on concurrent coder/gate/review steps.
+      # Sized to the bridge's MAX_IN_PROGRESS=2 (two issues in flight, each
+      # occupying one node per pipeline step) plus one spare. Each replica
+      # requests 200m/256Mi and can burst to 2 CPU / 8Gi during a self-gate.
+      replicaCount: 3
+      # native = the real M3 agent loop. `stub` (the chart default) writes a
+      # synthetic Succeeded result and would silently "pass" every task.
+      mode: native
+      # Pin to this namespace: the agent watches AgenticTasks, and an empty
+      # value means all namespaces.
+      taskNamespace: llm
+      # The scheduler rejects capability-pinned tasks when this is empty. These
+      # pods hold no GPU -- worker4's Strix iGPU serves the model behind
+      # litellm, so the executor node genuinely needs no accelerator. The Agent
+      # CRs ask for `accelerator: any`, which matches.
+      accelerator: none
+      roles:
+        - worker
+        - coder
+        - verifier
+      # The chart default (ghcr.io/defilantech/llmkube-foreman-agent) is the
+      # lean alpine runtime with no toolchain, so a coder-role agent cannot run
+      # its in-workspace self-gate. This is the polyglot coder build (Go +
+      # Python + Node), which is the right shape for this cluster's repos --
+      # keep the tag in lockstep with ./ocirepository.yaml.
+      image:
+        repository: ghcr.io/misospace/llmkube-coder
+        tag: "0.9.24@sha256:1b23b7d2b18e2e94d24c86bbff5d047d3c315e33e043a194397d07d180bf8945"
+      githubToken:
+        secretName: foreman-agent
+        secretKey: GITHUB_TOKEN
+      # gitRemoteURL deliberately unset: empty means each coder task clones and
+      # pushes its own Workload payload.repo, so this one fleet serves every
+      # repo the bridge dispatches. Setting it would pin all tasks to a single
+      # fork.
+      commitAuthorName: ekenheim
+      commitAuthorEmail: ekenheim@gmail.com
+      # run_gate_job reuses this across invocations for GOMODCACHE / pip / npm
+      # caches. RWX because the gate Job and the agent pod that submits it are
+      # not guaranteed to land on the same node.
+      gateCache:
+        storageClass: ceph-filesystem
+        accessModes: ["ReadWriteMany"]
+        size: 20Gi
+    coder:
+      # Job-mode Agents (./agents/coder.yaml et al) run under the chart's
+      # foreman-coder ServiceAccount and project this Secret as GITHUB_TOKEN for
+      # the clone + push. Reuse the agent's Secret rather than the chart's
+      # default standalone foreman-git-credentials.
+      gitCredentialsSecret: foreman-agent
+      gitCredentialsSecretKey: GITHUB_TOKEN
+    # webhook.failurePolicy stays at the chart default (Fail). Note the tradeoff
+    # with a single operator replica: during an operator rollout there is a brief
+    # window where every Agent/AgenticTask create is rejected cluster-wide. Flux
+    # retries the foreman-agents Kustomization, and the operator being mid-restart
+    # means nothing is dispatching anyway.

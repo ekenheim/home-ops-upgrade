@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: dispatch
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    # Was HELD at 0.5.40: 0.5.41's middleware tightened the CSP to
+    # `script-src 'self'`, dropping 'unsafe-inline' without adding a nonce, and
+    # Next.js App Router streams its RSC payload through inline
+    # `self.__next_f.push(...)` scripts (plus dispatch's own inline theme
+    # script). Browsers blocked all of them, so nothing hydrated: /automation
+    # sat on its "Loading..." shell and the rest of the UI was inert.
+    #
+    # Hold LIFTED. Upstream fixed it in misospace/dispatch#845 ("serve the theme
+    # initialiser from a static file and add a per-request CSP nonce"), merged
+    # 2026-08-24, which first shipped in v0.5.42 (published later the same day).
+    # Verified in the released source rather than inferred from the timeline:
+    # middleware.ts at v0.5.40 has `script-src 'self' 'unsafe-inline'`, and at
+    # v0.5.42 and v0.5.48 it has `script-src 'self' 'nonce-__NONCE__'`.
+    #
+    # 0.5.48 rather than 0.5.42 because that is the version this chart is being
+    # run at elsewhere, so it is the better-exercised target. The matching hold
+    # in .github/renovate/packageRules.json5 is removed in the same change.
+    tag: 0.5.48
+  # Chart wraps the bjw-s common library (v5.0.1), so the values below are the
+  # same shape as an app-template HelmRelease, plus a dispatch-specific
+  # `migrations:` block.
+  url: oci://ghcr.io/misospace/charts/dispatch

@@ -1,0 +1,91 @@
+---
+# GPU claim for InferenceServices running on worker4's Radeon 8060S.
+#
+# deviceClassName gpu.amd.com is created by the ROCm k8s-gpu-dra-driver
+# (kube-system). Confirm the device is actually advertised before relying on
+# this:
+#   kubectl get resourceslices.resource.k8s.io
+#   -> node=worker4 driver=gpu.amd.com devices=['gpu-0-128']
+#
+# WHY A ResourceClaim AND NOT A ResourceClaimTemplate
+#
+# This was a ResourceClaimTemplate, and that is what made the node
+# single-model: a template mints a *fresh, pod-scoped* claim for every pod
+# that references it, so the second serving pod asked for a device the first
+# pod's claim already held and sat Pending forever. That was read as "the GPU
+# is exclusive"; it is not. allocationMode governs how many *devices* land in
+# the claim, and says nothing about how many pods may use one. Sharing is
+# governed by reservedFor, which the API caps at 256 consumers:
+#   kubectl explain resourceclaims.status.reservedFor
+#   -> "There can be at most 256 such reservations."
+#
+# So: one long-lived claim, allocated once, reserved by every serving pod that
+# names it. ornith-35b and qwen38-27b now run side by side on gpu-0-128.
+#
+# Verify after any change here -- both pods must appear under one claim:
+#   kubectl -n llm get resourceclaims.resource.k8s.io -o json | jq -r \
+#     '.items[] | "\(.metadata.name) reservedFor=\([.status.reservedFor[]?.name])"'
+#
+# WHAT THIS DOES NOT BUY
+#
+# Nothing arbitrates between the two llama-server processes once they are both
+# on the device. They contend for one LPDDR5X pool at a measured 184-217 GiB/s
+# effective, so concurrent generation splits that bandwidth and a prompt-
+# processing burst on one stalls the other. Worse, GTT is unreclaimable on this
+# UMA part -- if the two of them together over-allocate it, the node deadlocks
+# rather than OOM-killing a pod. Both models are therefore sized from measured
+# footprints with deliberate headroom, not from their context ceilings. Check
+# before adding a third:
+#   kubectl -n llm exec deploy/ornith-35b -- \
+#     cat /sys/class/drm/card0/device/mem_info_gtt_used \
+#         /sys/class/drm/card0/device/mem_info_gtt_total
+#
+# SURVIVING A worker4 REBOOT -- THIS CLAIM DOES NOT SELF-HEAL
+#
+# The claim is long-lived, but the CDI spec that actually injects the device
+# into a container is not: the ROCm driver writes it under CDI_ROOT=/var/run/cdi,
+# which is tmpfs and therefore empty after every reboot. Kubelet's DRA checkpoint
+# under /var/lib/kubelet DOES survive, so kubelet still believes these pods'
+# claim is prepared and never calls NodePrepareResources again. Nothing
+# regenerates the spec, and containerd fails every start with:
+#
+#   failed to create containerd container: CDI device injection failed:
+#   unresolvable CDI devices k8s.gpu.amd.com/gpu=<claim-uid>-gpu-0-128
+#
+# The pods sit in CreateContainerError and retry forever -- observed 954 attempts
+# over 3.5h with zero progress. Restarting the driver DaemonSet does not help;
+# it only writes specs when kubelet asks it to, and kubelet never asks.
+#
+# The fix is a new pod UID, which forces a fresh NodePrepareResources:
+#   kubectl -n llm delete pod -l 'app in (qwen38-27b,ornith-35b)'
+#
+# Do not "fix" this by deleting the claim -- the claim is fine, and deleting it
+# forces a reallocation this file exists to avoid. Confirm the device is still
+# advertised before suspecting anything deeper; gpu-0-128 normally survives:
+#   kubectl get resourceslices.resource.k8s.io
+#
+# allocationMode: All -- Strix Halo presents a single iGPU sharing system
+# memory, so there is nothing to partition between workloads; the claim takes
+# the whole device and the pods share the claim.
+#
+# NO adminAccess, deliberately, despite the upstream reference config for this
+# hardware setting it. The API gates it on a namespace label:
+#   spec.devices.requests[0].adminAccess: Forbidden: admin access to devices
+#   requires the `resource.kubernetes.io/admin-access: true` label on the
+#   containing namespace
+# Applying that label to llm would grant *every* workload in this shared
+# namespace (40+ pods) the ability to claim privileged device access, which is
+# a poor trade for a serving pod. adminAccess exists for monitoring agents that
+# need to see devices already allocated to others; pods sharing a claim that
+# holds the whole GPU do not need it.
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaim
+metadata:
+  name: llama-strix-gpu
+spec:
+  devices:
+    requests:
+      - name: gpu
+        exactly:
+          deviceClassName: gpu.amd.com
+          allocationMode: All

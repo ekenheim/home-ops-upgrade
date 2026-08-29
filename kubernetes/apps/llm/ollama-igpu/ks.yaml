@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app ollama-igpu
+  namespace: flux-system
+spec:
+  targetNamespace: llm
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  interval: 1h
+  path: ./kubernetes/apps/llm/ollama-igpu/app
+  postBuild:
+    substitute:
+      APP: *app
+      CLUSTER: main
+  prune: true
+  retryInterval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  timeout: 5m
+  wait: false

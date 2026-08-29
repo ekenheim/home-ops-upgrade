@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: llm
+  labels:
+    goldilocks.fairwinds.com/enabled: "true"
+    # Same as datasci, and for the same reason: llmkube's InferenceServices and
+    # the DRA GPU plugin need hostPath/device access on worker4, and the volsync
+    # movers below run privileged.
+    pod-security.kubernetes.io/enforce: privileged
+    #istio-injection: enabled
+  annotations:
+    # hermes, agentmemory, open-webui and toolhive/memory-mcp are all volsync
+    # backed. Without this the restic movers cannot chown restored data.
+    volsync.backube/privileged-movers: "true"

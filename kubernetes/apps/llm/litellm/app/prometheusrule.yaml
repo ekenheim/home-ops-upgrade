@@ -1,0 +1,72 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: litellm
+spec:
+  groups:
+    - name: litellm.rules
+      rules:
+        # The one that means "a caller just got an error". Everything below is
+        # degradation; this is outage.
+        - alert: LiteLLMFallbackChainExhausted
+          expr: |-
+            sum by (requested_model, exception_status, exception_class) (
+              increase(litellm_deployment_failed_fallbacks_total[15m])
+            ) > 0
+          annotations:
+            summary: >-
+              LiteLLM {{ $labels.requested_model }} fallback chain exhausted -- no working
+              deployment ({{ $labels.exception_status }} {{ $labels.exception_class }})
+          labels:
+            severity: critical
+        # Fallbacks firing repeatedly means callers are silently getting a
+        # different model than they asked for. router_settings.fallbacks maps
+        # `review` and `deep` onto `self-hosted`, which is a slower/stronger ->
+        # faster/weaker swap -- see the note in ../app/configmap.yaml. Worth
+        # knowing about rather than discovering in an output review.
+        - alert: LiteLLMModelFailover
+          expr: |-
+            sum by (requested_model, fallback_model, exception_status, exception_class) (
+              increase(litellm_deployment_successful_fallbacks_total[10m])
+            ) > 3
+          for: 5m
+          annotations:
+            summary: >-
+              LiteLLM {{ $labels.requested_model }} failing over to {{ $labels.fallback_model }}
+              ({{ $labels.exception_status }} {{ $labels.exception_class }})
+          labels:
+            severity: warning
+        - alert: LiteLLMDeploymentOutage
+          # deployment_state latches at 2 via the cooldown callback's pool label
+          # and never resets (success callbacks label by requested model), so
+          # gate on ongoing failures too -- otherwise a recovered deployment
+          # alerts forever.
+          expr: |-
+            max by (litellm_model_name) (litellm_deployment_state) >= 2
+            and on (litellm_model_name)
+            sum by (litellm_model_name) (rate(litellm_deployment_failure_responses_total[15m])) > 0
+          for: 10m
+          annotations:
+            summary: >-
+              LiteLLM {{ $labels.litellm_model_name }} out of rotation and still failing
+              (deployment_state >= 2)
+          labels:
+            severity: warning
+        # 403/429 is the shape a spent ChatGPT subscription grant or an expired
+        # upstream key takes. Distinct from the outage alert because the fix is
+        # a credential, not a restart -- see the device-login runbook in
+        # ../app/configmap.yaml.
+        - alert: LiteLLMAuthOrQuotaFailures
+          expr: |-
+            sum by (litellm_model_name, exception_status) (
+              increase(litellm_deployment_failure_responses_total{exception_status=~"403|429"}[15m])
+            ) > 5
+          for: 5m
+          annotations:
+            summary: >-
+              LiteLLM {{ $labels.litellm_model_name }} returning {{ $labels.exception_status }}
+              (auth/quota -- check the upstream key or plan cap)
+          labels:
+            severity: warning

@@ -91,6 +91,24 @@ spec:
         - pods=[*]
         - deployments=[*]
         - persistentvolumeclaims=[*]
+      rbac:
+        # KSM reads the CRs named in the Custom Resource State config below.
+        # Without these it starts fine and silently emits no foreman_* series.
+        extraRules:
+          - apiGroups: ["foreman.llmkube.dev"]
+            resources: ["agentictasks", "workloads", "fleetnodes"]
+            verbs: ["list", "watch"]
+      customResourceState:
+        enabled: true
+        # create: false -- the ConfigMap is NOT ours. The foreman chart renders
+        # it into this namespace via `foreman.crs.namespace: observability`
+        # (apps/llm/foreman/app/helmrelease.yaml), so the metric definitions
+        # track foreman chart bumps instead of being hand-copied here and
+        # rotting. `name`/`key` must match that chart's output:
+        # <release>-crs / foreman.crs.configMapKey.
+        create: false
+        name: foreman-crs
+        key: foreman-crs.yaml
       prometheus:
         monitor:
           enabled: true

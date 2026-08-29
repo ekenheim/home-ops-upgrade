@@ -1,0 +1,18 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: memini
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    # renovate: datasource=docker depName=registry.erwanleboucher.dev/eleboucher/charts/memini
+    tag: v0.7.21
+  # NOT ghcr.io -- upstream publishes to its own registry. Anonymous pull works
+  # (the /v2/ root answers 401, which is normal; the manifest fetch does not),
+  # so no imagePullSecret is needed. Verified by pulling v0.7.21 on 2026-08-29.
+  url: oci://registry.erwanleboucher.dev/eleboucher/charts/memini

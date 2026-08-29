@@ -129,23 +129,12 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["rayproject/ray"],
       "allowedVersions": "<2.54.1"
-    },
-    {
-      // Hold the dispatch chart at 0.5.40. 0.5.41's middleware tightened the
-      // CSP to `script-src 'self'`, dropping 'unsafe-inline' without adding a
-      // nonce. Next.js App Router streams its RSC payload through inline
-      // `self.__next_f.push(...)` scripts, so browsers block every one of them
-      // and the app never hydrates -- /automation sits on its "Loading..."
-      // shell and the rest of the UI is inert. Lift together with the pin in
-      // kubernetes/apps/datasci/dispatch/app/ocirepository.yaml once upstream
-      // restores 'unsafe-inline' or emits a nonce.
-      "description": ["Pin dispatch to 0.5.40 (0.5.41 CSP blocks hydration)"],
-      "matchDatasources": ["docker"],
-      "matchPackageNames": [
-        "ghcr.io/misospace/charts/dispatch",
-        "ghcr.io/misospace/dispatch"
-      ],
-      "allowedVersions": "<0.5.41"
     }
+    // The dispatch hold at <0.5.41 was removed here on 2026-08-29. It existed
+    // because 0.5.41 tightened the CSP to `script-src 'self'` without a nonce,
+    // which blocked Next.js's inline RSC bootstrap and left the UI unhydrated.
+    // misospace/dispatch#845 added a per-request nonce and shipped in v0.5.42;
+    // kubernetes/apps/llm/dispatch/app/ocirepository.yaml now tracks 0.5.48.
+    // Renovate is free to move this package again.
   ]
 }

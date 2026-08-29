@@ -1,0 +1,36 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app litellm-operator
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/llm/litellm-operator/app
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  targetNamespace: llm
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  # NOT a dependency of ./litellm/ks.yaml, and that is intentional. The proxy
+  # there is still a plain app-template HelmRelease reading a hand-written
+  # config.yaml; the operator manages nothing until a LiteLLMProxy CR exists.
+  # Installing it first means the CRDs and the LLMKube auto-register watcher are
+  # in place whenever we do convert, without coupling the gateway's availability
+  # to an operator that is currently idle.
+  #
+  # llmkube is a dependency only because `llmkube.autoRegister: true` needs the
+  # inference.llmkube.dev CRDs present at operator start -- otherwise the
+  # watcher logs a warning and stays disabled for the life of the pod.
+  dependsOn:
+    - name: llmkube
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: *app

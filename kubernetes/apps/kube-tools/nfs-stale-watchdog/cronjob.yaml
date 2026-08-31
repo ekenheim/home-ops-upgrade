@@ -56,8 +56,17 @@ spec:
                   # within the API's 1h retention window. This matters for
                   # StatefulSet pods (stable names) where a stale event from
                   # 40min ago could otherwise nuke a healthy replacement.
+                  # NOTE: this image ships busybox date, not GNU date. It has
+                  # no relative-date parsing ("15 minutes ago" is rejected) and
+                  # cannot read RFC3339 without an explicit -D format. Both
+                  # idioms were used here originally, so `set -e` aborted this
+                  # script on the CUTOFF_EPOCH line on every single run from
+                  # 2026-05-25 until 2026-08-31 -- the watchdog never scanned
+                  # anything, and posterizarr and tautulli both sat wedged for
+                  # 3d16h on 2026-08-28 with it "running" every 5 minutes.
+                  # The cutoff is now computed in awk via systime(), and the
+                  # event timestamp is parsed with -D below. Keep it that way.
                   LOOKBACK_MIN=15
-                  CUTOFF_EPOCH=$(date -u -d "$${LOOKBACK_MIN} minutes ago" +%s)
 
                   TMPL='{range .items[*]}{.metadata.namespace}|{.involvedObject.kind}|{.involvedObject.name}|{.lastTimestamp}|{.message}{"\n"}{end}'
 
@@ -65,9 +74,10 @@ spec:
                   # script even though "nothing to clean" is the happy path.
                   { kubectl get events -A --field-selector reason=Failed -o jsonpath="$TMPL" \
                       | grep -E "stale file handle|failed to prepare subPath for volumeMount" || true; } \
-                    | awk -F'|' -v cutoff="$CUTOFF_EPOCH" '
+                    | awk -F'|' -v lookback="$LOOKBACK_MIN" '
+                        BEGIN { cutoff = systime() - lookback * 60 }
                         $2 == "Pod" && $4 != "" {
-                          cmd = "date -u -d \"" $4 "\" +%s 2>/dev/null"
+                          cmd = "date -u -D \"%Y-%m-%dT%H:%M:%SZ\" -d \"" $4 "\" +%s 2>/dev/null"
                           ts = 0
                           cmd | getline ts
                           close(cmd)

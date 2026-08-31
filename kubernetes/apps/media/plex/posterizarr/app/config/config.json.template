@@ -91,7 +91,7 @@
     "LibraryFolders": "true",
     "Posters": "true",
     "SeasonPosters": "true",
-    "BackgroundPosters": "false",
+    "BackgroundPosters": "true",
     "TitleCards": "true",
     "show_skipped": "false",
     "logLevel": "2",

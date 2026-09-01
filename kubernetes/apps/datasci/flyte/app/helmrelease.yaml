@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: flyte-binary
-      version: v2.0.44
+      version: v2.0.45
       sourceRef:
         kind: HelmRepository
         name: flyteorg

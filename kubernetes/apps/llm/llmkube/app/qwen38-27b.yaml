@@ -266,6 +266,15 @@ spec:
   # and the way back is to cut contextSize to 262144 (recovers ~9.5 GiB) rather
   # than returning to 524288. If it crashes anyway, this model is exonerated --
   # set this to 1 and go after the panic itself with netconsole.
+  #
+  # AND CUT ORNITH BACK FIRST. On 2026-09-01 ornith-35b took the GPU budget
+  # this pod had been conceding: its contextSize went to 2097152 (262144 per
+  # slot, its full native window) on the explicit grounds that it is the only
+  # tenant, taking it from ~34 to ~47 GiB. Setting replicas: 1 here without
+  # first lowering ornith's contextSize would put the pair near 74 GiB of GTT
+  # and host headroom back into the band the resets happened in -- which is
+  # the exact condition this parking is meant to bisect, so it would also
+  # invalidate the experiment.
   replicas: 0
   # worker4 is the only node with an AMD GPU, and it is tainted as a dedicated
   # LLM node -- both are required or the pod cannot be placed.

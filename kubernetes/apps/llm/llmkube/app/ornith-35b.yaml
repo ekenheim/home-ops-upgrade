@@ -300,8 +300,10 @@ spec:
   # to the Vulkan driver producing subtle numerical errors on AMD, reproduced
   # it across several unrelated models, and had it disappear entirely on ROCm.
   #   https://huggingface.co/deepreinforce-ai/Ornith-1.0-35B-GGUF/discussions/22
-  # Our per-slot window is 131072, well inside the broken range, and the
-  # symptom is degraded output rather than an error -- the worst kind to ship.
+  # Our per-slot window is 262144, so a request can now run to 3x the top of
+  # that broken range rather than 1.6x -- the reason to stay on ROCm got
+  # stronger with the context bump, not weaker. The symptom is degraded output
+  # rather than an error, which is the worst kind to ship.
   #
   # rocm-7_2_3 is the upgrade actually worth taking: +1.2 t/s is negligible,
   # but it is the backend that thread landed on as correct, and it is a newer
@@ -347,22 +349,42 @@ spec:
   # lockstep with this number -- hermes cannot discover it through litellm and
   # silently assumes 256k otherwise.
   #
-  # Cost is linear and small: measured 22.7 GiB GTT at contextSize 65536 and
-  # 23.8 GiB at 131072, i.e. ~1.1 GiB per extra 65536 tokens. Measured 28.6 GiB
-  # at 524288, so this lands near 37 GiB -- worker4 reports 124 GiB of GTT.
-  # Confirmed live 2026-08-17 at this setting: mem_info_gtt_used 37,492,838,400
-  # (34.9 GiB) of 133,143,986,176 (124 GiB).
+  # 2097152/8 = 262144 each -- 2026-09-01. This is the model's FULL native
+  # window (gguf metadata: qwen35moe.context_length = 262144, and config.json
+  # carries no rope_scaling, so 262144 is trained rather than extended). There
+  # is nothing left to give above this: asking a slot for more would need RoPE
+  # scaling and cost quality. Every earlier value here was half the model or
+  # less, chosen to leave room for a second model on the device.
   #
-  # That 124 GiB is no longer this pod's alone. qwen38-27b shares the device
-  # (see resourceclaim.yaml) at roughly 27 GiB, so the pair sits near 62 GiB
-  # and the free pool is ~62 GiB rather than ~89. Growing contextSize here now
-  # spends a shared budget -- re-measure both pods before raising it, because
-  # over-allocating GTT deadlocks the node instead of OOM-killing a pod.
+  # WHY IT IS SAFE TO TAKE THE WHOLE WINDOW NOW
   #
-  # Per-slot stays under the model's native window (gguf metadata:
-  # qwen35moe.context_length = 262144 -- Ornith shares the arch), so no RoPE
-  # scaling and no quality loss.
-  contextSize: 1048576
+  # qwen38-27b is parked at replicas: 0 (see qwen38-27b.yaml -- it is a bisect
+  # for worker4's hard resets, not a capacity decision), so this pod is the
+  # only tenant of the GPU and the ~27 GiB it used to concede is free. That
+  # made this an unshared budget rather than the shared one the note below
+  # used to warn about.
+  #
+  # Cost is linear and measured, not projected: 22.7 GiB GTT at contextSize
+  # 65536, 23.8 at 131072, 28.6 at 524288, 34.4 at 1048576 -- a flat
+  # ~0.79 GiB per extra 65536 tokens of total budget, i.e. ~10 KB per token.
+  # Doubling to 2097152 adds ~12.6 GiB, so expect ~47 GiB of the 124 GiB GTT
+  # pool and ~77 GiB still free.
+  #
+  # Verified free before the change (2026-09-01, ornith alone on the node):
+  #   mem_info_gtt_used  36,951,764,992 (34.4 GiB) of 133,143,986,176 (124 GiB)
+  #   MemAvailable       76,633,052 kB  (71.3 GiB) of 129,445,360 kB
+  # Host headroom is the number that actually matters, not the GTT ceiling:
+  # GTT is pinned and is not charged to the pod cgroup, so the kernel cannot
+  # OOM-kill its way out of exhaustion and panics instead. The crashes
+  # qwen38-27b was parked for correlated with MemAvailable ~26 GiB, not with
+  # any GTT ceiling (peak was 58% of the pool). This change spends ~12.6 GiB
+  # of the 71.3 GiB available, landing near ~59 GiB -- far from that range.
+  #
+  # BEFORE UN-PARKING qwen38-27b, CUT THIS BACK. Restoring it costs ~27 GiB at
+  # its own contextSize 262144, which would put the pair near 74 GiB of GTT
+  # and host headroom back into the band the resets happened in. The two
+  # models can no longer both have their full window; this one yields first.
+  contextSize: 2097152
   parallelSlots: 8
   # Restarting the server drops in-flight requests. waitForIdle holds the
   # pod-template update until llama.cpp reports its slots idle, so a rollout

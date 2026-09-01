@@ -36,11 +36,11 @@ spec:
   maxRetries: 3
   maxOutputTokens: 20480
   stuckLoopDetection:
-    # See ./coder.yaml -- 131072 per-request window (contextSize 1048576 / 8
+    # See ./coder.yaml -- 262144 per-request window (contextSize 2097152 / 8
     # slots), less maxOutputTokens 20480. Keep in lockstep with coder.yaml.
     editFreeTurnsLimit: 100
-    contextSoftCap: 96000
-    contextHardCap: 104000
+    contextSoftCap: 192000
+    contextHardCap: 208000
   requestTurnTimeoutSeconds: 1800
   requestTimeoutSeconds: 7200
   bashTimeoutSeconds: 60

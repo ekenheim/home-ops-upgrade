@@ -54,22 +54,28 @@ spec:
   maxRetries: 3
   maxOutputTokens: 20480
   stuckLoopDetection:
-    # Sized to this cluster's actual per-request window, which is NOT the
-    # model's 262144 native context: the InferenceService runs contextSize
-    # 1048576 across parallelSlots 8, so each request gets 131072. llama.cpp
+    # Sized to this cluster's actual per-request window: the InferenceService
+    # runs contextSize 2097152 across parallelSlots 8, so each request gets
+    # 262144 -- which is now also the model's full native context. llama.cpp
     # rejects anything over that outright ("request exceeds the available
     # context size"), so cap well under it -- and note the window has to hold
-    # maxOutputTokens (20480) as well, leaving ~110k for input.
+    # maxOutputTokens (20480) as well, leaving ~241k for input.
     #
-    # These were 48000/60000, sized against the OLD contextSize 524288 (=65536
-    # per slot) and never revisited when #6402 doubled it on 2026-08-17. That
-    # stale 48000 is what killed nordic-housing#8: the coder was terminated by
+    # 192000/208000 as of 2026-09-01, the same ~73%/79% of the window the
+    # previous 96000/104000 were of 131072. The margin is deliberate and is
+    # kept proportional rather than spent: a cap that sits right on the window
+    # turns a soft-cap stop into a hard 400 from llama.cpp.
+    #
+    # These were once 48000/60000, sized against contextSize 524288 (=65536 per
+    # slot) and never revisited when #6402 doubled it on 2026-08-17. That stale
+    # 48000 is what killed nordic-housing#8: the coder was terminated by
     # ContextSoftCap at turn 18 after 76s ("wire-token count 49631 >= soft cap
     # 48000"), having read a 1665-line h3ZoneData.ts, and the escalation read
-    # as "too hard" when it was simply out of budget.
+    # as "too hard" when it was simply out of budget. Move these whenever
+    # contextSize moves.
     editFreeTurnsLimit: 100
-    contextSoftCap: 96000
-    contextHardCap: 104000
+    contextSoftCap: 192000
+    contextHardCap: 208000
   requestTurnTimeoutSeconds: 1800
   requestTimeoutSeconds: 7200
   bashTimeoutSeconds: 60

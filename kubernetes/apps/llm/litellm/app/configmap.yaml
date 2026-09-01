@@ -15,6 +15,9 @@ data:
       # Ornith rollout (llama.cpp build 0b1bad14f, gfx1151, rocm-6.4.4):
       #   50.5 t/s generation, three consecutive runs, variance under 0.1
       #   34 GiB GTT of 124 GiB with contextSize 1048576 across 8 slots
+      #     (contextSize is 2097152 as of 2026-09-01, i.e. ~47 GiB -- the
+      #      throughput number above is unaffected, KV size is not in the
+      #      per-token read path)
       #
       # That lands on kyuz0's public Strix Halo reference of 50.3 t/s for this
       # model class, quant and backend, i.e. this node performs as expected.
@@ -50,12 +53,19 @@ data:
       # catching it. Note hermes does NOT learn the window from this: it reads
       # /v1/models, which returns bare ids. Set model.context_length in the
       # hermes ConfigMap too, and move all three with contextSize.
+      #
+      # 262144 as of 2026-09-01 (contextSize 2097152 / parallelSlots 8), which
+      # is Ornith's full native window. It was 131072 while qwen38-27b shared
+      # the GPU; that model is parked at replicas 0, so ornith took the whole
+      # budget. self-hosted, review and fast all point at the same backend and
+      # must carry the same number -- and foreman's contextSoftCap/HardCap in
+      # ../../foreman/agents/coder.yaml move with it too.
       - model_name: self-hosted
         model_info:
           mode: chat
           supports_function_calling: true
           supports_vision: true
-          max_input_tokens: 131072
+          max_input_tokens: 262144
         litellm_params:
           model: openai/ornith-35b
           api_base: http://ornith-35b.llm:8080/v1
@@ -67,7 +77,7 @@ data:
           mode: chat
           supports_function_calling: true
           supports_vision: true
-          max_input_tokens: 131072
+          max_input_tokens: 262144
         litellm_params:
           model: openai/ornith-35b
           api_base: http://ornith-35b.llm:8080/v1
@@ -99,7 +109,7 @@ data:
           mode: chat
           supports_function_calling: true
           supports_vision: true
-          max_input_tokens: 131072
+          max_input_tokens: 262144
         litellm_params:
           model: openai/ornith-35b
           api_base: http://ornith-35b.llm:8080/v1
@@ -135,19 +145,19 @@ data:
       # tool calling on the live endpoint first -- see qwen38-27b.yaml.
       #
       # max_input_tokens is the per-slot window (contextSize 524288 /
-      # parallelSlots 2) and is DELIBERATELY not the 131072 the ornith aliases
-      # advertise. `deep` runs Qwen3.8-27B at its full native 262144 -- gguf
-      # `qwen35.context_length = 262144`, no rope_scaling -- because the jobs
-      # routed here are the ones that want the whole window and can wait.
+      # parallelSlots 2). `deep` runs Qwen3.8-27B at its full native 262144 --
+      # gguf `qwen35.context_length = 262144`, no rope_scaling -- because the
+      # jobs routed here are the ones that want the whole window and can wait.
       #
-      # ornith is also a 262144-native model and is also running at half, but
-      # raising it costs ~13 GiB of shared GTT across its 8 slots and its
-      # consumers are latency-sensitive, so it stays at 131072 for now.
+      # As of 2026-09-01 the ornith aliases advertise 262144 too, so all four
+      # numbers match again -- but that is a coincidence of both models being
+      # 262144-native and both now running at their full window, NOT a rule.
+      # They are independent backends with independent contextSize; do not
+      # collapse them to one value, and keep naming which alias a hardcoded
+      # window means (hermes' model.context_length tracks `self-hosted`).
       #
-      # Consequence: the two backends no longer share one context number. Do
-      # not "tidy" these to match. Anything that hardcodes a window per
-      # endpoint (hermes' model.context_length, currently 131072 for its
-      # default self-hosted model) has to name which alias it means.
+      # Note this alias currently has no backend at all: qwen38-27b is parked
+      # at replicas 0 and `deep` falls through to ornith. See qwen38-27b.yaml.
       - model_name: deep
         model_info:
           mode: chat

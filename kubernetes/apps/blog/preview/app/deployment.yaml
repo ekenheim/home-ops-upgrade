@@ -63,6 +63,10 @@ spec:
             - name: git-secret
               mountPath: /etc/git-secret
               readOnly: true
+            - name: passwd
+              mountPath: /etc/passwd
+              subPath: passwd
+              readOnly: true
       containers:
         - name: dev
           image: node:22-alpine
@@ -138,6 +142,10 @@ spec:
           volumeMounts:
             - name: workspace
               mountPath: /workspace
+            - name: passwd
+              mountPath: /etc/passwd
+              subPath: passwd
+              readOnly: true
       volumes:
         - name: workspace
           emptyDir: {}
@@ -145,3 +153,6 @@ spec:
           secret:
             secretName: blog-preview-git
             defaultMode: 0440
+        - name: passwd
+          configMap:
+            name: blog-preview-passwd

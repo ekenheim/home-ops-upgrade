@@ -1,0 +1,15 @@
+---
+# ssh calls getpwuid() and refuses to run when the uid has no passwd entry, and
+# alpine/git ships none in the 1000 range. The namespace enforces the restricted
+# Pod Security Standard, so running as root is not an option either — this gives
+# uid 1000 a name instead.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blog-preview-passwd
+  labels:
+    app.kubernetes.io/name: blog-preview
+data:
+  passwd: |
+    root:x:0:0:root:/root:/bin/sh
+    node:x:1000:1000:node:/workspace:/bin/sh

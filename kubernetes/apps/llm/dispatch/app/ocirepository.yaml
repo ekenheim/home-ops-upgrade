@@ -27,7 +27,7 @@ spec:
     # 0.5.48 rather than 0.5.42 because that is the version this chart is being
     # run at elsewhere, so it is the better-exercised target. The matching hold
     # in .github/renovate/packageRules.json5 is removed in the same change.
-    tag: 0.5.51
+    tag: 0.5.52
   # Chart wraps the bjw-s common library (v5.0.1), so the values below are the
   # same shape as an app-template HelmRelease, plus a dispatch-specific
   # `migrations:` block.

@@ -10,28 +10,67 @@
 [ai]
 enabled = true
 
-[ai.ollama]
-# OpenAI-compatible endpoint on the workstation. The /v1 suffix is required.
-# Pin a DHCP reservation for this address: a lease change surfaces as a
-# generic "Connection error." that looks identical to Ollama being down.
-base_url = "http://192.168.1.182:11434/v1"
+[ai.open_ai]
+# The cluster LiteLLM proxy, not OpenAI. marimo routes any model id prefixed
+# `openai/` through this block (AnyProviderConfig.for_openai), so the prefix is
+# a marimo-internal provider selector and says nothing about who serves the
+# weights -- everything below lands on worker4's iGPU via llmkube.
+#
+# The /v1 suffix is required: marimo passes base_url to the OpenAI SDK
+# unmodified, and the SDK appends only the route (/chat/completions).
+#
+# Cluster-internal DNS on purpose. The ingress (litellm.$${SECRET_DOMAIN}) would
+# work too but adds a TLS hop and a round trip out to the LAN for traffic that
+# never leaves the cluster.
+base_url = "http://litellm.llm:4000/v1"
+# `api_key` is deliberately absent here. marimo's _get_key falls back to the
+# OPENAI_API_KEY environment variable when the field is missing or empty, which
+# keeps the credential out of this file (this file is a ConfigMap in git AND is
+# rewritten in place by the marimo UI, so it is the wrong home for a secret).
+#
+# LiteLLM enforces auth on every route -- verified 2026-09-01, `no header`,
+# `Bearer `, `Bearer anything` and `Bearer sk-1234` all return 401 on
+# /v1/models -- so without a key the AI panel is dead. Note the failure is
+# LOUD by design: `openai` is the one provider marimo marks require_key=True,
+# so a missing key surfaces as "OpenAI API key not configured" rather than an
+# opaque 401. That is why this uses `openai/` rather than an [ai.custom_providers]
+# entry, which sets require_key=False and would fail silently.
 
 [ai.models]
-# One model across all three roles on purpose. qwen3.6:35b occupies 23.3GB of
-# a ~24GB card, so a second model cannot be resident; mixing models makes
-# Ollama evict and reload on every role switch, costing 20-40s each time.
-# Warm latency on a resident model is ~0.7s.
-chat_model = "ollama/qwen3.6:35b"
-edit_model = "ollama/qwen3.6:35b"
-autocomplete_model = "ollama/qwen3.6:35b"
-custom_models = ["ollama/qwen3.6:35b"]
-displayed_models = [
-  "ollama/qwen3.6:35b",
-  "ollama/qwen3.6:35b-ctx24k",
-  "ollama/qwen3.5:9b",
-  "ollama/qwen3.5:9b-ctx32k",
-  "ollama/qwen2.5vl:7b",
+# All four ids are LiteLLM aliases, not model names -- see litellm's
+# configmap.yaml. `self-hosted`, `review` and `fast` are the same Ornith-1.0-35B
+# weights; `deep` is the dense Qwen3.8-27B sharing the same iGPU.
+#
+# `fast` for autocomplete is the load-bearing choice. Ornith is a reasoning
+# model whose chat template opens the assistant turn with a <think> block, so
+# `self-hosted` burns output budget thinking before it answers -- fine for chat,
+# useless for a completion that has to arrive between keystrokes. `fast` is the
+# same backend with enable_thinking: false.
+chat_model = "openai/self-hosted"
+edit_model = "openai/self-hosted"
+autocomplete_model = "openai/fast"
+# custom_models is what puts non-catalogue ids in the picker at all; marimo has
+# no way to enumerate a LiteLLM proxy's aliases. displayed_models then narrows
+# the picker to exactly these -- without it the `openai/` provider drags in
+# marimo's whole built-in OpenAI catalogue, none of which this proxy serves.
+custom_models = [
+  "openai/self-hosted",
+  "openai/fast",
+  "openai/deep",
+  "openai/review",
 ]
+displayed_models = [
+  "openai/self-hosted",
+  "openai/fast",
+  "openai/deep",
+  "openai/review",
+]
+
+# [ai.ollama] is gone on purpose. It pointed at a workstation Ollama on a pinned
+# DHCP lease (192.168.1.182:11434) and was later hand-edited in the UI to point
+# at litellm instead -- which cannot work: marimo only skips the API key for a
+# base_url containing 127.0.0.1:11434, so every request went out with the
+# literal string "ollama-placeholder" as its bearer token and came back 401.
 
 [completion]
 activate_on_typing = true

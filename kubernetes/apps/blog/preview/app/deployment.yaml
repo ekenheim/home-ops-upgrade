@@ -1,0 +1,147 @@
+---
+# Live preview of the blog. Clones github.com/ekenheim/talos-and-tensors and
+# runs the Astro dev server against the working copy, pulling every 30s. Drafts
+# are visible here and only here — production builds strip them.
+#
+# There is no PVC on purpose: the checkout is disposable, git is the source of
+# truth, and a restart just re-clones.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog-preview
+  labels:
+    app.kubernetes.io/name: blog-preview
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: blog-preview
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: blog-preview
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: clone
+          image: alpine/git:v2.54.0
+          # The mounted key is group-readable (0440); ssh refuses anything but
+          # 0600, so take a private copy before using it.
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              mkdir -p /workspace/.ssh
+              install -m 600 /etc/git-secret/identity /workspace/.ssh/id
+              install -m 644 /etc/git-secret/known_hosts /workspace/.ssh/known_hosts
+              rm -rf /workspace/repo
+              # URL inlined rather than passed via env: Flux runs envsubst over
+              # this manifest, and an unresolved shell variable would fail the
+              # whole Kustomization.
+              git clone --depth 1 git@github.com:ekenheim/talos-and-tensors.git /workspace/repo
+          env:
+            - name: GIT_SSH_COMMAND
+              value: ssh -i /workspace/.ssh/id -o UserKnownHostsFile=/workspace/.ssh/known_hosts -o IdentitiesOnly=yes
+            - name: HOME
+              value: /workspace
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: git-secret
+              mountPath: /etc/git-secret
+              readOnly: true
+      containers:
+        - name: dev
+          image: node:22-alpine
+          workingDir: /workspace/repo
+          # Vite rejects Host headers it does not know, so the ingress hostname
+          # is allow-listed. astro dev only daemonises when it detects an agent
+          # environment, so it stays in the foreground here and the container
+          # lifecycle tracks the server.
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              npm ci --no-audit --no-fund
+              exec npx astro dev --host 0.0.0.0 --port 4321 \
+                --allowed-hosts "preview.${SECRET_DOMAIN}"
+          env:
+            - name: HOME
+              value: /workspace
+          ports:
+            - name: http
+              containerPort: 4321
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+        - name: pull
+          image: alpine/git:v2.54.0
+          workingDir: /workspace/repo
+          # Vite watches the working tree, so a pull that changes a file is
+          # picked up without restarting anything.
+          command:
+            - sh
+            - -c
+            - |
+              set -u
+              while true; do
+                sleep 30
+                git pull --ff-only --quiet || true
+              done
+          env:
+            - name: GIT_SSH_COMMAND
+              value: ssh -i /workspace/.ssh/id -o UserKnownHostsFile=/workspace/.ssh/known_hosts -o IdentitiesOnly=yes
+            - name: HOME
+              value: /workspace
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+      volumes:
+        - name: workspace
+          emptyDir: {}
+        - name: git-secret
+          secret:
+            secretName: blog-preview-git
+            defaultMode: 0440

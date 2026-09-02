@@ -1,0 +1,29 @@
+---
+# Internal only. This serves unpublished drafts and a dev server, so it stays
+# off the external ingress and is reached over the tailnet.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blog-preview
+  labels:
+    app.kubernetes.io/name: blog-preview
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Blog preview
+    gethomepage.dev/group: Development
+spec:
+  ingressClassName: internal
+  rules:
+    - host: &host "preview.${SECRET_DOMAIN}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: blog-preview
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - *host

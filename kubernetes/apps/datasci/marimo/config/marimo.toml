@@ -11,92 +11,101 @@
 enabled = true
 
 [ai.open_ai]
-# The cluster LiteLLM proxy, not OpenAI. marimo routes any model id prefixed
-# `openai/` through this block (AnyProviderConfig.for_openai), so the prefix is
-# a marimo-internal provider selector and says nothing about who serves the
-# weights -- everything below lands on worker4's iGPU via llmkube.
+# Despite the name, this block configures the cluster LiteLLM proxy, and it
+# serves EVERY model below -- including the ones prefixed `litellm/`.
+#
+# A marimo model id is `<provider>/<alias>`. The provider half is a marimo
+# internal selector, stripped before the request goes out, so LiteLLM receives
+# just `self-hosted`, `fast`, `review`, `chatgpt`. It says nothing about who
+# serves the weights. What it DOES pick is which HTTP API marimo speaks:
+#
+#   openai/   -> OpenAIProvider  -> OpenAIResponsesModel -> POST /v1/responses
+#   litellm/  -> CustomProvider  -> OpenAIChatModel      -> POST /v1/chat/completions
+#
+# `litellm` is a real pydantic-ai provider (LiteLLMProvider) and sits in its
+# chat-compatible set, so it resolves cleanly rather than by accident.
+#
+# Credentials for BOTH come from this one block. `litellm/` is not a builtin
+# marimo provider and there is no [ai.open_ai_compatible] block, so for_model's
+# catch-all falls through to for_openai -- which is what we want, because
+# for_openai is the only path with require_key=True AND an OPENAI_API_KEY env
+# fallback. So the key stays out of this file and a missing key fails loudly.
+# Do NOT add an [ai.custom_providers] or [ai.open_ai_compatible] entry for
+# litellm: both set require_key=False with no env fallback, and would turn a
+# missing credential into a silent failure.
 #
 # The /v1 suffix is required: marimo passes base_url to the OpenAI SDK
 # unmodified and the SDK appends only the route.
-#
-# That route is /responses, NOT /chat/completions. marimo's OpenAIProvider
-# builds a pydantic-ai OpenAIResponsesModel (providers.py create_model), so
-# every `openai/` id above goes out as an OpenAI Responses API call. LiteLLM
-# bridges /v1/responses to each backend's chat endpoint -- verified 2026-09-02,
-# all five aliases below answered 200 -- but the bridge is lossy; see the
-# autocomplete note under [ai.models].
 #
 # Cluster-internal DNS on purpose. The ingress (litellm.$${SECRET_DOMAIN}) would
 # work too but adds a TLS hop and a round trip out to the LAN for traffic that
 # never leaves the cluster.
 base_url = "http://litellm.llm:4000/v1"
-# `api_key` is deliberately absent here. marimo's _get_key falls back to the
-# OPENAI_API_KEY environment variable when the field is missing or empty, which
-# keeps the credential out of this file (this file is a ConfigMap in git AND is
-# rewritten in place by the marimo UI, so it is the wrong home for a secret).
-#
-# LiteLLM enforces auth on every route -- verified 2026-09-01, `no header`,
-# `Bearer `, `Bearer anything` and `Bearer sk-1234` all return 401 on
-# /v1/models -- so without a key the AI panel is dead. Note the failure is
-# LOUD by design: `openai` is the one provider marimo marks require_key=True,
-# so a missing key surfaces as "OpenAI API key not configured" rather than an
-# opaque 401. That is why this uses `openai/` rather than an [ai.custom_providers]
-# entry, which sets require_key=False and would fail silently.
+# `api_key` is deliberately absent -- see the env-fallback note above. This file
+# is a plaintext ConfigMap in git AND is rewritten in place by the marimo UI, so
+# it is the wrong home for a secret. The key is a LiteLLM virtual key supplied
+# as OPENAI_API_KEY from secret.sops.yaml.
 
 [ai.models]
 # Every id is a LiteLLM alias, not a model name -- see litellm's configmap.yaml.
-# Picking the model is LiteLLM's job, not marimo's: marimo names an alias and
-# LiteLLM decides which backend serves it.
+# Picking the model is LiteLLM's job: marimo names an alias and LiteLLM decides
+# which backend serves it.
 #
 #   self-hosted / review / fast  Ornith-1.0-35B on worker4's iGPU (llmkube)
-#   deep                         nominally Qwen3.8-27B, see the warning below
 #   chatgpt                      gpt-5.4 on the metered ChatGPT subscription
+#
+# WHY `litellm/` AND NOT `openai/` FOR THE LOCAL MODELS. Both reach the same
+# proxy; the difference is the route, and /v1/responses is broken for these in
+# two independent ways (both verified 2026-09-02):
+#
+#  1. LiteLLM's responses bridge DROPS chat_template_kwargs -- even when the
+#     caller sends them explicitly -- so `fast`s enable_thinking:false is
+#     ignored and it reasons like every other Ornith alias. Same prompt:
+#     0.3s over chat/completions vs 8.4s over responses.
+#  2. The reasoning that leaks out then CRASHES the client. LiteLLM emits
+#     reasoning deltas with no content_index, and pydantic-ai 2.37.0 does
+#     `while len(raw_list) <= index` on it:
+#       TypeError: '<=' not supported between instances of 'int' and 'NoneType'
+#     That kills the whole streaming chat, so `openai/self-hosted` is not
+#     merely slow, it does not work at all.
 #
 # `chatgpt` is the one alias here that is NOT free local compute -- it spends a
 # human subscription shared with hermes and the codex CLI. LiteLLM deliberately
-# keeps it out of every router fallback so nothing reaches it by accident, so
-# it is safe to list: it is only ever used when picked by name in the UI.
-chat_model = "openai/self-hosted"
-edit_model = "openai/self-hosted"
-# AI inline completion is disabled ([completion] copilot = false), so this is
-# currently inert. It is still set to `fast` as the least-bad choice if it is
-# ever re-enabled. The reason it is off:
+# keeps it out of every router fallback so nothing reaches it by accident, so it
+# is safe to list: it is only used when picked by name.
 #
-# `fast` is `self-hosted`'s backend with chat_template_kwargs enable_thinking =
-# false, which is what makes it answer without an Ornith <think> block. But
-# LiteLLM's /v1/responses bridge DROPS chat_template_kwargs -- verified
-# 2026-09-02, dropped even when the caller sends them explicitly in the request
-# body -- and marimo only ever calls /v1/responses. So over this route `fast`
-# thinks. Measured on the same completion prompt:
-#
-#   /v1/chat/completions   2.0s,  99 output tokens, no reasoning block
-#   /v1/responses          8.4s, 460 output tokens, 1242 chars of reasoning
-#
-# 8.4s is not a completion that arrives between keystrokes. Re-enable when the
-# bridge forwards chat_template_kwargs; do not "fix" it by picking a different
-# alias, since all of them are the same reasoning weights.
-autocomplete_model = "openai/fast"
+# CAVEAT: `chatgpt` is streaming-only. LiteLLM's ChatGPT provider returns
+# text/event-stream even for a non-streaming request, and errors outright on the
+# chat route. marimo streams both /api/ai/chat and /api/ai/completion, so chat
+# and edit are fine; only /api/ai/inline_completion is non-streaming. Do not set
+# `chatgpt` as autocomplete_model.
+chat_model = "litellm/self-hosted"
+edit_model = "litellm/self-hosted"
+# `fast` is `self-hosted`s backend with enable_thinking:false, which over the
+# chat route is honoured -- measured 0.1-0.3s, fast enough to sit between
+# keystrokes. This is only true on `litellm/`; see point 1 above.
+autocomplete_model = "litellm/fast"
 # custom_models is what puts non-catalogue ids in the picker at all; marimo has
 # no way to enumerate a LiteLLM proxy's aliases. displayed_models then narrows
-# the picker to exactly these -- without it the `openai/` provider drags in
-# marimo's whole built-in OpenAI catalogue, none of which this proxy serves.
+# the picker to exactly these -- without it marimo drags in its whole built-in
+# catalogue, none of which this proxy serves.
 #
-# `deep` is deliberately absent from both lists. Its backend (qwen38-27b) is
-# parked at replicas 0 -- `kubectl -n llm get inferenceservice` reports it
-# Stopped -- and LiteLLM falls it back to self-hosted, so listing it would put
-# a second entry in the picker that silently serves Ornith. Add it back when
-# qwen38-27b is running.
+# `deep` is deliberately absent. Its backend (qwen38-27b) is parked at
+# replicas 0 -- `kubectl -n llm get inferenceservice` reports it Stopped -- and
+# LiteLLM falls it back to self-hosted, so listing it would put a second entry
+# in the picker that silently serves Ornith. The marimo virtual key is scoped to
+# exclude it too, so it 403s rather than lying. Add it back when qwen38-27b runs.
 custom_models = [
-  "openai/self-hosted",
-  "openai/fast",
-  "openai/review",
-  "openai/chatgpt",
+  "litellm/self-hosted",
+  "litellm/fast",
+  "litellm/review",
+  "litellm/chatgpt",
 ]
 displayed_models = [
-  "openai/self-hosted",
-  "openai/fast",
-  "openai/review",
-  "openai/chatgpt",
+  "litellm/self-hosted",
+  "litellm/fast",
+  "litellm/review",
+  "litellm/chatgpt",
 ]
 
 # [ai.ollama] is gone on purpose. It pointed at a workstation Ollama on a pinned
@@ -108,11 +117,10 @@ displayed_models = [
 [completion]
 activate_on_typing = true
 auto_close_pairs = true
-# `copilot = "custom"` is what activates ai.models.autocomplete_model; false
-# leaves editor autocomplete alone and only turns off the AI inline completion.
-# Off because every alias thinks over marimo's /v1/responses route -- see the
-# autocomplete_model note above.
-copilot = false
+# `copilot = "custom"` is what activates ai.models.autocomplete_model. Enabled
+# because `litellm/fast` answers in 0.1-0.3s; it was off while autocomplete was
+# routed over /v1/responses, where the same alias took 8.4s.
+copilot = "custom"
 signature_hint_on_typing = false
 
 [package_management]

@@ -1,0 +1,28 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: talos-and-tensors
+  labels:
+    app.kubernetes.io/name: talos-and-tensors
+  annotations:
+    external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Blog
+    gethomepage.dev/group: Development
+spec:
+  ingressClassName: external
+  rules:
+    - host: &host "blog.${SECRET_DOMAIN}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: talos-and-tensors
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - *host

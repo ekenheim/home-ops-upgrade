@@ -90,7 +90,16 @@ spec:
                 # declares no version bounds, so has() still returns True and the
                 # break only surfaces at boot as:
                 #   ModuleNotFoundError: No module named 'mcp.server.fastmcp'
-                uv pip install --system --quiet "marimo[mcp]==$(marimo --version)"
+                #
+                # `recommended` is here for the AI panel, not for convenience.
+                # It is the only extra that pulls pydantic-ai-slim[openai], and
+                # marimo's AI providers import both `openai` and `pydantic_ai`
+                # lazily inside create_model/create_provider. Neither ships in
+                # the base image, so without this EVERY model in [ai.models]
+                # fails at request time no matter how it is configured -- and it
+                # fails in the request, not at boot, so the pod stays Ready.
+                uv pip install --system --quiet \
+                  "marimo[mcp,recommended]==$(marimo --version)"
 
                 # --token-password-file replaces --no-token. The same value gates
                 #   the web UI (login form at /auth/login, then a 14-day cookie)
@@ -136,6 +145,13 @@ spec:
             envFrom:
               - secretRef:
                   name: marimo-s3-creds
+              # Supplies OPENAI_API_KEY, which is the LiteLLM virtual key. The
+              # [ai.open_ai] block in marimo.toml deliberately omits `api_key`
+              # so the credential stays out of a file that lives in git AND is
+              # rewritten in place by the marimo UI; marimo's for_openai falls
+              # back to this env var (config.py os_key("OPENAI_API_KEY")).
+              - secretRef:
+                  name: marimo-litellm
             resources:
               requests:
                 cpu: 100m

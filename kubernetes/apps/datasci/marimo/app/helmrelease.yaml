@@ -145,13 +145,25 @@ spec:
             envFrom:
               - secretRef:
                   name: marimo-s3-creds
-              # Supplies OPENAI_API_KEY, which is the LiteLLM virtual key. The
-              # [ai.open_ai] block in marimo.toml deliberately omits `api_key`
-              # so the credential stays out of a file that lives in git AND is
-              # rewritten in place by the marimo UI; marimo's for_openai falls
-              # back to this env var (config.py os_key("OPENAI_API_KEY")).
+              # Supplies OPENAI_API_KEY -- a LiteLLM virtual key, defined in
+              # secret.sops.yaml. The [ai.open_ai] block in marimo.toml
+              # deliberately omits `api_key` so the credential stays out of a
+              # file that is a plaintext ConfigMap in git AND is rewritten in
+              # place by the marimo UI; marimo's for_openai falls back to this
+              # env var (config.py os_key("OPENAI_API_KEY")).
+              #
+              # optional: the AI panel is secondary to running notebooks, and a
+              # hard reference makes a missing key a CreateContainerConfigError
+              # that takes the whole notebook server down -- which is what
+              # happened on 2026-09-02, when this pointed at a Bitwarden item
+              # that did not exist. marimo's own failure mode for a missing key
+              # is already loud and specific ("OpenAI API key not configured"),
+              # because `openai/` is the one provider it marks require_key=True,
+              # so nothing is silently swallowed by degrading this to a runtime
+              # error.
               - secretRef:
                   name: marimo-litellm
+                  optional: true
             resources:
               requests:
                 cpu: 100m

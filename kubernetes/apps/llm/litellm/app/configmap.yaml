@@ -252,8 +252,29 @@ data:
       # declares mode: responses rather than chat.
       #
       # supports_function_calling / supports_vision below are not aspirational:
-      # both are True in litellm's own registry for this model, and a streaming
+      # both were True in litellm's own registry for gpt-5.4, and a streaming
       # tool call was exercised end to end (get_weather -> {"city":"Malmo"}).
+      #
+      # gpt-5.5 is NOT in litellm's bundled model_prices map (its chatgpt/
+      # entries stop at gpt-5.4, on main too), so litellm has no cost or
+      # capability metadata for it -- which is why model_info is spelled out
+      # above rather than inherited. That map is a pricing table that lags the
+      # backend; it is NOT a support list, and its gaps say nothing about what
+      # Codex serves. The authoritative list is the backend's own:
+      #   GET https://chatgpt.com/backend-api/codex/models?client_version=0.0.0
+      # which on 2026-09-02 returned gpt-5.6-{sol,terra,luna}, gpt-reserve,
+      # gpt-5.5, gpt-5.4, gpt-5.4-mini, codex-auto-review.
+      #
+      # Note that list is the CODEX surface and is not the same as the model
+      # picker on chatgpt.com -- the web app offers gpt-5-5-instant,
+      # -thinking, mini variants and Deep Research, none of which exist here.
+      # `chatgpt/gpt-5.4-pro` is the cautionary case: visible as a plan
+      # feature, rejected by Codex with "The 'gpt-5.4-pro' model is not
+      # supported when using Codex with a ChatGPT account."
+      #
+      # A usage_limit_reached 429 surfaces on this provider as a bare HTML
+      # error page, not JSON, so it is easy to misread as the model being
+      # rejected. Check the limit before concluding a model is unsupported.
       #
       # Unrelated: issue #27175 reports Cloudflare 403s on this provider. It
       # does NOT reproduce here -- filed against v1.83.14, several releases
@@ -271,7 +292,7 @@ data:
           supports_function_calling: true
           supports_vision: true
         litellm_params:
-          model: chatgpt/gpt-5.4
+          model: chatgpt/gpt-5.5
 
       # --- Embeddings: still ollama-igpu on the Intel masters ---
       # Deliberately NOT moved. The Strix InferenceService reports capabilities

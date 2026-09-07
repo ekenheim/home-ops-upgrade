@@ -99,7 +99,7 @@ spec:
           bridge:
             image:
               repository: ghcr.io/roryeckel/wyoming_openai
-              tag: 0.6.0@sha256:7c8ae7979933d31f359ccd3f93f496374baacd94ad4944dfcb37b39d6e89c7b0
+              tag: 0.6.1@sha256:7200ac141cd12594878aca7ce69d7c2159b824a411f25b96ea7431f71d250344
             # The image entrypoint is `python -m wyoming_openai`. It resolves
             # the TTS backend at startup and exits(1) if the endpoint is not
             # answering yet, so without this gate it crash-loops 2-3 times on

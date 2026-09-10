@@ -21,7 +21,7 @@ metadata:
     app.kubernetes.io/component: rbac
 rules:
   - apiGroups: [""]
-    resources: ["nodes", "namespaces", "events"]
+    resources: ["nodes", "namespaces", "events", "services"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["pods"]
@@ -43,7 +43,7 @@ rules:
     verbs: ["get", "patch", "update"]
   - apiGroups: ["batch"]
     resources: ["cronjobs", "cronjobs/status", "jobs"]
-    verbs: ["get", "list", "watch", "patch", "update", "create"]
+    verbs: ["get", "list", "watch", "patch", "update", "create", "delete"]
   - apiGroups: ["metrics.k8s.io"]
     resources: ["nodes", "pods"]
     verbs: ["get", "list"]

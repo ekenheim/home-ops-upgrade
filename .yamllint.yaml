@@ -22,7 +22,6 @@ rules:
 
 ignore: |
   .github/
-  kubernetes/apps/datasci/kubeflow/
   kubernetes/apps/datasci/deploykf-values/
   kubernetes/apps/datasci/seldon-core/chart/
   **/templates/

@@ -25,5 +25,3 @@ resources:
   - ./bandit-demo/ks.yaml
   - ./banditweb/ks.yaml
   - ./seldon-core/ks.yaml
-  - ./kubeflow/ks.yaml
-  - ./kubeflow-secrets/ks.yaml

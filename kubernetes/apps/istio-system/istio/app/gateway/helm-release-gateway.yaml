@@ -24,8 +24,7 @@ spec:
   values:
     service:
       annotations:
-        # Also publish deployKF hostnames on this gateway, since deployKF is attached to `istio-ingress`.
-        external-dns.alpha.kubernetes.io/hostname: "helm-gw.istio.local,*.helm.istio.local,deploykf.istio.local,*.deploykf.istio.local,kubeflow.istio.local,*.kubeflow.istio.local"
+        external-dns.alpha.kubernetes.io/hostname: "helm-gw.istio.local,*.helm.istio.local"
         io.cilium/lb-ipam-ips: "${SVC_ISTIO_ADDR}"
       loadBalancerIP: "${SVC_ISTIO_ADDR}"
     # Configure Kiali Dashboard

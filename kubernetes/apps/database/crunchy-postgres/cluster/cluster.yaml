@@ -298,7 +298,12 @@ spec:
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: DoNotSchedule
+          # Soft, not DoNotSchedule: 4 replicas on 4 schedulable nodes leaves
+          # no slot for the RollingUpdate surge pod (the tainted GPU node counts
+          # as an empty domain under the default nodeTaintsPolicy), so every
+          # pgbouncer rollout wedged with one pod Pending -- the last one for
+          # 13 days. Same fix as cloudflared.
+          whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
               postgres-operator.crunchydata.com/cluster: *name

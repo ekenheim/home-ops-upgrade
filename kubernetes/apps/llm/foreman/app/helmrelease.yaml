@@ -17,6 +17,42 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
+  # Mount ./gitconfig-configmap.yaml over /etc/gitconfig in the agent
+  # Deployment. This used to be a kyverno ClusterPolicy mutating every pod
+  # under the foreman-agent / foreman-coder ServiceAccounts; kyverno was an
+  # unmanaged deployKF leftover and was removed, so the agent Deployment gets
+  # the volume here instead, on the rendered manifest. Only the Deployment is
+  # reachable this way -- the per-task coder Jobs are created by the operator
+  # at run time, not by Helm -- and the chart's agent-deployment.yaml has no
+  # extraVolumes knob. The coder Jobs fall back to the harness's own
+  # GIT_ASKPASS scaffolding (repo.Auth), which is what cloned and pushed
+  # before the policy existed; the piece that genuinely needed this file is
+  # the reviewer, which runs InProcess in this Deployment.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: foreman-agent
+            patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: foreman-agent
+              spec:
+                template:
+                  spec:
+                    volumes:
+                      - name: foreman-git-config
+                        configMap:
+                          name: foreman-git-config
+                    containers:
+                      - name: agent
+                        volumeMounts:
+                          - name: foreman-git-config
+                            mountPath: /etc/gitconfig
+                            subPath: gitconfig
+                            readOnly: true
   values:
     foreman:
       # Foreman CRD status metrics via kube-state-metrics Custom Resource State.

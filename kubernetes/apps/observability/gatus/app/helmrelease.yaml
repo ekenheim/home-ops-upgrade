@@ -83,6 +83,11 @@ spec:
               capabilities: { drop: ["ALL"] }
             resources: *resources
     defaultPodOptions:
+      # app-template 5.x defaults this to false. The k8s-sidecar init container
+      # watches ConfigMaps cluster-wide through the in-cluster client and dies
+      # with "Service token file does not exist" without it. This is what broke
+      # the 4.6.2 -> 5.0.0 upgrade in May and left the HelmRelease suspended.
+      automountServiceAccountToken: true
       dnsConfig:
         options:
           - { name: ndots, value: "1" }

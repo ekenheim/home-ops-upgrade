@@ -129,6 +129,16 @@ spec:
             - key: llm-workload
               operator: Exists
               effect: NoSchedule
+            # tuppr taints every node PreferNoSchedule while a Talos upgrade is
+            # pending (and the TalosUpgrade has sat Failed for weeks). Rook's
+            # node validity check demands a toleration for EVERY taint, soft
+            # ones included, so without this it logs "placement settings do
+            # not match", counts 0 of 5 storage nodes valid, and never runs
+            # osd-prepare -- which is how worker4's replaced disk could not be
+            # re-added on 2026-09-14.
+            - key: tuppr.home-operations.com/outdated
+              operator: Exists
+              effect: PreferNoSchedule
         mgr: &placement
           nodeAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:

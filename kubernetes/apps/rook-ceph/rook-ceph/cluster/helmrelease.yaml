@@ -20,6 +20,15 @@ spec:
       retries: 3
   upgrade:
     cleanupOnFail: true
+    # Do not wait for the CephCluster to report idle. Rook marks the CR
+    # InProgress (observedGeneration lags) until it has finished every OSD
+    # rolling update, and each OSD update is gated on ok-to-stop, so during a
+    # backfill that can be hours. Helm's 15m wait then times out and the
+    # rollback below silently strips whatever change was just applied to the
+    # CR (seen twice: a placement change mid-rebalance in Aug, and the tuppr
+    # toleration on 2026-09-14). Rook does its own careful rollout; nothing
+    # here needs Helm to babysit it.
+    disableWait: true
     remediation:
       strategy: rollback
       retries: 3

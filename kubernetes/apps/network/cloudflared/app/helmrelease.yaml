@@ -78,7 +78,16 @@ spec:
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: DoNotSchedule
+          # Soft, not DoNotSchedule. The default nodeTaintsPolicy (Ignore) counts
+          # the tainted GPU node as a domain holding 0 pods, so with maxSkew 1 no
+          # schedulable node may ever hold 2 -- the cluster can fit exactly one
+          # pod per untainted node. A RollingUpdate on 3 replicas needs a surge
+          # pod, which then only fits while a 4th node is free; any NotReady
+          # node (or a stray pod carrying the same name label) leaves the surge
+          # pod Pending, the Deployment InProgress, and Helm rolling back after
+          # its 5m timeout. ScheduleAnyway keeps the spread as a scoring
+          # preference without wedging every upgrade.
+          whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
               app.kubernetes.io/name: *app

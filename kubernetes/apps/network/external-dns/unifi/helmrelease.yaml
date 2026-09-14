@@ -24,14 +24,12 @@ spec:
       retries: 3
       strategy: rollback
   values:
-    replicaCount: 2
-    topologySpreadConstraints:
-      - maxSkew: 1
-        topologyKey: kubernetes.io/hostname
-        whenUnsatisfiable: DoNotSchedule
-        labelSelector:
-          matchLabels:
-            app.kubernetes.io/name: external-dns-unifi
+    # external-dns has no leader election, so two replicas would race on the
+    # same records. Chart 1.22.0 made that explicit: values.schema.json caps
+    # replicaCount at 1 and the Deployment template fails on anything higher.
+    # 1.21.1 hardcoded `replicas: 1`, so the previous `2` was silently ignored
+    # and this is what has always actually run.
+    replicaCount: 1
     domainFilters:
       - ${SECRET_DOMAIN}
       - istio.local

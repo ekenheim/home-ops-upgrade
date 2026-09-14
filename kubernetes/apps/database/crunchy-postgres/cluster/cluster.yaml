@@ -295,16 +295,11 @@ spec:
           # Ref: https://github.com/grafana/grafana/issues/74260
           pool_mode: transaction
           client_tls_sslmode: prefer
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: kubernetes.io/hostname
-          # Soft, not DoNotSchedule: 4 replicas on 4 schedulable nodes leaves
-          # no slot for the RollingUpdate surge pod (the tainted GPU node counts
-          # as an empty domain under the default nodeTaintsPolicy), so every
-          # pgbouncer rollout wedged with one pod Pending -- the last one for
-          # 13 days. Same fix as cloudflared.
-          whenUnsatisfiable: ScheduleAnyway
-          labelSelector:
-            matchLabels:
-              postgres-operator.crunchydata.com/cluster: *name
-              postgres-operator.crunchydata.com/role: pgbouncer
+      # No custom topologySpreadConstraints: PGO already injects a hostname
+      # spread with whenUnsatisfiable: ScheduleAnyway on every pgbouncer pod.
+      # A DoNotSchedule copy here wedged rollouts (one pod Pending for 13
+      # days, #6821), and a ScheduleAnyway copy collides with PGO's own on the
+      # server-side-apply list key (topologyKey + whenUnsatisfiable):
+      #   duplicate entries for key [topologyKey="kubernetes.io/hostname",
+      #   whenUnsatisfiable="ScheduleAnyway"]
+      # which fails every PostgresCluster reconcile.

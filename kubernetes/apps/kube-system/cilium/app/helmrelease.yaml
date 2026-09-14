@@ -49,23 +49,12 @@ spec:
           enabled: true
           annotations:
             grafana_folder: Network
+      # relay and ui are off: hubble-relay could not complete its TLS handshake
+      # to hubble-peer and crashlooped every ~90s (1780 restarts, ~360/day),
+      # relisting on every start, and nothing consumed the UI. The flow/DNS/
+      # drop metrics above come straight from the per-node agents and do not
+      # need relay, so the Grafana dashboards keep working.
       relay:
-        enabled: true
-        rollOutPods: true
-        prometheus:
-          serviceMonitor:
-            enabled: true
+        enabled: false
       ui:
-        enabled: true
-        rollOutPods: true
-        ingress:
-          enabled: true
-          className: internal
-          annotations:
-            gethomepage.dev/enabled: "true"
-            gethomepage.dev/icon: cilium.png
-            gethomepage.dev/name: Hubble
-            gethomepage.dev/group: Observability
-            gethomepage.dev/description: Network Monitoring Dashboard
-            external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-          hosts: ["hubble.${SECRET_DOMAIN}"]
+        enabled: false

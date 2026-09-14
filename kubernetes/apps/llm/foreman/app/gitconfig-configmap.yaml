@@ -5,8 +5,8 @@ kind: ConfigMap
 metadata:
   name: foreman-git-config
 data:
-  # Mounted over /etc/gitconfig in every foreman pod that runs git -- the coder
-  # Jobs and the agent Deployment -- by ./git-credentials-policy.yaml.
+  # Mounted over /etc/gitconfig in the agent Deployment (where the reviewer and
+  # gate run InProcess) by the postRenderer in ./helmrelease.yaml.
   #
   # Why the *system* config and not an env var: foreman's bash tool (the one the
   # model drives) hands the shell a fixed env allowlist,

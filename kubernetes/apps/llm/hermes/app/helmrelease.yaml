@@ -98,6 +98,14 @@ spec:
               HERMES_HOME: /opt/data
               HOME: /opt/data
               TZ: "${TIMEZONE}"
+              # Keep uv's cache off the PVC. With HOME on /opt/data it landed
+              # in /opt/data/home/.cache/uv: 1.25M hardlinked files, 40 GiB as
+              # restic sees it. That overflowed the 8Gi restic cache, so the
+              # hourly volsync backup failed from 2026-09-06 and retried every
+              # ~6 min, rescanning 934k files on master1 each time. The cache
+              # is regenerable, so the overlay is fine; it just must not be
+              # backed up.
+              UV_CACHE_DIR: /tmp/uv-cache
               # The dashboard runs HERE, in the same container as the gateway,
               # rather than as its own container. gateway/status.py resolves
               # status from {HERMES_HOME}/gateway.pid -- shared on the PVC, so
@@ -179,6 +187,7 @@ spec:
               - /opt/data/workspace
             env:
               TZ: "${TIMEZONE}"
+              UV_CACHE_DIR: /tmp/uv-cache
             resources:
               requests:
                 cpu: 10m

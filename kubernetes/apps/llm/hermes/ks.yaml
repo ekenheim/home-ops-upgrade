@@ -29,3 +29,6 @@ spec:
     substitute:
       APP: *app
       VOLSYNC_CAPACITY: 20Gi
+      # restic's metadata cache for this PVC outgrew the template's 8Gi default
+      # (see UV_CACHE_DIR in the HelmRelease); plex uses 50Gi the same way.
+      VOLSYNC_CACHE_CAPACITY: 20Gi

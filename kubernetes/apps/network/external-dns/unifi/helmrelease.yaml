@@ -34,6 +34,13 @@ spec:
       - ${SECRET_DOMAIN}
       - istio.local
     extraArgs:
+      # external-dns v0.22.0 (chart 1.22.0) changed the default annotation
+      # prefix to external-dns.kubernetes.io/ with NO fallback to the alpha
+      # prefix every Ingress/Service in this repo still uses. Without this
+      # flag the target/hostname annotations are invisible: on 2026-09-14 it
+      # deleted 12 CNAMEs (blog, harbor, hempriser, rybbit, strapi, ...) and
+      # then failed to replace them with proxied A records to 192.168.50.153.
+      - --annotation-prefix=external-dns.alpha.kubernetes.io/
       - --ignore-ingress-tls-spec
       - --webhook-provider-url=http://localhost:8888
     fullnameOverride: external-dns-unifi

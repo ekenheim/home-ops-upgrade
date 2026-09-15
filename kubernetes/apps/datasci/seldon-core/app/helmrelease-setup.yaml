@@ -29,11 +29,11 @@ spec:
     controller:
       # Watch all namespaces so bandit resources in development/datasci are reconciled
       clusterwide: true
+      # The chart's values are flat (controller.resources.cpu/memory) and
+      # render the same memory value as both request and limit; a nested
+      # requests/limits block here is silently ignored. The manager's working
+      # set sits at 58-63 MiB, so the 64Mi default killed it (exit 137) ~4
+      # times a day.
       resources:
-        requests:
-          cpu: 10m
-          memory: 128Mi
-        # The chart defaults the limit to 64Mi; the manager's working set sits
-        # at 58-63 MiB, so it was killed (exit 137) ~4 times a day.
-        limits:
-          memory: 512Mi
+        cpu: 10m
+        memory: 512Mi

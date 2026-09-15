@@ -121,7 +121,9 @@ spec:
                 cpu: 100m
                 memory: 256Mi
               limits:
-                memory: 2Gi
+                # Working set peaks at 1.9-2.0 GiB; the 2Gi limit OOM-killed the
+                # pod 7 times in the week to 2026-09-15.
+                memory: 6Gi
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:

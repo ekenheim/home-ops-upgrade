@@ -32,4 +32,8 @@ spec:
       resources:
         requests:
           cpu: 10m
-          memory: 64Mi
+          memory: 128Mi
+        # The chart defaults the limit to 64Mi; the manager's working set sits
+        # at 58-63 MiB, so it was killed (exit 137) ~4 times a day.
+        limits:
+          memory: 512Mi

@@ -10,7 +10,18 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.9.28
+    # HELD AT 0.9.27 -- 2026-09-16. 0.9.28 (defilantech/LLMKube#1829) stops
+    # building the runtime's args whenever spec.command is set and passes
+    # spec.args verbatim instead. Both our InferenceServices set
+    # `command: [llama-server]` because kyuz0/amd-strix-halo-toolboxes has no
+    # entrypoint (Cmd is /bin/bash), and neither sets spec.args, so 0.9.28
+    # rendered ornith's Deployment with only the extraArgs: llama-server came
+    # up in router mode with no model on 127.0.0.1 and the pod never went
+    # Ready. Renovate is held below 0.9.28 in .github/renovate/packageRules.json5.
+    # To move on: either upstream grows an opt-in, or ornith-35b.yaml and
+    # qwen38-27b.yaml take over the full arg list in spec.args (the typed
+    # fields contextSize/parallelSlots/cacheType*/batchSize stop mattering).
+    tag: 0.9.27
   url: oci://ghcr.io/defilantech/charts/llmkube
 ---
 # yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json

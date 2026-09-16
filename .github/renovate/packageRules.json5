@@ -129,6 +129,17 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["rayproject/ray"],
       "allowedVersions": "<2.54.1"
+    },
+    {
+      // 0.9.28 (defilantech/LLMKube#1829) passes spec.args verbatim whenever
+      // spec.command is set, dropping the runtime-built args. Our llama.cpp
+      // InferenceServices need `command: [llama-server]` (the Strix Halo
+      // toolbox image has no entrypoint) and set no spec.args, so ornith came
+      // up serving nothing. See kubernetes/apps/llm/llmkube/app/helmrelease.yaml.
+      "description": ["Hold llmkube chart below 0.9.28 until the InferenceServices carry their own spec.args"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/defilantech/charts/llmkube"],
+      "allowedVersions": "<0.9.28"
     }
     // The dispatch hold at <0.5.41 was removed here on 2026-08-29. It existed
     // because 0.5.41 tightened the CSP to `script-src 'self'` without a nonce,

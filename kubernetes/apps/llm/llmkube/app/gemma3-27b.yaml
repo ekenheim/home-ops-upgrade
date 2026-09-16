@@ -1,0 +1,90 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/inference.llmkube.dev/model_v1alpha1.json
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: gemma3-27b
+spec:
+  # Gemma 3 27B instruct, dense. Added 2026-09-16 for subtitle translation
+  # (Lingarr, en -> sv). Ornith is a coding MoE with ~3B active parameters
+  # and its Swedish is not usable: "Ingen wiste", "fedrarna", "65 million",
+  # "Hur skulle det take slut?" from the same 30 lines on both `fast` and
+  # `self-hosted`, plus a ~30% rate of a 150-line JSON batch collapsing
+  # mid-output. Gemma 3 is one of the strongest open models on the
+  # Scandinavian languages at this size.
+  #
+  # unsloth's UD-Q4_K_XL is 15.7 GiB, within 0.3 GiB of plain Q4_K_M and
+  # measurably better on their dynamic-quant benchmarks. No mmproj: this
+  # deployment is text-only translation, and the projector would only cost
+  # memory on a GPU ornith already shares.
+  source: hf://unsloth/gemma-3-27b-it-GGUF
+  files:
+    - gemma-3-27b-it-UD-Q4_K_XL.gguf
+  sha256: 4ad994103fd28aa7e854a3cf1f14f15499da67446fde45feeb3db4d755db2886
+  format: gguf
+  quantization: UD-Q4_K_XL
+  prefetch: true
+  hardware:
+    accelerator: rocm
+    gpu:
+      enabled: true
+      vendor: amd
+      layers: 99
+      resourceClaims:
+        - name: gpu
+          resourceClaimName: llama-strix-gpu
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/inference.llmkube.dev/inferenceservice_v1alpha1.json
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: gemma3-27b
+  labels:
+    krr/ignore: "true"
+spec:
+  modelRef: gemma3-27b
+  modelCache:
+    claimName: llmkube-model-cache
+  runtime: llamacpp
+  # Same Strix Halo ROCm build as ornith; see ornith-35b.yaml for why ROCm
+  # and not Vulkan. `command` is required because the image has no
+  # entrypoint -- and that is why the llmkube chart is held at 0.9.27
+  # (helmrelease.yaml).
+  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-10.0
+  command:
+    - llama-server
+  replicas: 1
+  nodeSelector:
+    topology.kubernetes.io/gpus: amd
+  tolerations:
+    - key: llm-workload
+      operator: Exists
+      effect: NoSchedule
+  # Translation batches are ~1.5k prompt + ~1.5k completion tokens at
+  # Lingarr's 50-line batch size; 4 slots x 16k is plenty and keeps the KV
+  # cache small next to ornith's 2M-token window on the same 128 GiB.
+  contextSize: 65536
+  parallelSlots: 4
+  rolloutPolicy:
+    waitForIdle: true
+    idleTimeoutSeconds: 600
+  flashAttention: true
+  jinja: true
+  cacheTypeK: q8_0
+  cacheTypeV: q8_0
+  batchSize: 2048
+  uBatchSize: 512
+  resources:
+    cpu: "500m"
+    memory: 24Gi
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  extraArgs:
+    - --alias
+    - gemma3-27b
+    - --cont-batching
+    # A dense 27B runs ~10-12 tok/s here; cap responses so an abandoned
+    # request cannot hold the GPU for long (same reasoning as ornith).
+    - --n-predict
+    - "8192"

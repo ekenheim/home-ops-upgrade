@@ -24,6 +24,16 @@ spec:
   format: gguf
   quantization: UD-Q4_K_XL
   prefetch: true
+  # The shared model cache is a local PV pinned to worker4, which is tainted
+  # llm-workload=true:NoSchedule; without these the prefetch Job sits Pending
+  # with "1 node(s) had untolerated taint(s)".
+  prefetchTolerations:
+    - key: llm-workload
+      operator: Exists
+      effect: NoSchedule
+    - key: tuppr.home-operations.com/outdated
+      operator: Exists
+      effect: PreferNoSchedule
   hardware:
     accelerator: rocm
     gpu:

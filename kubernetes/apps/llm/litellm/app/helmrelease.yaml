@@ -22,6 +22,21 @@ spec:
     remediation:
       retries: 3
   values:
+    defaultPodOptions:
+      # Keep the proxy off master1. Its worn SATA SSD stalls etcd and the
+      # node flaps NotReady (2026-09-16 10:40 UTC, five link resets in an
+      # hour); every LLM caller in the cluster lost LiteLLM for those three
+      # minutes. Nothing pins the proxy to a control-plane node, so simply
+      # exclude the sick one. Drop this once master1's disk is replaced
+      # (see kubernetes/bootstrap/talos/talconfig.yaml notes on master1).
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values: ["master1"]
     controllers:
       litellm:
         annotations:

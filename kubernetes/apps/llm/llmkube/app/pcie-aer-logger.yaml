@@ -1,0 +1,56 @@
+---
+# Logs PCIe AER counters for every device on worker4 once a minute, so that a
+# device accumulating RxErr/BadTLP before a sync-flood reset can be identified
+# from the previous pod's logs. Only meaningful once the kernel owns AER
+# (pcie_ports=native in the worker4 kernel args); with firmware-owned AER the
+# counters stay at zero regardless of what the link is doing.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: pcie-aer-logger
+spec:
+  selector:
+    matchLabels: {app.kubernetes.io/name: pcie-aer-logger}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: pcie-aer-logger}
+    spec:
+      nodeSelector:
+        topology.kubernetes.io/gpus: amd
+      tolerations:
+        - {key: llm-workload, operator: Exists, effect: NoSchedule}
+        - {key: tuppr.home-operations.com/outdated, operator: Exists, effect: PreferNoSchedule}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: logger
+          image: docker.io/library/busybox:1.37.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              while true; do
+                for d in /host/sys/bus/pci/devices/*; do
+                  [ -f "$d/aer_dev_correctable" ] || continue
+                  id=$(basename "$d"); v=$(cat "$d/vendor" 2>/dev/null); dev=$(cat "$d/device" 2>/dev/null)
+                  c=$(tr '\n' ' ' < "$d/aer_dev_correctable" | sed 's/  */ /g')
+                  f=$(tr '\n' ' ' < "$d/aer_dev_fatal" | sed 's/  */ /g')
+                  n=$(tr '\n' ' ' < "$d/aer_dev_nonfatal" | sed 's/  */ /g')
+                  echo "$(date -u +%FT%TZ) $id $v:$dev COR[$c] NONFATAL[$n] FATAL[$f]"
+                done
+                sleep 60
+              done
+          volumeMounts:
+            - {name: sys, mountPath: /host/sys, readOnly: true}
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 32Mi}
+      volumes:
+        - name: sys
+          hostPath: {path: /sys, type: Directory}

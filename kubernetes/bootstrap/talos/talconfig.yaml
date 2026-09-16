@@ -148,6 +148,25 @@ nodes:
                 - key: llm-workload
                   value: "true"
                   effect: NoSchedule
+      # worker4 (MS-S1 MAX) hard-resets under sustained GPU load; every boot
+      # reports `x86/amd: Previous system reset reason [0x08000800]: an
+      # uncorrected error caused a data fabric sync flood event`. The firmware
+      # keeps PCIe error handling to itself (`_OSC: platform does not support
+      # [AER LTR DPC]`), so the OS never sees whether a device (the DRAM-less
+      # Kingston NVMe with its 64 MiB host memory buffer is the suspect) is
+      # throwing errors before the fabric resets. Take AER natively so the
+      # counters logged by apps/llm/llmkube/app/pcie-aer-logger.yaml are real.
+      # An hour of 90 GB CPU-only memory stress (2026-09-16) did NOT reset the
+      # node, so the memory controller is not the problem on its own.
+      # Applied with a reboot: `task talos:apply-node` (or talosctl upgrade).
+      # Pair the reboot with the BIOS change: UMA Frame Buffer FIXED at 96 GB
+      # (not Auto), so both models load into the carve-out instead of GTT.
+      - |-
+        machine:
+          install:
+            extraKernelArgs:
+              - pcie_ports=native
+              - pcie_ecrc=on
     networkInterfaces:
       # Realtek dual-port card (r8169): enp97s0 is 2.5G, enp98s0 is 10G.
       # Only the 10G port is cabled. Do NOT bond these -- mismatched speeds --

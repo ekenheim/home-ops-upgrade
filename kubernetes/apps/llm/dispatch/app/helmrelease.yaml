@@ -36,6 +36,17 @@ spec:
               # acceptance criteria. `fast` is the same weights with thinking
               # off, which is right for extraction, not for this.
               DISPATCH_GROOMER_MODEL: self-hosted
+              # The default 100s timeout never fit a reasoning model with repo
+              # context: the final grooming call thinks for 7-17k tokens and
+              # takes several minutes, so every run aborted, was marked
+              # retryable, and the scheduler re-groomed the same issue every
+              # 10 minutes (597 attempts on nordic-housing#99, 915 failures vs
+              # 10 completions since 2026-08-22), each attempt leaving a
+              # runaway generation on the GPU. 15 minutes lets a run complete;
+              # 30 minutes between runs keeps a genuinely stuck issue from
+              # monopolising ornith.
+              DISPATCH_GROOMER_TIMEOUT_MS: "900000"
+              DISPATCH_GROOMER_INTERVAL_MS: "1800000"
               DISPATCH_SCHEDULER_ENABLED: "true"
               # --- PR follow-up: CI failures / review comments -> pr-fix queue -
               # The `pr-followup` scheduler job drops every PR whose author is

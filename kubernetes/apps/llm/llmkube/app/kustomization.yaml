@@ -8,6 +8,7 @@ resources:
   - ./rbac.yaml
   - ./resourceclaim.yaml
   - ./cdi-stale-watchdog.yaml
+  - ./pcie-aer-logger.yaml
   - ./ornith-35b.yaml
   - ./qwen38-27b.yaml
   - ./gemma3-27b.yaml

@@ -408,6 +408,17 @@ spec:
     - --alias
     - ornith-35b
     - --cont-batching
+    # Hard cap on tokens per response. llama.cpp keeps generating after a
+    # client disconnects, and dispatch's groomer aborted every run at 100s
+    # while this reasoning model was still thinking, so single responses ran
+    # to 35k tokens for nobody: 87% of ornith's output 2026-09-15/16 went to
+    # requests the caller had already abandoned, and that sustained ~96 W GPU
+    # load is what worker4 (MS-S1 MAX) has been hard-resetting under since
+    # 2026-09-09. 16384 is well above any answer dispatch or hermes wants
+    # (groomer runs that finished used 7-17k including thinking) and stops
+    # the runaway case.
+    - --n-predict
+    - "16384"
     # NO --spec-type draft-mtp here, deliberately, even though this model has
     # an MTP head (config.json: mtp_num_hidden_layers: 1) and the flag would
     # be worth ~1.38x. bartowski's plain GGUF strips the MTP tensors, exactly

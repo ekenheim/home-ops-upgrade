@@ -158,6 +158,19 @@ data:
       #
       # Note this alias currently has no backend at all: qwen38-27b is parked
       # at replicas 0 and `deep` falls through to ornith. See qwen38-27b.yaml.
+      # Gemma 3 27B (dense, unsloth UD-Q4_K_XL) on worker4 -- see
+      # ../../llmkube/app/gemma3-27b.yaml. Exists for Lingarr's en->sv
+      # subtitle work, where ornith's Swedish was not usable. Text-only.
+      - model_name: translate
+        model_info:
+          mode: chat
+          supports_function_calling: false
+          supports_vision: false
+          max_input_tokens: 65536
+        litellm_params:
+          model: openai/gemma3-27b
+          api_base: http://gemma3-27b.llm:8080/v1
+          api_key: none
       - model_name: deep
         model_info:
           mode: chat

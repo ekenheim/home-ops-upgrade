@@ -10,3 +10,4 @@ resources:
   - ./cdi-stale-watchdog.yaml
   - ./ornith-35b.yaml
   - ./qwen38-27b.yaml
+  - ./gemma3-27b.yaml

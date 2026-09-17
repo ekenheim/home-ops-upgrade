@@ -19,15 +19,15 @@ resources:
   - ./ollama-igpu/ks.yaml
   # Flux-Kustomizations | Tooling & memory
   - ./toolhive/ks.yaml
-  # Three memory services on purpose, for now. agentmemory is what hermes' plugin
-  # talks to and is unchanged; memini and supermemory are being evaluated
-  # alongside it and share no data with it or each other. Upstream (whose image
-  # agentmemory actually is) has moved to memini, so that one is the trial
-  # before deciding whether to follow; supermemory is the popular closed-binary
-  # alternative, added 2026-09-17 to compare against both. See README.md.
-  - ./agentmemory/ks.yaml
+  # Two memory services. memini is what hermes' provider plugin talks to
+  # (agentmemory was removed 2026-09-17; its author had already moved to
+  # memini). hindsight is the candidate to consolidate on: open source, one
+  # bank per consumer, MCP per bank, LLM on the ChatGPT subscription. Nothing
+  # is wired to it yet. supermemory was trialled for a day and dropped: the
+  # engine is a closed binary and every multi-client feature is enterprise.
+  # See README.md.
   - ./memini/ks.yaml
-  - ./supermemory/ks.yaml
+  - ./hindsight/ks.yaml
   - ./searxng/ks.yaml
   # Flux-Kustomizations | Frontends
   - ./open-webui/ks.yaml

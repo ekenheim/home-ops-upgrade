@@ -30,6 +30,6 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      # sqlite plus vectors for a homelab's memory volume. agentmemory runs on
+      # sqlite plus vectors for a homelab's memory volume. agentmemory ran on
       # 5Gi doing the same job; this matches it.
       VOLSYNC_CAPACITY: 5Gi

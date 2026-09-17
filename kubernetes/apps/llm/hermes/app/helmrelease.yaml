@@ -56,10 +56,14 @@ spec:
                 # server added from the dashboard on 2026-08-14 was gone after
                 # the 08-16 restart, with no backup to recover it from.
                 python3 /tmp/merge-config.py
-                PLUGIN_DIR=/opt/data/plugins/agentmemory
+                # memini replaced agentmemory as the memory provider on
+                # 2026-09-17. The old plugin dir is removed from the PVC so
+                # hermes does not load two providers.
+                rm -rf /opt/data/plugins/agentmemory
+                PLUGIN_DIR=/opt/data/plugins/memini
                 mkdir -p "$PLUGIN_DIR"
-                cp /tmp/agentmemory-plugin/plugin.yaml "$PLUGIN_DIR/plugin.yaml"
-                cp /tmp/agentmemory-plugin/__init__.py "$PLUGIN_DIR/__init__.py"
+                cp /tmp/memini-plugin/plugin.yaml "$PLUGIN_DIR/plugin.yaml"
+                cp /tmp/memini-plugin/__init__.py "$PLUGIN_DIR/__init__.py"
                 chown -R 10000:10000 /opt/data/plugins
                 # code-server runs as uid 1000 (coder) with supplementary
                 # group 10000, but /opt/data is mode 700 -- mode 700 grants the
@@ -125,13 +129,18 @@ spec:
               HERMES_DASHBOARD: "1"
               HERMES_DASHBOARD_PORT: "9119"
               GATEWAY_HEALTH_URL: http://localhost:8642
-              AGENTMEMORY_URL: http://agentmemory.llm:3111
-              AGENTMEMORY_PROJECT: hermes
-              AGENTMEMORY_SECRET:
+              # Memory provider (plugins/memory/memini, rendered from
+              # memini-plugin.yaml). The bearer is memini's `hermes` named
+              # key, whose default_namespace is `hermes` -- see
+              # memini/app/externalsecret.yaml. It is read from the `memini`
+              # Bitwarden item through hermes-memini (externalsecret.yaml)
+              # so the key has exactly one source.
+              MEMINI_URL: http://memini.llm:8080
+              MEMINI_API_KEY:
                 valueFrom:
                   secretKeyRef:
-                    name: hermes
-                    key: AGENTMEMORY_SECRET
+                    name: hermes-memini
+                    key: MEMINI_API_KEY
               # Auth for the marimo MCP server declared in hermes-config.
               # Read straight from marimo's own Secret (same namespace) rather
               # than copied into the `hermes` Bitwarden item, so the token has
@@ -250,6 +259,6 @@ spec:
             subPath: merge-config.py
       plugin:
         type: configMap
-        name: hermes-agentmemory-plugin
+        name: hermes-memini-plugin
         globalMounts:
-          - path: /tmp/agentmemory-plugin
+          - path: /tmp/memini-plugin

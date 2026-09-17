@@ -140,16 +140,6 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/defilantech/charts/llmkube"],
       "allowedVersions": "<0.9.28"
-    },
-    {
-      // supermemory-server has no image; kubernetes/apps/llm/supermemory
-      // downloads the release binary by version. Upstream tags every server
-      // release `server-vX.Y.Z` (the repo's only release stream), and the
-      // annotated value in the HelmRelease is the bare X.Y.Z.
-      "description": ["Map supermemory server-v* release tags onto the bare version"],
-      "matchDatasources": ["github-releases"],
-      "matchPackageNames": ["supermemoryai/supermemory"],
-      "extractVersion": "^server-v(?<version>.+)$"
     }
     // The dispatch hold at <0.5.41 was removed here on 2026-08-29. It existed
     // because 0.5.41 tightened the CSP to `script-src 'self'` without a nonce,

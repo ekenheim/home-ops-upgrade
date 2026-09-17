@@ -321,6 +321,23 @@ data:
           api_base: http://ollama-igpu.llm:11434/v1
           api_key: ollama
 
+      # --- Embeddings: bge-m3 on the `embeddings` app (llama.cpp, CPU) ---
+      # The multilingual successor to all-minilm, which stays above only until
+      # memini and hindsight have moved. 1024 dims, no query/document prefix.
+      # Named after the model on purpose: vector size is a property of the
+      # model, and a generic alias would hide a breaking change from the two
+      # stores that bake it into their data. Why this model and this server:
+      # ../../embeddings/app/helmrelease.yaml.
+      # Virtual keys are scoped by model name, so a consumer's key must list
+      # `bge-m3` before that consumer is switched.
+      - model_name: bge-m3
+        model_info:
+          mode: embedding
+        litellm_params:
+          model: openai/bge-m3
+          api_base: http://embeddings.llm:8080/v1
+          api_key: none
+
       # --- Cloud providers (placeholders) ---
       # Add the matching keys to the `litellm` Bitwarden item + externalsecret,
       # then uncomment. See jory's repo for the full reference set.

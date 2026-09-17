@@ -19,12 +19,15 @@ resources:
   - ./ollama-igpu/ks.yaml
   # Flux-Kustomizations | Tooling & memory
   - ./toolhive/ks.yaml
-  # Two memory services on purpose, for now. agentmemory is what hermes' plugin
-  # talks to and is unchanged; memini is being evaluated alongside it and shares
-  # no data with it. Upstream (whose image agentmemory actually is) has moved to
-  # memini, so this is the trial before deciding whether to follow.
+  # Three memory services on purpose, for now. agentmemory is what hermes' plugin
+  # talks to and is unchanged; memini and supermemory are being evaluated
+  # alongside it and share no data with it or each other. Upstream (whose image
+  # agentmemory actually is) has moved to memini, so that one is the trial
+  # before deciding whether to follow; supermemory is the popular closed-binary
+  # alternative, added 2026-09-17 to compare against both. See README.md.
   - ./agentmemory/ks.yaml
   - ./memini/ks.yaml
+  - ./supermemory/ks.yaml
   - ./searxng/ks.yaml
   # Flux-Kustomizations | Frontends
   - ./open-webui/ks.yaml

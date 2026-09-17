@@ -22,9 +22,12 @@ spec:
     # The store is a database on the Crunchy cluster (pgvector is installed
     # there); the user is declared in crunchy-postgres/cluster/cluster.yaml.
     - name: crunchy-postgres-operator-cluster
-    # Embeddings go through litellm (`all-minilm`). The LLM does NOT: it is the
+    # Embeddings go through litellm (`bge-m3`). The LLM does NOT: it is the
     # ChatGPT subscription via Hindsight's own Codex provider, see helmrelease.
     - name: litellm
+    # What actually serves `bge-m3`. The API probes the embedding endpoint at
+    # start to learn the vector size and crash-loops without it.
+    - name: embeddings
   wait: true
   interval: 30m
   retryInterval: 1m

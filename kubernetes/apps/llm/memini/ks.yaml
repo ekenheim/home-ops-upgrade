@@ -20,9 +20,11 @@ spec:
     - name: external-secrets-stores
     - name: rook-ceph-cluster
     # Both the embedding and the assessment model are reached through litellm;
-    # nothing here talks to ollama-igpu or an InferenceService directly, so
-    # litellm is the only inference dependency.
+    # nothing here talks to a model server directly.
     - name: litellm
+    # litellm only proxies `bge-m3`; this is what serves it. memini embeds on
+    # every write and recall, so it should not come up before it on a rebuild.
+    - name: embeddings
   wait: true
   interval: 30m
   retryInterval: 1m

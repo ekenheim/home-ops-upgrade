@@ -96,16 +96,25 @@ spec:
         HINDSIGHT_API_LLM_MODEL: gpt-5.6-luna
         HINDSIGHT_API_REFLECT_LLM_PROVIDER: openai-codex
         HINDSIGHT_API_REFLECT_LLM_MODEL: gpt-5.5
-        # --- Embeddings: litellm -> ollama-igpu all-minilm, 384 dims ---
-        # Same model memini uses. Free, on the control-plane iGPUs, and it
-        # keeps every memory service comparable. Dims are baked into the
-        # pgvector columns: changing the model later means a new bank, not a
-        # switch. Upgrade path if recall is weak: text-embedding-3-small
-        # through litellm once an OpenAI API key exists there.
+        # --- Embeddings: litellm -> embeddings (bge-m3, 1024 dims) ---
+        # Same model memini uses: multilingual, so a Swedish query finds an
+        # English memory and the reverse, which all-minilm (the first choice
+        # here, 384 dims) could not do. Why this model and how it is served:
+        # ../../embeddings/app/helmrelease.yaml. bge-m3 needs no query prefix,
+        # which matters because this client has no way to add one.
+        #
+        # THE DIMENSION IS A ONE-WAY DOOR. ensure_embedding_dimension() alters
+        # memory_units.embedding and mental_models.embedding on startup only
+        # while those tables are EMPTY, and refuses to start once they hold
+        # rows. It was switched on 2026-09-18 with 0 banks for exactly that
+        # reason. Changing the model after this means new banks, not a switch.
+        #
+        # The server rejects input over 4096 tokens rather than truncating;
+        # retain chunks are 3000 chars, well inside it.
         HINDSIGHT_API_EMBEDDINGS_PROVIDER: openai
         HINDSIGHT_API_EMBEDDINGS_OPENAI_BASE_URL: http://litellm.llm:4000/v1
-        HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL: all-minilm
-        HINDSIGHT_API_EMBEDDINGS_OPENAI_DIMENSIONS: "384"
+        HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL: bge-m3
+        HINDSIGHT_API_EMBEDDINGS_OPENAI_DIMENSIONS: "1024"
         # --- Auth ---
         # Off by default upstream. The built-in extension turns every /v1 and
         # /mcp call into "Authorization: Bearer $HINDSIGHT_API_TENANT_API_KEY"

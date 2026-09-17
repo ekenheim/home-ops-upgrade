@@ -32,30 +32,32 @@ spec:
               MEMINI_API_KEYS_FILE: /etc/memini/api-keys.yaml
 
               # --- Embeddings -------------------------------------------------
-              # Through litellm, NOT straight at ollama-igpu. litellm already
-              # publishes `all-minilm` as a model (see ../../litellm/app/configmap.yaml)
-              # and proxying keeps this app on one auth path and one set of
-              # spend/latency metrics now that the prometheus callbacks are on.
+              # Through litellm, not straight at the embeddings Service: proxying
+              # keeps this app on one auth path and one set of spend/latency
+              # metrics (see ../../litellm/app/configmap.yaml).
               #
-              # 384 dims because that is what all-minilm emits. Upstream's own
-              # example uses Qwen3-Embedding-0.6B at 1024 dims served by a
-              # dedicated InferenceService; that is NOT portable here -- it asks
-              # for an Intel GPU through DRA, and the only DeviceClass on this
-              # cluster is gpu.amd.com (Intel iGPUs are exposed via the
-              # gpu.intel.com/i915 device plugin instead). Recall quality is
-              # lower than Qwen3-Embedding's; the trade is that this schedules
-              # today and adds nothing to worker4's GPU.
+              # bge-m3, 1024 dims, served by ../../embeddings (llama.cpp, CPU).
+              # It replaced all-minilm (384 dims) on 2026-09-18: that model is
+              # English-only with a ~256-token window, so Swedish queries
+              # missed, a Swedish question could not find an English memory,
+              # and everything past the start of a captured turn was ignored.
+              # Measurements and the reasoning for model and server are in
+              # ../../embeddings/app/helmrelease.yaml.
               #
-              # Changing the model or dims later is not free: memini stores
-              # vectors, so see MEMINI_REEMBED_ON_MODEL_CHANGE below.
+              # The server rejects input over 4096 tokens rather than
+              # truncating. capture_user_max_chars (1000) plus
+              # capture_assistant_max_chars (3000) is ~1,400 tokens even in
+              # Swedish; raise the window there before raising those caps.
+              #
+              # Changing the model or dims is not free: memini stores vectors,
+              # so see MEMINI_REEMBED_ON_MODEL_CHANGE below.
               MEMINI_EMBED_BASE_URL: http://litellm.llm:4000/v1
-              MEMINI_EMBED_MODEL: all-minilm
-              MEMINI_EMBED_DIMS: "384"
-              # Deliberately NOT set to upstream's "Instruct: ... Query: "
-              # prefix. That is a Qwen3-Embedding instruction format; all-minilm
-              # is a plain sentence-transformer with no instruct mode, so the
-              # prefix would just be embedded as literal text and pollute every
-              # query vector.
+              MEMINI_EMBED_MODEL: bge-m3
+              MEMINI_EMBED_DIMS: "1024"
+              # No query prefix, deliberately. Upstream's "Instruct: ... Query: "
+              # is a Qwen3-Embedding format; bge-m3 takes queries and documents
+              # as plain text, so a prefix would be embedded as literal words
+              # and pollute every query vector.
               MEMINI_EMBED_MAX_CONCURRENCY: "2"
               MEMINI_RECALL_EMBED_TIMEOUT: 5s
               # Re-embeds the whole store if the model or dims change, instead

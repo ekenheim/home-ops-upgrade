@@ -71,7 +71,7 @@ data:
           api_base: http://ornith-35b.llm:8080/v1
           api_key: none
 
-      # `review` is the alias agentmemory points ANTHROPIC_MODEL at.
+      # `review` was the alias agentmemory pointed ANTHROPIC_MODEL at (removed 2026-09-17).
       - model_name: review
         model_info:
           mode: chat
@@ -139,9 +139,9 @@ data:
       # NOTHING IN THIS REPO POINTS HERE YET, deliberately -- it is available
       # in Open WebUI's model picker and to anything you aim at it by hand. To
       # move the reviewer workloads over, change `model:` and `api_base:` on
-      # the `review` block above to this backend; agentmemory
-      # (ANTHROPIC_MODEL=review) and foreman's reviewer Agent both follow that
-      # alias, and the router fallback below already catches an outage. Verify
+      # the `review` block above to this backend; foreman's reviewer Agent
+      # follows that alias, and the router fallback below already catches an
+      # outage. Verify
       # tool calling on the live endpoint first -- see qwen38-27b.yaml.
       #
       # max_input_tokens is the per-slot window (contextSize 524288 /
@@ -310,7 +310,8 @@ data:
       # --- Embeddings: still ollama-igpu on the Intel masters ---
       # Deliberately NOT moved. The Strix InferenceService reports capabilities
       # ["completion","multimodal"] -- it does not serve embeddings, and
-      # agentmemory depends on this (OPENAI_EMBEDDING_MODEL=all-minilm, 384
+      # memini and hindsight depend on this (MEMINI_EMBED_MODEL /
+      # HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL = all-minilm, 384
       # dimensions). Moving it would need a separate embedding InferenceService.
       - model_name: all-minilm
         model_info:

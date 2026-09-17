@@ -58,6 +58,15 @@ spec:
       databases: ["langflow"]
       password:
         type: AlphaNumeric
+    # Hindsight (llm ns) memory service. Needs the `vector` extension, which
+    # PG16 does not trust for the owning role, so after PGO creates the
+    # database a superuser has to run once:
+    #   CREATE EXTENSION IF NOT EXISTS vector;   -- in database hindsight
+    # See kubernetes/apps/llm/README.md.
+    - name: "hindsight"
+      databases: ["hindsight"]
+      password:
+        type: AlphaNumeric
     - name: "prefect"
       databases: ["prefect"]
       password:

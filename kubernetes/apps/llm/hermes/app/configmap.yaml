@@ -301,7 +301,10 @@ data:
       timeout: 180
       persistent_shell: true
     memory:
-      provider: agentmemory
+      # memini, through the provider plugin in memini-plugin.yaml (replaced
+      # agentmemory 2026-09-17). hindsight is the next candidate: its
+      # provider ships in the image under plugins/memory/hindsight.
+      provider: memini
       auto_migrate: true
     compression:
       enabled: true
@@ -340,7 +343,7 @@ data:
     #   memory-mcp  http://mcp-memory-mcp-proxy.llm:8080/mcp   (9 tools)
     # ha-mcp's 78 tool schemas are a large slice of the window next to a ~28k
     # base prompt, and models degrade at tool selection well before they run
-    # out of context. memory-mcp overlaps with the agentmemory provider above
+    # out of context. memory-mcp overlaps with the memini provider above
     # -- running both invites the agent to write to one and read from the
     # other. Add either by pasting its url below; add `enabled: false` to park
     # one without deleting it.

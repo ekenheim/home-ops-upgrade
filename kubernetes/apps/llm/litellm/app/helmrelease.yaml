@@ -111,7 +111,7 @@ spec:
               # while that runs. At the old threshold of 30 (5 minutes) the
               # kubelet killed the container a third of the way into the flow,
               # every time -- an unbreakable CrashLoop taking the whole gateway
-              # (hermes, agentmemory, foreman, Lingarr, Open WebUI) with it,
+              # (hermes, memini, hindsight, foreman, Lingarr, Open WebUI) with it,
               # for a reason nothing in the events makes obvious. Observed
               # 2026-08-22 on the very first rollout of this feature.
               #

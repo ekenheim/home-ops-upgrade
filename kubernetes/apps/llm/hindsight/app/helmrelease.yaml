@@ -1,0 +1,169 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app hindsight
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: *app
+  interval: 30m
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # One Secret for everything; see externalsecret.yaml for what is in it.
+    existingSecret: *app
+    # External Postgres on the Crunchy cluster. The chart's own helper builds
+    # a URL without sslmode, and the Crunchy primary is TLS-only (hostssl
+    # only in pg_hba), so the URL is spelled out here. $(POSTGRES_PASSWORD)
+    # is expanded by the kubelet: the chart defines that env var from the
+    # Secret's `postgres-password` key just above this one. Direct primary,
+    # not pgbouncer: Hindsight runs alembic migrations on boot and the pool
+    # is in transaction mode, which drops session-scoped advisory locks.
+    databaseUrl: postgresql://hindsight:$$(POSTGRES_PASSWORD)@postgres-primary.database.svc:5432/hindsight?sslmode=require
+    postgresql:
+      enabled: false
+    podSecurityContext:
+      fsGroup: 1000
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    api:
+      image:
+        repository: ghcr.io/vectorize-io/hindsight-api
+        # `-slim` ships no local models (~500 MB instead of ~9 GB). LLM,
+        # embeddings and reranking are all external here, so nothing needs
+        # torch or a model cache in this pod.
+        tag: 0.10.0-slim@sha256:bc3082ccb514fee1a7f7d66da308ba2c2018e2ea2c739d2341c993e3a3bd91b9
+      env:
+        # --- LLM: the ChatGPT subscription, via Hindsight's own Codex provider ---
+        #
+        # NOT litellm. litellm's `chatgpt` alias only works for streaming
+        # /chat/completions (documented at length in litellm/app/configmap.yaml)
+        # and Hindsight makes non-streaming calls; verified failing again on
+        # litellm v1.101.0 on 2026-09-17 ("Unknown items in responses API
+        # response: []"). Hindsight's `openai-codex` provider speaks the Codex
+        # SSE backend natively, so it goes straight to chatgpt.com with its
+        # own OAuth grant and no proxy in between. Cost is the subscription
+        # quota, shared with hermes, the codex CLI and litellm's chatgpt alias.
+        #
+        # This is a FOURTH independent device login (see the litellm ConfigMap
+        # for why grants cannot be shared: refresh tokens are single-use and
+        # rotate). It lives in auth.json on the `hindsight` PVC mounted below.
+        # How to perform it is in kubernetes/apps/llm/README.md.
+        HINDSIGHT_API_LLM_PROVIDER: openai-codex
+        HINDSIGHT_API_LLM_CODEX_HOME: /codex-auth
+        # Models are whatever the Codex backend lists for the account, NOT the
+        # OpenAI API catalogue and NOT Hindsight's defaults: its default for
+        # this provider is gpt-5.4-mini, which the backend no longer serves.
+        # Authoritative list (needs a Codex access token):
+        #   GET https://chatgpt.com/backend-api/codex/models?client_version=0.0.0
+        # On 2026-09-17 it returned gpt-6-astra, gpt-5.6-{sol,terra,luna},
+        # gpt-5.5, gpt-reserve, codex-auto-review. luna is the light tier
+        # (litellm prices it at $0.20/M in) and carries the high-volume
+        # per-turn fact extraction; reflect (query-time synthesis) gets 5.5.
+        HINDSIGHT_API_LLM_MODEL: gpt-5.6-luna
+        HINDSIGHT_API_REFLECT_LLM_PROVIDER: openai-codex
+        HINDSIGHT_API_REFLECT_LLM_MODEL: gpt-5.5
+        # --- Embeddings: litellm -> ollama-igpu all-minilm, 384 dims ---
+        # Same model memini uses. Free, on the control-plane iGPUs, and it
+        # keeps every memory service comparable. Dims are baked into the
+        # pgvector columns: changing the model later means a new bank, not a
+        # switch. Upgrade path if recall is weak: text-embedding-3-small
+        # through litellm once an OpenAI API key exists there.
+        HINDSIGHT_API_EMBEDDINGS_PROVIDER: openai
+        HINDSIGHT_API_EMBEDDINGS_OPENAI_BASE_URL: http://litellm.llm:4000/v1
+        HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL: all-minilm
+        HINDSIGHT_API_EMBEDDINGS_OPENAI_DIMENSIONS: "384"
+        # --- Auth ---
+        # Off by default upstream. The built-in extension turns every /v1 and
+        # /mcp call into "Authorization: Bearer $HINDSIGHT_API_TENANT_API_KEY"
+        # (key in the Secret). One key for the whole server; per-client
+        # isolation is by bank, one bank per consumer.
+        HINDSIGHT_API_TENANT_EXTENSION: hindsight_api.extensions.builtin.tenant:ApiKeyTenantExtension
+        HINDSIGHT_API_VECTOR_EXTENSION: pgvector
+      extraVolumes:
+        - name: codex-auth
+          persistentVolumeClaim:
+            # ../../../../templates/volsync renders this claim (named ${APP}).
+            claimName: *app
+      extraVolumeMounts:
+        - name: codex-auth
+          mountPath: /codex-auth
+      resources:
+        requests:
+          cpu: 250m
+          memory: 1Gi
+        limits:
+          # Upstream recommends 4Gi for the API pod; the built-in worker runs
+          # inside it (worker.enabled stays false).
+          memory: 4Gi
+    controlPlane:
+      # Web UI. It has no login of its own (vectorize-io/hindsight#1148), so
+      # it is only reachable on the internal ingress class below. It reaches
+      # the API server-side with HINDSIGHT_CP_DATAPLANE_API_KEY from the Secret.
+      enabled: true
+      image:
+        repository: ghcr.io/vectorize-io/hindsight-control-plane
+        tag: 0.10.0@sha256:ce5df19142319121ad40338b1a1aaf15975e586c5b4a664792854e2f2617e3c0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+    tei:
+      reranker:
+        # Hindsight reranks recall results by default with a local
+        # cross-encoder, which the slim image cannot run (no torch). The chart
+        # can run the same ms-marco MiniLM cross-encoder as a CPU
+        # text-embeddings-inference sidecar; the chart then points the API at
+        # it. ~85 MB model, pulled on first start. Set enabled: false to fall
+        # back to plain reciprocal-rank fusion if this is ever in the way.
+        enabled: true
+        image:
+          repository: ghcr.io/huggingface/text-embeddings-inference
+          tag: cpu-1.8.3@sha256:8de25e75ce39617f17f2f6c77d60a4f75b65e779ed5005420eb1400072a15c1c
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            memory: 2Gi
+    ingress:
+      enabled: true
+      className: internal
+      annotations:
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/group: LLM
+        gethomepage.dev/name: Hindsight
+        gethomepage.dev/icon: mdi-brain
+        gethomepage.dev/description: Agent memory (banks per consumer, MCP per bank)
+        external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+      hosts:
+        - host: hindsight.${SECRET_DOMAIN}
+          paths:
+            - path: /
+              pathType: Prefix
+              service: controlPlane
+            # API + per-bank MCP for clients outside the cluster (Claude Code,
+            # laptops). Bearer-gated by the tenant extension.
+            - path: /v1
+              pathType: Prefix
+              service: api
+            - path: /mcp
+              pathType: Prefix
+              service: api
+    metrics:
+      serviceMonitor:
+        enabled: true

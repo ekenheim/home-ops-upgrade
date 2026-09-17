@@ -17,6 +17,8 @@ resources:
   # Flux-Kustomizations | Inference
   - ./llmkube/ks.yaml
   - ./ollama-igpu/ks.yaml
+  # Text embeddings (bge-m3 on llama.cpp, CPU) for memini and hindsight.
+  - ./embeddings/ks.yaml
   # Flux-Kustomizations | Tooling & memory
   - ./toolhive/ks.yaml
   # Two memory services. memini is what hermes' provider plugin talks to

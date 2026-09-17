@@ -14,6 +14,16 @@
       "matchPackageNames": ["/plex/"]
     },
     {
+      // llama.cpp tags every commit to master as server-b<N>, several a day.
+      // Each bump rolls the `embeddings` pods that memini and hindsight depend
+      // on, and PRs auto-merge here, so take one a month instead.
+      "description": ["Build-number versioning and a monthly cadence for llama.cpp server images"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/ggml-org/llama.cpp"],
+      "versioning": "regex:^server-b(?<major>\\d+)$",
+      "schedule": ["on the first day of the month"]
+    },
+    {
       "description": ["Custom versioning for mylar3"],
       "matchDatasources": ["docker"],
       "versioning": "regex:^version-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$",

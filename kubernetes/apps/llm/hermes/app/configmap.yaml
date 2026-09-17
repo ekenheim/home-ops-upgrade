@@ -301,7 +301,8 @@ data:
       timeout: 180
       persistent_shell: true
     memory:
-      # memini, through the provider plugin in memini-plugin.yaml (replaced
+      # memini, through upstream's eleboucher/memini-hermes plugin, which the
+      # init container installs onto the PVC (see helmrelease.yaml; replaced
       # agentmemory 2026-09-17). hindsight is the next candidate: its
       # provider ships in the image under plugins/memory/hindsight.
       provider: memini

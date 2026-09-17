@@ -16,6 +16,27 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  # The API Deployment mounts the RWO `hindsight` PVC (Codex auth.json), and
+  # the chart hardcodes no strategy, so it defaults to RollingUpdate: the new
+  # pod waits on a Multi-Attach error for a volume the old pod will not
+  # release until the new one is Ready. Every chart bump or values change
+  # would hang there. The chart has no knob for this, hence the patch.
+  # If this is ever applied to a Deployment that was created as RollingUpdate,
+  # strip the API-server-defaulted rollingUpdate from the live object first or
+  # Helm's server-side apply is rejected:
+  #   kubectl -n llm patch deploy hindsight-api --type=merge \
+  #     -p '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null}}}'
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: hindsight-api
+            patch: |
+              - op: add
+                path: /spec/strategy
+                value:
+                  type: Recreate
   values:
     # One Secret for everything; see externalsecret.yaml for what is in it.
     existingSecret: *app

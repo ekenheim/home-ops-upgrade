@@ -14,6 +14,7 @@ lives here.
 | `toolhive` | MCP operator + `ha-mcp`, `context7`, `memory-mcp`, `platform-mcp`. |
 | `agentmemory` | Long-term memory service behind litellm. Hermes' plugin talks to this one. |
 | `memini` | **New.** Second memory service (REST + MCP), on trial alongside agentmemory. |
+| `supermemory` | **New.** Third memory service, on trial alongside both. Closed-source binary, see below. |
 | `searxng` | Search backend for open-webui and litellm. |
 | `open-webui`, `hermes`, `langflow` | Frontends. |
 | `foreman`, `dispatch` | The agentic coding loop. |
@@ -182,6 +183,55 @@ typo here looks perfectly healthy and only fails later as a 401. Confirm with:
 ```sh
 kubectl -n llm get secret memini -o jsonpath='{.data}' | tr ',' '\n'
 ```
+
+## supermemory is a closed binary, and its store is bound to pod identity
+
+Added 2026-09-17 as a third memory service to trial next to agentmemory and
+memini. Nothing is wired to it yet: hermes still writes to agentmemory, and the
+compare is meant to be done by hand (or with upstream's MemoryBench) before any
+consumer moves.
+
+What is different about it, in the order it will bite:
+
+- **There is no image and no source.** `supermemoryai/supermemory` is MIT, but
+  that covers the SDKs, MCP server and web app. `supermemory-server` ships only
+  as a ~300 MB prebuilt Bun binary on the GitHub release
+  (supermemoryai/supermemory#1299, open). The init container downloads the
+  pinned `server-vX.Y.Z` release on every pod start and verifies it against the
+  release's `manifest.json`; the app container is a bare `debian:bookworm-slim`.
+  Renovate tracks the version through `SUPERMEMORY_VERSION` in the HelmRelease
+  plus an `extractVersion` rule in `.github/renovate/packageRules.json5`.
+- **The encrypted store's key is derived from `/etc/machine-id` + hostname**
+  (supermemoryai/supermemory#1317). Both are pinned: `configmap.yaml` mounts a
+  fixed machine-id and the HelmRelease sets `defaultPodOptions.hostname`.
+  Verified 2026-09-17 by replacing the pod: a second pod with a different name
+  unlocked the same PVC and kept its memories. Change either value and the
+  store is gone for good; there is no key override.
+- **Its own bearer token cannot be supplied.** The `sm_...` API key is
+  generated on first boot into `/data/api-key`. `SUPERMEMORY_API_KEY` is a
+  client-side variable and a pre-seeded file is ignored (both tested on 0.0.8).
+  Loopback callers skip auth entirely, everything through the Service or
+  ingress needs the bearer. Fetch it with
+  `kubectl exec -n llm deploy/supermemory -- cat /data/api-key`.
+- **`/v4/search` returns nothing at its default threshold with all-minilm.**
+  Memories land (`/v4/profile` and `/v4/memories/list` show them) but the
+  384-dim similarity for a good hit is ~0.45-0.6, below the default cutoff.
+  Pass `"threshold": 0.1` (or lower) in the search body. Document search on
+  `/v3/search` is unaffected.
+- **"Lite" licence: one org, 10k documents.** Fine for a trial; not a
+  replacement for either of the other two without an enterprise agreement.
+- **Extraction is slow by design.** One small document took ~60 s through
+  `fast` (ornith-35b) for 5 memories. `SUPERMEMORY_INGEST_CONCURRENCY=1` keeps
+  it to one document at a time so it does not crowd the shared llama.cpp slots.
+
+### Before this can start
+
+supermemory needs a **new `supermemory` Bitwarden Secrets Manager item** with
+one field:
+
+| Field | Used for |
+| --- | --- |
+| `LITELLM_API_KEY` | litellm **virtual** key for `fast` + `all-minilm` (extraction and embeddings) — never the master key |
 
 ## Two couplings that span namespaces
 

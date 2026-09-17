@@ -142,10 +142,14 @@ kubectl -n llm exec deploy/litellm -c app -- curl -s http://ornith-35b.llm:8080/
 
 agentmemory was removed on 2026-09-17. Its image (`ghcr.io/joryirving/agentmemory`)
 came from a cluster whose author had already moved to memini, and memini had been
-running alongside it since 2026-08-29. hermes now uses memini through the
-provider plugin in `hermes/app/memini-plugin.yaml` (briefing into the system
-prompt, search before each turn, every turn captured as an episodic memory,
-`memory_recall` / `memory_save` tools). hermes authenticates with memini's
+running alongside it since 2026-08-29. hermes now uses memini through upstream's
+own provider plugin, `eleboucher/memini-hermes`, which the hermes init container
+installs onto the PVC with `hermes plugins install ... --ref <sha>` (recall
+before each turn, every turn captured as an episodic memory, MEMORY.md/USER.md
+edits mirrored as semantic facts, `memory_recall` / `memory_list` /
+`memory_remember` / `memory_forget` / `memory_status` tools). The pinned ref
+tracks the memini release, so bump it together with the tag in
+`memini/app/ocirepository.yaml`. hermes authenticates with memini's
 `hermes` named key, whose default namespace is `hermes`; that key is rendered
 into memini's keys file AND into the `hermes-memini` Secret from the same
 `MEMINI_HERMES_KEY` field of the `memini` Bitwarden item.

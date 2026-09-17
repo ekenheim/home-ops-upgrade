@@ -60,10 +60,36 @@ spec:
                 # 2026-09-17. The old plugin dir is removed from the PVC so
                 # hermes does not load two providers.
                 rm -rf /opt/data/plugins/agentmemory
+                # The provider is upstream's own plugin, installed the way its
+                # README says to (`hermes plugins install
+                # eleboucher/memini-hermes`), pinned to one commit with --ref.
+                # That repo is a mirror of memini's plugin/memini synced on
+                # each release, so bump MEMINI_PLUGIN_REF together with the
+                # memini tag in memini/app/ocirepository.yaml: memini 400s on
+                # handshake fields it does not know, so a newer plugin against
+                # an older server is the combination to avoid.
+                # The marker keeps a GitHub outage from blocking pod start:
+                # the clone only runs when the pinned ref changes, and a failed
+                # clone with a plugin already on the PVC is not fatal. --force
+                # because a plain re-install errors with "already exists"; it
+                # also replaces the hand-written plugin this superseded.
+                MEMINI_PLUGIN_REF=ad5e12b3ade70e0afaa011513aa97920d2b66b46 # v0.7.29
                 PLUGIN_DIR=/opt/data/plugins/memini
-                mkdir -p "$PLUGIN_DIR"
-                cp /tmp/memini-plugin/plugin.yaml "$PLUGIN_DIR/plugin.yaml"
-                cp /tmp/memini-plugin/__init__.py "$PLUGIN_DIR/__init__.py"
+                MARKER="$PLUGIN_DIR/.installed-ref"
+                if [ "$(cat "$MARKER" 2>/dev/null || true)" != "$MEMINI_PLUGIN_REF" ]; then
+                  # HERMES_HOME is only set on the app container; without it
+                  # here the CLI installs into ~/.hermes on the overlay.
+                  if HERMES_HOME=/opt/data HOME=/opt/data \
+                      hermes plugins install eleboucher/memini-hermes \
+                      --ref "$MEMINI_PLUGIN_REF" --force --enable </dev/null; then
+                    echo "$MEMINI_PLUGIN_REF" > "$MARKER"
+                  elif [ -f "$PLUGIN_DIR/__init__.py" ]; then
+                    echo "memini plugin install failed; keeping the copy on the PVC" >&2
+                  else
+                    echo "memini plugin install failed and none is installed" >&2
+                    exit 1
+                  fi
+                fi
                 chown -R 10000:10000 /opt/data/plugins
                 # code-server runs as uid 1000 (coder) with supplementary
                 # group 10000, but /opt/data is mode 700 -- mode 700 grants the
@@ -129,13 +155,18 @@ spec:
               HERMES_DASHBOARD: "1"
               HERMES_DASHBOARD_PORT: "9119"
               GATEWAY_HEALTH_URL: http://localhost:8642
-              # Memory provider (plugins/memory/memini, rendered from
-              # memini-plugin.yaml). The bearer is memini's `hermes` named
-              # key, whose default_namespace is `hermes` -- see
+              # Memory provider: upstream's eleboucher/memini-hermes plugin,
+              # installed onto the PVC by the init container above. The
+              # bearer is memini's `hermes` named key, whose
+              # default_namespace is `hermes` -- see
               # memini/app/externalsecret.yaml. It is read from the `memini`
               # Bitwarden item through hermes-memini (externalsecret.yaml)
               # so the key has exactly one source.
-              MEMINI_URL: http://memini.llm:8080
+              MEMINI_BASE_URL: http://memini.llm:8080
+              # Pinned rather than left to the handshake: unpinned, the plugin
+              # offers the server a cwd/git-derived project name, and the
+              # gateway's cwd says nothing about whose memory this is.
+              MEMINI_NAMESPACE: hermes
               MEMINI_API_KEY:
                 valueFrom:
                   secretKeyRef:
@@ -257,8 +288,3 @@ spec:
             subPath: config.yaml
           - path: /tmp/merge-config.py
             subPath: merge-config.py
-      plugin:
-        type: configMap
-        name: hermes-memini-plugin
-        globalMounts:
-          - path: /tmp/memini-plugin

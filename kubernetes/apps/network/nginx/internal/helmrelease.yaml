@@ -30,7 +30,8 @@ spec:
       minAvailable: 1
       service:
         annotations:
-          external-dns.alpha.kubernetes.io/hostname: internal.${SECRET_DOMAIN}
+          # internal.${SECRET_DOMAIN} now belongs to the envoy-internal Gateway.
+          # Rollback: put the hostname annotation back here and take it off there.
           io.cilium/lb-ipam-ips: 192.168.50.152
         externalTrafficPolicy: Cluster
       ingressClassResource:

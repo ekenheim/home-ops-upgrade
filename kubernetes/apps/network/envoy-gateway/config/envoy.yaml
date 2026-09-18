@@ -104,16 +104,16 @@ metadata:
   annotations:
     # Same target the `internal` Ingresses use, on purpose. While an app has both
     # an Ingress and an HTTPRoute, both must produce the identical record or LAN
-    # DNS flaps between proxies. internal.${SECRET_DOMAIN} is still the
-    # nginx-internal Service; moving that name to the Service below IS the
-    # internal cutover.
+    # DNS flaps between proxies.
     external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
 spec:
   gatewayClassName: envoy
   infrastructure:
     annotations:
-      # Becomes internal.${SECRET_DOMAIN} once nginx-internal is gone.
-      external-dns.alpha.kubernetes.io/hostname: envoy-internal.${SECRET_DOMAIN}
+      # Owning this name IS the internal cutover: every record that targets
+      # internal.${SECRET_DOMAIN} follows it here. Ingresses with no target
+      # annotation publish nginx's IP directly and only move when deleted.
+      external-dns.alpha.kubernetes.io/hostname: internal.${SECRET_DOMAIN}
       io.cilium/lb-ipam-ips: 192.168.50.155
   listeners:
     - name: http

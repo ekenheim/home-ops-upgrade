@@ -19,9 +19,9 @@ lives here.
 | `repo-wiki` | mkdocs site of LLM-written repo wikis; a 12-hourly CronJob on `self-hosted` writes them. |
 | `hermes`, `langflow` | Frontends. `open-webui` was retired 2026-09-18 (unused). |
 | `comfyui` | Image generation (ROCm) on worker4. Output on the NAS under `Media/comfyui`. |
-| `lemonade-tts`, `whisper` | GPU speech on worker4: OpenMOSS TTS and whisper.cpp (Vulkan). HTTP only, no consumers yet; Home Assistant and Bazarr keep their CPU services. |
+| `lemonade-tts`, `whisper` | GPU speech on worker4: OpenMOSS TTS and whisper.cpp (Vulkan). Web pages at `lemonade.<domain>` and `whisper.<domain>` (internal, no login); no API consumers yet; Home Assistant and Bazarr keep their CPU services. |
 | `sillytavern` | Character chat frontend. Internal ingress is its only access control. |
-| `ai-marketplace-monitor` | Facebook Marketplace watcher, listings rated by `fast`. UI is port-forward only. No notifier wired yet. |
+| `ai-marketplace-monitor` | Facebook Marketplace watcher, listings rated by `fast`. UI at `marketplace.<domain>`, login = the Facebook credentials. No notifier wired yet. |
 | `foreman`, `dispatch` | The agentic coding loop. |
 
 ## litellm-operator is installed but drives nothing
@@ -371,16 +371,12 @@ Added 2026-09-18 after joryirving/home-ops. BoPeng/ai-marketplace-monitor drives
 a real Chromium (Xvfb) through Marketplace searches and has litellm's `fast`
 rate each new listing against a plain-language description.
 
-- **The web UI is loopback-only and has no ingress**, on purpose: it is a config
-  editor plus a noVNC view of a browser logged in to Facebook, and bound to
-  anything but 127.0.0.1 it wants the Facebook credentials as its own login.
-
-  ```sh
-  kubectl -n llm port-forward svc/ai-marketplace-monitor 8467:8467
-  # http://127.0.0.1:8467 -- "Browser" in the header is where a Facebook login
-  # challenge or CAPTCHA gets solved
-  ```
-
+- **The web UI is at `marketplace.<domain>` (internal) and its login is the
+  Facebook login.** Bound to 0.0.0.0 the app demands credentials, and the ones
+  it means are `FACEBOOK_USERNAME` / `FACEBOOK_PASSWORD`. Behind it: a config
+  editor and "Browser", a noVNC view of the logged-in Chromium, which is where a
+  Facebook login challenge or CAPTCHA gets solved. Upstream keeps this on
+  127.0.0.1 behind a port-forward instead.
 - **config.toml lives on the PVC and belongs to the UI.** Git only seeds a
   starter (`app/configmap.yaml`) when the file is missing: Stockholm, SEK,
   litellm `fast`, an empty `[user.me]` and one disabled example item. Add real

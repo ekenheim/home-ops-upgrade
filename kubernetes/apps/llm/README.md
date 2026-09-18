@@ -18,6 +18,9 @@ lives here.
 | `miso-gallery` | Web gallery over ComfyUI's output (NAS, `Media/comfyui/output`). Local password auth, browse-only. |
 | `repo-wiki` | mkdocs site of LLM-written repo wikis; a 12-hourly CronJob on `self-hosted` writes them. |
 | `hermes`, `langflow` | Frontends. `open-webui` was retired 2026-09-18 (unused). |
+| `comfyui` | Image generation (ROCm) on worker4. Output on the NAS under `Media/comfyui`. |
+| `lemonade-tts`, `whisper` | GPU speech on worker4: OpenMOSS TTS and whisper.cpp (Vulkan). HTTP only, no consumers yet; Home Assistant and Bazarr keep their CPU services. |
+| `sillytavern` | Character chat frontend. Internal ingress is its only access control. |
 | `ai-marketplace-monitor` | Facebook Marketplace watcher, listings rated by `fast`. UI is port-forward only. No notifier wired yet. |
 | `foreman`, `dispatch` | The agentic coding loop. |
 
@@ -335,6 +338,32 @@ service map still points every MLflow/Ray/Dagster/marimo entry at `.datasci`.
 `qdrant` and `falkordb` have no consumers in this namespace. If marimo later
 moves, `hermes/app/configmap.yaml` and `platform-mcp/server/platform_mcp.py`
 both need updating.
+
+## GPU apps outside llmkube: comfyui, lemonade-tts, whisper
+
+Added 2026-09-18 after joryirving/home-ops. They are plain app-template pods,
+not InferenceServices:
+
+- **`privileged`, not the DRA claim.** They see `/dev/kfd` and `/dev/dri`
+  directly, so they survive the lost-CDI-after-reboot problem the DRA pods have.
+- **Static hostPath volumes on worker4** (`<app>/app/pv.yaml`, under
+  `/var/openebs/local/<app>`), because no provisioner can serve that node. Not
+  backed up, and the sizes are nominal: worker4 has one 463 GiB disk for
+  everything. The kubelet applies `fsGroup` to no hostPath, which is why
+  lemonade-tts chowns its volume in a root init container.
+- **GTT is the real limit and nothing accounts for it.** GPU memory on this UMA
+  node is pinned system RAM, charged to no cgroup and out of the OOM killer's
+  reach. ornith-35b + gemma3-27b hold ~67 of 124 GiB. Upstream records
+  LLMs + ComfyUI deadlocking the same hardware, and worker4 additionally
+  hard-resets under sustained GPU load, taking `fast`/`self-hosted`/`review`
+  with it. Scale comfyui to 0 when it is not in use.
+- ComfyUI's `output` and `input` are NFS subPaths (`Media/comfyui/...` on the
+  data share), so other pods can read them from any node. NFS needs no CSI
+  plugin, which is why it mounts on worker4 where Ceph cannot.
+- Speech, for orientation: `default/wyoming-whisper`, `wyoming-piper` and
+  `wyoming-kokoro` serve Home Assistant over Wyoming; `downloads/whisper`
+  serves Bazarr over the `/asr` API. The two here speak different HTTP APIs
+  and replace neither.
 
 ## ai-marketplace-monitor: Facebook Marketplace watcher
 

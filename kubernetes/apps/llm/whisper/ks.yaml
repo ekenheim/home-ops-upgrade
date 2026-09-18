@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  # NOT `whisper`: flux-system already has a Kustomization of that name, for
+  # Bazarr's CPU whisper (../../downloads/bazarr/ks.yaml). Flux Kustomizations
+  # share one namespace, so a second `whisper` would replace that object and
+  # prune Bazarr's Deployment. Everything this one renders is still called
+  # `whisper`, in the llm namespace, where nothing collides.
+  name: whisper-gpu
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/llm/whisper/app
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: &app whisper
+  targetNamespace: llm
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  dependsOn: []
+  # false, as upstream has it: a GPU pod that cannot schedule (worker4 down,
+  # which it is more often than any other node) must not hold up the rest of
+  # the llm namespace.
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: *app

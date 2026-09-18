@@ -1,0 +1,174 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+#
+# ComfyUI on worker4's Strix Halo iGPU (ROCm), after joryirving/home-ops
+# (kubernetes/apps/base/llm/comfyui): same image pin, same env, same flags.
+#
+# GPU ACCESS IS `privileged`, NOT THE DRA CLAIM the llmkube InferenceServices
+# share. That is upstream's choice and it suits this node: a privileged pod
+# sees /dev/kfd and /dev/dri directly, so it does not hang in
+# CreateContainerError when worker4 reboots and loses its CDI specs, which the
+# DRA pods do.
+#
+# READ BEFORE LEAVING THIS RUNNING UNATTENDED. On this UMA node GPU memory is
+# GTT: pinned system RAM that is charged to no cgroup and that the kernel OOM
+# killer cannot reclaim. The memory limit below bounds ComfyUI's host-side
+# footprint only. ornith-35b and gemma3-27b already hold ~67 of 124 GiB GTT;
+# a large image model on top is what upstream records as deadlocking the same
+# hardware ("review+self-hosted+comfyui together deadlock the node"), and
+# worker4 additionally hard-resets under sustained GPU load (FCH sync flood).
+# A reset takes ornith down with it, and with ornith goes litellm `fast`,
+# `self-hosted` and `review`. Scale to 0 when not in use:
+#   kubectl -n llm scale deploy/comfyui --replicas=0
+# (Flux restores 1 on its next reconcile unless `replicas` is changed here.)
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app comfyui
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.2.1
+      interval: 30m
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    defaultPodOptions:
+      # PyTorch's shared-memory tensors between ComfyUI's worker processes.
+      hostIPC: true
+      automountServiceAccountToken: false
+      # worker4 is the only node with the Strix Halo iGPU.
+      nodeSelector:
+        topology.kubernetes.io/gpus: amd
+      tolerations:
+        - key: llm-workload
+          operator: Exists
+          effect: NoSchedule
+        # tuppr soft-taints a node mid-upgrade; without this the pod is
+        # evicted off the only node it can run on.
+        - key: tuppr.home-operations.com/outdated
+          operator: Exists
+          effect: PreferNoSchedule
+    controllers:
+      comfyui:
+        # RWO hostPath volume: never two pods on it at once.
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: docker.io/yanwk/comfyui-boot
+              tag: rocm7@sha256:01abb7d88ce25d93bf3505c9e0be2c15b035ad9f66e767f205bd0e65e1be30e5
+            securityContext:
+              privileged: true
+            env:
+              TZ: "${TIMEZONE}"
+              # gfx1151 (Strix Halo) is not in ROCm's supported list; this
+              # makes it present as the nearest supported target.
+              HSA_OVERRIDE_GFX_VERSION: "11.5.1"
+              HSA_ENABLE_SDMA: "0"
+              HIP_VISIBLE_DEVICES: "0"
+              ROCR_VISIBLE_DEVICES: "0"
+              PYTORCH_HIP_ALLOC_CONF: "max_split_size_mb:256,garbage_collection_threshold:0.6"
+              CLI_ARGS: "--listen 0.0.0.0 --port 8188 --use-split-cross-attention --disable-mmap --reserve-vram 100"
+            probes:
+              # First start installs ComfyUI and its Python deps onto the
+              # volume, which takes many minutes; later starts are quick.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: &health
+                    path: /
+                    port: 8188
+                  periodSeconds: 10
+                  failureThreshold: 360
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *health
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 6
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *health
+                  periodSeconds: 15
+                  timeoutSeconds: 10
+                  failureThreshold: 4
+            resources:
+              requests:
+                cpu: 500m
+                memory: 8Gi
+              limits:
+                # Upstream sets none. --disable-mmap reads a checkpoint fully
+                # into RAM before it moves to GTT, so this has to clear the
+                # largest checkpoint in use; it does NOT cap GPU memory.
+                memory: 32Gi
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 8188
+    ingress:
+      app:
+        enabled: true
+        # Internal only: ComfyUI has no login and runs arbitrary custom nodes.
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: LLM
+          gethomepage.dev/name: ComfyUI
+          gethomepage.dev/icon: mdi-image-auto-adjust
+          gethomepage.dev/description: Image generation on the Strix Halo iGPU
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          # Workflows upload images and hold a websocket open for progress.
+          nginx.ingress.kubernetes.io/proxy-body-size: "0"
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+          nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+        hosts:
+          - host: &host comfyui.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+              - *host
+    persistence:
+      comfyui:
+        existingClaim: *app
+        globalMounts:
+          - path: /root/ComfyUI
+      # Output and input live on the NAS so miso-gallery (and anything else)
+      # can read them from any node. The share's root is read-only to the
+      # cluster; Media/ is writable, which is the pattern posterizarr uses.
+      # The kubelet creates the subPath directories on first mount. Verified
+      # mountable and writable from worker4 on 2026-09-18 -- NFS needs no CSI
+      # plugin, which is why it works on this node where Ceph does not.
+      data:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        globalMounts:
+          - path: /root/ComfyUI/output
+            subPath: Media/comfyui/output
+          - path: /root/ComfyUI/input
+            subPath: Media/comfyui/input

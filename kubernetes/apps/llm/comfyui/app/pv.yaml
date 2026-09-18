@@ -1,0 +1,49 @@
+---
+# Static hostPath volume on worker4, the same construction as
+# ../../llmkube/app/model-cache-pv.yaml, and for the same reason: worker4 is
+# tainted, the Ceph CSI node plugins and the openebs helper pod tolerate
+# nothing, so no provisioner can serve a volume there. The storage class named
+# here does not exist on purpose -- nothing provisions, the claim binds to this
+# PV by name. Holds the whole ComfyUI tree: code, custom nodes, the venv, models and saved workflows (/root/ComfyUI/user).
+#
+# Not backed up: volsync snapshots through CSI, and there is no CSI here.
+# The size is nominal; hostPath enforces nothing. worker4's disk is 463 GiB
+# shared with the OS, container images and llmkube's model cache (99 GiB used
+# on 2026-09-18), so watch it rather than trust this number.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: comfyui-worker4
+spec:
+  capacity:
+    storage: 150Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: comfyui-local
+  claimRef:
+    namespace: llm
+    name: comfyui
+  hostPath:
+    path: /var/openebs/local/comfyui
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: ["worker4"]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: comfyui
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: comfyui-local
+  volumeName: comfyui-worker4
+  resources:
+    requests:
+      storage: 150Gi

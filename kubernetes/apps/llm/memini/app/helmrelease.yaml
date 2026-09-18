@@ -147,35 +147,6 @@ spec:
         # the keys file silently never mounts.
         enabled: true
         name: memini-api-keys
-    ingress:
-      main:
-        className: internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: LLM
-          gethomepage.dev/name: Memini
-          gethomepage.dev/icon: mdi-brain
-          gethomepage.dev/description: Memory service for AI agents (REST + MCP)
-          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-        hosts:
-          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              # Admin SPA on the dedicated `ui` port. Internal ingress only: the
-              # shell itself is credential-free, but a signed-in token is
-              # same-origin-readable, so this must not go on the external class.
-              - path: /
-                service:
-                  identifier: main
-                  port: ui
-              # /v1 and /mcp are bearer-gated by MEMINI_API_KEY.
-              - path: /v1
-                service:
-                  identifier: main
-                  port: http
-              - path: /mcp
-                service:
-                  identifier: main
-                  port: http
     serviceMonitor:
       main:
         # Scrapes the dedicated `metrics` port (9090), which is unauthenticated

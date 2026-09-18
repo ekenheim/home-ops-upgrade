@@ -5,6 +5,5 @@ kind: Kustomization
 resources:
   - ./deployment.yaml
   - ./service.yaml
-  - ./ingress.yaml
   - ./httproute.yaml
   - ../../../../templates/gatus/external

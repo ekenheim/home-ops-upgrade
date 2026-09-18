@@ -57,7 +57,7 @@ spec:
         - name: ndots
           value: "1"
     ingress:
-      enabled: true
+      enabled: false  # moved to an HTTPRoute on envoy-gateway
       className: internal
       annotations:
         hajimari.io/enable: "false"

@@ -61,7 +61,6 @@ spec:
         ports:
           http:
             port: 5656
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       app:
         annotations:
@@ -79,23 +78,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 5656
-    ingress:
-      app:
-        className: internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Downloads
-          gethomepage.dev/name: Kapowarr
-          gethomepage.dev/icon: kapowarr.png
-          gethomepage.dev/description: Comic Book Manager
-          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-        hosts:
-          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
     persistence:
       config:
         existingClaim: *app

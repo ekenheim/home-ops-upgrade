@@ -52,7 +52,6 @@ spec:
         ports:
           http:
             port: 80
-    # envoy-gateway: replaces the `external` Ingress below at cutover.
     route:
       app:
         hostnames: ["it-tools.${SECRET_DOMAIN}"]
@@ -64,17 +63,3 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 80
-    ingress:
-      app:
-        className: external
-        annotations:
-          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-        hosts:
-          - host: &host it-tools.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts: [*host]

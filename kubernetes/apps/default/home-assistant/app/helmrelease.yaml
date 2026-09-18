@@ -97,7 +97,6 @@ spec:
           http:
             enabled: true
             port: 8080
-    # envoy-gateway: replaces the `external` Ingress below at cutover.
     route:
       codeserver:
         hostnames: ["hass-code.${SECRET_DOMAIN}"]
@@ -119,29 +118,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 8123
-    ingress:
-      app:
-        className: external
-        annotations:
-          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-        hosts:
-          - host: hass.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-      codeserver:
-        className: internal
-        annotations:
-          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-        hosts:
-          - host: hass-code.${SECRET_DOMAIN}
-            paths:
-            - path: /
-              service:
-                identifier: codeserver
-                port: http
     persistence:
       config:
         existingClaim: *app

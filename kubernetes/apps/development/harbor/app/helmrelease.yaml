@@ -34,20 +34,22 @@ spec:
       targetPath: secretKey
   values:
     expose:
-      type: ingress
+      # HTTPRoute on envoy-external (public, via the Cloudflare tunnel). The LAN
+      # path for large pushes is httproute-internal.yaml on envoy-internal.
+      # No body-size setting needed: envoy has no default request size limit.
+      type: route
       tls:
         enabled: true
         certSource: secret
         secret:
           secretName: harbor-ingress
-      ingress:
+      route:
         hosts:
-          core: harbor.${SECRET_DOMAIN}
-        className: external
-        annotations:
-          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-          nginx.ingress.kubernetes.io/ssl-redirect: "true"
-          nginx.ingress.kubernetes.io/proxy-body-size: "0"
+          - harbor.${SECRET_DOMAIN}
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
 
     externalURL: https://harbor.${SECRET_DOMAIN}
     ipFamily:

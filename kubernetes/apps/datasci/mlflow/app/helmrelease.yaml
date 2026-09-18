@@ -165,7 +165,6 @@ spec:
         ports:
           http:
             port: *port
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       main:
         hostnames: ["mlflow.${SECRET_DOMAIN}"]
@@ -177,26 +176,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 5000
-    ingress:
-      main:
-        className: internal
-        annotations:
-          nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-          nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-          nginx.ingress.kubernetes.io/proxy-body-size: "0"
-          nginx.ingress.kubernetes.io/whitelist-source-range: |
-            10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
-        hosts:
-          - host: &host mlflow.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                pathType: Prefix
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
     persistence:
       data:
         enabled: true

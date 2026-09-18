@@ -6,7 +6,6 @@ resources:
   - ./externalsecret.yaml
   - ./deployment.yaml
   - ./service.yaml
-  - ./ingress.yaml
   - ./gatus-data.yaml
   - ./pipeline
   - ../../../../templates/gatus/guarded

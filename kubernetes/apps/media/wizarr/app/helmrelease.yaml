@@ -61,7 +61,6 @@ spec:
         ports:
           http:
             port: 5690
-    # envoy-gateway: replaces the `external` Ingress below at cutover.
     route:
       app:
         annotations:
@@ -79,26 +78,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 5690
-    ingress:
-      app:
-        className: external
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Video
-          gethomepage.dev/name: Wizarr
-          gethomepage.dev/icon: wizarr.png
-          gethomepage.dev/description: Plex Invite Management
-          # gethomepage.dev/widget.type: wizarr
-          # gethomepage.dev/widget.url: http://wizarr.media.svc.cluster.local:5690
-          # gethomepage.dev/widget.key: ${WIZARR_TOKEN}
-          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-        hosts:
-          - host: join.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
     persistence:
       config:
         existingClaim: *app

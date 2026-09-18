@@ -37,7 +37,7 @@ spec:
       enabled: false
     alertmanager:
       ingress:
-        enabled: true
+        enabled: false  # moved to an HTTPRoute on envoy-gateway
         pathType: Prefix
         ingressClassName: internal
         annotations:
@@ -137,7 +137,7 @@ spec:
       thanosServiceMonitor:
         enabled: true
       ingress:
-        enabled: true
+        enabled: false  # moved to an HTTPRoute on envoy-gateway
         ingressClassName: internal
         annotations:
           gethomepage.dev/enabled: "true"

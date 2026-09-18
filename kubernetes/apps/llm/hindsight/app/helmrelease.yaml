@@ -173,7 +173,7 @@ spec:
           limits:
             memory: 2Gi
     ingress:
-      enabled: true
+      enabled: false  # moved to an HTTPRoute on envoy-gateway
       className: internal
       annotations:
         gethomepage.dev/enabled: "true"

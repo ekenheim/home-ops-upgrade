@@ -137,7 +137,6 @@ spec:
         ports:
           http:
             port: 8467
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       app:
         annotations:
@@ -155,30 +154,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 8467
-    ingress:
-      app:
-        enabled: true
-        className: internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: LLM
-          gethomepage.dev/name: Marketplace Monitor
-          gethomepage.dev/icon: mdi-storefront-outline
-          gethomepage.dev/description: Facebook Marketplace watcher (login = the Facebook credentials)
-          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-          # Live log stream and the noVNC browser view are long-lived websockets.
-          nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-          nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-        hosts:
-          - host: &host marketplace.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
     persistence:
       data:
         existingClaim: *app

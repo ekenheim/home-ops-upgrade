@@ -73,7 +73,6 @@ spec:
         ports:
           http:
             port: *port
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       app:
         hostnames: ["filebrowser.${SECRET_DOMAIN}"]
@@ -85,18 +84,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 80
-    ingress:
-      app:
-        className: internal
-        hosts:
-          - host: &host filebrowser.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts: [*host]
     persistence:
       data:
         existingClaim: filebrowser-data

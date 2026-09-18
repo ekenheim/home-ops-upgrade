@@ -104,7 +104,6 @@ spec:
         ports:
           http:
             port: *port
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       app:
         annotations:
@@ -125,25 +124,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 6767
-    ingress:
-      app:
-        className: internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Downloads
-          gethomepage.dev/name: Bazarr
-          gethomepage.dev/icon: bazarr.png
-          gethomepage.dev/description: Subtitle Downloads
-          gethomepage.dev/widget.type: bazarr
-          gethomepage.dev/widget.url: http://bazarr.downloads:6767
-          gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_BAZARR_TOKEN}}` }}"
-        hosts:
-        - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-          paths:
-          - path: /
-            service:
-              identifier: app
-              port: http
     persistence:
       config:
         existingClaim: *app

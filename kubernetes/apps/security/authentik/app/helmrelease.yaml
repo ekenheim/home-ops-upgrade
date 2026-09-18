@@ -65,7 +65,7 @@ spec:
               namespace: network
               sectionName: https
       ingress:
-        enabled: true
+        enabled: false  # moved to an HTTPRoute on envoy-gateway
         ingressClassName: external
         annotations:
           gethomepage.dev/enabled: "true"

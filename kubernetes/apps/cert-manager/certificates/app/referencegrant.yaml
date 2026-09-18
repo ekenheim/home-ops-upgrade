@@ -1,0 +1,20 @@
+---
+# Gateway certificateRefs are namespace-local. This lets the envoy Gateways in
+# `network` use the wildcard certs here without copying the Secrets around.
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/referencegrant_v1beta1.json
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: envoy-gateway-tls
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: network
+  to:
+    - group: ""
+      kind: Secret
+      name: ${SECRET_DOMAIN}-tls
+    - group: ""
+      kind: Secret
+      name: ${SECRET_SECONDARY_DOMAIN}-tls

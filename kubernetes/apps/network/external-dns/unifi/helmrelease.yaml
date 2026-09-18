@@ -85,5 +85,6 @@ spec:
     sources:
       - ingress
       - service
+      - gateway-httproute
     txtOwnerId: main
     txtPrefix: k8s.main.

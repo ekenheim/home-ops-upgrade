@@ -53,10 +53,13 @@ spec:
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
       - --events
+      # Gateway API twin of --ingress-class=external below: without it every
+      # internal HTTPRoute would be published to Cloudflare too.
+      - --gateway-name=envoy-external
       - --ignore-ingress-tls-spec
       - --ingress-class=external
     policy: sync
-    sources: ["crd", "ingress"]
+    sources: ["crd", "ingress", "gateway-httproute"]
     txtPrefix: k8s.
     txtOwnerId: homelab
     domainFilters:

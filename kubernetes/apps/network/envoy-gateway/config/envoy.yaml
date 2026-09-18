@@ -1,0 +1,211 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/envoyproxy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: envoy
+spec:
+  logging:
+    level:
+      default: info
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        replicas: 2
+        container:
+          imageRepository: mirror.gcr.io/envoyproxy/envoy
+          resources:
+            requests:
+              cpu: 100m
+            limits:
+              memory: 1Gi
+        pod:
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              # Not DoNotSchedule: with worker4 tainted that wedges rollouts.
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/managed-by: envoy-gateway
+      envoyService:
+        # Same as ingress-nginx. envoy-gateway defaults to Local, but Cilium L2
+        # announcements pick the announcing node without regard to where the
+        # proxy pods run, so Local blackholes the VIP on a node with no pod.
+        externalTrafficPolicy: Cluster
+  shutdown:
+    drainTimeout: 180s
+  telemetry:
+    metrics:
+      prometheus:
+        compression:
+          type: Gzip
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/gatewayclass_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: envoy
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: envoy
+    namespace: network
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/gateway_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: envoy-external
+  annotations:
+    # Inherited by every HTTPRoute attached here: the Cloudflare tunnel CNAME,
+    # same target the `external` Ingresses carry per-app today.
+    # (alpha prefix: both external-dns instances run --annotation-prefix.)
+    external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+spec:
+  gatewayClassName: envoy
+  infrastructure:
+    annotations:
+      # external.${SECRET_DOMAIN} still belongs to the nginx-external Service.
+      # Move it (and the secondary domain) here in the PR that repoints
+      # cloudflared, not before: two Services claiming one name conflict.
+      external-dns.alpha.kubernetes.io/hostname: envoy-external.${SECRET_DOMAIN}
+      io.cilium/lb-ipam-ips: 192.168.50.156
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        certificateRefs:
+          - kind: Secret
+            name: ${SECRET_DOMAIN}-tls
+            namespace: cert-manager
+          - kind: Secret
+            name: ${SECRET_SECONDARY_DOMAIN}-tls
+            namespace: cert-manager
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/gateway_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: envoy-internal
+  annotations:
+    external-dns.alpha.kubernetes.io/target: envoy-internal.${SECRET_DOMAIN}
+spec:
+  gatewayClassName: envoy
+  infrastructure:
+    annotations:
+      # Becomes internal.${SECRET_DOMAIN} once nginx-internal is gone.
+      external-dns.alpha.kubernetes.io/hostname: envoy-internal.${SECRET_DOMAIN}
+      io.cilium/lb-ipam-ips: 192.168.50.155
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        certificateRefs:
+          - kind: Secret
+            name: ${SECRET_DOMAIN}-tls
+            namespace: cert-manager
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/backendtrafficpolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: envoy
+spec:
+  targetSelectors:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+  compression:
+    - type: Brotli
+    - type: Gzip
+    - type: Zstd
+  tcpKeepalive:
+    idleTime: 60s
+    interval: 10s
+    probes: 3
+  timeout:
+    http:
+      # Deliberately short, not a typo: envoy drops idle upstream connections
+      # before the backend does, so it never reuses one the app already closed
+      # (the classic intermittent 503 "upstream connect error").
+      connectionIdleTimeout: 4s
+      # No request deadline + 1h stream idle replaces every nginx
+      # proxy-read-timeout / proxy-send-timeout annotation.
+      requestTimeout: 0s
+      streamIdleTimeout: 1h
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/clienttrafficpolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: envoy
+spec:
+  clientIPDetection:
+    xForwardedFor:
+      # cloudflared reaches the gateway from a pod IP; trust its XFF so the
+      # real client address survives. SecurityPolicy CIDR allow-lists (the
+      # whitelist-source-range replacement) depend on this.
+      trustedCIDRs:
+        - ${CLUSTER_CIDR}
+  http2:
+    onInvalidMessage: TerminateStream
+  targetSelectors:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+  tcpKeepalive:
+    idleTime: 60s
+    interval: 10s
+    probes: 3
+  timeout:
+    http:
+      idleTimeout: 600s
+  tls:
+    minVersion: "1.2"
+    alpnProtocols:
+      - h2
+      - http/1.1
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: https-redirect
+  annotations:
+    external-dns.alpha.kubernetes.io/controller: none
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: http
+    - name: envoy-internal
+      namespace: network
+      sectionName: http
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301

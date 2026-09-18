@@ -30,9 +30,7 @@ spec:
       minAvailable: 1
       service:
         annotations:
-          external-dns.alpha.kubernetes.io/hostname: |
-            external.${SECRET_DOMAIN}
-            external.${SECRET_SECONDARY_DOMAIN}
+          # external.* now belongs to the envoy-external Gateway.
           io.cilium/lb-ipam-ips: 192.168.50.153
         externalTrafficPolicy: Cluster
       ingressClassResource:

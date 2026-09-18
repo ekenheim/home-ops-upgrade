@@ -52,6 +52,18 @@ spec:
         ports:
           http:
             port: 80
+    # envoy-gateway: replaces the `external` Ingress below at cutover.
+    route:
+      app:
+        hostnames: ["it-tools.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 80
     ingress:
       app:
         className: external

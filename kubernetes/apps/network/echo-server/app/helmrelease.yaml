@@ -105,7 +105,7 @@ spec:
     # New hostnames on purpose: nothing that works today changes.
     route:
       external:
-        hostnames: ["echo-envoy.${SECRET_DOMAIN}"]
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}", "echo-envoy.${SECRET_DOMAIN}"]
         parentRefs:
           - name: envoy-external
             namespace: network

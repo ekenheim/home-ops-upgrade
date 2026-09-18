@@ -80,6 +80,27 @@ spec:
         ports:
           http:
             port: 80
+    # envoy-gateway: replaces the `external` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Video"
+          gethomepage.dev/name: "Tautulli"
+          gethomepage.dev/icon: "tautulli.png"
+          gethomepage.dev/description: "Plex Stream Monitoring"
+          gethomepage.dev/widget.type: "tautulli"
+          gethomepage.dev/widget.url: "http://tautulli.media"
+          gethomepage.dev/widget.key: '{{ `{{HOMEPAGE_VAR_TAUTULLI_TOKEN}}` }}'
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 80
     ingress:
       app:
         className: external

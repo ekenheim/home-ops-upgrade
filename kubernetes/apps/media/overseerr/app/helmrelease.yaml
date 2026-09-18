@@ -59,6 +59,27 @@ spec:
         ports:
           http:
             port: 5055
+    # envoy-gateway: replaces the `external` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Video"
+          gethomepage.dev/name: "Overseerr"
+          gethomepage.dev/icon: "overseerr.png"
+          gethomepage.dev/description: "Media Request Management"
+          gethomepage.dev/widget.type: "overseerr"
+          gethomepage.dev/widget.url: "http://overseerr.media:5055"
+          gethomepage.dev/widget.key: '{{ `{{HOMEPAGE_VAR_OVERSEERR_TOKEN}}` }}'
+        hostnames: ["requests.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 5055
     ingress:
       app:
         className: external

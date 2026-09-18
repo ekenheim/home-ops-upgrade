@@ -367,6 +367,22 @@ spec:
       metricRelabelings:
         - action: labeldrop
           regex: (pod)
+    # envoy-gateway: replaces the `external` Ingress below at cutover.
+    route:
+      main:
+        enabled: true
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/icon: grafana.png
+          gethomepage.dev/name: Grafana
+          gethomepage.dev/group: Observability
+          gethomepage.dev/description: Monitoring Dashboards
+        hostnames:
+          - "{{ .Release.Name }}.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
     ingress:
       enabled: true
       ingressClassName: external

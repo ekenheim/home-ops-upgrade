@@ -172,6 +172,13 @@ spec:
         - ${CLUSTER_CIDR}
   http2:
     onInvalidMessage: TerminateStream
+  path:
+    # Leave request paths exactly as sent. The defaults unescape %2F (with a
+    # redirect) and merge //, either of which changes the path after the
+    # client signed it: S3 SigV4 on s3.* / s3-secondary.* breaks, as do object
+    # keys containing an encoded slash.
+    escapedSlashesAction: KeepUnchanged
+    disableMergeSlashes: true
   targetSelectors:
     - group: gateway.networking.k8s.io
       kind: Gateway

@@ -1,0 +1,24 @@
+---
+# envoy-gateway: replaces ingress.yaml at cutover.
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: talos-and-tensors
+  labels:
+    app.kubernetes.io/name: talos-and-tensors
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Blog"
+    gethomepage.dev/group: "Development"
+spec:
+  hostnames:
+    - "blog.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: talos-and-tensors
+          port: 80

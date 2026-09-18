@@ -15,10 +15,13 @@ lives here.
 | `memini` | Memory service (REST + MCP). Hermes' provider plugin talks to this one. |
 | `hindsight` | **New.** Memory service to consolidate on: banks per consumer, MCP per bank, LLM on the ChatGPT subscription. Nothing wired yet. |
 | `searxng` | Search backend for litellm. |
+| `miso-gallery` | Web gallery over ComfyUI's output (NAS, `Media/comfyui/output`). Local password auth, browse-only. |
+| `repo-wiki` | mkdocs site of LLM-written repo wikis; a 12-hourly CronJob on `self-hosted` writes them. |
 | `hermes`, `langflow` | Frontends. `open-webui` was retired 2026-09-18 (unused). |
 | `comfyui` | Image generation (ROCm) on worker4. Output on the NAS under `Media/comfyui`. |
 | `lemonade-tts`, `whisper` | GPU speech on worker4: OpenMOSS TTS and whisper.cpp (Vulkan). HTTP only, no consumers yet; Home Assistant and Bazarr keep their CPU services. |
 | `sillytavern` | Character chat frontend. Internal ingress is its only access control. |
+| `ai-marketplace-monitor` | Facebook Marketplace watcher, listings rated by `fast`. UI is port-forward only. No notifier wired yet. |
 | `foreman`, `dispatch` | The agentic coding loop. |
 
 ## litellm-operator is installed but drives nothing
@@ -139,6 +142,39 @@ kubectl -n llm get litellmproxy,litellmmodel      # expect: no resources (operat
 kubectl -n llm exec deploy/hermes -- curl -s http://litellm.llm:4000/health/liveliness
 kubectl -n llm exec deploy/litellm -c app -- curl -s http://ornith-35b.llm:8080/v1/models
 ```
+
+## miso-gallery and repo-wiki
+
+Added 2026-09-18 after joryirving/home-ops.
+
+**miso-gallery** reads the same NFS subPath comfyui writes
+(`Media/comfyui/output`), so it runs on any node and stays up while worker4 is
+down. Internal ingress + local password instead of upstream's external gateway
++ authentik OIDC. It runs as 1000:100 against files ComfyUI writes as root, so
+it is browse-only in practice. Its tag database is on its own 1Gi volume, not
+on NFS. It needs a **`miso-gallery` Bitwarden Secrets Manager item**:
+
+| Field | Used for |
+| --- | --- |
+| `ADMIN_PASSWORD` | the login (plaintext or a Werkzeug hash) |
+| `SECRET_KEY` | Flask session secret; `python -c "import secrets; print(secrets.token_urlsafe(48))"` |
+
+**repo-wiki** is two controllers on one volume: `mkdocs` serves the site and a
+CronJob (`0 */12 * * *`) regenerates the wiki of any repo in `repos.txt`
+(`app/configmap.yaml`) whose HEAD moved, one repo and at most 20 pages per
+run, each page one long completion on `self-hosted`. llama.cpp keeps
+generating after a client gives up, so if ornith's `/slots` fill with dead
+work after a run, suspend this first:
+
+```sh
+kubectl -n llm patch cronjob repo-wiki-repo-wiki-gen -p '{"spec":{"suspend":true}}'
+```
+
+Only `ekenheim/home-ops-upgrade` is listed. Private repos additionally need to
+be on the agent PAT's "selected repositories" list or they 404 silently. It
+needs a **`repo-wiki` Bitwarden Secrets Manager item** with `LITELLM_API_KEY`
+(a litellm virtual key of its own); `GITHUB_TOKEN` comes from the existing
+`github_token` item.
 
 ## memini is hermes' memory; agentmemory and supermemory are gone
 
@@ -328,4 +364,36 @@ not InferenceServices:
   `wyoming-kokoro` serve Home Assistant over Wyoming; `downloads/whisper`
   serves Bazarr over the `/asr` API. The two here speak different HTTP APIs
   and replace neither.
+## ai-marketplace-monitor: Facebook Marketplace watcher
+
+Added 2026-09-18 after joryirving/home-ops. BoPeng/ai-marketplace-monitor drives
+a real Chromium (Xvfb) through Marketplace searches and has litellm's `fast`
+rate each new listing against a plain-language description.
+
+- **The web UI is loopback-only and has no ingress**, on purpose: it is a config
+  editor plus a noVNC view of a browser logged in to Facebook, and bound to
+  anything but 127.0.0.1 it wants the Facebook credentials as its own login.
+
+  ```sh
+  kubectl -n llm port-forward svc/ai-marketplace-monitor 8467:8467
+  # http://127.0.0.1:8467 -- "Browser" in the header is where a Facebook login
+  # challenge or CAPTCHA gets solved
+  ```
+
+- **config.toml lives on the PVC and belongs to the UI.** Git only seeds a
+  starter (`app/configmap.yaml`) when the file is missing: Stockholm, SEK,
+  litellm `fast`, an empty `[user.me]` and one disabled example item. Add real
+  items in the UI editor. Credentials stay in the Secret; the file refers to
+  them as `${FACEBOOK_USERNAME}` and so on.
+- **No notifier is wired yet.** Upstream supports telegram, ntfy, pushover,
+  pushbullet and email; Discord, which is what is wanted here, is not among
+  them. Until that is solved, matches only show in the UI and the log.
+
+It needs an **`ai-marketplace-monitor` Bitwarden Secrets Manager item**:
+
+| Field | Used for |
+| --- | --- |
+| `FACEBOOK_USERNAME` | the account the scraper logs in as |
+| `FACEBOOK_PASSWORD` | its password |
+| `LITELLM_API_KEY` | litellm **virtual** key; only `fast` is called |
 

@@ -1,0 +1,40 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app ai-marketplace-monitor
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/llm/ai-marketplace-monitor/app
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  targetNamespace: llm
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  dependsOn:
+    - name: volsync
+    - name: external-secrets-stores
+    - name: rook-ceph-cluster
+    # Listings are judged by a model behind litellm (`fast`).
+    - name: litellm
+  # false, as upstream has it: the pod cannot start until the
+  # `ai-marketplace-monitor` Bitwarden item exists, and that must not hold the
+  # rest of the llm namespace's dependency chain hostage.
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: *app
+      # config.toml, the listing cache (sqlite) and the Chromium profile that
+      # holds the Facebook session. Backed up so a PVC rebuild does not mean
+      # a fresh Facebook login from a new "device".
+      VOLSYNC_CAPACITY: 5Gi
+      # The image runs everything as root (supervisord + Xvfb + Chromium).
+      VOLSYNC_UID: "0"
+      VOLSYNC_GID: "0"

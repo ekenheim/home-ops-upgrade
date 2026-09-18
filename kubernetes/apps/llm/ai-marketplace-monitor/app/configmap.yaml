@@ -1,0 +1,47 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-marketplace-monitor-seed
+data:
+  # A STARTER, not the live config. The init container copies it to the PVC
+  # only when no config.toml is there yet; from then on the file belongs to
+  # the web UI's editor (which is where items get added) and git never touches
+  # it again. To re-seed, delete config.toml on the PVC and restart the pod.
+  #
+  # Every `$${VAR}` is doubled for Flux: postBuild envsubst runs over this file
+  # in strict mode and would fail the whole Kustomization on a single-dollar
+  # variable it does not know. The app sees the single-dollar form and resolves it from
+  # its own environment (the Secret), erroring if one is missing.
+  #
+  # This exact shape was run in a throwaway pod on 2026-09-18: `[user.me]` may
+  # be empty but must exist ("Config file does not contain a user section"),
+  # and with no enabled item the monitor idles on "No search job is defined"
+  # while the UI keeps serving.
+  config.toml: |
+    [marketplace.facebook]
+    search_city = 'stockholm'
+    currency = 'SEK'
+    username = '$${FACEBOOK_USERNAME}'
+    password = '$${FACEBOOK_PASSWORD}'
+
+    # litellm's `fast` (ornith-35b, thinking off): rating a listing against a
+    # description is extraction, not reasoning.
+    [ai.litellm]
+    provider = 'openai'
+    base_url = 'http://litellm.llm:4000/v1'
+    api_key = '$${LITELLM_API_KEY}'
+    model = 'fast'
+
+    # No notifier yet. Supported: telegram, ntfy, pushover, pushbullet, email.
+    # Discord is not, which is the open question. Until a key is added here
+    # matches only show in the web UI and the log.
+    [user.me]
+
+    # Placeholder so the file parses. Copy it, rename it, set enabled = true.
+    [item.example]
+    enabled = false
+    search_phrases = 'example'
+    # description = 'what a good listing looks like, in plain words'
+    # min_price = 100
+    # max_price = 1000

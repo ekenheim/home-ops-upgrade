@@ -1,0 +1,136 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+#
+# BoPeng/ai-marketplace-monitor: watches Facebook Marketplace searches in a
+# real (headful, Xvfb) Chromium, has a model rate each new listing against a
+# plain-language description, and notifies on good ones. After
+# joryirving/home-ops (kubernetes/apps/base/llm/ai-marketplace-monitor).
+#
+# THE WEB UI IS LOCALHOST-ONLY ON PURPOSE, and there is no ingress. It holds a
+# config editor and a noVNC view of a browser that is logged in to Facebook.
+# Bound to 127.0.0.1 it asks for no password; bound to anything else it
+# demands the Facebook credentials as its login. Reach it with:
+#   kubectl -n llm port-forward svc/ai-marketplace-monitor 8467:8467
+#   -> http://127.0.0.1:8467   ("Browser" in the header is the noVNC view,
+#      which is where a Facebook login challenge or CAPTCHA gets solved)
+# port-forward enters the pod's own network namespace, so it reaches a
+# loopback listener; a Service or Ingress route would not.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app ai-marketplace-monitor
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.2.1
+      interval: 30m
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      # Not worker4 (tainted anyway), and not master1 if it can be helped: a
+      # headful Chromium on a node that throttles at 95C is a poor neighbour.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values: ["master1"]
+    controllers:
+      ai-marketplace-monitor:
+        # RWO PVC: RollingUpdate would hang on Multi-Attach (hindsight did).
+        strategy: Recreate
+        annotations:
+          secret.reloader.stakater.com/reload: *app
+        initContainers:
+          seed-config:
+            image: &image
+              repository: ghcr.io/bopeng/ai-marketplace-monitor
+              tag: 0.10.2@sha256:0f5c180cca0317475a7fd3b199054abb64b98845b3a29c74fb1dcdf2a1257835
+            # Copy the starter only if there is no config yet; see
+            # configmap.yaml. No braces or positional parameters in here: Flux
+            # envsubst runs over this file too.
+            command:
+              - sh
+              - -c
+              - |
+                set -eu
+                F=/root/.ai-marketplace-monitor/config.toml
+                if [ -f "$F" ]; then echo "config.toml present, leaving it alone"; exit 0; fi
+                cp /seed/config.toml "$F"
+                echo "seeded starter config.toml"
+        containers:
+          app:
+            image: *image
+            env:
+              TZ: "${TIMEZONE}"
+              AIMM_WEBUI_HOST: 127.0.0.1
+            envFrom:
+              - secretRef:
+                  name: *app
+            probes:
+              # exec, not httpGet: the listener is on loopback, which the
+              # kubelet cannot reach from outside the pod.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  initialDelaySeconds: 60
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  exec: &probe
+                    command:
+                      - /usr/bin/curl
+                      - --fail
+                      - --silent
+                      - --output
+                      - /dev/null
+                      - http://127.0.0.1:8467/
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  initialDelaySeconds: 30
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  exec: *probe
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 8467
+    persistence:
+      data:
+        existingClaim: *app
+        globalMounts:
+          - path: /root/.ai-marketplace-monitor
+      seed:
+        type: configMap
+        name: ai-marketplace-monitor-seed
+        advancedMounts:
+          ai-marketplace-monitor:
+            seed-config:
+              - path: /seed
+                readOnly: true

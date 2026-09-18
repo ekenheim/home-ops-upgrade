@@ -16,6 +16,7 @@ lives here.
 | `hindsight` | **New.** Memory service to consolidate on: banks per consumer, MCP per bank, LLM on the ChatGPT subscription. Nothing wired yet. |
 | `searxng` | Search backend for litellm. |
 | `hermes`, `langflow` | Frontends. `open-webui` was retired 2026-09-18 (unused). |
+| `ai-marketplace-monitor` | Facebook Marketplace watcher, listings rated by `fast`. UI is port-forward only. No notifier wired yet. |
 | `foreman`, `dispatch` | The agentic coding loop. |
 
 ## litellm-operator is installed but drives nothing
@@ -299,4 +300,37 @@ service map still points every MLflow/Ray/Dagster/marimo entry at `.datasci`.
 `qdrant` and `falkordb` have no consumers in this namespace. If marimo later
 moves, `hermes/app/configmap.yaml` and `platform-mcp/server/platform_mcp.py`
 both need updating.
+
+## ai-marketplace-monitor: Facebook Marketplace watcher
+
+Added 2026-09-18 after joryirving/home-ops. BoPeng/ai-marketplace-monitor drives
+a real Chromium (Xvfb) through Marketplace searches and has litellm's `fast`
+rate each new listing against a plain-language description.
+
+- **The web UI is loopback-only and has no ingress**, on purpose: it is a config
+  editor plus a noVNC view of a browser logged in to Facebook, and bound to
+  anything but 127.0.0.1 it wants the Facebook credentials as its own login.
+
+  ```sh
+  kubectl -n llm port-forward svc/ai-marketplace-monitor 8467:8467
+  # http://127.0.0.1:8467 -- "Browser" in the header is where a Facebook login
+  # challenge or CAPTCHA gets solved
+  ```
+
+- **config.toml lives on the PVC and belongs to the UI.** Git only seeds a
+  starter (`app/configmap.yaml`) when the file is missing: Stockholm, SEK,
+  litellm `fast`, an empty `[user.me]` and one disabled example item. Add real
+  items in the UI editor. Credentials stay in the Secret; the file refers to
+  them as `${FACEBOOK_USERNAME}` and so on.
+- **No notifier is wired yet.** Upstream supports telegram, ntfy, pushover,
+  pushbullet and email; Discord, which is what is wanted here, is not among
+  them. Until that is solved, matches only show in the UI and the log.
+
+It needs an **`ai-marketplace-monitor` Bitwarden Secrets Manager item**:
+
+| Field | Used for |
+| --- | --- |
+| `FACEBOOK_USERNAME` | the account the scraper logs in as |
+| `FACEBOOK_PASSWORD` | its password |
+| `LITELLM_API_KEY` | litellm **virtual** key; only `fast` is called |
 

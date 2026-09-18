@@ -102,6 +102,24 @@ spec:
           redis:
             port: 6379
 
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Data Science"
+          gethomepage.dev/name: "FalkorDB"
+          gethomepage.dev/icon: "database.png"
+          gethomepage.dev/description: "Graph database for knowledge graphs"
+        hostnames: ["falkordb.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 3000
     ingress:
       app:
         className: internal

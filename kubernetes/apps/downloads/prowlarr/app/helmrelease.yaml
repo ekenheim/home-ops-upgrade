@@ -67,6 +67,27 @@ spec:
         ports:
           http:
             port: *port
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Downloads"
+          gethomepage.dev/name: "Prowlarr"
+          gethomepage.dev/icon: "prowlarr.png"
+          gethomepage.dev/description: "Torrent/NZB Indexer Management"
+          gethomepage.dev/widget.type: "prowlarr"
+          gethomepage.dev/widget.url: "http://prowlarr.downloads"
+          gethomepage.dev/widget.key: '{{ `{{HOMEPAGE_VAR_PROWLARR_TOKEN}}` }}'
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 80
     ingress:
       app:
         className: internal

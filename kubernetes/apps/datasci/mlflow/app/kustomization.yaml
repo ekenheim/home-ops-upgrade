@@ -8,3 +8,4 @@ resources:
   - ./externalsecret.yaml
   - ../../../../templates/volsync
   - ../../../../templates/gatus/guarded
+  - ./securitypolicy.yaml

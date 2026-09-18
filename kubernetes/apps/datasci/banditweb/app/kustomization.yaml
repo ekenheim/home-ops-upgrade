@@ -8,3 +8,4 @@ resources:
   - ./ingress-analysis.yaml
   - ./authorizationpolicy.yaml
   - ../../../../templates/gatus/guarded
+  - ./httproute-internal.yaml

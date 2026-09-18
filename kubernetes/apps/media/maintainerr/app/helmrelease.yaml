@@ -69,6 +69,24 @@ spec:
         ports:
           http:
             port: 6246
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Video"
+          gethomepage.dev/name: "Maintainerr"
+          gethomepage.dev/icon: "https://raw.githubusercontent.com/joryirving/home-ops/main/docs/src/assets/icons/maintainerr.png"
+          gethomepage.dev/description: "Media Library Management"
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 6246
     ingress:
       app:
         className: internal

@@ -5,3 +5,4 @@ kind: Kustomization
 resources:
   - ./helmrelease.yaml
   - ../../../../../templates/gatus/infra
+  - ./httproute-internal.yaml

@@ -10,3 +10,4 @@ resources:
   - ./spark-era5-ingest.yaml
   - ./spark-entsoe-ingest.yaml
   - ../../../../templates/gatus/guarded
+  - ./httproute-internal.yaml

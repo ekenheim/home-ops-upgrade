@@ -64,6 +64,24 @@ spec:
         ports:
           http:
             port: 9876
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Downloads"
+          gethomepage.dev/name: "Lingarr"
+          gethomepage.dev/icon: "mdi-translate"
+          gethomepage.dev/description: "Subtitle Translation"
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 9876
     ingress:
       app:
         className: internal

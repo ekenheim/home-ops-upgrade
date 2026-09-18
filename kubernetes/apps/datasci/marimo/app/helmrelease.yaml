@@ -233,6 +233,31 @@ spec:
           shutdown-guard:
             port: 2719
 
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Data Science"
+          gethomepage.dev/name: "Marimo"
+          gethomepage.dev/icon: "https://marimo.io/favicon.ico"
+          gethomepage.dev/description: "Reactive Python notebook environment"
+        hostnames: ["marimo.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /api/kernel/shutdown
+            backendRefs:
+              - identifier: app
+                port: 2719
+          - backendRefs:
+              - identifier: app
+                port: 2718
     ingress:
       app:
         className: internal

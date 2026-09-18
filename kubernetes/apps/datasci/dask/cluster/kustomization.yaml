@@ -4,4 +4,5 @@ kind: Kustomization
 resources:
   - ./helmrelease.yaml
   - ./ingress.yaml
+  - ./httproute-internal.yaml
   - ./tcproute.yaml

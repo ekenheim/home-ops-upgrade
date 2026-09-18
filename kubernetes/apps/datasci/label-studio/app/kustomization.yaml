@@ -5,4 +5,5 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./pvc.yaml
+  - ./securitypolicy.yaml
   - ../../../../templates/gatus/guarded

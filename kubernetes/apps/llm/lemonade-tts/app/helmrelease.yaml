@@ -131,6 +131,24 @@ spec:
         ports:
           http:
             port: 13305
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "LLM"
+          gethomepage.dev/name: "Lemonade"
+          gethomepage.dev/icon: "mdi-account-voice"
+          gethomepage.dev/description: "Lemonade Server model manager and TTS playground"
+        hostnames: ["lemonade.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 13305
     ingress:
       app:
         enabled: true

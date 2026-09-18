@@ -10,3 +10,4 @@ resources:
   - ./tdarr-ingress.yaml
   - ./supermicro-ingress.yaml
   #- ./vpn-endpoint.yaml
+  - ./httproute-internal.yaml

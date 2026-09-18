@@ -82,6 +82,18 @@ spec:
           http:
             port: *port
 
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        hostnames: ["search.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8080
     ingress:
       app:
         enabled: true

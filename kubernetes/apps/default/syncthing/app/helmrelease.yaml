@@ -72,6 +72,18 @@ spec:
             enabled: true
             port: 22000
             protocol: UDP
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        hostnames: ["syncthing.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8384
     ingress:
       app:
         className: internal

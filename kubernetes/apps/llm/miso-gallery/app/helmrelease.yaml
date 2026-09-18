@@ -82,6 +82,24 @@ spec:
         ports:
           http:
             port: 5000
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "LLM"
+          gethomepage.dev/name: "Miso Gallery"
+          gethomepage.dev/icon: "mdi-image-multiple"
+          gethomepage.dev/description: "Gallery of ComfyUI output"
+        hostnames: ["miso-gallery.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 5000
     ingress:
       app:
         enabled: true

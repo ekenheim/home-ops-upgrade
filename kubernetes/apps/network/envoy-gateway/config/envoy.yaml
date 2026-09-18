@@ -170,6 +170,16 @@ spec:
       # whitelist-source-range replacement) depend on this.
       trustedCIDRs:
         - ${CLUSTER_CIDR}
+  headers:
+    # Parity with ingress-nginx (hsts-max-age / hide-headers), which the apps
+    # behind it have been relying on without knowing.
+    lateResponseHeaders:
+      set:
+        - name: Strict-Transport-Security
+          value: max-age=31449600; includeSubDomains
+      remove:
+        - Server
+        - X-Powered-By
   http2:
     onInvalidMessage: TerminateStream
   path:

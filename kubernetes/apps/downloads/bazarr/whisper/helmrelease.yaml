@@ -28,7 +28,8 @@ spec:
           reloader.stakater.com/auto: "true"
         pod:
           affinity:
-            # This used to be a hard podAffinity onto ollama-igpu, which
+            # This used to be a hard podAffinity onto ollama-igpu (since
+            # retired), which
             # bought nothing: whisper never requested gpu.intel.com/i915, and
             # the image cannot drive an Intel iGPU anyway (app/config.py picks
             # a device with `"cuda" if torch.cuda.is_available() else "cpu"`,

@@ -18,7 +18,6 @@ REBIND=(
   litellm-chatgpt-auth
   llmkube-model-cache
   memory-mcp
-  ollama-igpu
 )
 
 # PVCs that CANNOT rebind. templates/volsync/claim.yaml gives these a
@@ -30,7 +29,6 @@ REBIND=(
 RESTORE=(
   agentmemory
   hermes
-  open-webui
 )
 
 retain() {

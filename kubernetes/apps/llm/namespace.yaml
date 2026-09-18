@@ -11,6 +11,6 @@ metadata:
     pod-security.kubernetes.io/enforce: privileged
     #istio-injection: enabled
   annotations:
-    # hermes, memini, hindsight, open-webui and toolhive/memory-mcp are volsync
+    # hermes, memini, hindsight and toolhive/memory-mcp are volsync
     # backed. Without this the restic movers cannot chown restored data.
     volsync.backube/privileged-movers: "true"

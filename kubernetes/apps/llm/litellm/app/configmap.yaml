@@ -307,29 +307,15 @@ data:
         litellm_params:
           model: chatgpt/gpt-5.5
 
-      # --- Embeddings: still ollama-igpu on the Intel masters ---
-      # Deliberately NOT moved. The Strix InferenceService reports capabilities
-      # ["completion","multimodal"] -- it does not serve embeddings, and
-      # memini and hindsight depend on this (MEMINI_EMBED_MODEL /
-      # HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL = all-minilm, 384
-      # dimensions). Moving it would need a separate embedding InferenceService.
-      - model_name: all-minilm
-        model_info:
-          mode: embedding
-        litellm_params:
-          model: openai/all-minilm
-          api_base: http://ollama-igpu.llm:11434/v1
-          api_key: ollama
-
       # --- Embeddings: bge-m3 on the `embeddings` app (llama.cpp, CPU) ---
-      # The multilingual successor to all-minilm, which stays above only until
-      # memini and hindsight have moved. 1024 dims, no query/document prefix.
+      # The only embedding model. It replaced `all-minilm` on ollama-igpu on
+      # 2026-09-18 (both retired). 1024 dims, no query/document prefix.
       # Named after the model on purpose: vector size is a property of the
       # model, and a generic alias would hide a breaking change from the two
       # stores that bake it into their data. Why this model and this server:
       # ../../embeddings/app/helmrelease.yaml.
-      # Virtual keys are scoped by model name, so a consumer's key must list
-      # `bge-m3` before that consumer is switched.
+      # If a virtual key is ever restricted by model name, it must list
+      # `bge-m3`; the memini and hindsight keys were checked and are not.
       - model_name: bge-m3
         model_info:
           mode: embedding

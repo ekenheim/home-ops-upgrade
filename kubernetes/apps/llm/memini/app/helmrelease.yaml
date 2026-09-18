@@ -60,9 +60,15 @@ spec:
               # and pollute every query vector.
               MEMINI_EMBED_MAX_CONCURRENCY: "2"
               MEMINI_RECALL_EMBED_TIMEOUT: 5s
-              # Re-embeds the whole store if the model or dims change, instead
-              # of silently mixing incompatible vectors and returning nonsense
-              # for anything written before the switch.
+              # Re-embeds the whole store when the MODEL changes at the same
+              # width, instead of silently mixing incompatible vectors. It does
+              # NOT cover a change of dims: the sqlite-vec store is fixed at
+              # its original width and the pod crash-loops with "store was
+              # created with N embedding dims but is configured for M". The
+              # 384 -> 1024 move on 2026-09-18 went: scale to 0, `memini export
+              # --all-namespaces --include-expired --include-superseded` from a
+              # pod with the OLD dims, move memini.db aside, let this start a
+              # fresh store, `memini import --source memini <export>`.
               MEMINI_REEMBED_ON_MODEL_CHANGE: "true"
 
               # --- Rerank -----------------------------------------------------

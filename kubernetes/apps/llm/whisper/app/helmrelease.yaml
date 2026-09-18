@@ -1,0 +1,144 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+#
+# whisper.cpp server on worker4's iGPU through Vulkan, after joryirving/home-ops
+# (kubernetes/apps/base/llm/whisper). The init container fetches lemonade-sdk's
+# prebuilt Vulkan whisper-server and the ggml model onto the volume once; the
+# toolbox image only supplies the Mesa/RADV userspace.
+#
+# This is the THIRD whisper here, and none of them is a duplicate of another:
+#   default/wyoming-whisper   CPU, Wyoming TCP  -> Home Assistant voice
+#   downloads/whisper         CPU, /asr API     -> Bazarr subtitles
+#   llm/whisper (this)        GPU, whisper.cpp HTTP (/inference) -> nothing yet
+# The APIs differ, so this cannot be dropped in behind either consumer as is.
+# large-v3-turbo is also the WORST pick for short voice commands (fixed 30 s
+# window, flat latency); it earns its place on long audio.
+#
+# Upstream also runs a second copy, `whisper-iris`, on its Intel-iGPU nodes.
+# Left out: on this cluster that would be a fourth whisper with no consumer.
+#
+# Every dollar-brace in the init script is doubled for Flux envsubst.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app whisper
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.2.1
+      interval: 30m
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      # worker4 is the only node with the Strix Halo iGPU.
+      nodeSelector:
+        topology.kubernetes.io/gpus: amd
+      tolerations:
+        - key: llm-workload
+          operator: Exists
+          effect: NoSchedule
+        # tuppr soft-taints a node mid-upgrade; without this the pod is
+        # evicted off the only node it can run on.
+        - key: tuppr.home-operations.com/outdated
+          operator: Exists
+          effect: PreferNoSchedule
+    controllers:
+      whisper:
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          fetch:
+            image: &image
+              repository: docker.io/kyuz0/amd-strix-halo-toolboxes
+              tag: vulkan-radv@sha256:b8e8caeb5f929a5f397a4bd605aab3009ff9140afd139eeefa20fa23034bb5b0
+            command:
+              - bash
+              - -c
+              - |
+                set -euo pipefail
+                cd /cache
+                if [ ! -x "bin/$${WHISPER_VERSION}/whisper-server" ]; then
+                  curl -fsSL -o w.tgz "https://github.com/lemonade-sdk/whisper.cpp-rocm/releases/download/$${WHISPER_VERSION}/whisper-$${WHISPER_VERSION}-linux-vulkan-x86_64.tar.gz"
+                  python3 -c "import tarfile;tarfile.open('w.tgz').extractall('x')"
+                  mkdir -p "bin/$${WHISPER_VERSION}"
+                  mv x/whisper-*-linux-vulkan-x86_64/* "bin/$${WHISPER_VERSION}/"
+                  rm -rf x w.tgz
+                fi
+                if [ ! -s "$${WHISPER_MODEL_FILE}" ]; then
+                  curl -fsSL -o "$${WHISPER_MODEL_FILE}.part" "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/$${WHISPER_MODEL_FILE}"
+                  mv "$${WHISPER_MODEL_FILE}.part" "$${WHISPER_MODEL_FILE}"
+                fi
+                ls -l "bin/$${WHISPER_VERSION}/whisper-server" "$${WHISPER_MODEL_FILE}"
+            env:
+              # Keep in step with the command and LD_LIBRARY_PATH below.
+              WHISPER_VERSION: v1.8.4
+              WHISPER_MODEL_FILE: ggml-large-v3-turbo-q8_0.bin
+        containers:
+          app:
+            image: *image
+            securityContext:
+              privileged: true
+            command:
+              - /cache/bin/v1.8.4/whisper-server
+            args:
+              - --model
+              - /cache/ggml-large-v3-turbo-q8_0.bin
+              - --host
+              - 0.0.0.0
+              - --port
+              - "8080"
+              - --threads
+              - "4"
+            env:
+              TZ: "${TIMEZONE}"
+              LD_LIBRARY_PATH: /cache/bin/v1.8.4
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: &health
+                    path: /
+                    port: 8080
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  failureThreshold: 6
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *health
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                  failureThreshold: 6
+            resources:
+              requests:
+                cpu: 500m
+                memory: 4Gi
+              limits:
+                memory: 8Gi
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 8080
+    persistence:
+      cache:
+        existingClaim: *app
+        globalMounts:
+          - path: /cache

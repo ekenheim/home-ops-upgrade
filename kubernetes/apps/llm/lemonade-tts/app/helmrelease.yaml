@@ -1,0 +1,149 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+#
+# Lemonade Server as a GPU text-to-speech endpoint (OpenMOSS TTS on Vulkan),
+# after joryirving/home-ops (kubernetes/apps/base/llm/lemonade-tts). OpenAI
+# style API on :13305 (/api/v1/audio/speech, /api/v1/health).
+#
+# This is the THIRD TTS in the cluster. default/wyoming-piper and
+# default/wyoming-kokoro (Kokoro-FastAPI on CPU behind a wyoming bridge) both
+# serve Home Assistant over the Wyoming protocol. This one speaks HTTP only,
+# so it does not replace them, and nothing consumes it yet -- in-cluster only,
+# no ingress, same as upstream.
+#
+# Privileged for /dev/kfd + /dev/dri, and the same GTT caveat as ../../comfyui:
+# GPU memory here is charged to no cgroup, so the request is the scheduler's
+# only hint and the limit caps the host side alone.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app lemonade-tts
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.2.1
+      interval: 30m
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      # worker4 is the only node with the Strix Halo iGPU.
+      nodeSelector:
+        topology.kubernetes.io/gpus: amd
+      tolerations:
+        - key: llm-workload
+          operator: Exists
+          effect: NoSchedule
+        # tuppr soft-taints a node mid-upgrade; without this the pod is
+        # evicted off the only node it can run on.
+        - key: tuppr.home-operations.com/outdated
+          operator: Exists
+          effect: PreferNoSchedule
+    controllers:
+      lemonade-tts:
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          # Runs as root, and has to: the volume is a hostPath (see pv.yaml),
+          # and the kubelet applies fsGroup to no hostPath, so the directory
+          # arrives root:root 0755 and the image's `lemonade` user could not
+          # write a byte. Upstream's openebs volume does not have this problem.
+          # The ownership is taken from the image's own home directory rather
+          # than hardcoded, so a changed uid upstream does not break it.
+          #
+          # config.json is a sparse override: only keys that differ from
+          # Lemonade's defaults. Written here rather than mounted from a
+          # ConfigMap because Lemonade writes its own state into the same
+          # directory.
+          config:
+            image: &image
+              repository: ghcr.io/lemonade-sdk/lemonade-server
+              # Upstream publishes no version tags, hence latest + digest.
+              tag: latest@sha256:3873d3ec672eaebdf4484cf1592daae1ae0f73d0f6377a03f38f931f972ca122
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
+            command:
+              - sh
+              - -c
+              - |
+                set -eu
+                mkdir -p /vol/config /vol/huggingface /vol/lemonade /vol/llama
+                printf '%s\n' '{"openmoss": {"backend": "vulkan"}}' > /vol/config/config.json
+                cat /vol/config/config.json
+                chown -R --reference=/opt/lemonade /vol
+                ls -ln /vol
+        containers:
+          app:
+            image: *image
+            securityContext:
+              privileged: true
+            command:
+              - ./lemond
+            args:
+              - --host
+              - 0.0.0.0
+              - --port
+              - "13305"
+            env:
+              TZ: "${TIMEZONE}"
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: &health
+                    path: /api/v1/health
+                    port: 13305
+                  initialDelaySeconds: 60
+                  periodSeconds: 30
+                  failureThreshold: 6
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *health
+                  initialDelaySeconds: 20
+                  periodSeconds: 10
+                  failureThreshold: 12
+            resources:
+              requests:
+                cpu: 500m
+                memory: 8Gi
+              limits:
+                memory: 16Gi
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 13305
+    persistence:
+      cache:
+        existingClaim: *app
+        advancedMounts:
+          lemonade-tts:
+            config:
+              - path: /vol
+            app:
+              - path: /opt/lemonade/.cache/huggingface
+                subPath: huggingface
+              - path: /opt/lemonade/.cache/lemonade
+                subPath: lemonade
+              - path: /opt/lemonade/.config/lemonade
+                subPath: config
+              - path: /opt/lemonade/llama
+                subPath: llama

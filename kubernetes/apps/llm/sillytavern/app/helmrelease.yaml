@@ -1,0 +1,126 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+#
+# SillyTavern, after joryirving/home-ops (kubernetes/apps/base/llm/sillytavern).
+#
+# ACCESS CONTROL IS THE INGRESS CLASS AND NOTHING ELSE. Upstream turns off
+# SillyTavern's own protections (whitelist, CSRF, the listen-without-auth
+# guard) because an Envoy SecurityPolicy does OIDC in front of it. There is no
+# such gateway here, so this is reachable by anything that can reach the
+# `internal` ingress -- the same posture as hindsight's control plane and
+# searxng. It stores API keys for whatever backends get configured in it:
+# never move this to the `external` class without putting auth in front (its
+# own basicAuthMode / user accounts, or authentik).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app sillytavern
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.2.1
+      interval: 30m
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      sillytavern:
+        # RWO PVC: RollingUpdate hangs on Multi-Attach (hindsight did).
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/sillytavern/sillytavern
+              tag: 1.19.0@sha256:eef27ff0c7961f1a2f488400f581f48ff38f8b910c5d3b8d389138d71791bb14
+            env:
+              TZ: "${TIMEZONE}"
+              # In-container browser launch is a no-op that only logs errors.
+              SILLYTAVERN_BROWSERLAUNCH_ENABLED: "false"
+              # Behind a reverse proxy the Origin differs from the app host.
+              SILLYTAVERN_DISABLECSRFPROTECTION: "true"
+              # Acknowledges listening without app-level auth; see the note
+              # at the top of this file for what stands in for it.
+              SILLYTAVERN_SECURITYOVERRIDE: "true"
+              # The default whitelist is loopback only and would 403 every
+              # request that arrives through the ingress.
+              SILLYTAVERN_WHITELISTMODE: "false"
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 8000
+    ingress:
+      app:
+        enabled: true
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: LLM
+          gethomepage.dev/name: SillyTavern
+          gethomepage.dev/icon: mdi-account-voice
+          gethomepage.dev/description: Character chat frontend on litellm
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+        hosts:
+          - host: &host tavern.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+              - *host
+    persistence:
+      # One claim, five subPaths, as upstream: everything SillyTavern writes.
+      data:
+        existingClaim: *app
+        globalMounts:
+          - path: /home/node/app/data
+            subPath: data
+          - path: /home/node/app/config
+            subPath: config
+          - path: /home/node/app/backups
+            subPath: backups
+          - path: /home/node/app/plugins
+            subPath: plugins
+          - path: /home/node/app/public/scripts/extensions/third-party
+            subPath: extensions

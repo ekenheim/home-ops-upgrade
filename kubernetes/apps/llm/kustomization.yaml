@@ -21,6 +21,16 @@ resources:
   # ollama-igpu used to sit here; retired 2026-09-18 with open-webui, its
   # last other consumer. It had silently been running on CPU anyway.
   - ./embeddings/ks.yaml
+  # Flux-Kustomizations | GPU apps outside llmkube (after joryirving/home-ops)
+  #
+  # All three are `privileged` pods pinned to worker4 rather than DRA
+  # consumers, each on a static hostPath volume (no provisioner can serve that
+  # node). They share the iGPU and its unreclaimable GTT with ornith-35b and
+  # gemma3-27b; see the warning at the top of comfyui/app/helmrelease.yaml
+  # before running image generation next to the LLMs.
+  - ./comfyui/ks.yaml
+  - ./lemonade-tts/ks.yaml
+  - ./whisper/ks.yaml
   # Flux-Kustomizations | Tooling & memory
   - ./toolhive/ks.yaml
   # Two memory services. memini is what hermes' provider plugin talks to
@@ -36,6 +46,7 @@ resources:
   # Flux-Kustomizations | Frontends
   - ./hermes/ks.yaml
   - ./langflow/ks.yaml
+  - ./sillytavern/ks.yaml
   # Flux-Kustomizations | The agentic coding loop
   #
   # dispatch grooms GitHub issues into a queue, the bridge CronJob turns claimed

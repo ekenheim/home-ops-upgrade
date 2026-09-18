@@ -3,13 +3,18 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app whisper
+  # NOT `whisper`: flux-system already has a Kustomization of that name, for
+  # Bazarr's CPU whisper (../../downloads/bazarr/ks.yaml). Flux Kustomizations
+  # share one namespace, so a second `whisper` would replace that object and
+  # prune Bazarr's Deployment. Everything this one renders is still called
+  # `whisper`, in the llm namespace, where nothing collides.
+  name: whisper-gpu
   namespace: flux-system
 spec:
   path: ./kubernetes/apps/llm/whisper/app
   commonMetadata:
     labels:
-      app.kubernetes.io/name: *app
+      app.kubernetes.io/name: &app whisper
   targetNamespace: llm
   prune: true
   sourceRef:

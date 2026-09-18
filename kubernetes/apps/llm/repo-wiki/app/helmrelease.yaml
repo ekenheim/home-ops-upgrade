@@ -137,7 +137,6 @@ spec:
         ports:
           http:
             port: 8000
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       app:
         annotations:
@@ -155,29 +154,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 8000
-    ingress:
-      app:
-        enabled: true
-        # Internal only: no login, and the pages quote private repos verbatim
-        # if any are ever added to repos.txt.
-        className: internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: LLM
-          gethomepage.dev/name: Repo Wikis
-          gethomepage.dev/icon: mdi-book-open-page-variant
-          gethomepage.dev/description: LLM-written wikis of my repositories
-          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-        hosts:
-          - host: &host wikis.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
     persistence:
       data:
         existingClaim: *app

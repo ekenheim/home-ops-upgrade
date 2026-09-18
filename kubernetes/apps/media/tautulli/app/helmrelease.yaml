@@ -80,7 +80,6 @@ spec:
         ports:
           http:
             port: 80
-    # envoy-gateway: replaces the `external` Ingress below at cutover.
     route:
       app:
         annotations:
@@ -101,26 +100,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 80
-    ingress:
-      app:
-        className: external
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Video
-          gethomepage.dev/name: Tautulli
-          gethomepage.dev/icon: tautulli.png
-          gethomepage.dev/description: Plex Stream Monitoring
-          gethomepage.dev/widget.type: tautulli
-          gethomepage.dev/widget.url: http://tautulli.media
-          gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_TAUTULLI_TOKEN}}` }}"
-          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-        hosts:
-          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
     persistence:
       config:
         existingClaim: *app

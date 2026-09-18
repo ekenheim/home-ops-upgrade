@@ -75,7 +75,6 @@ spec:
         ports:
           http:
             port: *port
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       app:
         annotations:
@@ -96,26 +95,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 8080
-    ingress:
-      app:
-        className: internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Downloads
-          gethomepage.dev/name: SABnzbd
-          gethomepage.dev/icon: sabnzbd.png
-          gethomepage.dev/description: NZB Download Client
-          gethomepage.dev/widget.type: sabnzbd
-          gethomepage.dev/widget.url: http://sabnzbd.downloads:8080
-          gethomepage.dev/widget.key: "{{ `{{HOMEPAGE_VAR_SABNZBD_TOKEN}}` }}"
-          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-        hosts:
-        - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-          paths:
-          - path: /
-            service:
-              identifier: app
-              port: http
     persistence:
       config:
         existingClaim: *app

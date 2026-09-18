@@ -233,7 +233,6 @@ spec:
           shutdown-guard:
             port: 2719
 
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       app:
         annotations:
@@ -258,33 +257,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 2718
-    ingress:
-      app:
-        className: internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Data Science
-          gethomepage.dev/name: Marimo
-          gethomepage.dev/icon: https://marimo.io/favicon.ico
-          gethomepage.dev/description: Reactive Python notebook environment
-          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-        hosts:
-          - host: &host marimo.${SECRET_DOMAIN}
-            paths:
-              # Exact match, so nginx emits `location = /api/kernel/shutdown`,
-              # which wins over the `location /` below regardless of order.
-              - path: /api/kernel/shutdown
-                pathType: Exact
-                service:
-                  identifier: app
-                  port: shutdown-guard
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
 
     persistence:
       notebooks:

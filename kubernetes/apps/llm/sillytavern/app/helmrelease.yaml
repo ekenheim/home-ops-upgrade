@@ -88,7 +88,6 @@ spec:
         ports:
           http:
             port: 8000
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       app:
         annotations:
@@ -106,27 +105,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 8000
-    ingress:
-      app:
-        enabled: true
-        className: internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: LLM
-          gethomepage.dev/name: SillyTavern
-          gethomepage.dev/icon: mdi-account-voice
-          gethomepage.dev/description: Character chat frontend on litellm
-          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-        hosts:
-          - host: &host tavern.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
     persistence:
       # One claim, five subPaths, as upstream: everything SillyTavern writes.
       data:

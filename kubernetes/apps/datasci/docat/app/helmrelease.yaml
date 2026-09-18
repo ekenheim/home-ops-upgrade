@@ -94,7 +94,6 @@ spec:
         ports:
           http:
             port: *port
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       app:
         hostnames: ["docs.${SECRET_DOMAIN}"]
@@ -106,25 +105,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 80
-    ingress:
-      app:
-        className: internal
-        annotations:
-          nginx.ingress.kubernetes.io/whitelist-source-range: |
-            10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
-          tailscale.com/tags: "tag:k8s"
-          tailscale.com/hostname: "docs.${SECRET_DOMAIN}"
-        hosts:
-          - host: &host docs.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                pathType: Prefix
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
     persistence:
       data:
         enabled: true

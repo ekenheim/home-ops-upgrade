@@ -82,7 +82,6 @@ spec:
         ports:
           http:
             port: 5000
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       app:
         annotations:
@@ -100,27 +99,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 5000
-    ingress:
-      app:
-        enabled: true
-        className: internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: LLM
-          gethomepage.dev/name: Miso Gallery
-          gethomepage.dev/icon: mdi-image-multiple
-          gethomepage.dev/description: Gallery of ComfyUI output
-          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-        hosts:
-          - host: &host miso-gallery.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
     persistence:
       config:
         existingClaim: *app

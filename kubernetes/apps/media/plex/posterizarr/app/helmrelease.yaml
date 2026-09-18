@@ -147,7 +147,6 @@ spec:
         ports:
           http:
             port: 8000
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       app:
         annotations:
@@ -165,23 +164,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 8000
-    ingress:
-      app:
-        className: internal
-        annotations:
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Video
-          gethomepage.dev/name: Posterizarr
-          gethomepage.dev/icon: posterizarr.png
-          gethomepage.dev/description: Media Poster Automation
-          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
-        hosts:
-          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true

@@ -218,7 +218,7 @@ spec:
       port: 10001
 
     ingress:
-      enabled: true
+      enabled: false  # moved to an HTTPRoute on envoy-gateway
       annotations:
         hajimari.io/enable: "true"
         hajimari.io/icon: mdi:ray

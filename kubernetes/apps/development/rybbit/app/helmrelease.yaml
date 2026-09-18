@@ -71,7 +71,6 @@ spec:
           http:
             port: 3002
 
-    # envoy-gateway: replaces the `external` Ingress below at cutover.
     route:
       main:
         annotations:
@@ -95,29 +94,3 @@ spec:
           - backendRefs:
               - identifier: client
                 port: 3002
-    ingress:
-      main:
-        className: external
-        annotations:
-          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/name: Rybbit
-          gethomepage.dev/group: Development
-          gethomepage.dev/icon: https://rybbit.com/rybbit-text.svg
-          nginx.ingress.kubernetes.io/proxy-body-size: 10m
-        hosts:
-          - host: rybbit.${SECRET_DOMAIN}
-            paths:
-              - path: /api
-                pathType: Prefix
-                service:
-                  identifier: backend
-                  port: http
-              - path: /
-                pathType: Prefix
-                service:
-                  identifier: client
-                  port: http
-        tls:
-          - hosts:
-              - rybbit.${SECRET_DOMAIN}

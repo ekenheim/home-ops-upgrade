@@ -63,7 +63,6 @@ spec:
         ports:
           http:
             port: 34400
-    # envoy-gateway: replaces the `internal` Ingress below at cutover.
     route:
       app:
         hostnames: ["xteve.${SECRET_DOMAIN}"]
@@ -75,20 +74,6 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 34400
-    ingress:
-      app:
-        enabled: true
-        className: internal
-        hosts:
-          - host: &host "xteve.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
     persistence:
       config:
         existingClaim: *app

@@ -37,7 +37,7 @@ spec:
       grpcPort: 6334
 
     ingress:
-      enabled: true
+      enabled: false  # moved to an HTTPRoute on envoy-gateway
       className: internal
       annotations:
         gethomepage.dev/enabled: "true"

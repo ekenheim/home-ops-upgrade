@@ -16,8 +16,11 @@ spec:
     kind: GitRepository
     name: home-kubernetes
   dependsOn:
-    # The model file lives on a CephFS PVC shared by both replicas.
+    # The model file lives on a CephFS PVC shared by both pool members.
     - name: rook-ceph-cluster
+    # Model and InferenceService are llmkube CRDs, and its controller is what
+    # turns them into Deployments.
+    - name: llmkube
   wait: true
   interval: 30m
   retryInterval: 1m

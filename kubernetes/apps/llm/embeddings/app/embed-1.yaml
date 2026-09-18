@@ -1,0 +1,145 @@
+---
+# One member of the embedding pool. embed-2.yaml is identical but for the
+# name; keep them in step. Two single-replica services rather than one with
+# replicas: 2, as upstream does it: litellm balances across them by name, and
+# llmkube rolls each one on its own (rolloutPolicy below), so an image bump
+# never takes both down together.
+#
+# Everything below was run as a throwaway InferenceService on 2026-09-18
+# before it was committed. Measured on worker3, 8 threads:
+#   short fact 27-40 ms | ~650 tok 1.7 s | ~1,430 tok 2.3 s | ~3,250 tok 6.5 s
+#   3.4 GiB resident at ubatch 2048 (5.7 GiB at 4096, for nothing: see below)
+# That is slower than bge-m3 on long input (a 28-layer decoder against an
+# encoder) and the same on short input, which is what recall sends.
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: embed-1
+  labels:
+    krr/ignore: "true"
+spec:
+  modelRef: embed
+  # NOT the operator's shared cache: that PVC is a hostPath PV pinned to
+  # worker4 (../../llmkube/app/model-cache-pv.yaml), and mounting it would
+  # drag memory onto the node that hard-resets under GPU load. This is our own
+  # CephFS RWX claim (./pvc.yaml), so both members read one copy from any node.
+  modelCache:
+    claimName: embeddings
+  runtime: llamacpp
+  # No spec.command here, deliberately: llmkube >= 0.9.28 drops its generated
+  # args when command is set (why the chart is held at 0.9.27). The stock
+  # image's entrypoint is llama-server already.
+  image: ghcr.io/ggml-org/llama.cpp:server-b11011@sha256:b97738dc7c62a5eefbfc2f910ff727cc2bcc7dbe9e613d95532fcc32f9374025
+  rolloutPolicy:
+    waitForIdle: true
+    idleTimeoutSeconds: 600
+  replicas: 1
+  priority: normal
+  # `embedding` makes the operator append --embedding --pooling last, which
+  # is what Qwen3-Embedding needs (last-token pooling; bge-m3 was cls).
+  mode: embedding
+  podLabels:
+    cpu-inference: "true"
+    embed-pool: "true"
+  affinity:
+    podAntiAffinity:
+      # Preferred, never required: a hard hostname spread has wedged rollouts
+      # here before (cloudflared, pgbouncer).
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                embed-pool: "true"
+            topologyKey: kubernetes.io/hostname
+    nodeAffinity:
+      # master1 throttles at 95C: the same ~3,250-token input took 39 s there
+      # against 6.5 s on worker3. Last resort, not first choice. worker4 is
+      # out of reach behind its llm-workload taint, which is the point.
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 50
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["master1"]
+  # THE WINDOW is contextSize, shared by all slots (--kv-unified), not
+  # ubatch: with last-token pooling llama-server feeds a long input through
+  # in several physical batches (a ~5,200-token input returned 200 at ubatch
+  # 2048), where bge-m3's cls pooling needed the whole input in one. So ubatch
+  # is only a memory/speed knob here. Upstream runs 32768/32 slots for a
+  # busier cluster; the largest thing our clients send is ~1,400 tokens
+  # (memini caps a turn at 1000+3000 chars, hindsight chunks at 3000 chars)
+  # and memini embeds at most two at a time.
+  contextSize: 16384
+  parallelSlots: 4
+  flashAttention: true
+  batchSize: 2048
+  uBatchSize: 2048
+  env:
+    - name: HOME
+      value: /tmp
+  resources:
+    # The operator renders cpu as a request only (no limit: a throttled
+    # embedding is a slow recall) and memory as request = limit.
+    cpu: 500m
+    memory: 5Gi
+  # runAsNonRoot goes on the container, NOT in podSecurityContext: the
+  # operator's model-cache-prep init container runs as uid 0 to chown the
+  # cache, and a pod-level runAsNonRoot leaves it in
+  # CreateContainerConfigError forever.
+  podSecurityContext:
+    fsGroup: 1000
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: ["ALL"]
+  extraVolumes:
+    - name: tmp
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: tmp
+      mountPath: /tmp
+  extraArgs:
+    - --alias
+    - embed
+    - --cont-batching
+    - --cache-ram
+    - "0"
+    - --kv-unified
+    # Alder Lake masters have 16 threads, worker3 has 32.
+    - --threads
+    - "8"
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  probeOverrides:
+    # /health is 503 while the model loads and 200 once it serves. The
+    # startup budget covers a first download plus a cold CephFS read.
+    startup:
+      httpGet:
+        path: /health
+        port: 8080
+      periodSeconds: 5
+      failureThreshold: 120
+    liveness:
+      httpGet:
+        path: /health
+        port: 8080
+      periodSeconds: 20
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readiness:
+      httpGet:
+        path: /health
+        port: 8080
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 2

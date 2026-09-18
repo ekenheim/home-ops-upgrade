@@ -36,36 +36,39 @@ spec:
               # keeps this app on one auth path and one set of spend/latency
               # metrics (see ../../litellm/app/configmap.yaml).
               #
-              # bge-m3, 1024 dims, served by ../../embeddings (llama.cpp, CPU).
-              # It replaced all-minilm (384 dims) on 2026-09-18: that model is
-              # English-only with a ~256-token window, so Swedish queries
-              # missed, a Swedish question could not find an English memory,
-              # and everything past the start of a captured turn was ignored.
-              # Measurements and the reasoning for model and server are in
-              # ../../embeddings/app/helmrelease.yaml.
+              # Qwen3-Embedding-0.6B, 1024 dims, served by ../../embeddings
+              # (llmkube, llama.cpp, CPU) -- the model upstream memini runs.
+              # History: all-minilm (384 dims, English, ~256-token window)
+              # until 2026-09-18, then bge-m3 for one day, picked for
+              # Swedish<->English recall that nobody here uses. Benchmarks and
+              # the reasoning are in ../../embeddings/app/model.yaml.
               #
-              # The server rejects input over 4096 tokens rather than
-              # truncating. capture_user_max_chars (1000) plus
-              # capture_assistant_max_chars (3000) is ~1,400 tokens even in
-              # Swedish; raise the window there before raising those caps.
+              # The window is 16384 tokens shared across slots.
+              # capture_user_max_chars (1000) plus capture_assistant_max_chars
+              # (3000) is ~1,400 tokens, which embeds in ~2.3 s.
               #
               # Changing the model or dims is not free: memini stores vectors,
               # so see MEMINI_REEMBED_ON_MODEL_CHANGE below.
               MEMINI_EMBED_BASE_URL: http://litellm.llm:4000/v1
-              MEMINI_EMBED_MODEL: bge-m3
+              MEMINI_EMBED_MODEL: qwen3-embedding-0.6b
               MEMINI_EMBED_DIMS: "1024"
-              # No query prefix, deliberately. Upstream's "Instruct: ... Query: "
-              # is a Qwen3-Embedding format; bge-m3 takes queries and documents
-              # as plain text, so a prefix would be embedded as literal words
-              # and pollute every query vector.
+              # Qwen3-Embedding is instruction-tuned: queries carry this
+              # prefix, stored documents carry none. Same string upstream
+              # uses. Changing it moves every query vector, not the stored
+              # ones, so it is safe to tune.
+              MEMINI_EMBED_QUERY_PREFIX: "Instruct: Given a user message, retrieve relevant past memories\nQuery: "
               MEMINI_EMBED_MAX_CONCURRENCY: "2"
-              MEMINI_RECALL_EMBED_TIMEOUT: 5s
+              # A recall query is short (~35 ms). The headroom is for one that
+              # queues behind a long write on the same slot pool.
+              MEMINI_RECALL_EMBED_TIMEOUT: 15s
+              MEMINI_WRITE_EMBED_TIMEOUT: 30s
               # Re-embeds the whole store when the MODEL changes at the same
               # width, instead of silently mixing incompatible vectors. It does
               # NOT cover a change of dims: the sqlite-vec store is fixed at
               # its original width and the pod crash-loops with "store was
               # created with N embedding dims but is configured for M". The
-              # 384 -> 1024 move on 2026-09-18 went: scale to 0, `memini export
+              # bge-m3 -> Qwen3 move was the covered case (1024 both sides).
+              # The 384 -> 1024 move earlier on 2026-09-18 went: scale to 0, `memini export
               # --all-namespaces --include-expired --include-superseded` from a
               # pod with the OLD dims, move memini.db aside, let this start a
               # fresh store, `memini import --source memini <export>`.

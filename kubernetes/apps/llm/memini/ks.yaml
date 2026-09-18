@@ -22,7 +22,7 @@ spec:
     # Both the embedding and the assessment model are reached through litellm;
     # nothing here talks to a model server directly.
     - name: litellm
-    # litellm only proxies `bge-m3`; this is what serves it. memini embeds on
+    # litellm only proxies the embedding model; this is what serves it. memini embeds on
     # every write and recall, so it should not come up before it on a rebuild.
     - name: embeddings
   wait: true

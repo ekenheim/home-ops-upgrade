@@ -10,7 +10,7 @@ lives here.
 | `litellm-operator` | **New.** Renders LiteLLM proxy config from CRDs. Currently idle — see below. |
 | `litellm` | The gateway. Still a bjw-s app-template HelmRelease + hand-written `config.yaml`. |
 | `llmkube` | llama.cpp InferenceServices (`ornith-35b`, `qwen38-27b`) on worker4's Strix Halo iGPU. |
-| `embeddings` | `bge-m3` on llama.cpp (CPU) for memini and hindsight. Replaced `ollama-igpu` 2026-09-18. |
+| `embeddings` | `qwen3-embedding-0.6b`: two llmkube InferenceServices on CPU (llama.cpp) for memini and hindsight, layout after joryirving/home-ops. Replaced `ollama-igpu`, then bge-m3, 2026-09-18. |
 | `toolhive` | MCP operator + `ha-mcp`, `context7`, `memory-mcp`, `platform-mcp`. |
 | `memini` | Memory service (REST + MCP). Hermes' provider plugin talks to this one. |
 | `hindsight` | **New.** Memory service to consolidate on: banks per consumer, MCP per bank, LLM on the ChatGPT subscription. Nothing wired yet. |
@@ -159,16 +159,15 @@ source (supermemoryai/supermemory#1299), and orgs, scoped keys, connectors and
 the dashboard are all enterprise-only. The Bitwarden item it asked for was never
 created; nothing to clean up.
 
-Two upstream memini pieces are still deliberately **not** ported, because they
-cannot schedule on this cluster as written:
+Of upstream memini's two model servers, one is ported and one is deliberately
+not:
 
-- **`memini-embed`** — upstream serves Qwen3-Embedding-0.6B (1024-dim) from a
-  dedicated InferenceService requesting an Intel GPU through DRA
-  (`resourceClaimTemplateName`). The only DeviceClass here is `gpu.amd.com`;
-  Intel iGPUs are exposed through the `gpu.intel.com/i915` device plugin, which
-  is a different mechanism. memini instead embeds via litellm's `bge-m3`
-  (1024-dim, multilingual, served by the `embeddings` app on CPU; until
-  2026-09-18 it was `all-minilm` on `ollama-igpu`).
+- **`memini-embed`** — ported on 2026-09-18 after all, as the `embeddings`
+  app: upstream's layout (llmkube `Model` + one InferenceService per pool
+  member, `accelerator: cpu`, Qwen3-Embedding-0.6B, 1024-dim), published in
+  litellm as `qwen3-embedding-0.6b`. Its model cache is our own CephFS claim,
+  not llmkube's shared cache, which is pinned to worker4. Before that it was
+  `all-minilm` on `ollama-igpu`, then bge-m3 for a day.
 - **`memini-rerank`** — would be a third pod sharing worker4's single
   `llama-strix-gpu` ResourceClaim with ornith-35b and qwen38-27b. Left off;
   recall falls back to plain vector similarity.
@@ -216,7 +215,8 @@ How it is put together, and why:
   5.5 does reflect. Check the list before changing either:
   `GET https://chatgpt.com/backend-api/codex/models?client_version=0.0.0`
   with a Codex access token and `chatgpt-account-id` header.
-- **Embeddings: litellm `bge-m3`, 1024 dims**, same as memini. Dims are
+- **Embeddings: litellm `qwen3-embedding-0.6b`, 1024 dims**, same as memini
+  (without the query prefix memini sends; this client cannot add one). Dims are
   baked into the pgvector columns; hindsight resizes them itself only while
   the tables are empty (done at 0 banks on 2026-09-18), so changing the model
   now means new banks.
@@ -236,7 +236,7 @@ How it is put together, and why:
    | Field | Used for |
    | --- | --- |
    | `HINDSIGHT_API_TENANT_API_KEY` | bearer for `/v1` and `/mcp`; any long random string |
-   | `LITELLM_API_KEY` | litellm **virtual** key — embeddings only (`bge-m3`) |
+   | `LITELLM_API_KEY` | litellm **virtual** key — embeddings only (`qwen3-embedding-0.6b`) |
 
 2. **`vector` extension**, once, as superuser, after PGO has created the
    database (the app role owns the database but PG16 does not trust `vector`):

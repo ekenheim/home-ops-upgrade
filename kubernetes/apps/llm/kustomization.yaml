@@ -16,7 +16,8 @@ resources:
   - ./litellm/ks.yaml
   # Flux-Kustomizations | Inference
   - ./llmkube/ks.yaml
-  # Text embeddings (bge-m3 on llama.cpp, CPU) for memini and hindsight.
+  # Text embeddings (Qwen3-Embedding-0.6B, llmkube InferenceServices on CPU)
+  # for memini and hindsight. Needs llmkube's CRDs, hence listed after it.
   # ollama-igpu used to sit here; retired 2026-09-18 with open-webui, its
   # last other consumer. It had silently been running on CPU anyway.
   - ./embeddings/ks.yaml

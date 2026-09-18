@@ -1,0 +1,36 @@
+---
+# Text embeddings for the memory services (memini, hindsight), published
+# through litellm as `qwen3-embedding-0.6b`.
+#
+# Model: Qwen/Qwen3-Embedding-0.6B (Apache-2.0, 1024 dims, 32k window), the
+# official Q8_0 GGUF. It replaced bge-m3 on 2026-09-18, a day after bge-m3
+# went in, because that choice was made without looking at a benchmark:
+# bge-m3 was picked for Swedish<->English retrieval off a four-query homemade
+# test, and the user only ever speaks English to agents. On published MTEB
+# (arXiv 2506.05176, tables 2 and 3):
+#                              MMTEB retrieval   MTEB eng v2 retrieval / mean
+#   bge-m3                          54.60           not listed
+#   text-embedding-3-large (API)    59.27           62.15 / 66.43
+#   Qwen3-Embedding-0.6B            64.64           61.83 / 70.70
+# So this matches OpenAI's large model on English retrieval, locally, at the
+# same size and the same 1024 dims bge-m3 had -- which is what made the swap a
+# re-embed rather than a store migration (see ../../memini/app/helmrelease.yaml).
+#
+# Layout follows joryirving/home-ops (kubernetes/apps/base/llm/embed): an
+# llmkube Model plus one single-replica InferenceService per pool member,
+# load-balanced by litellm. Differences from there are noted in embed-1.yaml.
+#
+# Pinned by repo revision and checksum, not resolve/main: vectors from
+# different weights are not comparable, so the weights must not move under
+# the two stores.
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: embed
+spec:
+  source: https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF/resolve/370f27d7550e0def9b39c1f16d3fbaa13aa67728/Qwen3-Embedding-0.6B-Q8_0.gguf
+  sha256: 06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439
+  format: gguf
+  quantization: Q8_0
+  hardware:
+    accelerator: cpu

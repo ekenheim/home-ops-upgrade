@@ -307,21 +307,34 @@ data:
         litellm_params:
           model: chatgpt/gpt-5.5
 
-      # --- Embeddings: bge-m3 on the `embeddings` app (llama.cpp, CPU) ---
-      # The only embedding model. It replaced `all-minilm` on ollama-igpu on
-      # 2026-09-18 (both retired). 1024 dims, no query/document prefix.
-      # Named after the model on purpose: vector size is a property of the
-      # model, and a generic alias would hide a breaking change from the two
-      # stores that bake it into their data. Why this model and this server:
-      # ../../embeddings/app/helmrelease.yaml.
+      # --- Embeddings: Qwen3-Embedding-0.6B on the `embeddings` app ---
+      # The only embedding model: two llmkube InferenceServices (llama.cpp,
+      # CPU), balanced here by sharing one model_name. It replaced bge-m3 on
+      # 2026-09-18 (same 1024 dims). Queries want an "Instruct: ...\nQuery: "
+      # prefix, documents none; memini adds it, hindsight cannot.
+      # Named after the model on purpose, where upstream calls it `embed`:
+      # vector space is a property of the model, memini decides whether to
+      # re-embed its store by comparing this NAME, and a generic alias would
+      # hide a weight swap from both stores. Why this model and this server:
+      # ../../embeddings/app/model.yaml.
       # If a virtual key is ever restricted by model name, it must list
-      # `bge-m3`; the memini and hindsight keys were checked and are not.
-      - model_name: bge-m3
+      # `qwen3-embedding-0.6b`; the memini and hindsight keys were checked
+      # and are not.
+      - model_name: qwen3-embedding-0.6b
         model_info:
           mode: embedding
+          max_input_tokens: 16384
         litellm_params:
-          model: openai/bge-m3
-          api_base: http://embeddings.llm:8080/v1
+          model: openai/embed
+          api_base: http://embed-1.llm:8080/v1
+          api_key: none
+      - model_name: qwen3-embedding-0.6b
+        model_info:
+          mode: embedding
+          max_input_tokens: 16384
+        litellm_params:
+          model: openai/embed
+          api_base: http://embed-2.llm:8080/v1
           api_key: none
 
       # --- Cloud providers (placeholders) ---

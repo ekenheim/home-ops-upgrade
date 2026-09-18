@@ -19,11 +19,17 @@ data:
   # and with no enabled item the monitor idles on "No search job is defined"
   # while the UI keeps serving.
   config.toml: |
+    # NO username/password here, on purpose. The monitor falls back to the
+    # FACEBOOK_USERNAME / FACEBOOK_PASSWORD environment variables for the
+    # Facebook login, and the web UI takes its own login from the same place.
+    # Written into this file as env placeholders they become a security hole:
+    # the web UI reads the RAW text, so its login would be the literal
+    # placeholder strings, which anyone can guess (verified 2026-09-18:
+    # the literal pair got 200, the real credentials 401). Upstream's own
+    # default template has this flaw.
     [marketplace.facebook]
     search_city = 'stockholm'
     currency = 'SEK'
-    username = '$${FACEBOOK_USERNAME}'
-    password = '$${FACEBOOK_PASSWORD}'
 
     # litellm's `fast` (ornith-35b, thinking off): rating a listing against a
     # description is extraction, not reasoning.

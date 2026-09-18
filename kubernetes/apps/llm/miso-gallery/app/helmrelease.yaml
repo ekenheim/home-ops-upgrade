@@ -10,11 +10,11 @@
 # instead of the external gateway + authentik OIDC, and the tag database on
 # its own small volume (the app's README advises against SQLite on NFS).
 #
-# BROWSE-ONLY IN PRACTICE. ComfyUI writes as root (0755/0644) and this runs as
-# 1000:100, so viewing works and the gallery's delete/upload buttons will fail
-# with permission errors. That is the safer default for something that can
-# delete from the NAS; loosen it on the NAS side if wanted, not by running
-# this as root.
+# IT CAN DELETE FROM THE NAS. The share squashes every NFS client to one
+# user (files show as uid 99, mode 0700), so this pod's 1000:100 is as much
+# the owner of ComfyUI's output as ComfyUI is: the gallery's delete and upload
+# buttons work. Verified from the running pod on 2026-09-18. That is why it
+# sits behind a password on the internal ingress and nowhere else.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

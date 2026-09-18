@@ -64,7 +64,7 @@ spec:
           fetch:
             image: &image
               repository: docker.io/kyuz0/amd-strix-halo-toolboxes
-              tag: vulkan-radv@sha256:b8e8caeb5f929a5f397a4bd605aab3009ff9140afd139eeefa20fa23034bb5b0
+              tag: vulkan-radv@sha256:42db3b40917ec8224a54000c680c5dfe38bac93fb80d45e96e0fe2c7f39bb5ea
             command:
               - bash
               - -c
@@ -137,6 +137,33 @@ spec:
         ports:
           http:
             port: 8080
+    ingress:
+      app:
+        enabled: true
+        # Not upstream, which keeps this in-cluster. whisper-server ships a small
+        # upload-a-file test page at / next to the /inference API. No login, so
+        # internal only.
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: LLM
+          gethomepage.dev/name: Whisper
+          gethomepage.dev/icon: mdi-microphone-message
+          gethomepage.dev/description: whisper.cpp on the Strix Halo iGPU (upload a file, get a transcript)
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          # Audio uploads: nginx's 1m default body limit rejects anything real.
+          nginx.ingress.kubernetes.io/proxy-body-size: "0"
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
+        hosts:
+          - host: &host whisper.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+              - *host
     persistence:
       cache:
         existingClaim: *app

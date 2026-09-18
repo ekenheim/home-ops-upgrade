@@ -6,15 +6,17 @@
 # plain-language description, and notifies on good ones. After
 # joryirving/home-ops (kubernetes/apps/base/llm/ai-marketplace-monitor).
 #
-# THE WEB UI IS LOCALHOST-ONLY ON PURPOSE, and there is no ingress. It holds a
-# config editor and a noVNC view of a browser that is logged in to Facebook.
-# Bound to 127.0.0.1 it asks for no password; bound to anything else it
-# demands the Facebook credentials as its login. Reach it with:
-#   kubectl -n llm port-forward svc/ai-marketplace-monitor 8467:8467
-#   -> http://127.0.0.1:8467   ("Browser" in the header is the noVNC view,
-#      which is where a Facebook login challenge or CAPTCHA gets solved)
-# port-forward enters the pod's own network namespace, so it reaches a
-# loopback listener; a Service or Ingress route would not.
+# THE WEB UI LOGIN IS THE FACEBOOK LOGIN. Upstream binds the UI to 127.0.0.1
+# (no password, port-forward only). Here it listens on 0.0.0.0 behind the
+# internal ingress instead, and the app's own rule for that case applies: it
+# refuses to start without credentials and asks for them at the door, and the
+# credentials it means are the marketplace ones -- FACEBOOK_USERNAME /
+# FACEBOOK_PASSWORD from the Secret. There is no separate UI password, and
+# the username is shown as a hint on the login page to anyone who loads it.
+# config.toml must NOT carry those two as env placeholders: see the init
+# container, which removes them, and configmap.yaml for why.
+# What sits behind that login is a config editor and a noVNC view ("Browser")
+# of a Chromium that is logged in to Facebook, so: internal class only.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -71,21 +73,35 @@ spec:
               - |
                 set -eu
                 F=/root/.ai-marketplace-monitor/config.toml
-                if [ -f "$F" ]; then echo "config.toml present, leaving it alone"; exit 0; fi
-                cp /seed/config.toml "$F"
-                echo "seeded starter config.toml"
+                if [ ! -f "$F" ]; then
+                  cp /seed/config.toml "$F"
+                  echo "seeded starter config.toml"
+                fi
+                # The one edit made to a config that already exists. The first
+                # seed (and upstream's default template) wrote the Facebook
+                # credentials as env placeholders; the web UI compares its
+                # login against the raw text, so with the UI on 0.0.0.0 those
+                # lines make the login a guessable literal. Without them both
+                # the monitor and the UI use the real values from the
+                # environment. See configmap.yaml. Real credentials typed into
+                # the file by hand do not match these patterns and are kept.
+                sed -i -e '/^username *= *.*FACEBOOK_USERNAME/d' -e '/^password *= *.*FACEBOOK_PASSWORD/d' "$F"
+                if grep -q '^[^#]*FACEBOOK_\(USERNAME\|PASSWORD\)' "$F"; then
+                  echo "placeholder credentials still in config.toml, refusing to start" >&2; exit 1
+                fi
+                echo "config.toml carries no placeholder credentials"
         containers:
           app:
             image: *image
             env:
               TZ: "${TIMEZONE}"
-              AIMM_WEBUI_HOST: 127.0.0.1
+              AIMM_WEBUI_HOST: 0.0.0.0
             envFrom:
               - secretRef:
                   name: *app
             probes:
-              # exec, not httpGet: the listener is on loopback, which the
-              # kubelet cannot reach from outside the pod.
+              # exec against loopback, as upstream: a request from 127.0.0.1 is
+              # never asked to log in, so the probe needs no credentials.
               liveness:
                 enabled: true
                 custom: true
@@ -121,6 +137,30 @@ spec:
         ports:
           http:
             port: 8467
+    ingress:
+      app:
+        enabled: true
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: LLM
+          gethomepage.dev/name: Marketplace Monitor
+          gethomepage.dev/icon: mdi-storefront-outline
+          gethomepage.dev/description: Facebook Marketplace watcher (login = the Facebook credentials)
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          # Live log stream and the noVNC browser view are long-lived websockets.
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+          nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+        hosts:
+          - host: &host marketplace.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+              - *host
     persistence:
       data:
         existingClaim: *app

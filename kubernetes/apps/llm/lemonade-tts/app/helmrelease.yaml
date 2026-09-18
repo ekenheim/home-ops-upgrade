@@ -8,8 +8,8 @@
 # This is the THIRD TTS in the cluster. default/wyoming-piper and
 # default/wyoming-kokoro (Kokoro-FastAPI on CPU behind a wyoming bridge) both
 # serve Home Assistant over the Wyoming protocol. This one speaks HTTP only,
-# so it does not replace them, and nothing consumes it yet -- in-cluster only,
-# no ingress, same as upstream.
+# so it does not replace them, and nothing consumes it yet. Upstream keeps it
+# in-cluster; here its web app also gets an internal ingress.
 #
 # Privileged for /dev/kfd + /dev/dri, and the same GTT caveat as ../../comfyui:
 # GPU memory here is charged to no cgroup, so the request is the scheduler's
@@ -131,6 +131,34 @@ spec:
         ports:
           http:
             port: 13305
+    ingress:
+      app:
+        enabled: true
+        # Not upstream, which keeps this in-cluster. The Lemonade App at / is a
+        # model manager and playground. The server has NO API key set and says
+        # so at start ("All endpoints, including the /internal/* control
+        # endpoints ..."): whoever reaches this host can pull and load models
+        # onto worker4's GPU. Internal only; never the external class.
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: LLM
+          gethomepage.dev/name: Lemonade
+          gethomepage.dev/icon: mdi-account-voice
+          gethomepage.dev/description: Lemonade Server model manager and TTS playground
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+          nginx.ingress.kubernetes.io/proxy-body-size: "0"
+          nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
+        hosts:
+          - host: &host lemonade.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+              - *host
     persistence:
       cache:
         existingClaim: *app

@@ -16,8 +16,9 @@ resources:
   - ./litellm/ks.yaml
   # Flux-Kustomizations | Inference
   - ./llmkube/ks.yaml
-  - ./ollama-igpu/ks.yaml
   # Text embeddings (bge-m3 on llama.cpp, CPU) for memini and hindsight.
+  # ollama-igpu used to sit here; retired 2026-09-18 with open-webui, its
+  # last other consumer. It had silently been running on CPU anyway.
   - ./embeddings/ks.yaml
   # Flux-Kustomizations | Tooling & memory
   - ./toolhive/ks.yaml
@@ -32,7 +33,6 @@ resources:
   - ./hindsight/ks.yaml
   - ./searxng/ks.yaml
   # Flux-Kustomizations | Frontends
-  - ./open-webui/ks.yaml
   - ./hermes/ks.yaml
   - ./langflow/ks.yaml
   # Flux-Kustomizations | The agentic coding loop

@@ -10,12 +10,12 @@ lives here.
 | `litellm-operator` | **New.** Renders LiteLLM proxy config from CRDs. Currently idle — see below. |
 | `litellm` | The gateway. Still a bjw-s app-template HelmRelease + hand-written `config.yaml`. |
 | `llmkube` | llama.cpp InferenceServices (`ornith-35b`, `qwen38-27b`) on worker4's Strix Halo iGPU. |
-| `ollama-igpu` | Ollama on the Intel iGPU. |
+| `embeddings` | `bge-m3` on llama.cpp (CPU) for memini and hindsight. Replaced `ollama-igpu` 2026-09-18. |
 | `toolhive` | MCP operator + `ha-mcp`, `context7`, `memory-mcp`, `platform-mcp`. |
 | `memini` | Memory service (REST + MCP). Hermes' provider plugin talks to this one. |
 | `hindsight` | **New.** Memory service to consolidate on: banks per consumer, MCP per bank, LLM on the ChatGPT subscription. Nothing wired yet. |
-| `searxng` | Search backend for open-webui and litellm. |
-| `open-webui`, `hermes`, `langflow` | Frontends. |
+| `searxng` | Search backend for litellm. |
+| `hermes`, `langflow` | Frontends. `open-webui` was retired 2026-09-18 (unused). |
 | `foreman`, `dispatch` | The agentic coding loop. |
 
 ## litellm-operator is installed but drives nothing
@@ -59,11 +59,10 @@ Four of them rebind directly in step 4:
 | PVC | Size | Why it cannot be re-created cheaply |
 | --- | --- | --- |
 | `llmkube-model-cache` | 300Gi | GGUF weights; hours to re-download |
-| `ollama-igpu` | 100Gi | Ollama model blobs |
 | `litellm-chatgpt-auth` | 1Gi | Codex OAuth grant — see step 5 |
 | `memory-mcp` | 1Gi | MCP memory graph, 136 days of it |
 
-The other three — `hermes`, `agentmemory`, `open-webui` — **cannot** be rebound.
+The other three — `hermes`, `agentmemory`, `open-webui` (the latter two since retired) — **cannot** be rebound.
 `templates/volsync/claim.yaml` gives them a `dataSourceRef` on
 `ReplicationDestination <app>-bootstrap`, and a PVC carrying a `dataSourceRef` is
 handled by the volume-populator controller: it provisions a fresh volume from the
@@ -167,16 +166,16 @@ cannot schedule on this cluster as written:
   dedicated InferenceService requesting an Intel GPU through DRA
   (`resourceClaimTemplateName`). The only DeviceClass here is `gpu.amd.com`;
   Intel iGPUs are exposed through the `gpu.intel.com/i915` device plugin, which
-  is a different mechanism. memini instead embeds via litellm's existing
-  `all-minilm` model (384-dim, served by `ollama-igpu` on the control-plane
-  iGPUs). Lower recall quality, but zero new GPU load.
+  is a different mechanism. memini instead embeds via litellm's `bge-m3`
+  (1024-dim, multilingual, served by the `embeddings` app on CPU; until
+  2026-09-18 it was `all-minilm` on `ollama-igpu`).
 - **`memini-rerank`** — would be a third pod sharing worker4's single
   `llama-strix-gpu` ResourceClaim with ornith-35b and qwen38-27b. Left off;
   recall falls back to plain vector similarity.
 
-`MEMINI_REEMBED_ON_MODEL_CHANGE: true` is set, so if a dedicated embedding model
-is added later the store re-embeds rather than silently mixing 384- and
-1024-dimension vectors.
+`MEMINI_REEMBED_ON_MODEL_CHANGE: true` re-embeds on a model change at the same
+width only. The sqlite-vec store is fixed at its original dims: the 384 -> 1024
+move was an export/import (see the comment in `memini/app/helmrelease.yaml`).
 
 memini needs a **`memini` Bitwarden Secrets Manager item** with these fields:
 
@@ -217,8 +216,10 @@ How it is put together, and why:
   5.5 does reflect. Check the list before changing either:
   `GET https://chatgpt.com/backend-api/codex/models?client_version=0.0.0`
   with a Codex access token and `chatgpt-account-id` header.
-- **Embeddings: litellm `all-minilm`, 384 dims**, same as memini. Dims are
-  baked into the pgvector columns; changing the model means new banks.
+- **Embeddings: litellm `bge-m3`, 1024 dims**, same as memini. Dims are
+  baked into the pgvector columns; hindsight resizes them itself only while
+  the tables are empty (done at 0 banks on 2026-09-18), so changing the model
+  now means new banks.
 - **Reranker: the chart's CPU text-embeddings-inference sidecar** running the
   same MiniLM cross-encoder Hindsight would run locally. The slim image has no
   torch. `tei.reranker.enabled: false` drops to reciprocal-rank fusion.
@@ -235,7 +236,7 @@ How it is put together, and why:
    | Field | Used for |
    | --- | --- |
    | `HINDSIGHT_API_TENANT_API_KEY` | bearer for `/v1` and `/mcp`; any long random string |
-   | `LITELLM_API_KEY` | litellm **virtual** key allowed `all-minilm` — embeddings only |
+   | `LITELLM_API_KEY` | litellm **virtual** key — embeddings only (`bge-m3`) |
 
 2. **`vector` extension**, once, as superuser, after PGO has created the
    database (the app role owns the database but PG16 does not trust `vector`):
@@ -299,7 +300,3 @@ service map still points every MLflow/Ray/Dagster/marimo entry at `.datasci`.
 moves, `hermes/app/configmap.yaml` and `platform-mcp/server/platform_mcp.py`
 both need updating.
 
-## Pre-existing issue, not introduced by the move
-
-`open-webui/app/externalsecret.yaml` still points OIDC at `sso.jory.dev` and
-`chat.jory.dev`. Copied from upstream; unrelated to the namespace split.

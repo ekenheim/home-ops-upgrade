@@ -4,8 +4,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: embeddings
 spec:
-  # RWX so both replicas read one copy of the GGUF (same pattern ollama-igpu
-  # used). It holds a single ~635 MB file that the init container can always
+  # RWX so both replicas read one copy of the GGUF (the pattern the retired
+  # ollama-igpu used). It holds a single ~635 MB file that the init container can always
   # re-download, so it is deliberately not backed up.
   accessModes: ["ReadWriteMany"]
   resources:

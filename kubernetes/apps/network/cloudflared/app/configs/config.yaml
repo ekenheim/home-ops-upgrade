@@ -3,6 +3,13 @@ originRequest:
   originServerName: external.${SECRET_DOMAIN}
 
 ingress:
+  # envoy-gateway migration canary: first match wins, so this one hostname
+  # goes to envoy while the wildcards below still send everything to nginx.
+  # The external cutover replaces all four nginx rules and drops this one.
+  - hostname: "echo-envoy.${SECRET_DOMAIN}"
+    service: https://envoy-external.network.svc.cluster.local:443
+    originRequest:
+      originServerName: "external.${SECRET_DOMAIN}"
   - hostname: "${SECRET_DOMAIN}"
     service: https://nginx-external-controller.network.svc.cluster.local:443
     originRequest:

@@ -101,3 +101,26 @@ spec:
                 service:
                   identifier: app
                   port: http
+    # envoy-gateway migration canaries, alongside the nginx Ingress above.
+    # New hostnames on purpose: nothing that works today changes.
+    route:
+      external:
+        hostnames: ["echo-envoy.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+      internal:
+        hostnames: ["echo-internal.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port

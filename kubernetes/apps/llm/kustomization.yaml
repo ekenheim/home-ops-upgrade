@@ -36,6 +36,9 @@ resources:
   # Flux-Kustomizations | Frontends
   - ./hermes/ks.yaml
   - ./langflow/ks.yaml
+  # Facebook Marketplace watcher; listings are rated by litellm's `fast`.
+  # Web UI is loopback-only by design (port-forward), see its helmrelease.
+  - ./ai-marketplace-monitor/ks.yaml
   # Flux-Kustomizations | The agentic coding loop
   #
   # dispatch grooms GitHub issues into a queue, the bridge CronJob turns claimed

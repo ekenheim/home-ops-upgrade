@@ -102,7 +102,12 @@ kind: Gateway
 metadata:
   name: envoy-internal
   annotations:
-    external-dns.alpha.kubernetes.io/target: envoy-internal.${SECRET_DOMAIN}
+    # Same target the `internal` Ingresses use, on purpose. While an app has both
+    # an Ingress and an HTTPRoute, both must produce the identical record or LAN
+    # DNS flaps between proxies. internal.${SECRET_DOMAIN} is still the
+    # nginx-internal Service; moving that name to the Service below IS the
+    # internal cutover.
+    external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
 spec:
   gatewayClassName: envoy
   infrastructure:

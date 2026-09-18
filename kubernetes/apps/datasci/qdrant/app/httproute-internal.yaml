@@ -1,0 +1,39 @@
+---
+# envoy-gateway: replaces the `internal` Ingress of the same name at cutover.
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: qdrant
+  namespace: datasci
+  annotations:
+    gethomepage.dev/description: "Vector Database"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: "AI"
+    gethomepage.dev/icon: "database.png"
+    gethomepage.dev/name: "Qdrant"
+spec:
+  hostnames:
+    - "qdrant.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /metrics
+      backendRefs:
+        - name: qdrant
+          port: 6335
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /grpc
+      backendRefs:
+        - name: qdrant
+          port: 6334
+    - backendRefs:
+        - name: qdrant
+          port: 6333

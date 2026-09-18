@@ -165,6 +165,18 @@ spec:
         ports:
           http:
             port: *port
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      main:
+        hostnames: ["mlflow.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 5000
     ingress:
       main:
         className: internal

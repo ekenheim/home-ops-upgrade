@@ -91,6 +91,27 @@ spec:
         ports:
           http:
             port: *port
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Downloads"
+          gethomepage.dev/name: "Sonarr"
+          gethomepage.dev/icon: "sonarr.png"
+          gethomepage.dev/description: "TV Downloads"
+          gethomepage.dev/widget.type: "sonarr"
+          gethomepage.dev/widget.url: "http://sonarr.downloads"
+          gethomepage.dev/widget.key: '{{ `{{HOMEPAGE_VAR_SONARR_TOKEN}}` }}'
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 80
     ingress:
       app:
         className: internal

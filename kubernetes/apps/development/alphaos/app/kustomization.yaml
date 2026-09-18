@@ -10,3 +10,4 @@ resources:
   - ./gatus-data.yaml
   - ./pipeline
   - ../../../../templates/gatus/guarded
+  - ./httproute-internal.yaml

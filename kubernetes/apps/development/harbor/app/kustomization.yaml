@@ -10,3 +10,4 @@ resources:
   - ./certificate.yaml
   - ./externalsecret.yaml
   - ../../../../templates/gatus/external
+  - ./httproute-internal.yaml

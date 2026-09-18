@@ -161,6 +161,24 @@ spec:
         ports:
           http:
             port: 4000
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Data Science"
+          gethomepage.dev/name: "LiteLLM"
+          gethomepage.dev/icon: "litellm.png"
+          gethomepage.dev/description: "LLM proxy / gateway"
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 4000
     ingress:
       app:
         className: internal

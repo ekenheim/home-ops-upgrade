@@ -246,6 +246,34 @@ spec:
         ports:
           http:
             port: 9119
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Data Science"
+          gethomepage.dev/name: "Hermes"
+          gethomepage.dev/icon: "mdi-robot"
+          gethomepage.dev/description: "Hermes agent gateway"
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: dashboard
+                port: 9119
+      code:
+        hostnames: ["{{ .Release.Name }}-code.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 12321
     ingress:
       app:
         className: internal

@@ -1,0 +1,76 @@
+---
+# envoy-gateway: replaces the `internal` Ingress of the same name at cutover.
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nas
+  namespace: default
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: "Storage"
+    gethomepage.dev/href: "https://nas.${SECRET_DOMAIN}"
+    gethomepage.dev/icon: "unraid.png"
+    gethomepage.dev/name: "Unraid"
+spec:
+  hostnames:
+    - "nas.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: nas
+          port: 80
+---
+# envoy-gateway: replaces the `internal` Ingress of the same name at cutover.
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: supermicro
+  namespace: default
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: "Storage"
+    gethomepage.dev/href: "https://supermicro.${SECRET_DOMAIN}"
+    gethomepage.dev/icon: "unraid.png"
+    gethomepage.dev/name: "Unraid"
+spec:
+  hostnames:
+    - "supermicro.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: supermicro
+          port: 80
+---
+# envoy-gateway: replaces the `internal` Ingress of the same name at cutover.
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tdarr
+  namespace: default
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: "Media"
+    gethomepage.dev/icon: "tdarr.png"
+    gethomepage.dev/name: "Tdarr"
+    gethomepage.dev/widget.type: "tdarr"
+    gethomepage.dev/widget.url: "http://192.168.50.50:8265"
+spec:
+  hostnames:
+    - "tdarr.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: tdarr
+          port: 8265

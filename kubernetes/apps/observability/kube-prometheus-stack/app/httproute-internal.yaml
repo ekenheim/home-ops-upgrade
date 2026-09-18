@@ -1,0 +1,47 @@
+---
+# envoy-gateway: replaces the `internal` Ingress of the same name at cutover.
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: kube-prometheus-stack-alertmanager
+  namespace: observability
+spec:
+  hostnames:
+    - "alertmanager.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: kube-prometheus-stack-alertmanager
+          port: 9093
+---
+# envoy-gateway: replaces the `internal` Ingress of the same name at cutover.
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: kube-prometheus-stack-prometheus
+  namespace: observability
+  annotations:
+    gethomepage.dev/app: "prometheus"
+    gethomepage.dev/description: "Monitoring Scrape Service"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: "Observability"
+    gethomepage.dev/icon: "prometheus.png"
+    gethomepage.dev/name: "Prometheus"
+    gethomepage.dev/widget.type: "prometheus"
+    gethomepage.dev/widget.url: "http://kube-prometheus-stack-prometheus.observability:9090"
+spec:
+  hostnames:
+    - "prometheus.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: kube-prometheus-stack-prometheus
+          port: 9090

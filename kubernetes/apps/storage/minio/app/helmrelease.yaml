@@ -91,6 +91,16 @@ spec:
             scrapeTimeout: 10s
     # envoy-gateway: replaces the `external` Ingress below at cutover.
     route:
+      app:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 9001
       api:
         hostnames: ["s3.${SECRET_DOMAIN}"]
         parentRefs:

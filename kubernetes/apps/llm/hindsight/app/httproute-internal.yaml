@@ -1,0 +1,39 @@
+---
+# envoy-gateway: replaces the `internal` Ingress of the same name at cutover.
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hindsight
+  namespace: llm
+  annotations:
+    gethomepage.dev/description: "Agent memory (banks per consumer, MCP per bank)"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: "LLM"
+    gethomepage.dev/icon: "mdi-brain"
+    gethomepage.dev/name: "Hindsight"
+spec:
+  hostnames:
+    - "hindsight.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /mcp
+      backendRefs:
+        - name: hindsight-api
+          port: 8888
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1
+      backendRefs:
+        - name: hindsight-api
+          port: 8888
+    - backendRefs:
+        - name: hindsight-control-plane
+          port: 3000

@@ -101,6 +101,24 @@ spec:
         ports:
           http:
             port: *port
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Home"
+          gethomepage.dev/name: "Outline"
+          gethomepage.dev/icon: "outline.png"
+          gethomepage.dev/description: "Team Knowledge Base and Wiki"
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 3000
     ingress:
       app:
         className: internal

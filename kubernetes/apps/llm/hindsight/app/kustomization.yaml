@@ -8,3 +8,4 @@ resources:
   - ./helmrelease.yaml
   - ../../../../templates/gatus/guarded
   - ../../../../templates/volsync
+  - ./httproute-internal.yaml

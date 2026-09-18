@@ -99,6 +99,16 @@ spec:
             port: 8080
     # envoy-gateway: replaces the `external` Ingress below at cutover.
     route:
+      codeserver:
+        hostnames: ["hass-code.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: codeserver
+                port: 8080
       app:
         hostnames: ["hass.${SECRET_DOMAIN}"]
         parentRefs:

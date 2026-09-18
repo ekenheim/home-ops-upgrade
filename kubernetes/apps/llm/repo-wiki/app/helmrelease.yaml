@@ -137,6 +137,24 @@ spec:
         ports:
           http:
             port: 8000
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "LLM"
+          gethomepage.dev/name: "Repo Wikis"
+          gethomepage.dev/icon: "mdi-book-open-page-variant"
+          gethomepage.dev/description: "LLM-written wikis of my repositories"
+        hostnames: ["wikis.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8000
     ingress:
       app:
         enabled: true

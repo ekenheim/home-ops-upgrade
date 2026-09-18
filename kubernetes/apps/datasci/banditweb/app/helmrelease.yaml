@@ -73,6 +73,18 @@ spec:
         ports:
           http:
             port: 8090
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        hostnames: ["bandit.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 3000
     ingress:
       app:
         className: internal

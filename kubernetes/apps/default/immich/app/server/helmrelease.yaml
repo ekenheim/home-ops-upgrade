@@ -134,6 +134,18 @@ spec:
         ports:
           http:
             port: *port
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        hostnames: ["photos.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 2283
     ingress:
       app:
         className: internal

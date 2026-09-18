@@ -80,6 +80,27 @@ spec:
         ports:
           http:
             port: 8000
+    # envoy-gateway: replaces the `internal` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Home"
+          gethomepage.dev/name: "Paperless"
+          gethomepage.dev/icon: "paperless.png"
+          gethomepage.dev/description: "Document OCR Software"
+          gethomepage.dev/widget.type: "paperlessngx"
+          gethomepage.dev/widget.url: "http://paperless.default:8000"
+          gethomepage.dev/widget.key: '{{ `{{HOMEPAGE_VAR_PAPERLESS_TOKEN}}` }}'
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8000
     ingress:
       app:
         className: internal

@@ -7,3 +7,4 @@ resources:
   - ./helmrelease.yaml
   - ./networkpolicy-rgw-allow-datasci.yaml
   - ./gatus.yaml
+  - ./httproute-internal.yaml

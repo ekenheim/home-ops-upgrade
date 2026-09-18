@@ -11,7 +11,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    # Gateway API CRDs. envoy-gateway's own CRDs come from its crds chart.
+    # Gateway API CRDs; envoy-gateway's own come with the chart.
     - name: gateway-api-crds
   path: ./kubernetes/apps/network/envoy-gateway/app
   prune: true

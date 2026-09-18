@@ -97,6 +97,27 @@ spec:
         ports:
           http:
             port: 32400
+    # envoy-gateway: replaces the `external` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Video"
+          gethomepage.dev/name: "Plex"
+          gethomepage.dev/icon: "plex.png"
+          gethomepage.dev/description: "Media Player"
+          gethomepage.dev/widget.type: "plex"
+          gethomepage.dev/widget.url: "http://plex.media:32400"
+          gethomepage.dev/widget.key: '{{ `{{HOMEPAGE_VAR_PLEX_TOKEN}}` }}'
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 32400
     ingress:
       app:
         className: external

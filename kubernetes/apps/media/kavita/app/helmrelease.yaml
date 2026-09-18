@@ -53,6 +53,28 @@ spec:
         ports:
           http:
             port: 5000
+    # envoy-gateway: replaces the `external` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Books"
+          gethomepage.dev/name: "Kavita"
+          gethomepage.dev/icon: "kavita.png"
+          gethomepage.dev/description: "Comic/Ebook Web Reader"
+          gethomepage.dev/widget.type: "kavita"
+          gethomepage.dev/widget.url: "http://kavita.media:5000"
+          gethomepage.dev/widget.username: '{{ `{{HOMEPAGE_VAR_KAVITA_USERNAME}}` }}'
+          gethomepage.dev/widget.password: '{{ `{{HOMEPAGE_VAR_KAVITA_PASSWORD}}` }}'
+        hostnames: ["comics.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 5000
     ingress:
       app:
         className: external

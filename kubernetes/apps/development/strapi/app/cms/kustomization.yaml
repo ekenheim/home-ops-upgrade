@@ -6,4 +6,5 @@ resources:
   - ./deployment.yaml
   - ./service.yaml
   - ./ingress.yaml
+  - ./httproute.yaml
   - ./configmap-arm-schema.yaml

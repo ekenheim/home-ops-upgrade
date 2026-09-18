@@ -1,0 +1,27 @@
+---
+# envoy-gateway: replaces ingress.yaml at cutover.
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: marketing-agency-website
+  namespace: development
+  labels:
+    app.kubernetes.io/name: marketing-agency
+    app.kubernetes.io/component: website
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Marketing Agency"
+    gethomepage.dev/group: "Development"
+spec:
+  hostnames:
+    - "${SECRET_SECONDARY_DOMAIN}"
+    - "www.${SECRET_SECONDARY_DOMAIN}"
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: marketing-agency-website
+          port: 3000

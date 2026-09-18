@@ -71,6 +71,30 @@ spec:
           http:
             port: 3002
 
+    # envoy-gateway: replaces the `external` Ingress below at cutover.
+    route:
+      main:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/name: "Rybbit"
+          gethomepage.dev/group: "Development"
+          gethomepage.dev/icon: "https://rybbit.com/rybbit-text.svg"
+        hostnames: ["rybbit.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /api
+            backendRefs:
+              - identifier: backend
+                port: 3001
+          - backendRefs:
+              - identifier: client
+                port: 3002
     ingress:
       main:
         className: external

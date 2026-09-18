@@ -61,6 +61,24 @@ spec:
         ports:
           http:
             port: 5690
+    # envoy-gateway: replaces the `external` Ingress below at cutover.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Video"
+          gethomepage.dev/name: "Wizarr"
+          gethomepage.dev/icon: "wizarr.png"
+          gethomepage.dev/description: "Plex Invite Management"
+        hostnames: ["join.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 5690
     ingress:
       app:
         className: external

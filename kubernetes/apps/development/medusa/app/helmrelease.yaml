@@ -294,6 +294,38 @@ spec:
             port: 8000
             protocol: HTTP
 
+    # envoy-gateway: replaces the `external` Ingress below at cutover.
+    route:
+      medusa-server:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/name: "Medusa"
+          gethomepage.dev/icon: "mdi:shopping"
+          gethomepage.dev/group: "Development"
+        hostnames: ["medusa.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: medusa-server
+                port: 9000
+      storefront:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/name: "Medusa"
+          gethomepage.dev/icon: "mdi:shopping"
+          gethomepage.dev/group: "Development"
+        hostnames: ["storefront.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: storefront
+                port: 8000
     ingress:
       main:
         className: external

@@ -15,7 +15,7 @@ lives here.
 | `memini` | Memory service (REST + MCP). Hermes' provider plugin talks to this one. |
 | `hindsight` | **New.** Memory service to consolidate on: banks per consumer, MCP per bank, LLM on the ChatGPT subscription. Nothing wired yet. |
 | `searxng` | Search backend for litellm. |
-| `miso-gallery` | Web gallery over ComfyUI's output (NAS, `Media/comfyui/output`). Local password auth, browse-only. |
+| `miso-gallery` | Web gallery over ComfyUI's output (NAS, `Media/comfyui/output`). Local password auth; can delete from the NAS. |
 | `repo-wiki` | mkdocs site of LLM-written repo wikis; a 12-hourly CronJob on `self-hosted` writes them. |
 | `hermes`, `langflow` | Frontends. `open-webui` was retired 2026-09-18 (unused). |
 | `comfyui` | Image generation (ROCm) on worker4. Output on the NAS under `Media/comfyui`. |
@@ -150,8 +150,8 @@ Added 2026-09-18 after joryirving/home-ops.
 **miso-gallery** reads the same NFS subPath comfyui writes
 (`Media/comfyui/output`), so it runs on any node and stays up while worker4 is
 down. Internal ingress + local password instead of upstream's external gateway
-+ authentik OIDC. It runs as 1000:100 against files ComfyUI writes as root, so
-it is browse-only in practice. Its tag database is on its own 1Gi volume, not
++ authentik OIDC. The NAS squashes every NFS client to one user, so the gallery
+can delete and upload as well as browse. Its tag database is on its own 1Gi volume, not
 on NFS. It needs a **`miso-gallery` Bitwarden Secrets Manager item**:
 
 | Field | Used for |

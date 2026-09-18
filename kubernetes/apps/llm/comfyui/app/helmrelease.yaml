@@ -36,10 +36,19 @@ spec:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
+  # Helm must not wait for this pod. The first start pulls a very large image
+  # and then copies the ComfyUI bundle onto the volume, which together outlast
+  # the default 5 min install timeout. On 2026-09-18 that made Helm uninstall
+  # the release mid-copy, the reinstalled pod then failed once on "cp: cannot
+  # create ... File exists", and with `retries: -1` it would have looped for as
+  # long as the pull stayed slow (a rebuilt worker4 starts with a cold image
+  # cache). The startup probe below is what judges this pod, not Helm.
   install:
+    disableWait: true
     remediation:
       retries: -1
   upgrade:
+    disableWait: true
     cleanupOnFail: true
     remediation:
       retries: 3

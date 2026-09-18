@@ -364,6 +364,7 @@ not InferenceServices:
   `wyoming-kokoro` serve Home Assistant over Wyoming; `downloads/whisper`
   serves Bazarr over the `/asr` API. The two here speak different HTTP APIs
   and replace neither.
+
 ## ai-marketplace-monitor: Facebook Marketplace watcher
 
 Added 2026-09-18 after joryirving/home-ops. BoPeng/ai-marketplace-monitor drives

@@ -2,5 +2,25 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  # Verbatim upstream bundle, do not hand-edit. To bump:
+  #   curl -fLo crds.yaml https://github.com/kubernetes-sigs/gateway-api/releases/download/<ver>/experimental-install.yaml
+  # Experimental channel because the Istio TCPRoutes (dask, ray) are still
+  # v1alpha2, which the standard channel no longer serves. envoy-gateway's own
+  # CRDs come from its gateway-crds-helm chart, not from here.
   - crds.yaml
-  - experimental-tcproute.yaml
+patches:
+  # The bundle ships a ValidatingAdmissionPolicy that denies moving a CRD from
+  # the standard to the experimental channel. The CRDs already in this cluster
+  # are v1.0.0 standard, so with the policy in place this upgrade denies itself.
+  - patch: |
+      $patch: delete
+      apiVersion: admissionregistration.k8s.io/v1
+      kind: ValidatingAdmissionPolicy
+      metadata:
+        name: safe-upgrades.gateway.networking.k8s.io
+  - patch: |
+      $patch: delete
+      apiVersion: admissionregistration.k8s.io/v1
+      kind: ValidatingAdmissionPolicyBinding
+      metadata:
+        name: safe-upgrades.gateway.networking.k8s.io

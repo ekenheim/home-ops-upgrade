@@ -1,0 +1,179 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+#
+# LLM-written wikis for git repositories, after joryirving/home-ops
+# (kubernetes/apps/base/llm/repo-wiki). Two controllers on one volume:
+#   mkdocs          serves /app-data/repository as a Material site
+#   repo-wiki-gen   CronJob; for each repo in repos.txt whose HEAD moved, plans
+#                   a set of pages, then writes each from the relevant files
+#
+# COST. Every page is one long non-streaming completion on `self-hosted`
+# (ornith-35b), up to 20 pages per run, and llama.cpp does NOT stop generating
+# when a client times out -- the slot keeps working for nobody (see the ornith
+# zombie-loop and dispatch groomer incidents). The guards are upstream's: one
+# repo per run, a 30 min timeout that is longer than any page should take, and
+# a state file so an unchanged repo costs one `git ls-remote`. If ornith's
+# /slots fill with dead work after a run, this job is the first suspect:
+#   kubectl -n llm patch cronjob repo-wiki-repo-wiki-gen -p '{"spec":{"suspend":true}}'
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app repo-wiki
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.2.1
+      interval: 30m
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 33
+        fsGroupChangePolicy: OnRootMismatch
+    controllers:
+      mkdocs:
+        # RWO PVC: never two server pods on it at once.
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          # Not upstream. mkdocs exits if docs_dir is missing, and on a fresh
+          # volume nothing creates it until the first CronJob run, up to 12 h
+          # away. A placeholder index keeps the site up until then; the
+          # generator writes its own index.md over it.
+          docs-dir:
+            image: &mkdocs
+              repository: docker.io/squidfunk/mkdocs-material
+              tag: 9.7.7@sha256:51b87149d227691486b5f08993d28c65ca7e4990010664b697265b8e6fcd5287
+            command:
+              - sh
+              - -c
+              - |
+                set -eu
+                mkdir -p /app-data/repository
+                if [ ! -f /app-data/repository/index.md ]; then
+                  printf '# Repo Wikis\n\nNothing generated yet. The generator runs every 12 hours.\n' > /app-data/repository/index.md
+                fi
+        containers:
+          app:
+            image:
+              repository: docker.io/squidfunk/mkdocs-material
+              tag: 9.7.7@sha256:51b87149d227691486b5f08993d28c65ca7e4990010664b697265b8e6fcd5287
+            command: ["mkdocs"]
+            # --dirty rebuilds only changed pages when the CronJob commits.
+            args: ["serve", "--dirty", "-f", "/config/mkdocs.yml", "-a", "0.0.0.0:8000"]
+            env:
+              TZ: "${TIMEZONE}"
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+      repo-wiki-gen:
+        type: cronjob
+        pod:
+          # The volume is RWO and mkdocs holds it, so the job has to land on
+          # the same node.
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values: ["repo-wiki"]
+                      - key: app.kubernetes.io/controller
+                        operator: In
+                        values: ["mkdocs"]
+                  topologyKey: kubernetes.io/hostname
+        cronjob:
+          schedule: "0 */12 * * *"
+          timeZone: "${TIMEZONE}"
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 1
+          failedJobsHistory: 1
+        containers:
+          app:
+            image:
+              repository: docker.io/library/python
+              tag: "3.14@sha256:e06cc1111ed84189e91866447f562b89faadbfbbb9937cd67e6bf4172cdb45df"
+            command: ["python3", "/config/generate.py"]
+            env:
+              TZ: "${TIMEZONE}"
+              OPENAI_BASE_URL: http://litellm.llm:4000/v1
+              # ornith-35b with thinking on. Writing a page from source files
+              # is the kind of work dispatch also gives this alias, not `fast`.
+              WIKI_MODEL: self-hosted
+              MAX_REPOS_PER_RUN: "1"
+              MAX_PAGES_PER_REPO: "20"
+              LLM_TIMEOUT: "1800"
+              WIKI_REPO: /app-data/repository
+            envFrom:
+              - secretRef:
+                  name: *app
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 2Gi
+    service:
+      app:
+        controller: mkdocs
+        ports:
+          http:
+            port: 8000
+    ingress:
+      app:
+        enabled: true
+        # Internal only: no login, and the pages quote private repos verbatim
+        # if any are ever added to repos.txt.
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: LLM
+          gethomepage.dev/name: Repo Wikis
+          gethomepage.dev/icon: mdi-book-open-page-variant
+          gethomepage.dev/description: LLM-written wikis of my repositories
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+        hosts:
+          - host: &host wikis.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+              - *host
+    persistence:
+      data:
+        existingClaim: *app
+        advancedMounts:
+          mkdocs:
+            docs-dir:
+              - path: /app-data
+            app:
+              - path: /app-data
+          repo-wiki-gen:
+            app:
+              - path: /app-data
+      config:
+        type: configMap
+        name: repo-wiki
+        globalMounts:
+          - path: /config

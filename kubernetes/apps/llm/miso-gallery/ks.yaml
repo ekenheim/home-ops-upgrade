@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app miso-gallery
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/llm/miso-gallery/app
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  targetNamespace: llm
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  dependsOn:
+    - name: volsync
+    - name: external-secrets-stores
+    - name: rook-ceph-cluster
+  # Deliberately NOT dependent on comfyui: the gallery reads the NAS, not the
+  # ComfyUI pod, and should stay up while worker4 is down.
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: *app
+      # Only the tag database. The images themselves are on the NAS.
+      VOLSYNC_CAPACITY: 1Gi
+      VOLSYNC_UID: "1000"
+      VOLSYNC_GID: "100"

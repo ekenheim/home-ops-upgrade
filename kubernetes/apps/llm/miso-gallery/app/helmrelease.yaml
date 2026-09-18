@@ -1,0 +1,117 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+#
+# misospace/miso-gallery: a web gallery over ComfyUI's output directory, after
+# joryirving/home-ops (kubernetes/apps/base/llm/miso-gallery).
+#
+# It reads the SAME NFS subPath ../../comfyui writes (Media/comfyui/output on
+# the data share), so it runs on any node and keeps working while worker4 is
+# down. Differences from upstream: internal ingress and local password auth
+# instead of the external gateway + authentik OIDC, and the tag database on
+# its own small volume (the app's README advises against SQLite on NFS).
+#
+# BROWSE-ONLY IN PRACTICE. ComfyUI writes as root (0755/0644) and this runs as
+# 1000:100, so viewing works and the gallery's delete/upload buttons will fail
+# with permission errors. That is the safer default for something that can
+# delete from the NAS; loosen it on the NAS side if wanted, not by running
+# this as root.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app miso-gallery
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.2.1
+      interval: 30m
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 100
+        fsGroup: 100
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      miso-gallery:
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/misospace/miso-gallery
+              tag: 0.2.1@sha256:1a42b20bf7236a01d8e3598c80c0d99cce9d33c88bc417b92cbf75a963ceee93
+            env:
+              TZ: "${TIMEZONE}"
+              IMAGE_BASE_URL: https://miso-gallery.${SECRET_DOMAIN}
+              GALLERY_SCAN_LIMIT: "50000"
+              TAG_DATABASE: /config/miso-gallery-tags.sqlite3
+            envFrom:
+              - secretRef:
+                  name: *app
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 5000
+    ingress:
+      app:
+        enabled: true
+        className: internal
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: LLM
+          gethomepage.dev/name: Miso Gallery
+          gethomepage.dev/icon: mdi-image-multiple
+          gethomepage.dev/description: Gallery of ComfyUI output
+          external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+        hosts:
+          - host: &host miso-gallery.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
+        tls:
+          - hosts:
+              - *host
+    persistence:
+      config:
+        existingClaim: *app
+        globalMounts:
+          - path: /config
+      data:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        globalMounts:
+          - path: /data
+            subPath: Media/comfyui/output

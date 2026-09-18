@@ -3,53 +3,36 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: envoy-gateway-crds
-spec:
-  interval: 1h
-  chartRef:
-    kind: OCIRepository
-    name: envoy-gateway-crds
-  install:
-    remediation:
-      retries: -1
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      retries: 3
-  values:
-    crds:
-      # Owned by the gateway-api-crds Kustomization (apps/istio-system/gateway-api),
-      # which Istio also depends on. Two owners would fight over them.
-      gatewayAPI:
-        enabled: false
-      envoyGateway:
-        enabled: true
----
-# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
-apiVersion: helm.toolkit.fluxcd.io/v2
-kind: HelmRelease
-metadata:
   name: envoy-gateway
 spec:
   interval: 1h
   chartRef:
     kind: OCIRepository
     name: envoy-gateway
-  dependsOn:
-    - name: envoy-gateway-crds
+  # envoy-gateway's own CRDs live in the chart's crds/ dir, which Helm only
+  # ever creates; CreateReplace is what upgrades them on a chart bump. The same
+  # dir bundles the Gateway API CRDs, which the gateway-api-crds Kustomization
+  # owns and re-asserts every 10m. Keep apps/istio-system/gateway-api/crds.yaml
+  # on the bundle version this chart ships (v1.9.1 -> v1.6.1) so the two agree.
+  # (The standalone gateway-crds-helm chart would avoid the overlap, but its
+  # Helm release Secret is over the 1MiB limit and cannot install.)
   install:
+    crds: CreateReplace
     remediation:
       retries: -1
   upgrade:
+    crds: CreateReplace
     cleanupOnFail: true
     remediation:
       strategy: rollback
       retries: 3
   values:
-    # The chart's crds subchart bundles the Gateway API CRDs with no way to
-    # leave them out; all CRDs come from envoy-gateway-crds above instead.
     crds:
-      enabled: false
+      gatewayAPI:
+        # Denies standard -> experimental CRD moves; already patched out of the
+        # gateway-api-crds bundle for the same reason.
+        safeUpgradePolicy:
+          enabled: false
     config:
       envoyGateway:
         provider:

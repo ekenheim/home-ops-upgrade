@@ -69,10 +69,10 @@ spec:
   gatewayClassName: envoy
   infrastructure:
     annotations:
-      # external.${SECRET_DOMAIN} still belongs to the nginx-external Service.
-      # Move it (and the secondary domain) here in the PR that repoints
-      # cloudflared, not before: two Services claiming one name conflict.
-      external-dns.alpha.kubernetes.io/hostname: envoy-external.${SECRET_DOMAIN}
+      # The name the target annotation above points at. On the LAN it resolves
+      # external apps straight to envoy; on Cloudflare the same name is the
+      # tunnel CNAME (cloudflared DNSEndpoint).
+      external-dns.alpha.kubernetes.io/hostname: external.${SECRET_DOMAIN},external.${SECRET_SECONDARY_DOMAIN}
       io.cilium/lb-ipam-ips: 192.168.50.156
   listeners:
     - name: http

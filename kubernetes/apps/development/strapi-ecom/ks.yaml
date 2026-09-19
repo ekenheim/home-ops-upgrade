@@ -29,6 +29,10 @@ spec:
       APP: strapi-ecom
       CLAIM: strapi-ecom-data
       VOLSYNC_CAPACITY: 2Gi
+      # The app runs as root and leaves root-only files on the PVC; the default
+      # uid 568 mover cannot read them all.
+      VOLSYNC_UID: "0"
+      VOLSYNC_GID: "0"
     substituteFrom:
       - kind: ConfigMap
         name: cluster-settings

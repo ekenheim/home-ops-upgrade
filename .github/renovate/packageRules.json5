@@ -160,6 +160,33 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/defilantech/charts/llmkube"],
       "allowedVersions": "<0.9.28"
+    },
+    {
+      // A rolling tag (latest, rocm7, vulkan-radv, 24-alpine, 18) with no
+      // digest never updates: the pull policy defaults to IfNotPresent, so a
+      // node keeps whichever build it cached first, and nothing in Git says
+      // which one that is. Nobody remembers which apps are in that state, so
+      // Renovate pins a digest on every such tag itself - including on apps
+      // added later - and autoMergeDocker.json5 merges the digest bumps
+      // weekly. Tags with a real version (1.2.3) are left as they are: a
+      // version bump already moves them.
+      // The pattern is "a bare word" or "a major only, with an optional
+      // flavour". Our own CI images are excluded: their workflows rewrite the
+      // tag to a commit SHA, and a stale digest left behind it would not pull.
+      "description": ["Pin digests on rolling tags so they update through Renovate"],
+      "matchDatasources": ["docker"],
+      "matchCurrentValue": "/^([a-z][a-z0-9_-]*|\\d+(-[a-z0-9_-]+)?)$/",
+      "matchPackageNames": ["!/ekenheim/", "!/nordic-housing/"],
+      "pinDigests": true
+    },
+    {
+      // rocm-10.0 looks like a version to the rule above but is a rolling
+      // tag too, rebuilt about four times a day. The ROCm versioning rule
+      // earlier in this file still offers the next ROCm line as a major.
+      "description": ["Pin digests on amd-strix-halo-toolboxes ROCm tags"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["docker.io/kyuz0/amd-strix-halo-toolboxes"],
+      "pinDigests": true
     }
     // The dispatch hold at <0.5.41 was removed here on 2026-08-29. It existed
     // because 0.5.41 tightened the CSP to `script-src 'self'` without a nonce,

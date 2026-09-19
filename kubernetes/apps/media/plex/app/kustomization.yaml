@@ -8,3 +8,24 @@ resources:
   - ./pvc.yaml
   - ../../../../templates/gatus/external
   - ../../../../templates/volsync
+patches:
+  # Plex is backed up hourly to MinIO only. Its 30GB (mostly re-downloadable
+  # Metadata) was half of the R2 bucket, so opt out of the template's R2 copy.
+  - target:
+      kind: ReplicationSource
+      name: .*-r2
+    patch: |
+      $patch: delete
+      apiVersion: volsync.backube/v1alpha1
+      kind: ReplicationSource
+      metadata:
+        name: not-used
+  - target:
+      kind: ExternalSecret
+      name: .*-volsync-r2
+    patch: |
+      $patch: delete
+      apiVersion: external-secrets.io/v1
+      kind: ExternalSecret
+      metadata:
+        name: not-used

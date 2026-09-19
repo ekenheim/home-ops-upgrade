@@ -196,24 +196,30 @@ spec:
         globalMounts:
           - path: /app/config-file
       assets:
+        # Mount the export root and reach the directory through subPath, like
+        # every other NAS consumer here. Mounting /mnt/user/Media/ppm/assets
+        # itself made that deep directory the NFS mount root; Unraid's FUSE
+        # layer drops its handle every ~15 min and a stale mount ROOT cannot be
+        # re-resolved, so the pod died. Through the root it is re-walked by name.
         type: nfs
         server: ${NAS_IP:=temp}
-        path: ${SECRET_NFS_PPM:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
         - path: /assets
+          subPath: Media/ppm/assets
       manualassets:
         type: nfs
         server: ${NAS_IP:=temp}
-        path: ${SECRET_NFS_PPM:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
         - path: /manualassets
-          subPath: manualassets
+          subPath: Media/ppm/assets/manualassets
       assetsbackup:
         type: nfs
         server: ${NAS_IP:=temp}
-        path: ${SECRET_NFS_PPM:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
         - path: /assetsbackup
-          subPath: assetsbackup
+          subPath: Media/ppm/assets/assetsbackup
 
 

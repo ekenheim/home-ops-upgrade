@@ -68,6 +68,16 @@ spec:
                   # event timestamp is parsed with -D below. Keep it that way.
                   LOOKBACK_MIN=15
 
+                  # A matching event does not mean the pod is still broken. A
+                  # fresh NFS mount of the Unraid share often starts with a
+                  # stale handle that clears by itself within ~3 minutes. The
+                  # event stays inside LOOKBACK_MIN long after that, so deleting
+                  # on the event alone killed the recovered pod, whose
+                  # replacement hit the same transient: posterizarr and tautulli
+                  # were recreated every 5 minutes, 118+ times, from 2026-09-18.
+                  # Only delete a pod that is still not Ready after MIN_AGE_MIN.
+                  MIN_AGE_MIN=10
+
                   TMPL='{range .items[*]}{.metadata.namespace}|{.involvedObject.kind}|{.involvedObject.name}|{.lastTimestamp}|{.message}{"\n"}{end}'
 
                   # grep returns 1 on no matches; under pipefail that aborts the
@@ -87,6 +97,21 @@ spec:
                     | while IFS=$'\t' read -r ns pod; do
                         [ -z "$ns" ] && continue
                         [ -z "$pod" ] && continue
+                        state=$(kubectl -n "$ns" get pod "$pod" --ignore-not-found \
+                          -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}|{.metadata.creationTimestamp}')
+                        [ -z "$state" ] && continue
+                        ready=$(echo "$state" | cut -d'|' -f1)
+                        created=$(echo "$state" | cut -d'|' -f2)
+                        if [ "$ready" = "True" ]; then
+                          echo "[nfs-watchdog] skipping $ns/$pod: recovered, pod is Ready"
+                          continue
+                        fi
+                        created_s=$(date -u -D "%Y-%m-%dT%H:%M:%SZ" -d "$created" +%s)
+                        age_s=$(( $(date -u +%s) - created_s ))
+                        if [ "$age_s" -lt $(( MIN_AGE_MIN * 60 )) ]; then
+                          echo "[nfs-watchdog] skipping $ns/$pod: only $age_s s old, may still recover"
+                          continue
+                        fi
                         echo "[nfs-watchdog] deleting $ns/$pod"
                         kubectl -n "$ns" delete pod "$pod" --ignore-not-found --wait=false
                       done

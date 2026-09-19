@@ -64,7 +64,13 @@ spec:
           fetch:
             image: &image
               repository: docker.io/kyuz0/amd-strix-halo-toolboxes
-              tag: vulkan-radv@sha256:7cf118131ec1971c1e2cec95eb537e5a8bfe310dfa55cea681c7c6c1e18ef371
+              # The timestamped tag, not the rolling `vulkan-radv`: upstream
+              # rebuilds several times a day, and a digest pinned on the
+              # rolling tag turned every rebuild into a PR. This tag is
+              # immutable, so Renovate treats the timestamp as the version
+              # (packageRules.json5) and auto-merges it once a week
+              # (autoMergeDocker.json5).
+              tag: vulkan-radv_20260919T122425@sha256:7cf118131ec1971c1e2cec95eb537e5a8bfe310dfa55cea681c7c6c1e18ef371
             command:
               - bash
               - -c

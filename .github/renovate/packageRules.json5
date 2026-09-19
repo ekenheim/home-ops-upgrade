@@ -104,6 +104,20 @@
       "versioning": "regex:^rocm-(?<major>\\d+)\\.(?<minor>\\d+)(\\.(?<patch>\\d+))?$"
     },
     {
+      // The same image pinned to one of its timestamped rebuilds
+      // (vulkan-radv_20260919T122425). The variant is the compatibility
+      // part, so vulkan-radv never jumps to vulkan-radv-performance or a
+      // rocm line; the timestamp is the version, split so a same-day rebuild
+      // is a patch and only a new year is a major. Must stay after the rule
+      // above: it overrides that versioning for timestamped pins only, and
+      // leaves the bare rocm-X.Y tags on the llmkube InferenceServices alone.
+      "description": ["Timestamp versioning for pinned amd-strix-halo-toolboxes rebuilds"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["docker.io/kyuz0/amd-strix-halo-toolboxes"],
+      "matchCurrentValue": "/_\\d{8}T\\d{6}$/",
+      "versioning": "regex:^(?<compatibility>.+)_(?<major>\\d{4})(?<minor>\\d{2})(?<patch>\\d{2})T(?<build>\\d{6})$"
+    },
+    {
       // Hold Kubernetes < 1.36 until Talos 1.13 GAs — talosctl 1.12.x
       // refuses the 1.35 -> 1.36 upgrade path. Lift this rule in the same
       // PR that bumps ghcr.io/siderolabs/installer to v1.13.x.

@@ -119,15 +119,22 @@ spec:
         globalMounts:
           - path: /config/cache
       posterizarr-watcher:
+        # Mount the export root and reach the directory through subPath, like
+        # every other NAS consumer here. Mounting the ppm directories
+        # themselves made a deep directory the NFS mount root; Unraid's FUSE
+        # layer drops its handle every ~15 min and a stale mount ROOT cannot be
+        # re-resolved, so the pod died. Through the root it is re-walked by name.
         type: nfs
         server: ${NAS_IP:=temp}
-        path: ${SECRET_NFS_WATCHER:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
         - path: /config/watcher
+          subPath: Media/ppm/watcher
       assets:
         type: nfs
         server: ${NAS_IP:=temp}
-        path: ${SECRET_NFS_PPM:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
         globalMounts:
         - path: /assets
+          subPath: Media/ppm/assets
 

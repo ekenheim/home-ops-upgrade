@@ -26,3 +26,5 @@ ignore: |
   kubernetes/apps/datasci/seldon-core/chart/
   **/templates/
   **/charts/
+  # vendored upstream Gateway API CRD bundle; v1.6.1 ships trailing spaces inside CEL expressions
+  **/gateway-api/crds.yaml

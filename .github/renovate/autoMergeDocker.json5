@@ -2,7 +2,25 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "packageRules": [
     {
+      // A digest bump is the same tag rebuilt, and on a rolling tag it is
+      // the only update there is. Merging them by hand does not scale
+      // (amd-strix-halo-toolboxes alone rebuilds about four times a day), so
+      // every image gets them merged automatically, once a week, off-hours:
+      // each merge restarts the workload and may pull a multi-GB image.
+      // pinDigest is the first pin that packageRules.json5 asks for.
+      // This rule is first on purpose. The rules below repeat
+      // `schedule: at any time` for images that must deploy immediately.
+      "description": ["Auto-merge all container digest updates, weekly"],
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["digest", "pinDigest"],
+      "schedule": ["* 0-5 * * 1"],
+      "automerge": true,
+      "automergeType": "branch",
+      "ignoreTests": true
+    },
+    {
       "description": ["Auto-merge container digests updates"],
+      "schedule": ["at any time"],
       "matchDatasources": ["docker"],
       "automerge": true,
       "automergeType": "branch",
@@ -30,6 +48,7 @@
     },
     {
       "description": ["Auto-merge container updates for hugo blog"],
+      "schedule": ["at any time"],
       "matchDatasources": ["docker"],
       "automerge": true,
       "automergeType": "branch",
@@ -38,23 +57,10 @@
     },
     {
       "description": ["Auto-merge hempriser/nordic-housing image updates"],
+      "schedule": ["at any time"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["/nordic-housing/"],
       "matchUpdateTypes": ["major", "minor", "patch", "digest"],
-      "automerge": true,
-      "automergeType": "branch",
-      "ignoreTests": true
-    },
-    {
-      // Upstream publishes ~4 rebuilds a day. Without the schedule each one
-      // would restart whisper (strategy Recreate) and pull a multi-GB image
-      // onto worker4; weekly keeps it current without the churn.
-      "description": ["Auto-merge amd-strix-halo-toolboxes timestamped rebuilds, weekly"],
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["docker.io/kyuz0/amd-strix-halo-toolboxes"],
-      "matchCurrentValue": "/_\\d{8}T\\d{6}$/",
-      "matchUpdateTypes": ["major", "minor", "patch"],
-      "schedule": ["* 0-5 * * 1"],
       "automerge": true,
       "automergeType": "branch",
       "ignoreTests": true

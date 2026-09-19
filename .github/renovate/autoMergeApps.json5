@@ -60,5 +60,18 @@
       matchUpdateTypes: ['major'],
       automerge: false,
     },
+    {
+      // Our own image, released from ekenheim/marketing-agency. Must stay below
+      // the 'never major' rule above so that major releases merge unattended too.
+      description: 'Auto-merge every marketing-agency website release after CI passes',
+      matchDatasources: ['docker'],
+      matchPackageNames: ['ghcr.io/ekenheim/marketing-agency-website'],
+      matchUpdateTypes: ['major', 'minor', 'patch', 'digest'],
+      automerge: true,
+      automergeType: 'pr',
+      automergeStrategy: 'squash',
+      platformAutomerge: true,
+      ignoreTests: false,
+    },
   ],
 }

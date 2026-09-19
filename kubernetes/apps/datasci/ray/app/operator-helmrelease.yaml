@@ -9,7 +9,11 @@ spec:
   chart:
     spec:
       chart: kuberay-operator
-      version: 1.7.1
+      # 1.7.1 is unusable: the chart defaults to quay.io/kuberay/operator:v1.7.1,
+      # which upstream never pushed (404). Every upgrade ImagePullBackOffs, times
+      # out and rolls back, leaving this HR failed and `ray` blocked behind it.
+      # Renovate skips 1.7.1 (.github/renovate/packageRules.json5).
+      version: 1.7.0
       sourceRef:
         kind: HelmRepository
         name: kuberay

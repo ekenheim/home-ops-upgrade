@@ -141,6 +141,16 @@
       "allowedVersions": "<2.54.1"
     },
     {
+      // Chart 1.7.1 defaults to quay.io/kuberay/operator:v1.7.1, an image
+      // upstream never pushed (404 on 2026-09-19; only v1.7.0 exists). The
+      // upgrade ImagePullBackOffs, times out and rolls back on every attempt.
+      // Skips only that version, so 1.7.2+ is proposed normally.
+      "description": ["Skip kuberay-operator chart 1.7.1 (references a missing image)"],
+      "matchDatasources": ["helm"],
+      "matchPackageNames": ["kuberay-operator"],
+      "allowedVersions": "!/^1\\.7\\.1$/"
+    },
+    {
       // 0.9.28 (defilantech/LLMKube#1829) passes spec.args verbatim whenever
       // spec.command is set, dropping the runtime-built args. Our llama.cpp
       // InferenceServices need `command: [llama-server]` (the Strix Halo

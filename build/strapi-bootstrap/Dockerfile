@@ -41,10 +41,9 @@ RUN mkdir -p src/admin && printf 'import { mergeConfig, type UserConfig } from "
 # CORS middleware — reads allowed origins from CORS_ORIGIN env var (comma-separated).
 # Falls back to * so dev mode works without configuration.
 RUN printf 'export default [\n  "strapi::logger",\n  "strapi::errors",\n  "strapi::security",\n  {\n    name: "strapi::cors",\n    config: {\n      origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : ["*"],\n      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],\n      headers: ["Content-Type", "Authorization", "Origin", "Accept"],\n      keepHeaderOnError: true,\n    },\n  },\n  "strapi::poweredBy",\n  "strapi::query",\n  "strapi::body",\n  "strapi::session",\n  "strapi::favicon",\n  "strapi::public",\n];\n' > config/middlewares.js
-# Translate plugin configuration — uses DeepL provider with API key from env var.
-RUN printf 'export default ({ env }) => ({\n  translate: {\n    enabled: true,\n    config: {\n      provider: "deepl",\n      providerOptions: {\n        apiKey: env("DEEPL_API_KEY"),\n        freeApi: true,\n      },\n      translatedFieldTypes: [\n        "string",\n        { type: "text", format: "plain" },\n        { type: "richtext", format: "markdown" },\n        "component",\n        "dynamiczone",\n      ],\n      translateRelations: true,\n    },\n  },\n});\n' > config/plugins.ts
-# Server config owned by the image (strapi-sync.sh copies it onto the PVC).
-COPY server.ts config/server.ts
+# Config owned by the image (strapi-sync.sh copies it onto the PVC). These are
+# type-checked by `strapi build`, which is strict since the 5.4x scaffold.
+COPY server.ts plugins.ts config/
 RUN npm run build
 
 # Stage 2: lean runtime image that ships the pre-built project as a seed template.

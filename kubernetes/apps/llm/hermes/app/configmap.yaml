@@ -386,6 +386,13 @@ data:
       context7:
         url: http://mcp-context7-proxy.llm:8080/mcp
         enabled: true
+      # The LLM-written wiki of this repo (repo-wiki), as wiki_list / wiki_read
+      # / wiki_search. Three small tool schemas; a page is 3-5k tokens and the
+      # cheapest way for hermes to learn how the cluster is laid out. Read-only,
+      # unauthenticated for the same reasons as `platform`.
+      wiki:
+        url: http://mcp-wiki-mcp-proxy.llm:8080/mcp
+        enabled: true
       # Cross-namespace: this one lives in `downloads`, not `llm`.
       arr:
         url: http://mcp-arr-proxy.downloads:8080/mcp

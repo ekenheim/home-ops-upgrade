@@ -60,7 +60,7 @@ spec:
   # and not Vulkan. `command` is required because the image has no
   # entrypoint -- and that is why the llmkube chart is held at 0.9.27
   # (helmrelease.yaml).
-  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-10.0
+  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-10.0@sha256:4b93f2fdacd647797d40b3f3808cf33300fb97f85f8f6ecb091b9186805b91a6
   command:
     - llama-server
   replicas: 1

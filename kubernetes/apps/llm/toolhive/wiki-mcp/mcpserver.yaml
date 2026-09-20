@@ -1,0 +1,61 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcpserver_v1beta1.json
+#
+# Read-only MCP front for repo-wiki (../../repo-wiki): list, read and search
+# the LLM-written repo wikis. Same construction as platform-mcp -- a stdlib
+# script from a ConfigMap on a stock python image; see that README for why.
+# It fetches markdown and manifest.json from the `raw` sidecar in the mkdocs
+# pod (repo-wiki.llm:8001) because the wiki volume is RWO and mkdocs itself
+# only serves HTML. No credential, no Kubernetes API access, no writes.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: &name wiki-mcp
+spec:
+  image: docker.io/library/python:3.14-slim@sha256:83ff1d245a3d57d04152252d3ef9cb361494d0b3395abd65a5ebe91c401c8e83
+  transport: stdio
+  proxyMode: streamable-http
+  proxyPort: 8080
+  # stdio backends serve a single client connection and cannot be scaled.
+  backendReplicas: 1
+  toolConfigRef:
+    name: *name
+  audit:
+    enabled: true
+  env:
+    - name: PYTHONUNBUFFERED
+      value: "1"
+    - name: PYTHONDONTWRITEBYTECODE
+      value: "1"
+    - name: WIKI_URL
+      value: http://repo-wiki.llm:8001
+  # Applied to the proxy Deployment, not the backend (operator v0.44.0 quirk,
+  # see platform-mcp); the backend's limits are in podTemplateSpec below.
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: mcp
+          # The stock image's entrypoint is an interactive REPL.
+          command:
+            - python3
+            - /srv/wiki_mcp.py
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: server
+              mountPath: /srv
+              readOnly: true
+      volumes:
+        - name: server
+          configMap:
+            name: wiki-mcp-server

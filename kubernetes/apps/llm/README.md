@@ -11,12 +11,12 @@ lives here.
 | `litellm` | The gateway. Still a bjw-s app-template HelmRelease + hand-written `config.yaml`. |
 | `llmkube` | llama.cpp InferenceServices (`ornith-35b`, `qwen38-27b`) on worker4's Strix Halo iGPU. |
 | `embeddings` | `qwen3-embedding-0.6b`: two llmkube InferenceServices on CPU (llama.cpp) for memini and hindsight, layout after joryirving/home-ops. Replaced `ollama-igpu`, then bge-m3, 2026-09-18. |
-| `toolhive` | MCP operator + `ha-mcp`, `context7`, `memory-mcp`, `platform-mcp`. |
+| `toolhive` | MCP operator + `ha-mcp`, `context7`, `memory-mcp`, `platform-mcp`, `wiki-mcp`. |
 | `memini` | Memory service (REST + MCP). Hermes' provider plugin talks to this one. |
 | `hindsight` | **New.** Memory service to consolidate on: banks per consumer, MCP per bank, LLM on the ChatGPT subscription. Nothing wired yet. |
 | `searxng` | Search backend for litellm. |
 | `miso-gallery` | Web gallery over ComfyUI's output (NAS, `Media/comfyui/output`). Local password auth; can delete from the NAS. |
-| `repo-wiki` | mkdocs site of LLM-written repo wikis; a 12-hourly CronJob on `self-hosted` writes them. |
+| `repo-wiki` | mkdocs site of LLM-written repo wikis; a nightly CronJob on `self-hosted` writes them. Agents read it through `wiki-mcp`. |
 | `hermes`, `langflow` | Frontends. `open-webui` was retired 2026-09-18 (unused). |
 | `comfyui` | Image generation (ROCm) on worker4. Output on the NAS under `Media/comfyui`. |
 | `lemonade-tts`, `whisper` | GPU speech on worker4: OpenMOSS TTS and whisper.cpp (Vulkan). Web pages at `lemonade.<domain>` and `whisper.<domain>` (internal, no login); no API consumers yet; Home Assistant and Bazarr keep their CPU services. |
@@ -160,11 +160,34 @@ on NFS. It needs a **`miso-gallery` Bitwarden Secrets Manager item**:
 | `SECRET_KEY` | Flask session secret; `python -c "import secrets; print(secrets.token_urlsafe(48))"` |
 
 **repo-wiki** is two controllers on one volume: `mkdocs` serves the site and a
-CronJob (`0 */12 * * *`) regenerates the wiki of any repo in `repos.txt`
+CronJob (`0 3 * * *`) updates the wiki of any repo in `repos.txt`
 (`app/configmap.yaml`) whose HEAD moved, one repo and at most 20 pages per
-run, each page one long completion on `self-hosted`. llama.cpp keeps
-generating after a client gives up, so if ornith's `/slots` fill with dead
-work after a run, suspend this first:
+run, each page one long completion on `self-hosted`.
+
+The generator has diverged from upstream (2026-09-20). Renovate moves this
+repo's HEAD all day, so upstream's "skip if HEAD did not move" never fired and
+every run rewrote all 20 pages: ~3.5 h of ornith, twice a day, with page slugs
+that changed between runs and an empty wiki whenever a run timed out. Now:
+
+- the page plan lives in `manifest.json` and is reused for `PLAN_MAX_AGE_DAYS`
+  (14), so **slugs are stable**; a re-plan is told to keep existing slugs. The
+  flip side: a new app enters the wiki at the next re-plan, not before. Force
+  one by deleting `planned_at` from the manifest, or the whole repo entry;
+- a page is rewritten only when the **files it is built from changed** (hash
+  in the manifest);
+- pages are built in `/app-data/.staging` and renamed into place;
+- a page that fails keeps its old text and is retried next run (`.wiki-state.json`
+  only advances on a clean run).
+
+**Consumers.** The mkdocs pod has a `raw` sidecar serving the markdown and
+`manifest.json` on `repo-wiki.llm:8001` (in-cluster only; the volume is RWO and
+mkdocs only serves HTML). `toolhive/wiki-mcp` reads that and exposes
+`wiki_list`, `wiki_read`, `wiki_search` at
+`http://mcp-wiki-mcp-proxy.llm:8080/mcp`; hermes has it as `wiki`. Any other
+agent can use the same URL.
+
+llama.cpp keeps generating after a client gives up, so if ornith's `/slots`
+fill with dead work after a run, suspend this first:
 
 ```sh
 kubectl -n llm patch cronjob repo-wiki-repo-wiki-gen -p '{"spec":{"suspend":true}}'

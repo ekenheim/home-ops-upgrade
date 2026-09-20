@@ -1,0 +1,13 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcptoolconfig_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPToolConfig
+metadata:
+  name: wiki-mcp
+spec:
+  # Explicit allow list, as on context7 and platform-mcp: a change to the
+  # script cannot silently publish a new tool to every connected agent.
+  toolsFilter:
+    - wiki_list
+    - wiki_read
+    - wiki_search

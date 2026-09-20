@@ -1,7 +1,11 @@
 ---
-# mkdocs.yml and generate.py are joryirving/home-ops' repo-wiki, verbatim but
-# for the repo list and the commit e-mail. There is no dollar sign anywhere in
-# this file; keep it that way, Flux envsubst runs over it in strict mode.
+# mkdocs.yml is joryirving/home-ops' repo-wiki verbatim. generate.py started
+# there too but has diverged: it keeps its page plan in manifest.json (stable
+# slugs), rewrites only the pages whose source files changed, builds in a
+# staging dir and swaps, and survives a failed page. manifest.json is also the
+# index the wiki-mcp server (../../toolhive/wiki-mcp) reads.
+# There is no dollar sign anywhere in this file; keep it that way, Flux
+# envsubst runs over it in strict mode.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -60,7 +64,11 @@ data:
     #!/usr/bin/env python3
     # Multi-pass repo wiki: stage 1 plans pages, stage 2 writes each from its
     # relevant files. Local-model friendly, background, no truncated whole-repo dump.
-    import io, json, os, pathlib, re, shutil, subprocess, tarfile, urllib.error, urllib.request, fnmatch
+    #
+    # The plan is kept in manifest.json and reused, so slugs are stable and a page
+    # is only rewritten when the files it is built from changed.
+    import fnmatch, hashlib, io, json, os, pathlib, re, shutil, subprocess, tarfile, time
+    import urllib.error, urllib.request
 
     LITELLM  = os.environ["OPENAI_BASE_URL"].rstrip("/")
     KEY      = os.environ["OPENAI_API_KEY"]
@@ -70,8 +78,13 @@ data:
     MAXPAGES = int(os.environ.get("MAX_PAGES_PER_REPO", "10"))
     TIMEOUT  = int(os.environ.get("LLM_TIMEOUT", "1800"))
     PAGE_CTX = int(os.environ.get("PAGE_CTX_CHARS", "120000"))
+    PLAN_AGE = int(os.environ.get("PLAN_MAX_AGE_DAYS", "14")) * 86400
     REPO     = pathlib.Path(os.environ.get("WIKI_REPO", "/app-data/repository"))
     STATE    = pathlib.Path("/app-data/.wiki-state.json")
+    # Outside docs_dir so mkdocs never sees a half-written tree, same filesystem
+    # so the swap is a rename.
+    STAGING  = pathlib.Path("/app-data/.staging")
+    MANIFEST = REPO / "manifest.json"
     ENTRIES  = [l.strip() for l in pathlib.Path("/config/repos.txt").read_text().splitlines()
                 if l.strip() and not l.startswith("#")]
 
@@ -150,26 +163,53 @@ data:
         "Always include an architecture/overview page, one page per major component or "
         "subsystem, plus setup and operations." % MAXPAGES)
 
+    # Slugs are URLs and MCP page ids. Without this the model renames half the
+    # pages on every run (overview-architecture -> overview-and-architecture).
+    PLAN_KEEP = (
+        "\n\nThe wiki already has the pages below. Reuse the EXACT slug and title of every "
+        "page that still applies; only add or drop a page when the repository gained or "
+        "lost a subsystem.\n")
+
     PAGE_SYS = (
         "You write one page of a technical wiki in GitHub-flavored markdown. Be detailed, "
         "accurate, and concrete: explain how things actually work, cite real file paths, and "
         "include a mermaid diagram when it clarifies structure or flow. Start with an H1 "
         "title. Do not invent features absent from the provided source.")
 
-    def plan(repo, files):
+    def slugify(s):
+        return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-") or "page"
+
+    def normalise(pages, files):
+        out, seen = [], set()
+        for pg in pages:
+            if not isinstance(pg, dict):
+                continue
+            slug = slugify(str(pg.get("slug") or pg.get("title") or "page"))
+            if slug in seen or slug == "index":
+                continue
+            seen.add(slug)
+            out.append({"title": str(pg.get("title") or slug), "slug": slug,
+                        "focus": str(pg.get("focus") or ""),
+                        "files": [p for p in pg.get("files") or [] if p in files]})
+        return out
+
+    def plan(repo, files, previous):
         tree = "\n".join(sorted(files))
         readme = next((files[p] for p in files
                        if p.lower() == "readme.md" or p.lower().endswith("/readme.md")), "")[:8000]
-        out = chat(PLAN_SYS, f"Repository: {repo}\n\nFile tree:\n{tree}\n\nREADME:\n{readme}")
+        user = f"Repository: {repo}\n\nFile tree:\n{tree}\n\nREADME:\n{readme}"
+        if previous:
+            user += PLAN_KEEP + json.dumps([{"title": p["title"], "slug": p["slug"]} for p in previous])
+        out = chat(PLAN_SYS, user)
         m = re.search(r"\[.*\]", out, re.S)
         try:
             return json.loads(m.group(0)) if m else []
         except Exception:
             return []
 
-    def write_page(repo, page, files):
+    def context(page, files):
         ctx, total = [], 0
-        for p in page.get("files", []):
+        for p in page["files"]:
             c = files.get(p)
             if not c:
                 continue
@@ -177,56 +217,129 @@ data:
             total += len(c)
             if total > PAGE_CTX:
                 break
-        user = (f"Repository: {repo}\nPage title: {page.get('title')}\n"
-                f"Focus: {page.get('focus', '')}\n\nRelevant source files:\n" + "\n\n".join(ctx))
-        return chat(PAGE_SYS, user)
+        return "\n\n".join(ctx)
+
+    def source_hash(page, ctx):
+        # Everything that shapes the page. A Renovate bump touches one HelmRelease,
+        # so only the pages built from that file get rewritten.
+        blob = "\0".join((MODEL, PAGE_SYS, page["title"], page["focus"], ctx))
+        return hashlib.sha256(blob.encode()).hexdigest()
+
+    def write_page(repo, page, ctx):
+        user = (f"Repository: {repo}\nPage title: {page['title']}\n"
+                f"Focus: {page['focus']}\n\nRelevant source files:\n" + ctx)
+        text = chat(PAGE_SYS, user)
+        if not text or not text.strip():
+            raise RuntimeError("empty completion")
+        return text
+
+    def existing_pages(base):
+        # A wiki written before manifest.json existed: recover slugs and titles
+        # from the files so the first manifest run does not rename everything.
+        out = []
+        for f in sorted(base.glob("*.md")):
+            if f.stem == "index":
+                continue
+            first = f.read_text().lstrip().splitlines()[:1]
+            title = first[0].lstrip("# ").strip() if first and first[0].startswith("#") else f.stem
+            out.append({"title": title, "slug": f.stem})
+        return out
 
     def commit(msg):
         subprocess.run(["git", "-C", str(REPO), "add", "-A"], check=False)
         subprocess.run(["git", "-C", str(REPO), "-c", "user.email=repo-wiki@users.noreply.github.com",
                         "-c", "user.name=repo-wiki", "commit", "-q", "-m", msg], check=False)
 
-    def slugify(s):
-        return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-") or "page"
+    def regenerate(repo, sha, entry):
+        now = int(time.time())
+        base = REPO / repo
+        files = fetch_files(repo)
+        old = {p["slug"]: p for p in entry.get("pages", [])}
+
+        pages = normalise(entry.get("pages", []), files)
+        planned_at = entry.get("planned_at", 0)
+        if not pages or now - planned_at > PLAN_AGE or any(not p["files"] for p in pages):
+            previous = pages or (existing_pages(base) if base.exists() else [])
+            pages = normalise(plan(repo, files, previous), files)[:MAXPAGES] or pages
+            planned_at = now
+            print(f"  planned {len(pages)} pages", flush=True)
+        if not pages:
+            pages = [{"title": "Overview", "slug": "overview", "focus": "repository overview",
+                      "files": sorted(files)[:40]}]
+
+        stage = STAGING / "new"
+        shutil.rmtree(STAGING, ignore_errors=True)
+        stage.mkdir(parents=True)
+        done, wrote, failed = [], 0, 0
+        for pg in pages:
+            slug, ctx = pg["slug"], context(pg, files)
+            digest = source_hash(pg, ctx)
+            prior, prior_file = old.get(slug, {}), base / f"{slug}.md"
+            if not entry and prior_file.exists():
+                # First run with a manifest over a wiki written without one: adopt
+                # the page as current rather than spend hours rewriting all of them.
+                prior = {"source_hash": digest, "generated_at": int(prior_file.stat().st_mtime)}
+            if prior.get("source_hash") == digest and prior_file.exists():
+                shutil.copy2(prior_file, stage / f"{slug}.md")
+                done.append({**pg, "source_hash": digest, "generated_at": prior.get("generated_at", now)})
+                continue
+            print(f"  page: {pg['title']} ({slug})", flush=True)
+            try:
+                (stage / f"{slug}.md").write_text(write_page(repo, pg, ctx))
+                done.append({**pg, "source_hash": digest, "generated_at": now})
+                wrote += 1
+            except Exception as e:
+                # One timeout must not cost the whole wiki. Keep the old page and
+                # its old hash, so the next run tries this page again.
+                failed += 1
+                print(f"  FAILED {slug}: {e}", flush=True)
+                if prior_file.exists():
+                    shutil.copy2(prior_file, stage / f"{slug}.md")
+                    done.append({**pg, "source_hash": prior.get("source_hash", ""),
+                                 "generated_at": prior.get("generated_at", 0)})
+        if not done:
+            raise RuntimeError("no page could be written")
+
+        index = [f"# {repo}\n", "_AI-generated wiki._\n", "## Pages\n"]
+        index += [f"- [{p['title']}]({p['slug']}.md)" for p in done]
+        (stage / "index.md").write_text("\n".join(index))
+
+        trash = STAGING / "old"
+        base.parent.mkdir(parents=True, exist_ok=True)
+        if base.exists():
+            base.rename(trash)
+        stage.rename(base)
+        shutil.rmtree(STAGING, ignore_errors=True)
+
+        print(f"  {repo}: {wrote} written, {len(done) - wrote} kept, {failed} failed", flush=True)
+        return {"sha": sha, "generated_at": now, "planned_at": planned_at, "pages": done}, failed
 
     subprocess.run(["git", "config", "--global", "--add", "safe.directory", str(REPO)], check=False)
     REPO.mkdir(parents=True, exist_ok=True)
     if not (REPO / ".git").exists():
         subprocess.run(["git", "init", "-q", str(REPO)], check=True)
     state = json.loads(STATE.read_text()) if STATE.exists() else {}
+    manifest = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {"repos": {}}
 
     candidates = sorted({r for e in ENTRIES for r in expand(e)})
     stale = [(r, s) for r in candidates if (s := head_sha(r)) and state.get(r) != s][:MAX]
-    print(f"{len(candidates)} repos discovered, {len(stale)} to regenerate this run", flush=True)
+    print(f"{len(candidates)} repos discovered, {len(stale)} to check this run", flush=True)
 
     for repo, sha in stale:
         print(f"== {repo}", flush=True)
         try:
-            files = fetch_files(repo)
-            pages = plan(repo, files)[:MAXPAGES]
-            if not pages:
-                pages = [{"title": "Overview", "slug": "overview", "focus": "repository overview",
-                          "files": sorted(files)[:40]}]
-            base = REPO / repo
-            shutil.rmtree(base, ignore_errors=True)
-            (REPO / f"{repo}.md").unlink(missing_ok=True)
-            base.mkdir(parents=True, exist_ok=True)
-            index = [f"# {repo}\n", "_AI-generated wiki._\n", "## Pages\n"]
-            for pg in pages:
-                slug = pg.get("slug") or slugify(pg.get("title", "page"))
-                print(f"  page: {pg.get('title')} ({slug})", flush=True)
-                (base / f"{slug}.md").write_text(write_page(repo, pg, files))
-                index.append(f"- [{pg.get('title', slug)}]({slug}.md)")
-            (base / "index.md").write_text("\n".join(index))
-            state[repo] = sha
-            STATE.write_text(json.dumps(state, indent=2))
-            commit(f"regenerate {repo} ({len(pages)} pages)")
-            print(f"  committed {repo}: {len(pages)} pages", flush=True)
+            entry, failed = regenerate(repo, sha, manifest["repos"].get(repo, {}))
+            manifest["repos"][repo] = entry
+            MANIFEST.write_text(json.dumps(manifest, indent=2))
+            if not failed:
+                # Only a clean run marks the sha done; a failed page is retried.
+                state[repo] = sha
+                STATE.write_text(json.dumps(state, indent=2))
+            commit(f"regenerate {repo} @ {sha[:7]}")
         except Exception as e:
             print(f"  skipped {repo}: {e}", flush=True)
             continue
 
-    (REPO / "home.md").unlink(missing_ok=True)
     root = ["# Repo Wikis\n", "_AI-generated documentation, one section per repository._\n"]
     for r in candidates:
         if (REPO / r / "index.md").exists():

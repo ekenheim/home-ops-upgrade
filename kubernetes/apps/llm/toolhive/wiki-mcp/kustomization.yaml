@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./mcptoolconfig.yaml
+  - ./mcpserver.yaml
+
+configMapGenerator:
+  - name: wiki-mcp-server
+    files:
+      - wiki_mcp.py=./server/wiki_mcp.py
+    options:
+      # The MCPServer references this ConfigMap by a fixed name. Consequence:
+      # editing the script does NOT roll the backend on its own --
+      #   kubectl -n llm rollout restart statefulset wiki-mcp
+      disableNameSuffixHash: true

@@ -3,17 +3,22 @@
 #
 # LLM-written wikis for git repositories, after joryirving/home-ops
 # (kubernetes/apps/base/llm/repo-wiki). Two controllers on one volume:
-#   mkdocs          serves /app-data/repository as a Material site
-#   repo-wiki-gen   CronJob; for each repo in repos.txt whose HEAD moved, plans
-#                   a set of pages, then writes each from the relevant files
+#   mkdocs          serves /app-data/repository as a Material site, plus a
+#                   `raw` sidecar serving the same markdown and manifest.json
+#                   on :8001 for the wiki-mcp server (../../toolhive/wiki-mcp)
+#   repo-wiki-gen   CronJob; for each repo in repos.txt whose HEAD moved, writes
+#                   the pages whose source files changed
 #
 # COST. Every page is one long non-streaming completion on `self-hosted`
-# (ornith-35b), up to 20 pages per run, and llama.cpp does NOT stop generating
-# when a client times out -- the slot keeps working for nobody (see the ornith
-# zombie-loop and dispatch groomer incidents). The guards are upstream's: one
-# repo per run, a 30 min timeout that is longer than any page should take, and
-# a state file so an unchanged repo costs one `git ls-remote`. If ornith's
-# /slots fill with dead work after a run, this job is the first suspect:
+# (ornith-35b), and llama.cpp does NOT stop generating when a client times out
+# -- the slot keeps working for nobody (see the ornith zombie-loop and dispatch
+# groomer incidents). Renovate moves this repo's HEAD many times a day, so the
+# upstream guard (skip a repo whose HEAD did not move) never fired here and
+# every run rewrote all 20 pages, ~3.5 h of ornith twice a day. Now the page
+# plan is kept for PLAN_MAX_AGE_DAYS and a page is rewritten only when the
+# files it is built from changed; a typical run is a tarball fetch and a
+# handful of pages, at night. If ornith's /slots fill with dead work after a
+# run, this job is still the first suspect:
 #   kubectl -n llm patch cronjob repo-wiki-repo-wiki-gen -p '{"spec":{"suspend":true}}'
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -83,6 +88,39 @@ spec:
                 memory: 128Mi
               limits:
                 memory: 512Mi
+          # Not upstream. mkdocs only serves rendered HTML and the volume is
+          # RWO, so this is how anything else reads the markdown: wiki-mcp
+          # fetches manifest.json and <owner>/<repo>/<slug>.md from here. Not
+          # on the route; in-cluster only. It serves .git too, which holds
+          # nothing but earlier versions of the same pages.
+          raw:
+            image:
+              repository: docker.io/library/python
+              tag: 3.14-slim@sha256:83ff1d245a3d57d04152252d3ef9cb361494d0b3395abd65a5ebe91c401c8e83
+            command: ["python3", "-m", "http.server", "8001", "--directory", "/app-data/repository"]
+            env:
+              PYTHONUNBUFFERED: "1"
+            securityContext:
+              runAsUser: 65534
+              runAsGroup: 65534
+              runAsNonRoot: true
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            probes:
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /index.md
+                    port: 8001
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
       repo-wiki-gen:
         type: cronjob
         pod:
@@ -101,7 +139,8 @@ spec:
                         values: ["mkdocs"]
                   topologyKey: kubernetes.io/hostname
         cronjob:
-          schedule: "0 */12 * * *"
+          # Nightly: ornith is shared with hermes and dispatch during the day.
+          schedule: "0 3 * * *"
           timeZone: "${TIMEZONE}"
           concurrencyPolicy: Forbid
           successfulJobsHistory: 1
@@ -121,6 +160,10 @@ spec:
               MAX_REPOS_PER_RUN: "1"
               MAX_PAGES_PER_REPO: "20"
               LLM_TIMEOUT: "1800"
+              # Re-plan the page list this often; in between, slugs and each
+              # page's file list are frozen (a new app shows up in the wiki at
+              # the next re-plan, not before).
+              PLAN_MAX_AGE_DAYS: "14"
               WIKI_REPO: /app-data/repository
             envFrom:
               - secretRef:
@@ -137,6 +180,8 @@ spec:
         ports:
           http:
             port: 8000
+          raw:
+            port: 8001
     route:
       app:
         annotations:
@@ -163,6 +208,9 @@ spec:
               - path: /app-data
             app:
               - path: /app-data
+            raw:
+              - path: /app-data
+                readOnly: true
           repo-wiki-gen:
             app:
               - path: /app-data

@@ -9,6 +9,10 @@
 #
 # naskio/strapi is NOT used: it is a v4 image and breaks on v5 admin panel builds.
 # Strapi publishes NO official images: https://docs.strapi.io/dev-docs/installation/docker
+# Upgrades: the image tag is the Strapi version (pinned in build/strapi-bootstrap/Dockerfile,
+# bumped by Renovate). The project itself lives on the PVC, so the init container runs
+# strapi-sync.sh, which upgrades the PVC whenever the image is newer. It never downgrades.
+#
 # See docs/medusa-strapi-integration.md for content type schema and integration guide.
 apiVersion: apps/v1
 kind: Deployment
@@ -36,20 +40,25 @@ spec:
       restartPolicy: Always
       imagePullSecrets:
         - name: ghcr-pull
+      initContainers:
+        # Seed the project on first run, upgrade it when the image ships a newer
+        # Strapi than the PVC, and sync the image-owned config.
+        - name: seed-and-upgrade
+          image: ghcr.io/ekenheim/strapi-bootstrap:5.54.0@sha256:1da364e734a7bc00d37d9613e65b6ec3f3ae0a950693c100f8687af30391a614
+          imagePullPolicy: Always
+          command: ["/usr/local/bin/strapi-sync.sh"]
+          volumeMounts:
+            - name: strapi-ecom-data
+              mountPath: /srv/app
       containers:
         - name: cms
-          image: ghcr.io/ekenheim/strapi-bootstrap@sha256:785dcd505abc846fd6a598e66b67a05f33bf10c0d7f2c65a54b60b64f00a0718
+          image: ghcr.io/ekenheim/strapi-bootstrap:5.54.0@sha256:1da364e734a7bc00d37d9613e65b6ec3f3ae0a950693c100f8687af30391a614
           imagePullPolicy: Always
           command: ["/bin/sh", "-c"]
           args:
             - |
               set -e
-              APP_DIR="/srv/app"
-              if [ ! -f "$APP_DIR/package.json" ]; then
-                echo "Seeding Strapi project from image template to PVC..."
-                cp -a /srv/template/. "$APP_DIR/"
-              fi
-              cd "$APP_DIR"
+              cd /srv/app
               echo "Starting Strapi in development mode to rebuild schema..."
               exec npm run develop
           ports:

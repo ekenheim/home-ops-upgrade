@@ -20,7 +20,7 @@
     "ghcr.io/devcontainers-extra/features/cloudflared:1": {},
     "ghcr.io/devcontainers-extra/features/go-task:1": {},
     "ghcr.io/devcontainers-extra/features/sops:1": {},
-    "ghcr.io/audacioustux/devcontainers/cilium:1": {},
+    "ghcr.io/audacioustux/devcontainers/cilium:1@sha256:d9a1687a48bd8a23f02778d3ff533cf53d02c5e13247b1b9944962e798edd018": {},
     "ghcr.io/dhoeric/features/stern:1": {},
     "ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {},
     "ghcr.io/jsburckhardt/devcontainer-features/flux:1": {},

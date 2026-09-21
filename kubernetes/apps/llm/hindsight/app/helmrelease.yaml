@@ -65,7 +65,7 @@ spec:
         # `-slim` ships no local models (~500 MB instead of ~9 GB). LLM,
         # embeddings and reranking are all external here, so nothing needs
         # torch or a model cache in this pod.
-        tag: 0.10.0-slim@sha256:bc3082ccb514fee1a7f7d66da308ba2c2018e2ea2c739d2341c993e3a3bd91b9
+        tag: 0.10.1-slim@sha256:26f9a62a5c870382c42ab7296722e0d7a2cead185b01d36708c7c3bdee4bf974
       env:
         # --- LLM: the ChatGPT subscription, via Hindsight's own Codex provider ---
         #

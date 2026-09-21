@@ -1,6 +1,6 @@
 {
   "name": "Home Ops",
-  "image": "mcr.microsoft.com/devcontainers/base:bullseye@sha256:d233ca1cefb8829b5a474659dc32537652772d702bdc49a20f366eedf588da35",
+  "image": "mcr.microsoft.com/devcontainers/base:bullseye",
   "containerEnv": {
     "KUBECONFIG": "${containerWorkspaceFolder}/kubeconfig",
     "SOPS_AGE_KEY_FILE": "${containerWorkspaceFolder}/.age.key"
@@ -10,21 +10,21 @@
     "command": "apt-get update && apt-get install -y age"
   },
   "features": {
-    "ghcr.io/devcontainers/features/common-utils:2@sha256:836cd0dc8d0036367f7dbc63cbdae70f7d43f3819ca9daca637eeb1ca0d99611": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
       "configureZshAsDefaultShell": true
     },
-    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1@sha256:bbe8adf6b37fff8c67412ab0a4579f4c2f30bbaba1d9a5cebd9e38bade54025b": {
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
       "minikube": "none"
     },
-    "ghcr.io/devcontainers/features/python:1@sha256:fbcad6955caeecc5ad3f7886baf652e25cba5225a6c4c2287c536de2e5607511": {},
-    "ghcr.io/devcontainers-extra/features/cloudflared:1@sha256:18b7db2cd2e84ce93716c465bebc4b5944b8309bdfe6fbf8c49b9129f3cc8253": {},
-    "ghcr.io/devcontainers-extra/features/go-task:1@sha256:4d1db153919976cadd3209ca05d655a761a01707767716994dad677b4538dc1b": {},
-    "ghcr.io/devcontainers-extra/features/sops:1@sha256:4cf07db9322cbe261fd103de5ba390907df63cd48d9e0d68517656fc35a27e6e": {},
-    "ghcr.io/audacioustux/devcontainers/cilium:1": {},
-    "ghcr.io/dhoeric/features/stern:1@sha256:23d5823e575fa902c4eb41bc6c56540a1623e2d434da49dbf3000c465f230e9f": {},
-    "ghcr.io/eitsupi/devcontainer-features/jq-likes:2@sha256:6a8b044f9f424097ec6d212167836b26994a76a556cbcb202084be79fe8032bd": {},
-    "ghcr.io/jsburckhardt/devcontainer-features/flux:1@sha256:9d81685acf08318a1751131f04e4bc83b5780ef2054484eab46acc74a3f7ed67": {},
-    "ghcr.io/rio/features/kustomize:1@sha256:fb0735cccf8082d918fa5ed78e5fbc668a409fd6929508d5e18d581daf5f43e8": {}
+    "ghcr.io/devcontainers/features/python:1": {},
+    "ghcr.io/devcontainers-extra/features/cloudflared:1": {},
+    "ghcr.io/devcontainers-extra/features/go-task:1": {},
+    "ghcr.io/devcontainers-extra/features/sops:1": {},
+    "ghcr.io/audacioustux/devcontainers/cilium:1@sha256:d9a1687a48bd8a23f02778d3ff533cf53d02c5e13247b1b9944962e798edd018": {},
+    "ghcr.io/dhoeric/features/stern:1": {},
+    "ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {},
+    "ghcr.io/jsburckhardt/devcontainer-features/flux:1": {},
+    "ghcr.io/rio/features/kustomize:1": {}
   },
   "customizations": {
     "vscode": {

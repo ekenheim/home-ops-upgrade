@@ -13,7 +13,7 @@ spec:
       nodeName: ${node}
       containers:
         - name: main
-          image: alpine:latest
+          image: alpine:latest@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
           command: ["/bin/sh", "-c"]
           args: ["rm -rf /mnt/host_var/lib/rook"]
           volumeMounts:

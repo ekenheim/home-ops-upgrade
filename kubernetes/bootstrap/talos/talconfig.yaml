@@ -68,9 +68,21 @@ nodes:
           ip: "192.168.50.10"
   - hostname: "master3"
     ipAddress: "192.168.50.34"
-    installDisk: "/dev/sda"
+    # Intel DC S3700 200GB (HP MK0200GCTYV), installed 2026-09-22 replacing the
+    # SanDisk SSD Plus. Pinned by WWID for the same reason as master1: the HP
+    # firmware reports no serial. The 980 PRO on nvme0n1 is osd.4.
+    installDiskSelector:
+      wwid: "naa.55cd2e404c10726b"
     talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de
     controlPlane: true
+    patches:
+      # See master1: /var/mnt is read-only on Talos 1.13, openebs local-hostpath
+      # needs this directory volume on every reinstalled node.
+      - |-
+        apiVersion: v1alpha1
+        kind: UserVolumeConfig
+        name: local-hostpath
+        volumeType: directory
     networkInterfaces:
       # 2x 2.5G bonded via LACP
       # Both NICs sit on the same L2; unbonded they answer ARP from two MACs

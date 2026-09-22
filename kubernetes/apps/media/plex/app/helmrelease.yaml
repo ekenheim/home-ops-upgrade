@@ -58,8 +58,18 @@ spec:
                   timeoutSeconds: 1
                   failureThreshold: 8
               readiness: *probes
+              # Plex runs a DB check after an unclean stop; give it up to 15m
+              # before liveness can restart it.
               startup:
-                enabled: false
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /identity
+                    port: 32400
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 90
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -73,6 +83,19 @@ spec:
         pod:
           annotations:
             descheduler.alpha.kubernetes.io/evict: "false"
+          # Let Plex flush SQLite cleanly so the next start skips the DB check.
+          terminationGracePeriodSeconds: 120
+          # Evict fast on a dead node (default 300s); the RBD exclusive lock
+          # prevents two pods writing the config volume at once.
+          tolerations:
+            - key: node.kubernetes.io/not-ready
+              operator: Exists
+              effect: NoExecute
+              tolerationSeconds: 30
+            - key: node.kubernetes.io/unreachable
+              operator: Exists
+              effect: NoExecute
+              tolerationSeconds: 30
           affinity:
             nodeAffinity:
               # Any node with an Intel iGPU (NFD label) so Plex can move when

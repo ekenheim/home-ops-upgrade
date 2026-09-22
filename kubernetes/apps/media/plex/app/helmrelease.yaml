@@ -75,12 +75,27 @@ spec:
             descheduler.alpha.kubernetes.io/evict: "false"
           affinity:
             nodeAffinity:
+              # Any node with an Intel iGPU (NFD label) so Plex can move when
+              # master3 is drained; prefer master3, then master2 (master1 throttles).
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
                   - matchExpressions:
-                      - key: workload
+                      - key: intel.feature.node.kubernetes.io/gpu
                         operator: In
-                        values: ["media"]
+                        values: ["true"]
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values: ["master3"]
+                - weight: 50
+                  preference:
+                    matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values: ["master2"]
           securityContext:
             runAsUser: 568
             runAsGroup: 568

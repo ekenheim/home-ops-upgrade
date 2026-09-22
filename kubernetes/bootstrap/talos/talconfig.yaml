@@ -99,7 +99,13 @@ nodes:
             # :0f first so bond0 inherits it and the DHCP reservation for .34 holds
             - hardwareAddr: "58:47:ca:75:60:0f"
             - hardwareAddr: "58:47:ca:75:60:10"
-        dhcp: true
+        # Static, not DHCP: on 2026-09-22 the .34 reservation stopped matching
+        # this MAC after a re-cable and the node came up on a dynamic lease.
+        # etcd advertises its peer URL by IP, so a control-plane node on the
+        # wrong address is an etcd member that can never rejoin.
+        dhcp: false
+        addresses:
+          - "192.168.50.34/24"
         mtu: 1500
         routes:
           - network: 0.0.0.0/0

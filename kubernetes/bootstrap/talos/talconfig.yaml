@@ -21,9 +21,26 @@ cniConfig:
 nodes:
   - hostname: "master1"
     ipAddress: "192.168.50.31"
-    installDisk: "/dev/sda"
+    # Intel DC S3710 200GB (HPE MK0200GEYKC, serial BTHV713504TX200MGN), installed
+    # 2026-09-22 replacing the worn Kingston A400. Pinned by WWID, not serial:
+    # the HPE firmware leaves the Disk resource's serial field empty, so a
+    # serial selector would never match. The 980 PRO on nvme0n1 is osd.2.
+    installDiskSelector:
+      wwid: "naa.55cd2e414db5ee67"
     talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de
     controlPlane: true
+    patches:
+      # openebs local-hostpath keeps its PVs under /var/mnt/local-hostpath. On
+      # the older nodes that directory was hand-made when /var/mnt was still
+      # writable; since Talos 1.10 /var/mnt is read-only and only user volumes
+      # may live there, so a fresh install needs it declared. A directory volume
+      # is just a directory on EPHEMERAL bind-mounted at /var/mnt/<name>.
+      # Add the same block to each master as it is reinstalled.
+      - |-
+        apiVersion: v1alpha1
+        kind: UserVolumeConfig
+        name: local-hostpath
+        volumeType: directory
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: 48:21:0b:36:2d:6a

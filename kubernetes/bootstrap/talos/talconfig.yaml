@@ -190,9 +190,16 @@ nodes:
       # Applied with a reboot: `task talos:apply-node` (or talosctl upgrade).
       # Pair the reboot with the BIOS change: UMA Frame Buffer FIXED at 96 GB
       # (not Auto), so both models load into the carve-out instead of GTT.
+      #
+      # grubUseUKICmdline: Talos >= 1.12 generates it as true, which makes GRUB
+      # take the cmdline from the UKI (i.e. the schematic) and rejects
+      # extraKernelArgs alongside it -- talhelper genconfig aborted on this
+      # node. Keep the GRUB cmdline so the args above still apply; moving them
+      # into the schematic is the alternative.
       - |-
         machine:
           install:
+            grubUseUKICmdline: false
             extraKernelArgs:
               - pcie_ports=native
               - pcie_ecrc=on

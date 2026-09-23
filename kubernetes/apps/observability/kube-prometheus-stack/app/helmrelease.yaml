@@ -122,6 +122,12 @@ spec:
       enabled: true
     prometheus-node-exporter:
       fullnameOverride: node-exporter
+      # RAPL energy_uj is root-only (0400), so the non-root exporter's rapl collector
+      # failed on every node and no CPU package power was ever scraped. The chart's
+      # init container chgrps it to the exporter's group before it starts.
+      permissionInitContainer:
+        fixes:
+          rapl: true
       prometheus:
         monitor:
           enabled: true

@@ -42,7 +42,7 @@ spec:
         - name: ghcr-pull
       initContainers:
         - name: seed-and-schema
-          image: ghcr.io/ekenheim/strapi-bootstrap:5.54.0@sha256:5995495cd4148e7a7b80e110fd2fb5ec081e235fd95a6c1314d515357eff40c9
+          image: ghcr.io/ekenheim/strapi-bootstrap:5.54.0@sha256:ed88756595e7addb4050d8fbb3b1867af58b5d29bc5e483cba39ed7a6763e4ce
           imagePullPolicy: Always
           command: ["/bin/sh", "-c"]
           args:
@@ -72,7 +72,7 @@ spec:
               readOnly: true
       containers:
         - name: cms
-          image: ghcr.io/ekenheim/strapi-bootstrap:5.54.0@sha256:5995495cd4148e7a7b80e110fd2fb5ec081e235fd95a6c1314d515357eff40c9
+          image: ghcr.io/ekenheim/strapi-bootstrap:5.54.0@sha256:ed88756595e7addb4050d8fbb3b1867af58b5d29bc5e483cba39ed7a6763e4ce
           imagePullPolicy: Always
           command: ["/bin/sh", "-c"]
           args:

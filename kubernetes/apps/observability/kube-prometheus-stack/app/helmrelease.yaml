@@ -131,6 +131,19 @@ spec:
               replacement: $1
               sourceLabels: ["__meta_kubernetes_pod_node_name"]
               targetLabel: kubernetes_node
+          metricRelabelings:
+            # master3's nct6798 (Meigao AHBNB board): SYSTIN/AUXTIN0-2/AUXTIN4 read 95-111 C and
+            # AUXTIN3 reads -25 C (unconnected thermistor inputs), the PCH_* temps are always 0 and
+            # fan1/3/4/5/7 have no tach. Only CPUTIN (temp2), PECI (temp7) and fan2 (CPU fan) are real.
+            - action: drop
+              sourceLabels: [chip, sensor]
+              separator: ";"
+              regex: platform_nct6775_[0-9]+;(temp([1345689]|1[012])|fan[13457])
+            # master3's ACPI thermal zone is a constant 27.8 C; the NUCs' acpitz is real, so keep theirs.
+            - action: drop
+              sourceLabels: [kubernetes_node, chip]
+              separator: ";"
+              regex: master3;thermal_thermal_zone0
     prometheus:
       thanosService:
         enabled: true

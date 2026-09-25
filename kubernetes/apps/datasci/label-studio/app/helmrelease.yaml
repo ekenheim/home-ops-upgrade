@@ -40,7 +40,7 @@ spec:
           app:
             image:
               repository: heartexlabs/label-studio
-              tag: 1.23.0@sha256:aa461572e8f9d86a1bf9520c1db620204e86160fd2f80dd7e9d40ac84a8828ea
+              tag: 1.23.1@sha256:7175aefd070e0941b59a49efa9c4cb95e25bde9a990dbd66151ae50a8b00b1aa
             env:
               CSRF_TRUSTED_ORIGINS: "https://label-studio.${SECRET_DOMAIN}"
               EXPERIMENTAL_FEATURES: 1

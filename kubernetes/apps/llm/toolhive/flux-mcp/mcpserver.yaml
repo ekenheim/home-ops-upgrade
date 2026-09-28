@@ -1,0 +1,35 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcpserver_v1beta1.json
+# flux-operator-mcp: Flux-aware tools (why is this HelmRelease failing, what
+# changed, dependency trees). --read-only here, where Jory also grants
+# reconcile/suspend: agents diagnose, humans (and git) change things. Its
+# ServiceAccount and read-only bindings are in ../kubectl-mcp/rbac.yaml.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: flux-mcp
+spec:
+  groupRef:
+    name: mcp-tools
+  image: ghcr.io/controlplaneio-fluxcd/flux-operator-mcp:v0.60.0@sha256:9940c2c46c1bff5af3827cb76f28a1ff347ea8141ed1af42e66ffbd79e8c4bdb
+  transport: streamable-http
+  proxyMode: streamable-http
+  proxyPort: 8080
+  mcpPort: 8000
+  serviceAccount: flux-mcp
+  audit:
+    enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: mcp
+          args: ["serve", "--transport=http", "--port=8000", "--read-only", "--mask-secrets"]
+          env:
+            - name: RUNTIME_NAMESPACE
+              value: flux-system

@@ -1,0 +1,47 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcpserver_v1beta1.json
+# Overseerr / Seerr requests for agents ("request Dune 2", "what is pending"),
+# after joryirving/home-ops. The npm package is pinned; Jory's floats.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: seerr-mcp
+spec:
+  groupRef:
+    name: mcp-tools
+  image: docker.io/node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+  transport: stdio
+  proxyMode: streamable-http
+  proxyPort: 8080
+  backendReplicas: 1
+  audit:
+    enabled: true
+  env:
+    - name: HOME
+      value: /tmp
+    - name: NPM_CONFIG_CACHE
+      value: /tmp/.npm
+    - name: SEERR_URL
+      value: http://overseerr.media.svc.cluster.local:5055
+  secrets:
+    - name: toolhive-seerr
+      key: SEERR_API_KEY
+      targetEnvName: SEERR_API_KEY
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 384Mi
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: mcp
+          command: ["npx"]
+          args: ["-y", "@jhomen368/overseerr-mcp@2.3.1"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

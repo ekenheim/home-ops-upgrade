@@ -1,0 +1,10 @@
+---
+# One group for every in-namespace MCP server; the mcp-gateway VirtualMCPServer
+# (../gateway) aggregates it behind a single endpoint. Lives here, with the
+# operator, so it exists before any server that references it.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPGroup
+metadata:
+  name: mcp-tools
+spec:
+  description: Homelab tools for agents, served through mcp-gateway

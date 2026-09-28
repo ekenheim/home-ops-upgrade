@@ -1,0 +1,13 @@
+---
+# toolhive's mcp-gateway optimizer: embeddings only.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: toolhive
+spec:
+  proxyRef: litellm-admin
+  keyAlias: toolhive
+  secretName: litellm-key-toolhive
+  secretKey: api-key
+  models:
+    - qwen3-embedding-0.6b

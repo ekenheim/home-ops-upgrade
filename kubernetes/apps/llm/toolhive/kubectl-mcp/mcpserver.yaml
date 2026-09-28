@@ -1,0 +1,35 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcpserver_v1beta1.json
+# kubectl-mcp-server in --read-only mode on a ServiceAccount that cannot read
+# Secrets (rbac.yaml). Lets agents inspect pods, events, logs and any CR.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: kubectl-mcp
+spec:
+  groupRef:
+    name: mcp-tools
+  image: docker.io/rohitghumare64/kubectl-mcp-server:1.24.0@sha256:17134e36a3e1d3a5e457c12d61e8c7f7c52a7927c6ae4250131dfd95a74a2331
+  transport: streamable-http
+  proxyMode: streamable-http
+  proxyPort: 8080
+  mcpPort: 8000
+  serviceAccount: kubectl-mcp
+  audit:
+    enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: mcp
+          args: ["--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8000", "--read-only"]
+          env:
+            - name: MCP_K8S_PROVIDER
+              value: in-cluster
+            - name: PYTHONUNBUFFERED
+              value: "1"

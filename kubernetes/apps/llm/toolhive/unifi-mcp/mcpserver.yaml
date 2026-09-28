@@ -1,0 +1,59 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcpserver_v1beta1.json
+# sirkirby/unifi-network-mcp: clients, devices, WLANs, firewall and traffic
+# stats for agents, after joryirving/home-ops. Read-only twice over: the
+# UniFi account is UnPoller's read-only one, and every policy write is off.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: unifi-mcp
+spec:
+  groupRef:
+    name: mcp-tools
+  image: ghcr.io/sirkirby/unifi-network-mcp:0.35.0@sha256:6e698b8ff8d199bb4d5e48287431158d1004c00f7ae36c15ee8bd157a6c896af
+  transport: streamable-http
+  mcpPort: 3000
+  audit:
+    enabled: true
+  env:
+    - name: UNIFI_NETWORK_HOST
+      value: 192.168.1.1
+    - name: UNIFI_NETWORK_SITE
+      value: default
+    - name: UNIFI_NETWORK_VERIFY_SSL
+      value: "false"
+    - name: UNIFI_MCP_HTTP_ENABLED
+      value: "true"
+    - name: UNIFI_MCP_HTTP_TRANSPORT
+      value: streamable-http
+    - name: UNIFI_MCP_HOST
+      value: 0.0.0.0
+    - name: UNIFI_MCP_PORT
+      value: "3000"
+    # toolhive's proxy is another pod; the rebinding check would 403 it
+    # (same failure as grafana-mcp's Host allowlist).
+    - name: UNIFI_MCP_ENABLE_DNS_REBINDING_PROTECTION
+      value: "false"
+    - name: UNIFI_TOOL_REGISTRATION_MODE
+      value: meta_only
+    - name: UNIFI_POLICY_CREATE
+      value: "false"
+    - name: UNIFI_POLICY_UPDATE
+      value: "false"
+    - name: UNIFI_POLICY_DELETE
+      value: "false"
+    - name: UNIFI_TOOL_PERMISSION_MODE
+      value: confirm
+  secrets:
+    - name: toolhive-unifi-username
+      key: UNIFI_NETWORK_USERNAME
+      targetEnvName: UNIFI_NETWORK_USERNAME
+    - name: toolhive-unifi-password
+      key: UNIFI_NETWORK_PASSWORD
+      targetEnvName: UNIFI_NETWORK_PASSWORD
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi

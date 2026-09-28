@@ -357,10 +357,11 @@ data:
           input_cost_per_token: 3.0e-07
           output_cost_per_token: 1.2e-06
         litellm_params:
-          # The Anthropic-compatible endpoint is the one that honours prompt
-          # caching on the plan.
+          # litellm's minimax/ provider speaks MiniMax's OpenAI-style API, so
+          # the base is /v1. Jory's .../anthropic/v1/messages (and /anthropic,
+          # /anthropic/v1) all 404 through it -- tested 2026-09-28 on v1.103.0.
           model: minimax/MiniMax-M3
-          api_base: https://api.minimax.io/anthropic/v1/messages
+          api_base: https://api.minimax.io/v1
           api_key: os.environ/MINIMAX_API_KEY
           cache_control_injection_points:
             - location: message

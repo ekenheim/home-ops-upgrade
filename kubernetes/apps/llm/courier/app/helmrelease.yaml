@@ -1,0 +1,52 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: courier
+spec:
+  # misospace/courier, after joryirving/home-ops: replaces foreman as the
+  # worker behind dispatch. It polls dispatch's `normal` queue (aliased to the
+  # `local` lane), starts one CoderRun pod per claimed issue, and in it an
+  # OpenCode coordinator plans, delegates to model sub-agents, pushes a
+  # courier/... branch, opens a PR and drives CI green. It never merges.
+  # Red CI or a changes-requested review queues a fix run (5 attempts, then
+  # needs-human).
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: courier
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      main:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          main:
+            args:
+              - --leader-elect
+              - --git-remote-template=https://github.com/%s.git
+              - --git-credential-secret=courier-github
+              - --executor-environment-secret=courier-executor
+    dispatch:
+      enabled: true
+      agentName: courier
+      baseURL: http://dispatch.llm.svc.cluster.local:3000
+      laneProfile: local
+      pollInterval: 30s
+      queueLane: normal
+      tokenSecret:
+        name: courier-dispatch
+        key: token
+    executor:
+      mcp:
+        # GitHub's hosted MCP: the coordinator's forge tools (issues, PRs,
+        # comments), authenticated with GITHUB_TOKEN from courier-executor.
+        githubURL: https://api.githubcopilot.com/mcp/

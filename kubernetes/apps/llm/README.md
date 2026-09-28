@@ -7,7 +7,7 @@ lives here.
 
 | App | Role |
 | --- | --- |
-| `litellm-operator` | **New.** Renders LiteLLM proxy config from CRDs. Currently idle — see below. |
+| `litellm-operator` | Mints per-app LiteLLM virtual keys (`litellm/keys/`). Does NOT run the proxy — see below. |
 | `litellm` | The gateway. Still a bjw-s app-template HelmRelease + hand-written `config.yaml`. |
 | `llmkube` | llama.cpp InferenceServices (`ornith-35b`, `qwen38-27b`) on worker4's Strix Halo iGPU. |
 | `embeddings` | `qwen3-embedding-0.6b`: two llmkube InferenceServices on CPU (llama.cpp) for memini and hindsight, layout after joryirving/home-ops. Replaced `ollama-igpu`, then bge-m3, 2026-09-18. |
@@ -24,7 +24,18 @@ lives here.
 | `ai-marketplace-monitor` | Facebook Marketplace watcher, listings rated by `fast`. UI at `marketplace.<domain>`, login = the Facebook credentials. No notifier wired yet. |
 | `foreman`, `dispatch` | The agentic coding loop. |
 
-## litellm-operator is installed but drives nothing
+## litellm-operator mints keys, but does not run the proxy
+
+Since 2026-09-28 (kubernetes/apps/llm/PLATFORM-PLAN.md) the operator's only job is
+`LiteLLMVirtualKey`: `litellm/keys/admin.yaml` is a zero-replica `LiteLLMProxy`
+whose `apiAccess.endpoint` points at the real proxy, and each app gets a
+`LiteLLMVirtualKey` there that lands as Secret `litellm-key-<app>`. The proxy
+stays the app-template HelmRelease below, because the operator's Deployment has
+no `strategy` or startup probe and ours needs both (single-writer ChatGPT
+grant, device login at startup). The pools live in `litellm/app/configmap.yaml`.
+
+The rest of this section predates that and is kept for the history.
+
 
 The chart ships six CRDs (`LiteLLMProxy`, `LiteLLMModel`, `LiteLLMVirtualKey`,
 `LiteLLMTeam`, `LiteLLMGuardrail`, `LiteLLMMCPServer`) and the operator reconciles

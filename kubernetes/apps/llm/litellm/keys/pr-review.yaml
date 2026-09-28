@@ -1,0 +1,22 @@
+---
+# GitHub Actions PR reviewer (.github/workflows/pr-review.yaml). The repo is
+# public, so diffs may go to the cloud plans. The Secret is copied to the
+# repo's Actions secrets as LITELLM_PR_REVIEW_API_KEY by hand:
+#   kubectl -n llm get secret litellm-key-pr-review -o jsonpath='{.data.api-key}' \
+#     | base64 -d | gh secret set LITELLM_PR_REVIEW_API_KEY
+# Re-run that if this CR is ever recreated (a new key is minted).
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: pr-review
+spec:
+  proxyRef: litellm-admin
+  keyAlias: pr-review
+  secretName: litellm-key-pr-review
+  secretKey: api-key
+  models:
+    - reasoning-pool
+    - implementation-pool
+    - local-pool
+    - local-pool-chat
+    - MiniMax-M3-chat

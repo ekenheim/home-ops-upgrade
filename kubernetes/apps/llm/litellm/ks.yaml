@@ -29,3 +29,36 @@ spec:
   postBuild:
     substitute:
       APP: *app
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app litellm-keys
+  namespace: flux-system
+spec:
+  # Per-app virtual keys, minted by litellm-operator through the admin API of
+  # the proxy above into Secrets named litellm-key-<app>. See keys/admin.yaml.
+  #
+  # Separate from `litellm` on purpose: a key that fails to mint (proxy
+  # restarting, master key rotated) must not mark the gateway itself unready,
+  # and eight apps dependOn `litellm`. Apps that consume one of these Secrets
+  # dependOn `litellm-keys` instead.
+  path: ./kubernetes/apps/llm/litellm/keys
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  targetNamespace: llm
+  # The operator deletes the remote key when a LiteLLMVirtualKey goes away, so
+  # pruning a CR here revokes that app's key. That is the intent.
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  dependsOn:
+    - name: litellm
+    - name: litellm-operator
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m

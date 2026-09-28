@@ -307,6 +307,344 @@ data:
         litellm_params:
           model: chatgpt/gpt-5.5
 
+      # === Cloud plans and ordered pools (kubernetes/apps/llm/PLATFORM-PLAN.md) ===
+      #
+      # Layout after joryirving/home-ops. Flat-rate coding plans, each capped
+      # on a rolling window, sit behind pool aliases so a cap-out moves to the
+      # next rung instead of failing the caller.
+      #
+      # `order:` is litellm's own failover: within one model_name, lower order
+      # is tried first, and once retries are exhausted litellm synthesises a
+      # fallback to the next order. No `fallbacks:` entry is needed for that.
+      # Fallbacks fire on ANY exception, so a 401 from a rung whose key is not
+      # in Bitwarden yet just moves on -- the pools work, one rung short, before
+      # every plan is bought.
+      #
+      # Cap-out signals differ: MiniMax and Z.AI send 429, Kimi sends 403
+      # (retried, never cooled down -- order-based fallback is what advances),
+      # ChatGPT sends 429 as a bare HTML page.
+      #
+      # The chatgpt/ rungs only work for STREAMING callers: litellm v1.103.0
+      # still defaults stream=False on the chatgpt chat bridge and the Codex
+      # backend only speaks SSE (see the `chatgpt` block above). A
+      # non-streaming caller fails that rung and falls through to the next.
+      #
+      # PRIVACY: MiniMax, Kimi and Z.AI are China-based. The pools are opt-in
+      # by alias; nothing that carries email, finance or home data may use
+      # them. The local aliases above never fall back to a cloud rung.
+      #
+      # NEVER share a model_info block between rungs with a YAML anchor/alias.
+      # PyYAML returns the SAME dict for every alias, litellm stamps its
+      # deployment id into model_info, and every rung ends up with the last
+      # rung's id: the pool silently collapses to one deployment (found
+      # 2026-09-28 testing this block -- reasoning-pool went straight to
+      # Ornith and cooled itself down). `<<:` merges on litellm_params are
+      # fine, they build a new dict.
+      #
+      # input/output costs are the providers' list prices, so the LiteLLM UI
+      # shows what the traffic would have cost pay-per-use. The plans are flat;
+      # this is not what is billed.
+
+      # --- Direct aliases, one per upstream model ---
+      - model_name: MiniMax-M3
+        model_info:
+          mode: chat
+          max_input_tokens: 1000000
+          max_output_tokens: 131072
+          supports_function_calling: true
+          supports_prompt_caching: true
+          supports_vision: true
+          input_cost_per_token: 3.0e-07
+          output_cost_per_token: 1.2e-06
+        litellm_params:
+          # The Anthropic-compatible endpoint is the one that honours prompt
+          # caching on the plan.
+          model: minimax/MiniMax-M3
+          api_base: https://api.minimax.io/anthropic/v1/messages
+          api_key: os.environ/MINIMAX_API_KEY
+          cache_control_injection_points:
+            - location: message
+              role: system
+            - location: message
+              index: -1
+      # Same model on MiniMax's OpenAI-compatible endpoint: the terminal
+      # fallback for the local pools, where callers speak chat completions.
+      - model_name: MiniMax-M3-chat
+        model_info:
+          mode: chat
+          max_input_tokens: 1000000
+          max_output_tokens: 131072
+          supports_function_calling: true
+          input_cost_per_token: 3.0e-07
+          output_cost_per_token: 1.2e-06
+        litellm_params:
+          model: openai/MiniMax-M3
+          api_base: https://api.minimax.io/v1
+          api_key: os.environ/MINIMAX_API_KEY
+      - model_name: MiniMax-M2.7
+        model_info:
+          mode: chat
+          max_input_tokens: 204800
+          max_output_tokens: 131072
+          supports_function_calling: true
+          supports_prompt_caching: true
+          input_cost_per_token: 3.0e-07
+          output_cost_per_token: 1.2e-06
+        litellm_params:
+          model: openai/MiniMax-M2.7
+          api_base: https://api.minimax.io/v1
+          api_key: os.environ/MINIMAX_API_KEY
+      - model_name: kimi-k2.7
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          max_output_tokens: 32768
+          supports_function_calling: true
+          supports_prompt_caching: true
+          supports_vision: true
+          input_cost_per_token: 9.5e-07
+          output_cost_per_token: 4.0e-06
+        litellm_params: &kimi-k27
+          model: openai/kimi-for-coding
+          api_base: https://api.kimi.com/coding/v1
+          api_key: os.environ/KIMI_CODE_API_KEY
+          # The coding endpoint rejects sampling overrides.
+          additional_drop_params:
+            - frequency_penalty
+            - n
+            - presence_penalty
+            - reasoning_effort
+            - temperature
+            - thinking
+            - top_p
+      - model_name: kimi-k3
+        model_info:
+          mode: chat
+          max_input_tokens: 1048576
+          max_output_tokens: 131072
+          supports_function_calling: true
+          supports_prompt_caching: true
+          supports_vision: true
+          input_cost_per_token: 3.0e-06
+          output_cost_per_token: 1.5e-05
+        litellm_params: &kimi-k3
+          model: openai/k3
+          api_base: https://api.kimi.com/coding/v1
+          api_key: os.environ/KIMI_CODE_API_KEY
+          # K3 takes reasoning_effort; K2.7 does not.
+          additional_drop_params:
+            - frequency_penalty
+            - n
+            - presence_penalty
+            - temperature
+            - thinking
+            - top_p
+      - model_name: glm-5.3
+        model_info:
+          mode: chat
+          max_input_tokens: 1000000
+          max_output_tokens: 131072
+          supports_function_calling: true
+          supports_prompt_caching: true
+          input_cost_per_token: 1.4e-06
+          output_cost_per_token: 4.4e-06
+        litellm_params: &glm-53
+          model: openai/glm-5.3
+          api_base: https://api.z.ai/api/coding/paas/v4
+          api_key: os.environ/ZAI_API_KEY
+          allowed_openai_params:
+            - reasoning_effort
+      - model_name: glm-5.3-flash
+        model_info:
+          mode: chat
+          max_input_tokens: 1000000
+          max_output_tokens: 131072
+          supports_function_calling: true
+          supports_prompt_caching: true
+          supports_vision: true
+          input_cost_per_token: 1.5e-07
+          output_cost_per_token: 5.0e-07
+        litellm_params: &glm-53-flash
+          model: openai/glm-5.3-flash
+          api_base: https://api.z.ai/api/coding/paas/v4
+          api_key: os.environ/ZAI_API_KEY
+          allowed_openai_params:
+            - reasoning_effort
+
+      # --- frontier-pool: hard problems ---
+      # No local floor on purpose: once every plan has rejected the request it
+      # fails, rather than quietly answering with a much weaker model. Use
+      # reasoning-pool when a weaker answer is acceptable.
+      # Window = smallest rung (gpt-5.6-sol advertises 272k over Codex).
+      - model_name: frontier-pool
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          <<: *kimi-k3
+          order: 1
+      - model_name: frontier-pool
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          model: chatgpt/gpt-5.6-sol
+          additional_drop_params: [temperature]
+          order: 2
+      - model_name: frontier-pool
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          <<: *glm-53
+          order: 3
+
+      # --- reasoning-pool: planning ---
+      # MiniMax-M3 is the flat-plan floor, Ornith the free one. Kimi K2.7's
+      # 262k window is the pool's ceiling.
+      - model_name: reasoning-pool
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          <<: *kimi-k27
+          order: 1
+      - model_name: reasoning-pool
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          model: chatgpt/gpt-5.6-terra
+          additional_drop_params: [temperature]
+          order: 2
+      - model_name: reasoning-pool
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          <<: *glm-53-flash
+          order: 3
+      - model_name: reasoning-pool
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          model: openai/MiniMax-M3
+          api_base: https://api.minimax.io/v1
+          api_key: os.environ/MINIMAX_API_KEY
+          order: 4
+      - model_name: reasoning-pool
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          model: openai/ornith-35b
+          api_base: http://ornith-35b.llm:8080/v1
+          api_key: none
+          order: 5
+
+      # --- implementation-pool: carrying out a plan (the coder role) ---
+      # Jory's coder is a 27B on a 3090; we have no such card, so the coder
+      # runs cloud-first. MiniMax leads because its plan has the most prompts
+      # per window (300 / 5h) and a coder run is 50-200 calls. Window =
+      # MiniMax-M2.7's 204800.
+      - model_name: implementation-pool
+        model_info:
+          mode: chat
+          max_input_tokens: 204800
+          supports_function_calling: true
+        litellm_params:
+          model: openai/MiniMax-M2.7
+          api_base: https://api.minimax.io/v1
+          api_key: os.environ/MINIMAX_API_KEY
+          order: 1
+      - model_name: implementation-pool
+        model_info:
+          mode: chat
+          max_input_tokens: 204800
+          supports_function_calling: true
+        litellm_params:
+          model: chatgpt/gpt-5.6-luna
+          additional_drop_params: [temperature]
+          order: 2
+      - model_name: implementation-pool
+        model_info:
+          mode: chat
+          max_input_tokens: 204800
+          supports_function_calling: true
+        litellm_params:
+          model: openai/ornith-35b
+          api_base: http://ornith-35b.llm:8080/v1
+          api_key: none
+          order: 3
+
+      # --- local-pool / local-pool-chat: worker4 first ---
+      # Same Ornith server behind two doors, like self-hosted/fast: the bare
+      # name thinks, -chat does not. Unlike self-hosted, these fall back to
+      # MiniMax-M3-chat (router_settings.fallbacks) when worker4 is down, so
+      # only point work that may leave the house at them.
+      - model_name: local-pool
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          model: openai/ornith-35b
+          api_base: http://ornith-35b.llm:8080/v1
+          api_key: none
+      - model_name: local-pool-chat
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          model: openai/ornith-35b
+          api_base: http://ornith-35b.llm:8080/v1
+          api_key: none
+          chat_template_kwargs:
+            enable_thinking: false
+
+      # --- auto: classifier routing for interactive clients only ---
+      # LLM classifier on `fast` (local, free, in every request's path). It
+      # never routes to frontier-pool, so it cannot eat the capped plans that
+      # interactive sessions pick by hand. REASONING folds into COMPLEX: no
+      # classifier Jory tried could separate them.
+      - model_name: auto
+        litellm_params:
+          model: auto_router/complexity_router
+          complexity_router_default_model: MiniMax-M3-chat
+          complexity_router_config:
+            tiers:
+              SIMPLE: local-pool-chat
+              MEDIUM: MiniMax-M3-chat
+              COMPLEX: reasoning-pool
+              REASONING: reasoning-pool
+            classifier_type: llm
+            classifier_llm_config:
+              model: fast
+              timeout_ms: 20000
+            classifier_fallback: default_model
+            session_affinity: true
+            session_affinity_ttl_seconds: 3600
+
       # --- Embeddings: Qwen3-Embedding-0.6B on the `embeddings` app ---
       # The only embedding model: two llmkube InferenceServices (llama.cpp,
       # CPU), balanced here by sharing one model_name. It replaced bge-m3 on
@@ -424,6 +762,10 @@ data:
         # asked for. Acceptable for cron work; check the litellm logs before
         # concluding `deep` produced a given output.
         - deep: ["self-hosted"]
+        # The local pools' cloud floor, for when worker4 is down. The
+        # classic local aliases above deliberately have none.
+        - local-pool: ["MiniMax-M3-chat"]
+        - local-pool-chat: ["MiniMax-M3-chat"]
 
     litellm_settings:
       drop_params: true

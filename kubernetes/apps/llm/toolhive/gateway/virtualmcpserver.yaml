@@ -28,7 +28,9 @@ spec:
       embeddingProvider: openai
       embeddingService: http://litellm.llm.svc.cluster.local:4000/v1
       embeddingModel: qwen3-embedding-0.6b
-      embeddingServiceTimeout: 180s
+      # The CPU embedder needs minutes to index a few hundred tool
+      # descriptions; at 180s the first session was dropped mid-index.
+      embeddingServiceTimeout: 600s
   podTemplateSpec:
     spec:
       containers:

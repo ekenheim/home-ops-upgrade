@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+# On-demand Renovate for the self-hosted renovate-operator (kube-tools),
+# after joryirving/home-ops. Ticking a checkbox on the Renovate Dashboard issue
+# or on a Renovate PR ("rebase/retry") is an edit event; this asks the
+# operator for an immediate run instead of waiting for the hourly schedule.
+#
+# Jory exposes the operator's webhook server publicly and lets GitHub call
+# it. Here it stays cluster-internal and this job, on the in-cluster runners,
+# calls the Service instead -- nothing new is reachable from the internet.
+name: Renovate Trigger
+
+on:
+  issues:
+    types: [edited]
+  pull_request:
+    types: [edited]
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  trigger:
+    name: Trigger Renovate
+    # Human edits only (Renovate's own dashboard rewrites are bot edits), on
+    # the dashboard issue or a same-repo renovate/* PR.
+    if: >-
+      ${{ github.event.sender.type != 'Bot'
+          && ((github.event_name == 'issues'
+                && contains(github.event.issue.title, 'Renovate Dashboard'))
+              || (github.event_name == 'pull_request'
+                && startsWith(github.event.pull_request.head.ref, 'renovate/')
+                && github.event.pull_request.head.repo.full_name == github.repository)) }}
+    runs-on: gha-runner-scale-set
+    timeout-minutes: 5
+    steps:
+      - name: Schedule a Renovate run
+        env:
+          WEBHOOK: http://renovate-operator.kube-tools.svc.cluster.local:8082
+          JOB: home-ops
+          NAMESPACE: kube-tools
+        run: |
+          project="$(printf '%s' "${GITHUB_REPOSITORY}" | jq -Rr @uri)"
+          curl -fsS -X POST \
+            "${WEBHOOK}/webhook/v1/schedule?job=${JOB}&namespace=${NAMESPACE}&project=${project}"
+          echo "Renovate run scheduled for ${GITHUB_REPOSITORY}"

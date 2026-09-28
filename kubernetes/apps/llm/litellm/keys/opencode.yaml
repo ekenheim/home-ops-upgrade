@@ -1,0 +1,45 @@
+---
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: opencode
+spec:
+  proxyRef: litellm-admin
+  keyAlias: opencode
+  secretName: litellm-key-opencode
+  secretKey: api-key
+  models:
+    - auto
+    - self-hosted
+    - fast
+    - chatgpt
+    - local-pool
+    - local-pool-chat
+    - reasoning-pool
+    - implementation-pool
+    - frontier-pool
+    - MiniMax-M3-chat
+    - MiniMax-M2.7
+---
+# Zed (or any editor) on your workstation. Reaches litellm through its
+# internal route: https://litellm.${SECRET_DOMAIN}/v1. Read the key with:
+#   kubectl -n llm get secret litellm-key-zed -o jsonpath='{.data.api-key}' | base64 -d
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: zed
+spec:
+  proxyRef: litellm-admin
+  keyAlias: zed
+  secretName: litellm-key-zed
+  secretKey: api-key
+  models:
+    - auto
+    - self-hosted
+    - fast
+    - chatgpt
+    - reasoning-pool
+    - implementation-pool
+    - frontier-pool
+    - MiniMax-M3-chat
+    - MiniMax-M2.7

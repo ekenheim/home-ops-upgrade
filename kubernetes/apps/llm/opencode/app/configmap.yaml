@@ -1,0 +1,110 @@
+---
+# OpenCode server config, after joryirving/home-ops, adapted to no-3090:
+# the coder lane is implementation-pool (cloud first) and the local lanes are
+# Ornith on worker4. $${VAR} is escaped for Flux postBuild; the shell and
+# opencode see a single-dollar placeholder.
+#
+# Default model is `auto` (litellm's classifier: simple -> local, medium ->
+# MiniMax, complex -> reasoning-pool). For anything private use the
+# coordinator-local agent: every lane it touches is on worker4.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opencode-config
+data:
+  entrypoint.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    git config --global user.name "ekenheim"
+    git config --global user.email "3757577+ekenheim@users.noreply.github.com"
+    git config --global init.defaultBranch main
+    git config --global credential.helper store
+    git config --global --add safe.directory '*'
+    umask 077
+    printf 'https://x-access-token:%s@github.com\n' "$${GITHUB_TOKEN}" > "$${HOME}/.git-credentials"
+    umask 022
+    mkdir -p "$${HOME}/projects"
+    if [[ ! -d "$${HOME}/projects/home-ops-upgrade/.git" ]]; then
+      git clone --filter=blob:none https://github.com/ekenheim/home-ops-upgrade.git "$${HOME}/projects/home-ops-upgrade" \
+        || echo "WARN: home-ops clone failed; clone it from a session instead"
+    fi
+    cd "$${HOME}/projects"
+    exec opencode serve --hostname 0.0.0.0 --port 4096
+  opencode.json: |
+    {
+      "$schema": "https://opencode.ai/config.json",
+      "model": "litellm/auto",
+      "permission": "allow",
+      "compaction": { "auto": true, "keep": { "tokens": 20000 }, "buffer": 16384 },
+      "tool_output": { "max_lines": 800, "max_bytes": 16384 },
+      "plugins": [
+        { "package": "@eleboucher/opencode-memini-v2@0.7.32", "options": { "base_url": "http://memini.llm.svc.cluster.local:8080", "namespace": "opencode", "auto_update": false } }
+      ],
+      "enabled_providers": ["litellm"],
+      "agent": {
+        "coordinator": {
+          "description": "Reasoning coordinator: plans, then delegates legwork to explorer / implementer / reviewer subagents.",
+          "mode": "primary",
+          "model": "litellm/reasoning-pool",
+          "prompt": "You are a coordinator. Do the high-level reasoning and synthesis yourself; delegate the legwork to subagents via the task tool: explorer for recon and 'where/how is X', implementer for multi-file edits of a settled plan, reviewer for an adversarial pass over a finished diff. Give each subagent a self-contained brief (goal, files, constraints, what to return). Read AGENTS.md in the repository first; it is the standard. Never push to the default branch or merge."
+        },
+        "coordinator-local": {
+          "description": "Local-only coordinator on Ornith (worker4). Use for anything private: no lane it uses leaves the house.",
+          "mode": "primary",
+          "model": "litellm/self-hosted",
+          "prompt": "You are a LOCAL-ONLY coordinator. Plan, delegate edits and recon to agentic-local, integrate and verify. Never delegate to explorer, implementer or reviewer: they run on cloud plans. Read AGENTS.md first. Never push to the default branch or merge."
+        },
+        "explorer": {
+          "description": "Recon: codebase scouting, search, 'where/how is X', read-only. MiniMax M2.7 (flat-rate plan).",
+          "mode": "subagent",
+          "model": "litellm/MiniMax-M2.7"
+        },
+        "implementer": {
+          "description": "Carrying out a settled plan: multi-file edits. implementation-pool (MiniMax M2.7 -> ChatGPT luna -> Ornith).",
+          "mode": "subagent",
+          "model": "litellm/implementation-pool"
+        },
+        "agentic-local": {
+          "description": "Local lane on Ornith (worker4, 262k, vision). Free, private, slower. The only subagent coordinator-local may use.",
+          "mode": "subagent",
+          "model": "litellm/self-hosted"
+        },
+        "reviewer": {
+          "description": "Independent adversarial review of a finished diff. MiniMax M3 (flat-rate, 1M context).",
+          "mode": "subagent",
+          "model": "litellm/MiniMax-M3-chat",
+          "prompt": "You are an ADVERSARIAL reviewer. Assume the change is wrong and prove it: find the concrete input or state that breaks it, the missed caller, the violated repository convention (AGENTS.md). Report only defects you can point at, most severe first. Agreement adds nothing."
+        }
+      },
+      "provider": {
+        "litellm": {
+          "npm": "@ai-sdk/openai-compatible",
+          "name": "LiteLLM",
+          "options": {
+            "baseURL": "http://litellm.llm.svc.cluster.local:4000/v1",
+            "apiKey": "{env:LITELLM_API_KEY}",
+            "timeout": 1800000
+          },
+          "models": {
+            "auto": { "name": "Auto (classifier router)", "limit": { "context": 262144, "output": 16384 } },
+            "self-hosted": { "name": "Ornith 35B (worker4, thinking)", "limit": { "context": 262144, "output": 32768 } },
+            "fast": { "name": "Ornith 35B (worker4, no thinking)", "limit": { "context": 262144, "output": 16384 } },
+            "chatgpt": { "name": "ChatGPT gpt-5.5 (subscription)", "limit": { "context": 272000, "output": 128000 } },
+            "local-pool": { "name": "Local pool (Ornith -> MiniMax)", "limit": { "context": 262144, "output": 32768 } },
+            "local-pool-chat": { "name": "Local pool, no thinking", "limit": { "context": 262144, "output": 16384 } },
+            "reasoning-pool": { "name": "Reasoning pool", "limit": { "context": 262144, "output": 32768 } },
+            "implementation-pool": { "name": "Implementation pool", "limit": { "context": 204800, "output": 32768 } },
+            "frontier-pool": { "name": "Frontier pool", "limit": { "context": 262144, "output": 32768 } },
+            "MiniMax-M3-chat": { "name": "MiniMax M3 (plan)", "limit": { "context": 1000000, "output": 16384 } },
+            "MiniMax-M2.7": { "name": "MiniMax M2.7 (plan)", "limit": { "context": 204800, "output": 32768 } }
+          }
+        }
+      },
+      "mcp": {
+        "toolhive": {
+          "type": "remote",
+          "url": "http://vmcp-mcp-gateway.llm.svc.cluster.local:4483/mcp",
+          "enabled": true
+        }
+      }
+    }

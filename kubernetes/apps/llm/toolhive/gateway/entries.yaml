@@ -1,0 +1,25 @@
+---
+# Servers outside `llm` join the group by URL: MCPGroup membership is
+# namespace-local, so arr (downloads) and grafana (observability) are
+# MCPServerEntries pointing at their toolhive proxies.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServerEntry
+metadata:
+  name: arr
+spec:
+  groupRef:
+    name: mcp-tools
+  remoteUrl: http://mcp-arr-proxy.downloads.svc.cluster.local:8080/mcp
+  transport: streamable-http
+  allowPrivateEndpoint: true
+---
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServerEntry
+metadata:
+  name: grafana
+spec:
+  groupRef:
+    name: mcp-tools
+  remoteUrl: http://mcp-grafana-mcp-proxy.observability.svc.cluster.local:8080/mcp
+  transport: streamable-http
+  allowPrivateEndpoint: true

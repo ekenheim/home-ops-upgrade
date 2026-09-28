@@ -20,6 +20,14 @@ spec:
     - --address
     - 0.0.0.0:8000
     - --disable-write
+    # mcp-grafana >= 1.6 rejects any Host header that is not loopback
+    # (DNS-rebinding protection), and toolhive's proxy is a different pod, so
+    # without this every request -- including toolhive's own initialize --
+    # gets 403 while the MCPServer still reports Ready. Exact matches only, no
+    # wildcards: the service and headless-service names in every DNS form.
+    - --allowed-hosts
+    # yamllint disable-line rule:line-length
+    - localhost:8000,127.0.0.1:8000,mcp-grafana-mcp:8000,mcp-grafana-mcp.observability:8000,mcp-grafana-mcp.observability.svc:8000,mcp-grafana-mcp.observability.svc.cluster.local:8000,mcp-grafana-mcp-headless:8000,mcp-grafana-mcp-headless.observability:8000,mcp-grafana-mcp-headless.observability.svc:8000,mcp-grafana-mcp-headless.observability.svc.cluster.local:8000,grafana-mcp-0.mcp-grafana-mcp-headless.observability.svc.cluster.local:8000
   env:
     - name: GRAFANA_URL
       value: http://grafana.observability.svc.cluster.local

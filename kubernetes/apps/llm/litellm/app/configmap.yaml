@@ -676,6 +676,23 @@ data:
           api_base: http://embed-2.llm:8080/v1
           api_key: none
 
+      # --- Rerank: memini's recall reranker ---
+      # hindsight's CPU text-embeddings-inference sidecar (ms-marco MiniLM
+      # cross-encoder), reused rather than adding Jory's three 8Gi reranker
+      # pods. TEI speaks its own /rerank shape (query + texts); memini speaks
+      # Cohere's (query + documents), and litellm's huggingface/ provider
+      # translates -- verified 2026-09-28 against the live TEI pod.
+      # English-only and 512-token (TEI runs --auto-truncate). If hindsight
+      # is ever removed, this backend goes with it; memini then recalls
+      # without reranking.
+      - model_name: rerank
+        model_info:
+          mode: rerank
+        litellm_params:
+          model: huggingface/cross-encoder/ms-marco-MiniLM-L-6-v2
+          api_base: http://hindsight-tei-reranker.llm.svc.cluster.local:8090
+          api_key: none
+
       # --- Cloud providers (placeholders) ---
       # Add the matching keys to the `litellm` Bitwarden item + externalsecret,
       # then uncomment. See jory's repo for the full reference set.

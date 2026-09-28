@@ -121,7 +121,17 @@ data:
                 // "*", not the server ID: OpenClaw substitutes env vars in
                 // VALUES only, so a placeholder key stays literal and the
                 // guild never resolves. Still locked to the admin via users.
-                "*": { users: ["$${DISCORD_ADMIN_USER_ID}"] },
+                // Only #openclaw. With groupPolicy "allowlist", a channel
+                // missing from this map is ignored entirely, so the bot cannot
+                // answer (or be summoned) anywhere else in the server. DMs
+                // from the admin are unaffected (dmPolicy/allowFrom).
+                // requireMention false: in its own channel you can just talk.
+                "*": {
+                  users: ["$${DISCORD_ADMIN_USER_ID}"],
+                  channels: {
+                    openclaw: { enabled: true, requireMention: false },
+                  },
+                },
               },
             },
           },

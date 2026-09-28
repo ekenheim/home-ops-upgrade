@@ -92,13 +92,14 @@ spec:
         # On 2026-09-17 it returned gpt-6-astra, gpt-5.6-{sol,terra,luna},
         # gpt-5.5, gpt-reserve, codex-auto-review. luna is the light tier
         # (litellm prices it at $0.20/M in) and carries the high-volume
-        # per-turn fact extraction; reflect (query-time synthesis) gets 5.5.
+        # per-turn fact extraction; reflect (query-time synthesis) gets 5.6-sol
+        # (was 5.5 until 2026-09-28; sol is its like-for-like successor).
         HINDSIGHT_API_LLM_MODEL: gpt-5.6-luna
         HINDSIGHT_API_REFLECT_LLM_PROVIDER: openai-codex
-        HINDSIGHT_API_REFLECT_LLM_MODEL: gpt-5.5
+        HINDSIGHT_API_REFLECT_LLM_MODEL: gpt-5.6-sol
         # Per-request Codex deadlines. Reflect's upstream default is 30s
         # (DEFAULT_REFLECT_LLM_TIMEOUT) and mental-model refresh inherits it;
-        # a refresh is a multi-step tool loop on gpt-5.5 that streams past
+        # a refresh is a multi-step tool loop on the reflect model that streams past
         # 30s, so every atlas-dev refresh died with CodexRunawayStreamError
         # and retried into the same wall (2026-09-28). Refresh is background
         # work: give it 5 minutes. Interactive reflect gets 120s, the general

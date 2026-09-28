@@ -299,13 +299,23 @@ data:
       # subscription shared with hermes and the codex CLI. A `deep` outage
       # must not silently start drawing it down. Anything that wants this has
       # to name `chatgpt` explicitly.
+      #
+      # 2026-09-28: gpt-5.5 -> gpt-6-astra, the new flagship on the account's
+      # Codex model list. litellm v1.103 has no registry entry for it, and
+      # with no entry the chatgpt/ provider sends chat calls to
+      # /codex/chat/completions, which Codex answers with a bare-HTML 403.
+      # `mode: responses` here is load-bearing: the router registers this
+      # model_info, which makes litellm bridge chat -> /codex/responses
+      # (verified: 403 without it, PONG with it). Streaming only, as above.
       - model_name: chatgpt
         model_info:
           mode: responses
+          max_input_tokens: 272000
+          max_output_tokens: 128000
           supports_function_calling: true
           supports_vision: true
         litellm_params:
-          model: chatgpt/gpt-5.5
+          model: chatgpt/gpt-6-astra
 
       # === Cloud plans and ordered pools (kubernetes/apps/llm/PLATFORM-PLAN.md) ===
       #
@@ -488,12 +498,15 @@ data:
           order: 1
       - model_name: frontier-pool
         model_info:
-          mode: chat
+          # responses, not chat: gpt-6-astra has no litellm registry entry,
+          # so this model_info is what routes it to /codex/responses (see the
+          # `chatgpt` alias). mode: chat here would 403 every call.
+          mode: responses
           max_input_tokens: 262144
           supports_function_calling: true
           supports_vision: true
         litellm_params:
-          model: chatgpt/gpt-5.6-sol
+          model: chatgpt/gpt-6-astra
           additional_drop_params: [temperature]
           order: 2
       - model_name: frontier-pool

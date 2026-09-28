@@ -31,7 +31,7 @@ most scheduled jobs stay on Ornith (worker4), as they do on Jory's Strix box.
 
 | Alias | Order | Policy |
 |---|---|---|
-| `frontier-pool` | Kimi K3 → ChatGPT gpt-5.6-sol → GLM-5.3 | Hard problems. No local floor: fails instead of silently getting dumber |
+| `frontier-pool` | Kimi K3 → ChatGPT gpt-6-astra → GLM-5.3 | Hard problems. No local floor: fails instead of silently getting dumber |
 | `reasoning-pool` | Kimi K2.7 → ChatGPT gpt-5.6-terra → GLM-5.3-flash → MiniMax-M3 → Ornith | Planning. MiniMax is the flat-plan floor, Ornith the free one |
 | `implementation-pool` | MiniMax-M2.7 → ChatGPT gpt-5.6-luna → Ornith | Carrying out a plan. MiniMax leads because it has the biggest prompt allowance (300 / 5h) |
 | `local-pool` / `local-pool-chat` | Ornith (thinking / no thinking) → MiniMax-M3-chat | Cheap, private-first work with a cloud fallback for when worker4 is down |

@@ -1,0 +1,180 @@
+---
+# OpenClaw gateway config (JSON5), after joryirving/home-ops, trimmed to one
+# agent. Validated with `openclaw config validate` and a gateway start on
+# the pinned image before it landed.
+#
+# Two kinds of placeholder, do not mix them up:
+#   $${VAR}           OpenClaw's own runtime env substitution. Written with
+#                     a double dollar so Flux postBuild emits a single-dollar
+#                     placeholder (an unescaped one fails the WHOLE
+#                     Kustomization, comments included).
+#   single-dollar SECRET_DOMAIN in the gateway block: substituted by Flux
+#                     from cluster-secrets.
+#
+# Models: the default is Ornith on worker4, falling back to the ChatGPT
+# subscription -- never a China-hosted plan, because this agent sees Home
+# Assistant, memory and whatever you say to it in Discord. MiniMax and the
+# pools are selectable per session (/model minimax) or per cron job for work
+# that carries nothing private.
+#
+# The init container copies this file into the PVC read-only (0400) on every
+# start, so edits made through the Control UI do not survive a restart:
+# change it here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openclaw-config
+data:
+  openclaw.json: |
+    {
+      agents: {
+        defaults: {
+          contextInjection: "continuation-skip",
+          bootstrapMaxChars: 16384,
+          bootstrapTotalMaxChars: 49152,
+          thinkingDefault: "medium",
+          timeoutSeconds: 1800,
+          model: {
+            primary: "litellm/self-hosted",
+            fallbacks: ["litellm/chatgpt"],
+          },
+          models: {
+            "litellm/self-hosted": { alias: "local", params: { cache_prompt: true } },
+            "litellm/fast": { alias: "local-fast", params: { cache_prompt: true } },
+            "litellm/chatgpt": { alias: "gpt" },
+            "litellm/local-pool": { alias: "local-pool" },
+            "litellm/local-pool-chat": { alias: "local-pool-chat" },
+            "litellm/MiniMax-M3-chat": { alias: "minimax" },
+            "litellm/MiniMax-M2.7": { alias: "minimax-old" },
+            "litellm/reasoning-pool": { alias: "reasoning" },
+            "litellm/implementation-pool": { alias: "implementation" },
+            "litellm/frontier-pool": { alias: "frontier" },
+          },
+          maxConcurrent: 2,
+          subagents: {
+            model: { primary: "litellm/fast" },
+            archiveAfterMinutes: 120,
+            maxConcurrent: 2,
+          },
+          systemAgent: { agentId: "main" },
+        },
+        entries: {
+          main: {
+            name: "Main",
+            workspace: "/home/node/.openclaw/workspace",
+            agentDir: "/home/node/.openclaw/agents/main/agent",
+          },
+        },
+      },
+      tools: {
+        elevated: { enabled: true, allowFrom: { discord: ["$${DISCORD_ADMIN_USER_ID}"] } },
+        sessions: { visibility: "all" },
+        exec: { mode: "full", strictInlineEval: false },
+        web: { search: { enabled: true, provider: "searxng" }, fetch: { enabled: true } },
+      },
+      models: {
+        providers: {
+          litellm: {
+            baseUrl: "http://litellm.llm.svc.cluster.local:4000/v1",
+            apiKey: "$${LITELLM_API_KEY}",
+            api: "openai-completions",
+            timeoutSeconds: 1800,
+            models: [
+              { id: "self-hosted", name: "Ornith 35B (worker4, thinking)", reasoning: true, input: ["text", "image"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
+              { id: "fast", name: "Ornith 35B (worker4, no thinking)", reasoning: false, input: ["text", "image"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 16384 },
+              { id: "chatgpt", name: "ChatGPT gpt-5.5 (subscription)", reasoning: true, input: ["text", "image"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 272000, maxTokens: 128000 },
+              { id: "local-pool", name: "Local pool (Ornith -> MiniMax)", reasoning: true, input: ["text", "image"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
+              { id: "local-pool-chat", name: "Local pool, no thinking", reasoning: false, input: ["text", "image"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 16384 },
+              { id: "MiniMax-M3-chat", name: "MiniMax M3 (plan)", reasoning: true, input: ["text"], cost: { input: 0.3, output: 1.2, cacheRead: 0.03, cacheWrite: 0.3 }, contextWindow: 1000000, maxTokens: 131072 },
+              { id: "MiniMax-M2.7", name: "MiniMax M2.7 (plan)", reasoning: true, input: ["text"], cost: { input: 0.3, output: 1.2, cacheRead: 0.03, cacheWrite: 0.3 }, contextWindow: 204800, maxTokens: 131072 },
+              { id: "reasoning-pool", name: "Reasoning pool", reasoning: true, input: ["text"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
+              { id: "implementation-pool", name: "Implementation pool", reasoning: true, input: ["text"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 204800, maxTokens: 32768 },
+              { id: "frontier-pool", name: "Frontier pool", reasoning: true, input: ["text", "image"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
+            ],
+          },
+        },
+      },
+      commands: {
+        native: "auto",
+        nativeSkills: "auto",
+        restart: false,
+        ownerAllowFrom: ["discord:$${DISCORD_ADMIN_USER_ID}"],
+        allowFrom: { discord: ["$${DISCORD_ADMIN_USER_ID}"] },
+      },
+      bindings: [
+        { agentId: "main", match: { channel: "discord", accountId: "*" } },
+      ],
+      channels: {
+        discord: {
+          enabled: true,
+          defaultAccount: "default",
+          actions: { messages: true, channels: true, search: true, reactions: false, stickers: false, polls: false, permissions: false, threads: false, pins: false, memberInfo: false, roleInfo: false, roles: false, channelInfo: false, voiceStatus: false, events: false, moderation: false, emojiUploads: false, stickerUploads: false },
+          streaming: { block: { enabled: false } },
+          groupPolicy: "allowlist",
+          dmPolicy: "allowlist",
+          allowFrom: ["$${DISCORD_ADMIN_USER_ID}"],
+          accounts: {
+            default: {
+              token: "$${DISCORD_BOT_TOKEN}",
+              responsePrefix: "[{model}]",
+              guilds: {
+                "$${DISCORD_SERVER_ID}": { users: ["$${DISCORD_ADMIN_USER_ID}"] },
+              },
+            },
+          },
+        },
+      },
+      plugins: {
+        allow: ["discord", "memini", "searxng", "litellm"],
+        entries: {
+          discord: { enabled: true },
+          searxng: {
+            enabled: true,
+            config: { webSearch: { baseUrl: "http://searxng.llm.svc.cluster.local:8080", language: "en" } },
+          },
+          memini: {
+            enabled: true,
+            hooks: { allowConversationAccess: true, timeouts: { before_prompt_build: 60000 } },
+            config: {
+              base_url: "http://memini.llm.svc.cluster.local:8080",
+              namespace: "openclaw",
+              namespace_per_agent: true,
+              namespace_template: "{namespace}/{agent}",
+              skip_without_agent: true,
+              skip_system_turns: true,
+              fallback_on_error: true,
+              timeout_ms: 60000,
+              recall_limit: 3,
+              min_capture_chars: 24,
+              recall_position: "append",
+              expose_tools: true,
+            },
+          },
+        },
+        slots: { memory: "memini" },
+      },
+      session: {
+        dmScope: "main",
+        reset: { mode: "idle", idleMinutes: 1440 },
+        maintenance: { mode: "enforce", pruneAfter: "7d", maxEntries: 1000, resetArchiveRetention: "7d" },
+      },
+      gateway: {
+        auth: { mode: "token", token: "$${OPENCLAW_GATEWAY_TOKEN}" },
+        controlUi: { allowedOrigins: ["https://openclaw.${SECRET_DOMAIN}"] },
+        mode: "local",
+        bind: "lan",
+        port: 18789,
+        publicOrigin: "https://openclaw.${SECRET_DOMAIN}",
+        trustedProxies: ["10.42.0.0/16"],
+      },
+      mcp: {
+        servers: {
+          "home-assistant": { url: "http://mcp-ha-mcp-proxy.llm.svc.cluster.local:8080/mcp", transport: "streamable-http", headers: { Accept: "application/json, text/event-stream" } },
+          platform: { url: "http://mcp-platform-mcp-proxy.llm.svc.cluster.local:8080/mcp", transport: "streamable-http", headers: { Accept: "application/json, text/event-stream" } },
+          wiki: { url: "http://mcp-wiki-mcp-proxy.llm.svc.cluster.local:8080/mcp", transport: "streamable-http", headers: { Accept: "application/json, text/event-stream" } },
+          context7: { url: "http://mcp-context7-proxy.llm.svc.cluster.local:8080/mcp", transport: "streamable-http", headers: { Accept: "application/json, text/event-stream" } },
+          arr: { url: "http://mcp-arr-proxy.downloads.svc.cluster.local:8080/mcp", transport: "streamable-http", headers: { Accept: "application/json, text/event-stream" } },
+        },
+      },
+      meta: { lastTouchedVersion: "2026.9.6" },
+    }

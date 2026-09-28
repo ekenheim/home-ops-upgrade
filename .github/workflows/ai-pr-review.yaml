@@ -1,0 +1,103 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+# AI review of every PR, after joryirving/home-ops (misospace/pr-reviewer-action).
+# Phase 1b of kubernetes/apps/llm/PLATFORM-PLAN.md.
+#
+# Runs on the in-cluster runners because LiteLLM is internal-only (Jory's is
+# public, so he uses ubuntu-latest). The key is the operator-minted
+# litellm-key-pr-review, copied into the LITELLM_PR_REVIEW_API_KEY Actions
+# secret (see kubernetes/apps/llm/litellm/keys/pr-review.yaml).
+#
+# It reviews against AGENTS.md's "PR Review Standards" and FAILS on a
+# request_changes verdict, so it only gates auto-merge if "AI PR Review" is
+# made a required check in branch protection. A model outage posts a notice
+# and passes (on_model_failure: notice) -- LiteLLM being down must not freeze
+# every Renovate merge.
+name: AI PR Review
+
+on:
+  pull_request:
+    branches: ["main"]
+    # `labeled`: add the `ai-review` label to force a fresh review.
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number to (re-)review
+        required: true
+
+concurrency:
+  # Label events get their own group: Renovate adds several labels at
+  # creation, and a shared group with cancel-in-progress would let those
+  # cancel the real `opened` review.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}${{ github.event.action == 'labeled' && format('-label-{0}', github.run_id) || '' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review-pr:
+    name: AI PR Review
+    # Never run a fork's PR on a self-hosted runner: the repo is public and the
+    # runner sits inside the cluster network.
+    if: >-
+      ${{ (github.event_name == 'pull_request'
+            && !github.event.pull_request.draft
+            && github.event.pull_request.head.repo.full_name == github.repository)
+          || github.event_name == 'workflow_dispatch' }}
+    runs-on: gha-runner-scale-set
+    timeout-minutes: 35
+    steps:
+      - name: Resolve PR head for re-review
+        id: prctx
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          sha="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')"
+          echo "head_sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || steps.prctx.outputs.head_sha }}
+
+      - name: Review
+        uses: misospace/pr-reviewer-action@a962cdfc21c378a3b8cf2d8b194c787408e60e6b # v2.5.0
+        with:
+          github_token: ${{ github.token }}
+          pr_number: ${{ github.event.pull_request.number || inputs.pr_number }}
+          force_review: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
+          # Primary: Ornith on worker4 (thinking), MiniMax floor when it is
+          # down. Smart: reasoning-pool, which boring PRs never reach
+          # (review_routing_mode: auto escalates by risk class). The action
+          # does not stream, so the ChatGPT rungs are skipped -- see the
+          # pools' comment in litellm's configmap.
+          ai_base_url: http://litellm.llm.svc.cluster.local:4000/v1
+          ai_api_key: ${{ secrets.LITELLM_PR_REVIEW_API_KEY }}
+          ai_model: local-pool
+          ai_response_format: json_object
+          # Ornith thinks before it answers; the default budget can be spent
+          # entirely on reasoning, leaving no JSON verdict.
+          ai_max_tokens: "16000"
+          ai_primary_retries: "2"
+          ai_primary_retry_delay_sec: "15"
+          review_routing_mode: auto
+          ai_smart_base_url: http://litellm.llm.svc.cluster.local:4000/v1
+          ai_smart_api_key: ${{ secrets.LITELLM_PR_REVIEW_API_KEY }}
+          ai_smart_model: reasoning-pool
+          ai_fallback_base_url: http://litellm.llm.svc.cluster.local:4000/v1
+          ai_fallback_api_key: ${{ secrets.LITELLM_PR_REVIEW_API_KEY }}
+          ai_fallback_model: implementation-pool
+          standards_file_candidates: "AGENTS.md"
+          context_limit_mode: normal
+          ci_status_check: "true"
+          ci_timeout_sec: "600"
+          on_model_failure: notice
+          fail_on_request_changes: "true"
+          publish_mode: review_comment
+          inline_findings: "true"

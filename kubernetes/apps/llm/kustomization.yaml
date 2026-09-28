@@ -14,6 +14,8 @@ resources:
   # hand-written config.yaml ConfigMap. Adopting the CRDs is a separate change.
   - ./litellm-operator/ks.yaml
   - ./litellm/ks.yaml
+  # LLM explanation of Alertmanager alerts, posted to Discord (misospace).
+  - ./alert-triage/ks.yaml
   # Flux-Kustomizations | Inference
   - ./llmkube/ks.yaml
   # Text embeddings (Qwen3-Embedding-0.6B, llmkube InferenceServices on CPU)

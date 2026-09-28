@@ -1,0 +1,14 @@
+---
+# history.jsonl: every incident alert-triage has seen, so a digest can say
+# whether one is new or routine (RETENTION, default 168h). Losing it only
+# costs that context, so no volsync.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: alert-triage
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: ceph-block
+  resources:
+    requests:
+      storage: 1Gi

@@ -162,6 +162,18 @@
       "allowedVersions": "<0.9.28"
     },
     {
+      // context7-mcp 4.1.x only accepts MCP protocol 2026-07-28 and answers
+      // every 2025-03-26 initialize with -32022 "Unsupported protocol
+      // version". toolhive 0.51's mcp-gateway (and older clients) still speak
+      // 2025-03-26, so the gateway marked context7 unavailable. 4.0.4 still
+      // negotiates 2025-03-26 (tested over stdio 2026-09-28). Lift once
+      // toolhive speaks 2026-07-28.
+      "description": ["Hold context7 MCP below 4.1.0 until toolhive speaks MCP 2026-07-28"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/stacklok/dockyard/npx/context7"],
+      "allowedVersions": "<4.1.0"
+    },
+    {
       // A rolling tag (latest, rocm7, vulkan-radv, 24-alpine, 18) with no
       // digest never updates: the pull policy defaults to IfNotPresent, so a
       // node keeps whichever build it cached first, and nothing in Git says

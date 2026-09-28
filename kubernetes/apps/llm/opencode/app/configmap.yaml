@@ -89,7 +89,7 @@ data:
             "auto": { "name": "Auto (classifier router)", "limit": { "context": 262144, "output": 16384 } },
             "self-hosted": { "name": "Ornith 35B (worker4, thinking)", "limit": { "context": 262144, "output": 32768 } },
             "fast": { "name": "Ornith 35B (worker4, no thinking)", "limit": { "context": 262144, "output": 16384 } },
-            "chatgpt": { "name": "ChatGPT gpt-5.5 (subscription)", "limit": { "context": 272000, "output": 128000 } },
+            "chatgpt": { "name": "ChatGPT gpt-6-astra (subscription)", "limit": { "context": 272000, "output": 128000 } },
             "local-pool": { "name": "Local pool (Ornith -> MiniMax)", "limit": { "context": 262144, "output": 32768 } },
             "local-pool-chat": { "name": "Local pool, no thinking", "limit": { "context": 262144, "output": 16384 } },
             "reasoning-pool": { "name": "Reasoning pool", "limit": { "context": 262144, "output": 32768 } },

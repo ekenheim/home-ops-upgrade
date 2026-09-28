@@ -22,7 +22,7 @@ RUN git config --global user.email "build@docker.local" && \
 # The version is pinned so Renovate can see it: a bump here rebuilds the image,
 # and strapi-sync.sh then upgrades the project on each PVC to match.
 # renovate: datasource=npm depName=@strapi/strapi
-ARG STRAPI_VERSION=5.54.0
+ARG STRAPI_VERSION=5.55.1
 RUN yes "" | npx --yes create-strapi-app@${STRAPI_VERSION} template --no-run --skip-cloud
 
 # Install deps and pre-build the admin panel as separate layers.

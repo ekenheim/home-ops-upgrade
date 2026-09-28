@@ -118,7 +118,10 @@ data:
               token: "$${DISCORD_BOT_TOKEN}",
               responsePrefix: "[{model}]",
               guilds: {
-                "$${DISCORD_SERVER_ID}": { users: ["$${DISCORD_ADMIN_USER_ID}"] },
+                // "*", not the server ID: OpenClaw substitutes env vars in
+                // VALUES only, so a placeholder key stays literal and the
+                // guild never resolves. Still locked to the admin via users.
+                "*": { users: ["$${DISCORD_ADMIN_USER_ID}"] },
               },
             },
           },

@@ -1,0 +1,47 @@
+---
+# One MCP endpoint for every agent, after joryirving/home-ops:
+#   http://vmcp-mcp-gateway.llm.svc.cluster.local:4483/mcp
+# It aggregates every server in the mcp-tools group (tool names prefixed with
+# the server, e.g. grafana_search_dashboards), and the optimizer answers a
+# find-tool query by embedding similarity instead of handing an agent all
+# ~250 tool schemas at once -- which a 262k local model cannot afford.
+#
+# Cluster-internal and unauthenticated, like the individual servers; every
+# backend is read-only or scoped to what its own token allows.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: VirtualMCPServer
+metadata:
+  name: mcp-gateway
+spec:
+  groupRef:
+    name: mcp-tools
+  incomingAuth:
+    type: anonymous
+  outgoingAuth:
+    source: discovered
+  config:
+    aggregation:
+      conflictResolution: prefix
+      conflictResolutionConfig:
+        prefixFormat: "{workload}_"
+    optimizer:
+      embeddingProvider: openai
+      embeddingService: http://litellm.llm.svc.cluster.local:4000/v1
+      embeddingModel: qwen3-embedding-0.6b
+      embeddingServiceTimeout: 180s
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: vmcp
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-key-toolhive
+                  key: api-key
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 2Gi

@@ -5,6 +5,8 @@ kind: MCPServer
 metadata:
   name: &name context7
 spec:
+  groupRef:
+    name: mcp-tools
   # ToolHive's own build of @upstash/context7-mcp. The npm package is baked
   # into /app/node_modules, so the `npx` entrypoint resolves locally and does
   # NOT fetch from the registry at pod start (unlike arr-mcp in downloads).

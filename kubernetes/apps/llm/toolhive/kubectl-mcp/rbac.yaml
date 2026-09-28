@@ -1,0 +1,197 @@
+---
+# Read-only cluster access for the kubectl and flux MCP servers, after
+# joryirving/home-ops. Kubernetes Secrets are readable by NEITHER role.
+#
+# Two ClusterRoles because a ClusterRole with an aggregationRule has its rules
+# owned by the aggregation controller:
+#   - mcp-readonly: aggregates everything that ships aggregate-to-view (the
+#     built-in `view` set, which already excludes secrets).
+#   - mcp-readonly-explicit: the rest. Core ("") is an explicit list without
+#     secrets and without exec/attach/proxy. Every non-core group is "*",
+#     which is safe for Secret *objects* (they only exist in core) -- EXCEPT
+#     dex.coreos.com, left out because Dex keeps password hashes and refresh
+#     tokens as custom resources.
+# Group list generated from `kubectl api-resources` on 2026-09-28; a CRD group
+# added later is only visible if its operator aggregates to view.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mcp-readonly
+aggregationRule:
+  clusterRoleSelectors:
+    - matchLabels:
+        rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mcp-readonly-explicit
+rules:
+  - nonResourceURLs: ["/api", "/api/*", "/apis", "/apis/*", "/healthz", "/livez", "/readyz", "/version", "/version/", "/openapi", "/openapi/*"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources:
+      - componentstatuses
+      - configmaps
+      - endpoints
+      - events
+      - limitranges
+      - namespaces
+      - namespaces/status
+      - nodes
+      - nodes/status
+      - persistentvolumeclaims
+      - persistentvolumeclaims/status
+      - persistentvolumes
+      - persistentvolumes/status
+      - pods
+      - pods/log
+      - pods/status
+      - podtemplates
+      - replicationcontrollers
+      - replicationcontrollers/status
+      - resourcequotas
+      - resourcequotas/status
+      - serviceaccounts
+      - services
+      - services/status
+    verbs: ["get", "list", "watch"]
+  - apiGroups:
+      - acme.cert-manager.io
+      - actions.github.com
+      - admissionregistration.k8s.io
+      - apiextensions.k8s.io
+      - apiregistration.k8s.io
+      - apps
+      - argoproj.io
+      - autoscaling
+      - batch
+      - ceph.rook.io
+      - cert-manager.io
+      - certificates.k8s.io
+      - cilium.io
+      - cluster.redpanda.com
+      - coordination.k8s.io
+      - courier.misospace.dev
+      - csi.ceph.io
+      - deviceplugin.intel.com
+      - discovery.k8s.io
+      - dragonflydb.io
+      - events.k8s.io
+      - extensions.istio.io
+      - external-secrets.io
+      - externaldns.k8s.io
+      - federation.llmkube.dev
+      - flowcontrol.apiserver.k8s.io
+      - flyte.lyft.com
+      - foreman.llmkube.dev
+      - fpga.intel.com
+      - gateway.envoyproxy.io
+      - gateway.networking.k8s.io
+      - gateway.networking.x-k8s.io
+      - generators.external-secrets.io
+      - groupsnapshot.storage.k8s.io
+      - helm.toolkit.fluxcd.io
+      - image.toolkit.fluxcd.io
+      - inference.llmkube.dev
+      - kubernetes.dask.org
+      - kustomize.toolkit.fluxcd.io
+      - litellm.home-operations.com
+      - machinelearning.seldon.io
+      - metrics.k8s.io
+      - mlops.seldon.io
+      - monitoring.coreos.com
+      - networking.istio.io
+      - networking.k8s.io
+      - nfd.k8s-sigs.io
+      - node.k8s.io
+      - notification.toolkit.fluxcd.io
+      - objectbucket.io
+      - policy
+      - postgres-operator.crunchydata.com
+      - ray.io
+      - rbac.authorization.k8s.io
+      - renovate-operator.mogenius.com
+      - resource.k8s.io
+      - scheduling.k8s.io
+      - security.istio.io
+      - snapshot.storage.k8s.io
+      - source.extensions.fluxcd.io
+      - source.toolkit.fluxcd.io
+      - sparkoperator.k8s.io
+      - storage.k8s.io
+      - tailscale.com
+      - talos.dev
+      - telemetry.istio.io
+      - toolhive.stacklok.dev
+      - tuppr.home-operations.com
+      - upgrade.cattle.io
+      - volsync.backube
+      - wgpolicyk8s.io
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubectl-mcp
+  namespace: llm
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubectl-mcp-readonly
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mcp-readonly
+subjects:
+  - kind: ServiceAccount
+    name: kubectl-mcp
+    namespace: llm
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubectl-mcp-readonly-explicit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mcp-readonly-explicit
+subjects:
+  - kind: ServiceAccount
+    name: kubectl-mcp
+    namespace: llm
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flux-mcp
+  namespace: llm
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: flux-mcp-readonly
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mcp-readonly
+subjects:
+  - kind: ServiceAccount
+    name: flux-mcp
+    namespace: llm
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: flux-mcp-readonly-explicit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mcp-readonly-explicit
+subjects:
+  - kind: ServiceAccount
+    name: flux-mcp
+    namespace: llm

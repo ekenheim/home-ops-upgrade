@@ -5,6 +5,8 @@ kind: MCPServer
 metadata:
   name: &name platform-mcp
 spec:
+  groupRef:
+    name: mcp-tools
   # A stock Python image, not a purpose-built one. The server is pure stdlib
   # (MCP over stdio is line-delimited JSON-RPC 2.0), so there is nothing to
   # install at start -- which matters because toolhive enforces

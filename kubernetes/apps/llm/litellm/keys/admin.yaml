@@ -1,0 +1,35 @@
+---
+# A LiteLLMProxy that runs NOTHING. It exists so LiteLLMVirtualKey CRs can mint
+# per-app keys GitOps-style (after joryirving/home-ops), while the real proxy
+# stays the app-template HelmRelease in ../app.
+#
+# Why not let the operator run the real proxy: its Deployment has no
+# `strategy` and no startup probe. Ours needs Recreate (the ChatGPT refresh
+# token is single-use, so exactly one writer) and a 20-minute startup probe
+# (a missing grant blocks startup on a device login). See ../app/helmrelease.yaml.
+#
+# How it stays inert:
+#   - replicas: 0, so its Deployment never starts a pod.
+#   - applyMode: file (the default, spelled out). NEVER switch this to `api`:
+#     with apiAccess.endpoint pointing at the real proxy, api mode would push
+#     this CR's model list into the live gateway.
+#   - modelSelector matches no label, so it does not adopt the LiteLLMModels
+#     llmkube autoRegister mints (embed-1/2, gemma3-27b, ornith-35b).
+#
+# LiteLLMVirtualKey reads only apiAccess: it calls the admin API at `endpoint`
+# with the master key and writes the new key into a Secret in this namespace.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMProxy
+metadata:
+  name: litellm-admin
+spec:
+  replicas: 0
+  applyMode: file
+  modelSelector:
+    matchLabels:
+      litellm.home-operations.com/adopt: "never"
+  apiAccess:
+    endpoint: http://litellm.llm.svc.cluster.local:4000
+    masterKeyRef:
+      name: litellm
+      key: LITELLM_MASTER_KEY

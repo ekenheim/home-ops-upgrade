@@ -1,0 +1,15 @@
+---
+# Cluster state is not private, so the cloud floor on local-pool is allowed.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: alert-triage
+spec:
+  proxyRef: litellm-admin
+  keyAlias: alert-triage
+  secretName: litellm-key-alert-triage
+  secretKey: api-key
+  models:
+    - local-pool-chat
+    - local-pool
+    - fast

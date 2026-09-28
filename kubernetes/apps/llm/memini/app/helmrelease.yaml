@@ -75,13 +75,14 @@ spec:
               MEMINI_REEMBED_ON_MODEL_CHANGE: "true"
 
               # --- Rerank -----------------------------------------------------
-              # Deliberately absent. Upstream runs a Qwen3-Reranker-0.6B
-              # InferenceService on its AMD GPU; here that would be a third pod
-              # sharing worker4's single `llama-strix-gpu` ResourceClaim with
-              # ornith-35b and qwen38-27b, on the node that hard-resets
-              # silently. Recall falls back to pure vector similarity.
-              # MEMINI_RERANK / MEMINI_RERANK_MODEL: see llmkube/app for the
-              # InferenceService pattern if this is ever revisited.
+              # litellm's `rerank` alias: hindsight's CPU cross-encoder (TEI),
+              # so nothing new on worker4's GPU -- the reason this used to be
+              # off. memini appends /rerank to the base and speaks the Cohere
+              # shape, which litellm translates for TEI. A failed or slow
+              # rerank (10s default timeout) degrades to the plain hybrid
+              # ranking rather than failing recall.
+              MEMINI_RERANK: http://litellm.llm:4000/v1
+              MEMINI_RERANK_MODEL: rerank
 
               # --- Assessment / dedup ----------------------------------------
               # `fast` is ornith-35b with thinking off. That is the right shape

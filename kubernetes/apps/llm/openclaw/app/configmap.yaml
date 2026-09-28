@@ -177,6 +177,9 @@ data:
           wiki: { url: "http://mcp-wiki-mcp-proxy.llm.svc.cluster.local:8080/mcp", transport: "streamable-http", headers: { Accept: "application/json, text/event-stream" } },
           context7: { url: "http://mcp-context7-proxy.llm.svc.cluster.local:8080/mcp", transport: "streamable-http", headers: { Accept: "application/json, text/event-stream" } },
           arr: { url: "http://mcp-arr-proxy.downloads.svc.cluster.local:8080/mcp", transport: "streamable-http", headers: { Accept: "application/json, text/event-stream" } },
+          // Read-only (Viewer + --disable-write): Prometheus queries, alert
+          // rules and state, dashboards. What the health digest runs on.
+          grafana: { url: "http://mcp-grafana-mcp-proxy.observability.svc.cluster.local:8080/mcp", transport: "streamable-http", headers: { Accept: "application/json, text/event-stream" } },
         },
       },
       meta: { lastTouchedVersion: "2026.9.6" },

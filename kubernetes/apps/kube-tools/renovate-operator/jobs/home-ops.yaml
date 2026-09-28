@@ -25,6 +25,12 @@ spec:
     # Commits through the API as the app, so they show as verified.
     - name: RENOVATE_PLATFORM_COMMIT_ENABLED
       value: "true"
+    # {{ secrets.* }} for the repo config (see renovate-secrets).
+    - name: RENOVATE_SECRETS
+      valueFrom:
+        secretKeyRef:
+          name: renovate-secrets
+          key: RENOVATE_SECRETS
   resources:
     requests:
       cpu: 100m

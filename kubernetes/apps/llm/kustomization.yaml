@@ -83,3 +83,7 @@ resources:
   # so a Workload scheduled into `datasci` will no longer get its credentials.
   - ./foreman/ks.yaml
   - ./dispatch/ks.yaml
+  # courier (misospace, after joryirving) replaces the foreman bridge as
+  # dispatch's worker: one CoderRun pod per claimed issue, PR opened, never
+  # merged. See courier/app/helmrelease.yaml.
+  - ./courier/ks.yaml

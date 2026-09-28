@@ -1,0 +1,35 @@
+---
+# The `local` lane: which model fills each role in a CoderRun.
+#
+# Jory's lane codes on a 27B on a 3090; we have no such card, so the coder
+# runs on implementation-pool (MiniMax M2.7 first -- its 300 prompts / 5h are
+# the biggest allowance -- then ChatGPT luna, then Ornith). The coordinator
+# plans on reasoning-pool. The reviewer stays on local Ornith: independent of
+# the coder's model, and free.
+#
+# Suspend without killing in-flight runs:
+#   kubectl -n llm annotate laneprofile local courier.misospace.dev/suspend=true
+apiVersion: courier.misospace.dev/v1alpha1
+kind: LaneProfile
+metadata:
+  name: local
+spec:
+  concurrency: 1
+  framing: >-
+    You are a coordinator: plan, delegate, integrate, and verify. Do not
+    implement yourself. Only you have the github MCP tools -- your sub-agents
+    do not, so do all issue and pull-request work yourself (read the issue;
+    open, update, and comment on the PR) and never delegate a forge action;
+    don't use the gh CLI. Send small, file-scoped work to coder-local, at most
+    two in flight: it runs on a flat-rate plan with a rolling prompt allowance,
+    so batch related edits instead of many tiny calls. Use coder-local for
+    recon and "where/how is X" scouting before you plan. After a substantive
+    change, dispatch agentic-local for an independent review pass over the
+    diff, then act on what it finds. This repository's AGENTS.md is the
+    standard: read it first. Push and update the feature branch, get CI
+    healthy, never merge, never push to the default branch, and leave the
+    pull request open and ready for human review.
+  roles:
+    coordinator: litellm/reasoning-pool
+    coder-local: litellm/implementation-pool
+    agentic-local: litellm/self-hosted

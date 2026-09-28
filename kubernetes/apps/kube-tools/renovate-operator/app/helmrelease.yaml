@@ -1,0 +1,48 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: renovate-operator
+spec:
+  # Self-hosted Renovate (mogenius/renovate-operator), after joryirving/home-ops.
+  # Replaces the hosted Mend Renovate app: runs on a schedule as the existing
+  # `mini-smurf-cluster` GitHub App, and on demand -- from the web UI below or
+  # when the Dependency Dashboard / a Renovate PR checkbox is ticked
+  # (.github/workflows/renovate-trigger.yaml calls the webhook server).
+  #
+  # The webhook server is deliberately NOT exposed outside the cluster (Jory
+  # routes GitHub webhooks to his through a public host). The trigger workflow
+  # runs on the in-cluster runners and calls it over the Service.
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: renovate-operator
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    fullnameOverride: renovate-operator
+    image:
+      registry: ghcr.io
+      repository: mogenius/renovate-operator
+      tag: 6.3.0@sha256:eab6fb669412a16365ea038c0c6b0c399b10ae0f4e432b9e42fae7da3cdaaa41
+    route:
+      enabled: true
+      hostnames: ["renovate.${SECRET_DOMAIN}"]
+      parentRefs:
+        - name: envoy-internal
+          namespace: network
+          sectionName: https
+    webhook:
+      enabled: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 256Mi

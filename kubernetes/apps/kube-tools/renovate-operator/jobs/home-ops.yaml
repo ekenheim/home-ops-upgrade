@@ -1,0 +1,39 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/renovate-operator.mogenius.com/renovatejob_v1alpha1.json
+apiVersion: renovate-operator.mogenius.com/v1alpha1
+kind: RenovateJob
+metadata:
+  name: home-ops
+spec:
+  # Only this repo, which is what the Mend app covered. Its config is the
+  # repo's own .github/renovate.json5 -- unchanged by the move.
+  discoveryFilters: ["ekenheim/home-ops-upgrade"]
+  image: ghcr.io/renovatebot/renovate:44.116.0@sha256:56f0ecefe7e3659e72bdb4ac6a07d3de107185370d0064434b37bba9f3656286
+  parallelism: 1
+  provider:
+    name: github
+  # Hourly, like the hosted app; on demand in between via the webhook.
+  schedule: "20 * * * *"
+  githubAppReference:
+    secretName: renovate-github-app
+    appIdSecretKey: appId
+    installationIdSecretKey: installationId
+    pemSecretKey: pem
+  extraEnv:
+    - name: LOG_LEVEL
+      value: info
+    # Commits through the API as the app, so they show as verified.
+    - name: RENOVATE_PLATFORM_COMMIT_ENABLED
+      value: "true"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 2Gi
+  webhook:
+    enabled: true
+    # The webhook server is cluster-internal only (no route), and the only
+    # caller is the trigger workflow on the in-cluster runners.
+    authentication:
+      enabled: false

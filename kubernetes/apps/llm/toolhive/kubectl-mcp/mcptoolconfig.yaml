@@ -1,0 +1,47 @@
+---
+# kubectl-mcp-server ships 275 tools (helm, kind, kubevirt, port-forward,
+# many overlapping getters). Through mcp-gateway every one is embedded for
+# the tool-search index on each new session, and 500 tools took past the
+# 180s embedding timeout on the CPU embedder (2026-09-28). This keeps the
+# read-only diagnostics an agent actually reaches for; everything mutating is
+# also denied by RBAC and --read-only regardless.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPToolConfig
+metadata:
+  name: kubectl-mcp
+spec:
+  toolsFilter:
+    - get_pods
+    - get_logs
+    - get_previous_logs
+    - get_events
+    - get_pod_events
+    - get_pod_conditions
+    - diagnose_pod_crash
+    - detect_pending_pods
+    - check_pod_health
+    - get_evicted_pods
+    - get_deployments
+    - get_statefulsets
+    - get_daemonsets
+    - get_replicasets
+    - get_jobs
+    - rollout_status_tool
+    - get_nodes
+    - get_nodes_summary
+    - get_node_metrics
+    - get_pod_metrics
+    - get_resource_usage
+    - get_pvcs
+    - get_persistent_volumes
+    - get_storage_classes
+    - get_services
+    - get_endpoints
+    - get_namespaces
+    - get_configmaps
+    - get_crds
+    - get_api_resources
+    - kubectl_describe
+    - kubectl_explain
+    - certs_status_explain_tool
+    - cilium_status_tool

@@ -1,0 +1,23 @@
+---
+# OpenClaw. No cloud-plan aliases in the default path (see the openclaw
+# ConfigMap), but MiniMax and the pools are allowed for jobs that pick them.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: openclaw
+spec:
+  proxyRef: litellm-admin
+  keyAlias: openclaw
+  secretName: litellm-key-openclaw
+  secretKey: api-key
+  models:
+    - self-hosted
+    - fast
+    - chatgpt
+    - local-pool
+    - local-pool-chat
+    - MiniMax-M3-chat
+    - MiniMax-M2.7
+    - reasoning-pool
+    - implementation-pool
+    - frontier-pool

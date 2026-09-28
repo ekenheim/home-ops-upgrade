@@ -51,6 +51,8 @@ resources:
   - ./repo-wiki/ks.yaml
   # Flux-Kustomizations | Frontends
   - ./hermes/ks.yaml
+  # Always-on agent gateway: Discord bot + scheduled jobs (after joryirving).
+  - ./openclaw/ks.yaml
   - ./langflow/ks.yaml
   - ./sillytavern/ks.yaml
   # Facebook Marketplace watcher; listings are rated by litellm's `fast`.

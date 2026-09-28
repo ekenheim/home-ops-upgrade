@@ -96,6 +96,16 @@ spec:
         HINDSIGHT_API_LLM_MODEL: gpt-5.6-luna
         HINDSIGHT_API_REFLECT_LLM_PROVIDER: openai-codex
         HINDSIGHT_API_REFLECT_LLM_MODEL: gpt-5.5
+        # Per-request Codex deadlines. Reflect's upstream default is 30s
+        # (DEFAULT_REFLECT_LLM_TIMEOUT) and mental-model refresh inherits it;
+        # a refresh is a multi-step tool loop on gpt-5.5 that streams past
+        # 30s, so every atlas-dev refresh died with CodexRunawayStreamError
+        # and retried into the same wall (2026-09-28). Refresh is background
+        # work: give it 5 minutes. Interactive reflect gets 120s, the general
+        # LLM default; its whole operation is still capped at 300s by
+        # DEFAULT_REFLECT_WALL_TIMEOUT.
+        HINDSIGHT_API_REFLECT_LLM_TIMEOUT: "120"
+        HINDSIGHT_API_MENTAL_MODEL_REFRESH_LLM_TIMEOUT: "300"
         # --- Embeddings: litellm -> embeddings (Qwen3-Embedding-0.6B, 1024 dims) ---
         # Same model memini uses. Why this model and how it is served:
         # ../../embeddings/app/model.yaml. It replaced bge-m3 on 2026-09-18,

@@ -1,0 +1,118 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: opencode
+spec:
+  # OpenCode server (web UI + API) as an interactive coding assistant, after
+  # joryirving/home-ops, on his image (opencode plus git and the tooling a
+  # session needs). Internal route only, behind opencode's own password
+  # (opencode-server, generated in-cluster) instead of Jory's Authentik OIDC.
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.2.1
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    controllers:
+      opencode:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        # RWO home PVC.
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/joryirving/opencode
+              tag: 2.0.18@sha256:5704af85d87d7b2ca449873218a441011756cf57741b1645cb30fce3aa149712
+            command: ["/etc/opencode/entrypoint.sh"]
+            env:
+              HOME: &home /home/opencode
+              OPENCODE_CONFIG: /etc/opencode/opencode.json
+              TZ: "${TIMEZONE}"
+              LITELLM_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-key-opencode
+                    key: api-key
+            envFrom:
+              - secretRef:
+                  name: opencode
+              - secretRef:
+                  name: opencode-server
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: &port 4096
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: *port
+                  initialDelaySeconds: 15
+                  periodSeconds: 15
+                  failureThreshold: 6
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 8Gi
+    service:
+      app:
+        controller: opencode
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "Data Science"
+          gethomepage.dev/name: "OpenCode"
+          gethomepage.dev/description: "Coding assistant (LiteLLM pools + MCP gateway)"
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      home:
+        existingClaim: opencode
+        globalMounts:
+          - path: *home
+      config:
+        type: configMap
+        name: opencode-config
+        defaultMode: 0755
+        globalMounts:
+          - path: /etc/opencode

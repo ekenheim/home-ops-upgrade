@@ -87,3 +87,5 @@ resources:
   # dispatch's worker: one CoderRun pod per claimed issue, PR opened, never
   # merged. See courier/app/helmrelease.yaml.
   - ./courier/ks.yaml
+  # Interactive coding assistant on the LiteLLM pools + MCP gateway.
+  - ./opencode/ks.yaml

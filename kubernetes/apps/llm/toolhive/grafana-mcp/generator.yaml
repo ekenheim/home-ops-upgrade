@@ -1,0 +1,25 @@
+---
+# Grafana service account + token for the grafana MCP server, created by ESO
+# through Grafana's API -- no hand-made token, nothing in Bitwarden. It logs
+# in with the admin credentials the grafana HelmRelease already uses
+# (grafana-secret, from the `grafana` Bitwarden item) and creates service
+# account `mcp` with role Viewer.
+#
+# The username is not secret material but has to be a literal here: the
+# generator's basic auth takes username as a string, only the password as a
+# secretRef.
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Grafana
+metadata:
+  name: grafana-mcp
+spec:
+  url: http://grafana.observability.svc.cluster.local
+  auth:
+    basic:
+      username: chopsting
+      password:
+        name: grafana-secret
+        key: adminPass
+  serviceAccount:
+    name: mcp
+    role: Viewer

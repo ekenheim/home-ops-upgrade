@@ -20,7 +20,8 @@ COMMON="--tz Europe/Stockholm --session isolated --channel discord --to $TO --an
 # because weather entities no longer carry it as an attribute.
 BRIEF=$(cat <<'EOF'
 Morning brief for the owner, max 15 lines, skip anything unremarkable.
-Do NOT use find_tool or tool_search: make exactly these three calls through toolhive call_tool (arguments go under "parameters"), in parallel, then write the brief.
+Do NOT use find_tool or tool_search. Make exactly these three calls in parallel, then write the brief.
+Every tool below lives behind the toolhive gateway, so no tool_name is a tool id you can call directly. Each call is OpenClaw's tool_call with id "mcp:toolhive:toolhive__call_tool" and args {"tool_name": <name>, "parameters": {...}}.
 
 A. tool_name "ha-mcp_ha_eval_template", parameters {"template": <the template below, verbatim>}
 Weather now: {{ states('weather.forecast_home') }}, {{ state_attr('weather.forecast_home','temperature') }}°C
@@ -60,7 +61,8 @@ If nothing is notable, reply with one line saying so."
 # read-only flux MCP; those two listings are large, hence last.
 HEALTH=$(cat <<'EOF'
 Daily health digest for the home-kubernetes cluster.
-Do NOT use find_tool or tool_search: every call below goes through toolhive call_tool (arguments go under "parameters").
+Do NOT use find_tool or tool_search.
+Every tool below lives behind the toolhive gateway, so no tool_name is a tool id you can call directly. Each call is OpenClaw's tool_call with id "mcp:toolhive:toolhive__call_tool" and args {"tool_name": <name>, "parameters": {...}}.
 
 1. In parallel, seven calls with tool_name "grafana_query_prometheus", each with parameters {"datasourceUid": "prometheus", "queryType": "instant", "startTime": "now", "endTime": "now", "expr": <one of these>}:
    - firing alerts: ALERTS{alertstate="firing", alertname!="Watchdog"}

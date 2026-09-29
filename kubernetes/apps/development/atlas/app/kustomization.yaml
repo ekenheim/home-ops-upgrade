@@ -6,6 +6,7 @@ resources:
   - ./externalsecret.yaml
   - ./pvc.yaml
   - ./deployment.yaml
+  - ./ingest.yaml
   - ./service.yaml
   - ../../../../templates/gatus/guarded
   - ./httproute-internal.yaml

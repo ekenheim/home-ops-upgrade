@@ -13,6 +13,9 @@ metadata:
   labels:
     app.kubernetes.io/name: atlas
     app.kubernetes.io/component: app
+  annotations:
+    # Env comes from ESO-managed Secrets; restart the pod when they rotate.
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   strategy:
@@ -68,6 +71,17 @@ spec:
               mountPath: /data/archive
             - name: tmp
               mountPath: /tmp
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+        # Create or update the configured companies (configs/themes); idempotent.
+        - name: seed-companies
+          image: *image
+          args: ["companies", "seed"]
+          env: *env
+          envFrom: *envFrom
+          securityContext: *securityContext
+          volumeMounts: *mounts
           resources:
             requests: { cpu: 50m, memory: 128Mi }
             limits: { memory: 512Mi }

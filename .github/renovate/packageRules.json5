@@ -54,7 +54,6 @@
         // Listed explicitly rather than matching the ghcr.io/misospace/ prefix
         // because the only other package from that org is `charts`, an OCI Helm
         // chart that moves by version and does not need this.
-        "ghcr.io/misospace/foreman-dispatch-bridge",
         "ghcr.io/fscorrupt/posterizarr",
         "ghcr.io/linuxserver/mariadb",
         // docker.io/library/python is here for a slightly different reason:

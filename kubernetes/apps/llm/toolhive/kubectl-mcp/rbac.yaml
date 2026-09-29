@@ -85,7 +85,6 @@ rules:
       - federation.llmkube.dev
       - flowcontrol.apiserver.k8s.io
       - flyte.lyft.com
-      - foreman.llmkube.dev
       - fpga.intel.com
       - gateway.envoyproxy.io
       - gateway.networking.k8s.io

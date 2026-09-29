@@ -34,6 +34,3 @@ spec:
   postBuild:
     substitute:
       APP: *app
-# foreman-dispatch-bridge (./bridge) retired 2026-09-28: courier claims dispatch
-# work now (../courier). Two workers polling one queue would both claim it.
-# ./bridge is left in git until foreman itself is removed.

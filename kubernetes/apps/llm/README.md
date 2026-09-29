@@ -22,7 +22,7 @@ lives here.
 | `lemonade-tts`, `whisper` | GPU speech on worker4: OpenMOSS TTS and whisper.cpp (Vulkan). Web pages at `lemonade.<domain>` and `whisper.<domain>` (internal, no login); no API consumers yet; Home Assistant and Bazarr keep their CPU services. |
 | `sillytavern` | Character chat frontend. Internal ingress is its only access control. |
 | `ai-marketplace-monitor` | Facebook Marketplace watcher, listings rated by `fast`. UI at `marketplace.<domain>`, login = the Facebook credentials. No notifier wired yet. |
-| `foreman`, `dispatch` | The agentic coding loop. |
+| `dispatch`, `courier` | The agentic coding loop. |
 
 ## litellm-operator mints keys, but does not run the proxy
 
@@ -341,20 +341,9 @@ How it is put together, and why:
    userinit controller grants `CREATE` on `public`); it retries on its own. See
    the crunchy onboarding notes if it does not.
 
-## Two couplings that span namespaces
+## A coupling that spans namespaces
 
-Both are easy to half-change and get a silently empty dashboard rather than an error.
-
-**foreman CRD metrics.** `foreman.crs.enabled` renders a CustomResourceState
-ConfigMap into `observability` (`crs.namespace`) because kube-state-metrics can
-only mount ConfigMaps from its own namespace. The consuming half —
-`kube-state-metrics.customResourceState` with `create: false`, plus
-`rbac.extraRules` granting list/watch on `foreman.llmkube.dev` — lives in
-`apps/observability/kube-prometheus-stack/app/helmrelease.yaml`. Enable one
-without the other and you get either a ConfigMap nothing reads or KSM pointing at
-a ConfigMap that does not exist. The chart's Grafana dashboard ConfigMap already
-carries `grafana_dashboard: "true"` and our sidecar searches all namespaces, so
-that part needs no wiring.
+It is easy to half-change and get a silently empty dashboard rather than an error.
 
 **litellm metrics.** The ServiceMonitor scrapes `/metrics` on the proxy port with
 no Authorization header, which only works because

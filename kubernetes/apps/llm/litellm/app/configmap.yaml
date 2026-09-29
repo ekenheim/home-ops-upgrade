@@ -58,8 +58,7 @@ data:
       # is Ornith's full native window. It was 131072 while qwen38-27b shared
       # the GPU; that model is parked at replicas 0, so ornith took the whole
       # budget. self-hosted, review and fast all point at the same backend and
-      # must carry the same number -- and foreman's contextSoftCap/HardCap in
-      # ../../foreman/agents/coder.yaml move with it too.
+      # must carry the same number.
       - model_name: self-hosted
         model_info:
           mode: chat
@@ -129,7 +128,7 @@ data:
       # So route by task, not by preference:
       #   deep         cron jobs, hard one-shots, second-opinion review of
       #                ornith's output -- anywhere a 90s answer is fine
-      #   self-hosted  interactive/agentic turns (hermes, foreman coder)
+      #   self-hosted  interactive/agentic turns (hermes, courier)
       #   fast         bulk mechanical work (Lingarr translation)
       #
       # Qwen3.8 beats Ornith on the published agentic-coding benchmarks
@@ -139,8 +138,7 @@ data:
       # NOTHING IN THIS REPO POINTS HERE YET, deliberately -- it is available
       # in Open WebUI's model picker and to anything you aim at it by hand. To
       # move the reviewer workloads over, change `model:` and `api_base:` on
-      # the `review` block above to this backend; foreman's reviewer Agent
-      # follows that alias, and the router fallback below already catches an
+      # the `review` block above to this backend; the router fallback below already catches an
       # outage. Verify
       # tool calling on the live endpoint first -- see qwen38-27b.yaml.
       #

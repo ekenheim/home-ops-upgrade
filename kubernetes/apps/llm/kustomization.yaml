@@ -60,32 +60,22 @@ resources:
   - ./ai-marketplace-monitor/ks.yaml
   # Flux-Kustomizations | The agentic coding loop
   #
-  # dispatch grooms GitHub issues into a queue, the bridge CronJob turns claimed
-  # ones into foreman Workload CRs, and foreman runs coder -> gate -> reviewer
-  # and opens the PR.
+  # dispatch grooms GitHub issues into a queue; courier claims them and runs
+  # one CoderRun pod per issue that opens a PR (never merges). foreman and its
+  # dispatch bridge did this job until 2026-09-29.
   #
-  # Enabled 2026-08-22, once these Bitwarden Secrets Manager items existed:
+  # Bitwarden Secrets Manager items:
   #   `github_token`  GITHUB_TOKEN -- the one agent PAT. Commits, PRs and issue
   #                   labels all come from this identity, on EVERY repo the loop
   #                   is pointed at, so scope it deliberately.
-  #   `dispatch`      DISPATCH_AGENT_TOKEN (shared with the bridge -- one field
-  #                   on purpose, two values means every tick 401s),
-  #                   DISPATCH_AUTH_USERNAME / _PASSWORD, LITELLM_API_KEY.
-  #   `foreman`       LITELLM_API_KEY, separate from dispatch's so either can be
-  #                   revoked alone.
+  #   `dispatch`      DISPATCH_AGENT_TOKEN, DISPATCH_AUTH_USERNAME / _PASSWORD,
+  #                   LITELLM_API_KEY.
+  #   `foreman`       LITELLM_API_KEY -- the item keeps its old name; courier
+  #                   reads its key from it (courier/app/externalsecret.yaml).
   #
-  # foreman stands alone (it idles with no Workloads); dispatch additionally
-  # needs the `dispatch` Postgres user, which is declared alongside this in
+  # dispatch needs the `dispatch` Postgres user, declared in
   # apps/database/crunchy-postgres/cluster/cluster.yaml.
-  #
-  # Moved out of `datasci` on 2026-08-29. foreman's Workloads now land in `llm`
-  # (foreman.taskNamespace) and the git-credentials Kyverno policy follows them,
-  # so a Workload scheduled into `datasci` will no longer get its credentials.
-  - ./foreman/ks.yaml
   - ./dispatch/ks.yaml
-  # courier (misospace, after joryirving) replaces the foreman bridge as
-  # dispatch's worker: one CoderRun pod per claimed issue, PR opened, never
-  # merged. See courier/app/helmrelease.yaml.
   - ./courier/ks.yaml
   # Interactive coding assistant on the LiteLLM pools + MCP gateway.
   - ./opencode/ks.yaml

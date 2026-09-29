@@ -9,4 +9,4 @@ resources:
   - ./dashboards/apps
   - ./dashboards/ray
   - ./dashboards/seldon
-  - ../../../../templates/gatus/internal
+  - ../../../../templates/gatus/infra

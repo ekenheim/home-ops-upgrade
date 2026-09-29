@@ -25,7 +25,6 @@ resources:
   - ./growthbook.yaml
   - ./homepage.yaml
   - ./istio.yaml
-  - ./ingress-nginx.yaml
   - ./intel.yaml
   - ./itzg.yaml
   - ./jetstack.yaml

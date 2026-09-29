@@ -26,7 +26,9 @@ servers:
         parameters: 0.0.0.0:9153
       - name: hosts
         configBlock: |-
-          192.168.50.152 harbor.${SECRET_DOMAIN}
+          # envoy-internal. Pods (the banditweb runners push here) must not
+          # resolve through public DNS; Harbor has no public route.
+          192.168.50.155 harbor.${SECRET_DOMAIN}
           fallthrough
       - name: kubernetes
         parameters: cluster.local in-addr.arpa ip6.arpa

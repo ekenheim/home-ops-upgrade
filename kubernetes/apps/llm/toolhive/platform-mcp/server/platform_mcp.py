@@ -395,8 +395,8 @@ PIPELINES = {
         "run into a Job in `datasci` with MLFLOW_TRACKING_URI and RAY_ADDRESS already set.",
     ],
     "alternatives": {
-        "Kubernetes CronJob": "fine for cluster chores; that is what cdi-stale-watchdog and "
-                              "foreman-dispatch-bridge are. Not for data pipelines -- no lineage, no UI.",
+        "Kubernetes CronJob": "fine for cluster chores; that is what cdi-stale-watchdog "
+                              "is. Not for data pipelines -- no lineage, no UI.",
         "Argo Workflows": "not installed.",
         "Prefect": "directory exists, Kustomization commented out. Not deployed.",
         "hermes cron": "documentation and scouting only. Not a data-pipeline runtime.",

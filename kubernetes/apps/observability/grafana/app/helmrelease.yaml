@@ -379,8 +379,10 @@ spec:
           gethomepage.dev/description: Monitoring Dashboards
         hostnames:
           - "{{ .Release.Name }}.${SECRET_DOMAIN}"
+        # Internal only since 2026-09-29: auth.anonymous is on (Viewer), so a
+        # public route let anyone on the internet browse every dashboard.
         parentRefs:
-          - name: envoy-external
+          - name: envoy-internal
             namespace: network
             sectionName: https
     ingress:

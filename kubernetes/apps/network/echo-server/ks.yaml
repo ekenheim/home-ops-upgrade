@@ -22,3 +22,5 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      # Gatus checks the remaining internal host (the public one is gone).
+      GATUS_SUBDOMAIN: echo-internal

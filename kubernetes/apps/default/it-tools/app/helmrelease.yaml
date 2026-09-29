@@ -55,8 +55,9 @@ spec:
     route:
       app:
         hostnames: ["it-tools.${SECRET_DOMAIN}"]
+        # Internal only since 2026-09-29: nothing outside the LAN/VPN needs it.
         parentRefs:
-          - name: envoy-external
+          - name: envoy-internal
             namespace: network
             sectionName: https
         rules:

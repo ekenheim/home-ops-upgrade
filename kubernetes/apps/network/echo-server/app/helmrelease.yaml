@@ -91,17 +91,9 @@ spec:
             scrapeTimeout: 10s
     # envoy-gateway migration canaries, alongside the nginx Ingress above.
     # New hostnames on purpose: nothing that works today changes.
+    # The public echo-server route was removed 2026-09-29: it reflects request
+    # headers back to any caller on the internet. echo-internal stays.
     route:
-      external:
-        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
-        parentRefs:
-          - name: envoy-external
-            namespace: network
-            sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *port
       internal:
         hostnames: ["echo-internal.${SECRET_DOMAIN}"]
         parentRefs:

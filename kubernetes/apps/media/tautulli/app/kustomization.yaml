@@ -5,7 +5,7 @@ kind: Kustomization
 resources:
   - ./helmrelease.yaml
   - ./pvc.yaml
-  - ../../../../templates/gatus/external
+  - ../../../../templates/gatus/internal
   - ../../../../templates/volsync
 configMapGenerator:
   - name: posterizarr-watcher

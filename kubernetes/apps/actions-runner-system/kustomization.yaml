@@ -7,6 +7,8 @@ resources:
   - ./namespace.yaml
   # Flux-Kustomizations
   - ./gha-runner-scale-set-controller/ks.yaml
+  # Keeps CI runners away from the unauthenticated MCP servers and HA.
+  - ./runner-network-policy/ks.yaml
   - ./gha-runner-scale-set/ks.yaml
   - ./gha-runner-scale-set-nordic-housing/ks.yaml
   - ./gha-runner-scale-set-bandit/ks.yaml

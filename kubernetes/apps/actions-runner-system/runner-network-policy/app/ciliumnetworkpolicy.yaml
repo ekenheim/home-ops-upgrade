@@ -1,0 +1,49 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# CI runners (every gha-runner-scale-set-*) must not reach the cluster's
+# unauthenticated agent tooling. Public repos run these runners, and an
+# approved fork PR is still untrusted code; the MCP servers accept any
+# caller, and ha-mcp holds a Home Assistant token that can drive the house.
+#
+# A DENY list, not an allow list, on purpose: workflows legitimately need
+# the internet (GitHub, registries), the Kubernetes API (schemas,
+# volsync-drill), the NAS (nas-restart) and LiteLLM (AI PR review), and an
+# allow list would silently break whichever one it forgot.
+# enableDefaultDeny=false keeps everything not listed below as it is today.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: runner-egress-deny
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/component: runner
+  enableDefaultDeny:
+    egress: false
+    ingress: false
+  egressDeny:
+    # The llm namespace (memini, hindsight, openclaw, opencode, courier,
+    # dispatch, the mcp-gateway ...) -- except LiteLLM, which the AI PR
+    # review calls. Deny wins over allow in Cilium, so the exception has to
+    # be written into the deny selector itself.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: llm
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: NotIn
+              values: ["litellm"]
+    # Every toolhive MCP server in ANY namespace (arr in downloads, grafana
+    # in observability). A namespaced policy only matches its own namespace
+    # unless the namespace key is present, hence the Exists.
+    - toEndpoints:
+        - matchLabels:
+            toolhive: "true"
+          matchExpressions:
+            - key: k8s:io.kubernetes.pod.namespace
+              operator: Exists
+    # Home Assistant itself.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: default
+            app.kubernetes.io/name: home-assistant

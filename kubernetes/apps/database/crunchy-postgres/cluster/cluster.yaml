@@ -187,6 +187,12 @@ spec:
       databases: ["hempriser"]
       password:
         type: AlphaNumeric
+    # Atlas research app (development ns): source ledger, audit trail and job queue.
+    # The app connects to the primary directly, not via pgbouncer.
+    - name: "atlas"
+      databases: ["atlas"]
+      password:
+        type: AlphaNumeric
     - name: "alphaos"
       databases: ["alphaos"]
       password:

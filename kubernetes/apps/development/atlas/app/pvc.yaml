@@ -1,0 +1,15 @@
+---
+# Atlas's source archive: immutable raw bytes and parses, content-addressed. The filesystem
+# backend for now (the object-locked MinIO bucket is a later step). RWO, so the api and worker
+# run as two containers in ONE pod that share it.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: atlas-archive
+  namespace: development
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: ceph-block
+  resources:
+    requests:
+      storage: 10Gi

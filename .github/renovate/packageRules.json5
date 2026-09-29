@@ -199,12 +199,31 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["docker.io/kyuz0/amd-strix-halo-toolboxes"],
       "pinDigests": true
-    }
+    },
     // The dispatch hold at <0.5.41 was removed here on 2026-08-29. It existed
     // because 0.5.41 tightened the CSP to `script-src 'self'` without a nonce,
     // which blocked Next.js's inline RSC bootstrap and left the UI unhydrated.
     // misospace/dispatch#845 added a per-request nonce and shipped in v0.5.42;
     // kubernetes/apps/llm/dispatch/app/ocirepository.yaml now tracks 0.5.48.
     // Renovate is free to move this package again.
+    {
+      // Atlas (github.com/ekenheim/atlas). Every Atlas release is a deploy the
+      // owner merges by hand, never automatically. This covers every update
+      // type in that directory, digests included: autoMergeDocker.json5's
+      // weekly and "/ekenheim/" digest merges and autoMergeApps.json5's
+      // minor/patch merge all come earlier and are overridden here. Keep these
+      // two rules LAST, so nothing later re-enables automerge.
+      "description": ["Never automerge anything under kubernetes/apps/development/atlas (Atlas)"],
+      "matchFileNames": ["kubernetes/apps/development/atlas/**"],
+      "automerge": false
+    },
+    {
+      // The Atlas image anywhere else it might be referenced (a Job, a
+      // second release). The path rule above already covers development/atlas.
+      "description": ["Never automerge ghcr.io/ekenheim/atlas"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/ekenheim/atlas"],
+      "automerge": false
+    }
   ]
 }

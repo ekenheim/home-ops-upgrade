@@ -1,13 +1,16 @@
 ---
-# Enqueue SEC ingest jobs; the worker in the atlas pod does the work (fetch, archive, parse,
-# then retain into Hindsight). These pods only talk to Postgres.
+# Enqueue Atlas jobs; the worker in the atlas pod does the work (fetch, archive, parse,
+# then retain into Hindsight). These pods only talk to Postgres. The bootstrap ingest Job
+# (0.1.0) has run and is removed; ingest is bounded by a 2-year lookback since 0.1.1.
 #
-# One-off bootstrap: the first ingest of each configured company. Fixed idempotency keys, so
-# re-running it (a Flux re-apply, a recreated Job) never enqueues a second ingest.
+# One-off re-run of the retains cancelled on 2026-09-29 (the unbounded bootstrap): resubmits
+# failed sections of Source Versions inside the ingest lookback (730 days), applying the 8-K
+# selection. Backfill class, so it runs in the nightly window. A Job's spec is immutable: a
+# later re-run needs a new Job name, never an edit of this one.
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: atlas-ingest-bootstrap
+  name: atlas-retry-failed-v0-1-1
   namespace: development
 spec:
   backoffLimit: 6
@@ -20,37 +23,33 @@ spec:
       restartPolicy: OnFailure
       imagePullSecrets:
         - name: ghcr-pull
-      securityContext: &podSecurity
+      securityContext:
         runAsNonRoot: true
         runAsUser: 10001
         runAsGroup: 10001
       containers:
-        - name: enqueue
-          image: &image ghcr.io/ekenheim/atlas:0.1.0
-          command: ["/bin/sh", "-c"]
-          args:
-            - >-
-              atlas ingest --company lumentum --key bootstrap-lumentum &&
-              atlas ingest --company coherent --key bootstrap-coherent
-          env: &env
+        - name: retry
+          image: ghcr.io/ekenheim/atlas:0.1.1
+          args: ["retention", "retry-failed", "--backfill"]
+          env:
             - name: ATLAS_ACTOR
               value: atlas-owner
             - name: ATLAS_ARCHIVE_ROOT
               value: /tmp/archive
-          envFrom: &envFrom
+          envFrom:
             - secretRef:
                 name: atlas-postgres
-          securityContext: &securityContext
+          securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities: { drop: ["ALL"] }
-          volumeMounts: &mounts
+          volumeMounts:
             - name: tmp
               mountPath: /tmp
-          resources: &resources
+          resources:
             requests: { cpu: 20m, memory: 128Mi }
             limits: { memory: 512Mi }
-      volumes: &volumes
+      volumes:
         - name: tmp
           emptyDir: {}
 ---
@@ -86,7 +85,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: enqueue
-              image: ghcr.io/ekenheim/atlas:0.1.0
+              image: ghcr.io/ekenheim/atlas:0.1.1
               command: ["/bin/sh", "-c"]
               args:
                 - >-

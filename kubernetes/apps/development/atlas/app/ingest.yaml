@@ -85,7 +85,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: enqueue
-              image: ghcr.io/ekenheim/atlas:0.1.1
+              image: ghcr.io/ekenheim/atlas:0.1.2
               command: ["/bin/sh", "-c"]
               args:
                 - >-
@@ -112,3 +112,53 @@ spec:
           volumes:
             - name: tmp
               emptyDir: {}
+---
+# One-off (0.1.2): EDGAR withholds filings accepted after 17:30 ET until the next business day,
+# so available_at for those was too early. Existing Source Versions are immutable; this records
+# append-only, audited corrections (later-only) that every reader applies. It retries until the
+# atlas pod has migrated to 0012. A later re-run needs a new Job name.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: atlas-correct-availability-v0-1-2
+  namespace: development
+spec:
+  backoffLimit: 10
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: atlas
+        app.kubernetes.io/component: maintenance
+    spec:
+      restartPolicy: OnFailure
+      imagePullSecrets:
+        - name: ghcr-pull
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+      containers:
+        - name: correct
+          image: ghcr.io/ekenheim/atlas:0.1.2
+          args: ["ledger", "correct-availability"]
+          env:
+            - name: ATLAS_ACTOR
+              value: atlas-owner
+            - name: ATLAS_ARCHIVE_ROOT
+              value: /tmp/archive
+          envFrom:
+            - secretRef:
+                name: atlas-postgres
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests: { cpu: 20m, memory: 128Mi }
+            limits: { memory: 512Mi }
+      volumes:
+        - name: tmp
+          emptyDir: {}

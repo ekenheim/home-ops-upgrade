@@ -46,15 +46,17 @@ spec:
       # Add security section to allow embedding
       security:
         allow_embedding: true
+      # Public on envoy-external, so every browser session goes through
+      # Authentik (which only admits the Grafana Admins / Monitoring groups).
+      # Break-glass if Authentik is down: /login?disableAutoLogin shows the
+      # local form for the admin user. Basic auth stays on: ESO's Grafana
+      # generator (apps/llm/toolhive/grafana-mcp) mints tokens with it.
       auth:
         signout_redirect_url: https://sso.${SECRET_DOMAIN}/application/o/grafana/end-session/
-        oauth_auto_login: false
+        oauth_auto_login: true
         oauth_allow_insecure_email_lookup: true
       auth.anonymous:
-        enabled: true
-        org_name: Main Org.
-        org_role: Viewer
-        hide_version: true
+        enabled: false
       auth.generic_oauth:
         name: authentik
         enabled: true
@@ -379,10 +381,10 @@ spec:
           gethomepage.dev/description: Monitoring Dashboards
         hostnames:
           - "{{ .Release.Name }}.${SECRET_DOMAIN}"
-        # Internal only since 2026-09-29: auth.anonymous is on (Viewer), so a
-        # public route let anyone on the internet browse every dashboard.
+        # Public again since 2026-09-30, now that anonymous access is off and
+        # login is forced through Authentik (see grafana.ini above).
         parentRefs:
-          - name: envoy-internal
+          - name: envoy-external
             namespace: network
             sectionName: https
     ingress:

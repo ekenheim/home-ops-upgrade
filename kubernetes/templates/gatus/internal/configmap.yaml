@@ -1,0 +1,21 @@
+---
+# HTTP check for an app served only on envoy-internal. Same as `external`,
+# minus the 1.1.1.1 resolver: public DNS has no record for an internal-only
+# host, so it resolves through cluster DNS (-> LAN DNS -> envoy-internal).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "${APP}-gatus-ep"
+  labels:
+    gatus.io/enabled: "true"
+data:
+  config.yaml: |
+    endpoints:
+      - name: "${APP}"
+        group: internal
+        url: "https://${GATUS_SUBDOMAIN:-${APP}}.${SECRET_DOMAIN}${GATUS_URL_PATH:-/}"
+        interval: 1m
+        conditions:
+          - "[STATUS] == ${GATUS_STATUS:-200}"
+        alerts:
+          - type: discord

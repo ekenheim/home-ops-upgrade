@@ -82,8 +82,9 @@ spec:
           gethomepage.dev/group: "Observability"
           gethomepage.dev/description: "Alertmanger Quick View"
         hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        # Internal only since 2026-09-29: nothing outside the LAN/VPN needs it.
         parentRefs:
-          - name: envoy-external
+          - name: envoy-internal
             namespace: network
             sectionName: https
         rules:

@@ -106,8 +106,9 @@ spec:
                 port: 9001
       api:
         hostnames: ["s3-secondary.${SECRET_DOMAIN}"]
+        # Internal only since 2026-09-29: every client is in-cluster.
         parentRefs:
-          - name: envoy-external
+          - name: envoy-internal
             namespace: network
             sectionName: https
         rules:

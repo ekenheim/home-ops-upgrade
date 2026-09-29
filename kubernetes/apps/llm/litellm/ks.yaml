@@ -62,3 +62,30 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app litellm-stores
+  namespace: flux-system
+spec:
+  # The `litellm-key-secrets` ClusterSecretStore, which lets development read
+  # litellm-key-atlas out of `llm` (see clustersecretstore/). Like
+  # crunchy-postgres-stores, it needs only external-secrets. A consumer
+  # dependsOn both this and `litellm-keys`, which mints the Secret it reads.
+  path: ./kubernetes/apps/llm/litellm/clustersecretstore
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  targetNamespace: llm
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  dependsOn:
+    - name: external-secrets
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m

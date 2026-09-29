@@ -1,0 +1,44 @@
+---
+# Modeled on database/crunchy-postgres/clustersecretstore, but namespaced and
+# narrowed. This SA may `get` exactly one Secret, litellm-key-atlas, in `llm`.
+# Nothing else in `llm` is readable through it, least of all the `litellm`
+# Secret that holds the master key.
+#
+# No list/watch: the kubernetes provider fetches single keys with a plain Get
+# (list is only for dataFrom.find, which no consumer should use here).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: external-secrets-llm
+  namespace: llm
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["litellm-key-atlas"]
+    verbs: ["get"]
+  # Kept for parity with the external-secrets docs. SelfSubjectRulesReview is
+  # cluster-scoped, so a Role cannot really grant it; system:basic-user
+  # already does, for every authenticated identity.
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["selfsubjectrulesreviews"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: &name external-secrets-llm
+  namespace: llm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: *name
+subjects:
+  - kind: ServiceAccount
+    name: *name
+    namespace: llm
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-secrets-llm
+  namespace: llm

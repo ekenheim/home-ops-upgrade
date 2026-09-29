@@ -4,7 +4,8 @@
 # (the Postgres job queue: SEC ingest, Hindsight retain/poll, reflect, mental-model refresh).
 # They share the RWO archive volume, hence one pod and strategy: Recreate.
 # Memory lives in the shared Hindsight (llm/hindsight), bank atlas-ai-infrastructure.
-# LiteLLM is not configured yet: runs are then not recorded (Atlas logs "litellm disabled").
+# LiteLLM (llm/litellm) with Atlas's own key: readiness checks it, and each run records the
+# deployments MiniMax-M3 routes to. Atlas calls MiniMax-M3 by name, not through atlas-* aliases.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -52,6 +53,12 @@ spec:
               value: http://hindsight-api.llm.svc.cluster.local:8888
             - name: ATLAS_HINDSIGHT_BANK_ID
               value: atlas-ai-infrastructure
+            - name: ATLAS_LITELLM_URL
+              value: http://litellm.llm.svc.cluster.local:4000
+            - name: ATLAS_LLM_EXTRACT_ALIAS
+              value: MiniMax-M3
+            - name: ATLAS_LLM_REFLECT_ALIAS
+              value: MiniMax-M3
             # SEC EDGAR fair access: live fetching with a contact address.
             - name: ATLAS_SEC_LIVE
               value: "true"
@@ -62,6 +69,8 @@ spec:
                 name: atlas-postgres
             - secretRef:
                 name: atlas-hindsight
+            - secretRef:
+                name: atlas-litellm
           securityContext: &securityContext
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

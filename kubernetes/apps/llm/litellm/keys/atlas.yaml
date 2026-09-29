@@ -1,0 +1,36 @@
+---
+# Atlas (development/atlas), the public-market research app. Public filings
+# and notes derived from them only, so MiniMax is allowed: nothing on this key
+# may carry the owner's email, finance or home data.
+#
+# Atlas calls MiniMax-M3 by name (ATLAS_LLM_EXTRACT_ALIAS/_REFLECT_ALIAS in its
+# Deployment) and records per run what it resolves to, from /model/info.
+# Dedicated atlas-extract/atlas-reflect aliases in the configmap would be
+# cleaner, but adding them restarts the gateway; that can come later.
+# `rerank` routes to the shared llm/hindsight TEI sidecar.
+#
+# The Secret lands in `llm`, because the operator writes it next to the CR.
+# development reads it through the `litellm-key-secrets` ClusterSecretStore
+# (../clustersecretstore), which can read only this one Secret and serves
+# only development.
+#
+# maxBudget is list-price spend (the configmap's *_cost_per_token), not a
+# bill: MiniMax is a flat plan. It caps a runaway backfill. maxParallelRequests
+# keeps Atlas from crowding the MiniMax plan's 3-4 concurrent slots out from
+# under the other callers.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: atlas
+spec:
+  proxyRef: litellm-admin
+  keyAlias: atlas
+  secretName: litellm-key-atlas
+  secretKey: api-key
+  maxBudget: "25"
+  budgetDuration: 30d
+  maxParallelRequests: 3
+  models:
+    - MiniMax-M3
+    - qwen3-embedding-0.6b
+    - rerank

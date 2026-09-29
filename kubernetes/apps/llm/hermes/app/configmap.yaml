@@ -280,6 +280,15 @@ data:
         api_mode: anthropic_messages
         api_key: $${LITELLM_API_KEY}
         stale_timeout_seconds: 3900
+    # v2026.9.24 defaults multiplex_profiles to true, and the startup config
+    # migration writes that default into the live config. Multiplexing makes
+    # placeholder refs resolve from the profile's .env only, never the process env,
+    # so the LITELLM_API_KEY above (from the `hermes` secret via envFrom) went
+    # out as the literal placeholder: every turn and cron run 401'd from
+    # 2026-09-26. Each profile already runs as its own s6 gateway
+    # (gateway-default, gateway-researcher), so nothing needs multiplexing.
+    gateway:
+      multiplex_profiles: false
     # The dashboard is published at hermes.${SECRET_DOMAIN}, and since
     # v2026.8.3 the image refuses a non-loopback bind with no auth provider
     # registered ("There is no unauthenticated public-bind option") -- the old

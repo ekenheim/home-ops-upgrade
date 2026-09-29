@@ -1,0 +1,128 @@
+---
+# Atlas Research (github.com/ekenheim/atlas): evidence-driven investment research on Hindsight.
+# One image, two roles in ONE pod: `atlas api` (FastAPI + the static viewer) and `atlas worker`
+# (the Postgres job queue: SEC ingest, Hindsight retain/poll, reflect, mental-model refresh).
+# They share the RWO archive volume, hence one pod and strategy: Recreate.
+# Memory lives in the shared Hindsight (llm/hindsight), bank atlas-ai-infrastructure.
+# LiteLLM is not configured yet: runs are then not recorded (Atlas logs "litellm disabled").
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atlas
+  namespace: development
+  labels:
+    app.kubernetes.io/name: atlas
+    app.kubernetes.io/component: app
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: atlas
+      app.kubernetes.io/component: app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: atlas
+        app.kubernetes.io/component: app
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        # Schema to head on the DIRECT primary (see externalsecret.yaml).
+        - name: migrate
+          image: &image ghcr.io/ekenheim/atlas:0.1.0
+          args: ["migrate"]
+          env: &env
+            - name: ATLAS_ACTOR
+              value: atlas-owner
+            - name: ATLAS_ARCHIVE_ROOT
+              value: /data/archive
+            - name: ATLAS_HINDSIGHT_URL
+              value: http://hindsight-api.llm.svc.cluster.local:8888
+            - name: ATLAS_HINDSIGHT_BANK_ID
+              value: atlas-ai-infrastructure
+            # SEC EDGAR fair access: live fetching with a contact address.
+            - name: ATLAS_SEC_LIVE
+              value: "true"
+            - name: ATLAS_SEC_USER_AGENT
+              value: "Atlas Research ${SECRET_ACME_EMAIL}"
+          envFrom: &envFrom
+            - secretRef:
+                name: atlas-postgres
+            - secretRef:
+                name: atlas-hindsight
+          securityContext: &securityContext
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts: &mounts
+            - name: archive
+              mountPath: /data/archive
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+        # Apply the research bank template, but only when it changed: a re-import can re-queue
+        # mental-model refreshes (LLM spend), so an unchanged template is skipped.
+        - name: apply-template
+          image: *image
+          args: ["hindsight", "apply-template", "--if-changed"]
+          env: *env
+          envFrom: *envFrom
+          securityContext: *securityContext
+          volumeMounts: *mounts
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+      containers:
+        - name: api
+          image: *image
+          args: ["api"]
+          env: *env
+          envFrom: *envFrom
+          securityContext: *securityContext
+          volumeMounts: *mounts
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 1Gi }
+          startupProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            periodSeconds: 15
+            failureThreshold: 6
+        - name: worker
+          image: *image
+          args: ["worker"]
+          env: *env
+          envFrom: *envFrom
+          securityContext: *securityContext
+          volumeMounts: *mounts
+          resources:
+            requests: { cpu: 100m, memory: 512Mi }
+            limits: { memory: 2Gi }
+      volumes:
+        - name: archive
+          persistentVolumeClaim:
+            claimName: atlas-archive
+        - name: tmp
+          emptyDir: {}

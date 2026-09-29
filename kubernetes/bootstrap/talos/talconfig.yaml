@@ -210,14 +210,30 @@ nodes:
               - pcie_ports=native
               - pcie_ecrc=on
     networkInterfaces:
-      # Realtek dual-port card (r8169): enp97s0 is 2.5G, enp98s0 is 10G.
-      # Only the 10G port is cabled. Do NOT bond these -- mismatched speeds --
-      # and do not cable both: the Cilium L2 policy matches ^(ens|enp|bond).*,
-      # so a second addressed NIC on this L2 would answer ARP for LoadBalancer
-      # VIPs from a second MAC, the same failure that required bonding master3.
-      - deviceSelector:
-          hardwareAddr: "38:05:25:31:97:13"
-        dhcp: true
+      # 2x 10G bonded via LACP (switch LAG on USW Pro XG 24 ports 11+12).
+      # Both ports are RTL8127 10GbE on r8169 (pciID 10EC:8127, verified
+      # 2026-09-29); an older note here called one of them 2.5G, it is not.
+      # Bonded rather than two NICs because both sit on the same L2 and the
+      # Cilium L2 policy matches ^(ens|enp|bond).*: unbonded, the second MAC
+      # can answer ARP for LoadBalancer VIPs -- the failure that forced
+      # master3 onto a bond. worker3 (ports 13+14) is set up the same way.
+      - interface: bond0
+        bond:
+          mode: 802.3ad
+          lacpRate: fast
+          xmitHashPolicy: layer3+4
+          miimon: 100
+          updelay: 200
+          downdelay: 200
+          deviceSelectors:
+            # :13 first so bond0 inherits the MAC the node has always used.
+            - hardwareAddr: "38:05:25:31:97:13"
+            - hardwareAddr: "38:05:25:31:97:12"
+        # Static, not DHCP, for the same reason as master3: a re-cable can
+        # leave the .38 reservation keyed to a MAC the bond no longer shows.
+        dhcp: false
+        addresses:
+          - "192.168.50.38/24"
         # Jumbo verified end-to-end: ping -M do -s 8972 worker3 -> worker4 is
         # 0% loss. Note the first install stalled here for ~90s retrying the
         # installer blob with "TLS handshake timeout" -- the LAN is 9000 but

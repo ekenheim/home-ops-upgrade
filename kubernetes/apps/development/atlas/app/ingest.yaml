@@ -1,58 +1,13 @@
 ---
 # Enqueue Atlas jobs; the worker in the atlas pod does the work (fetch, archive, parse,
-# then retain into Hindsight). These pods only talk to Postgres. The bootstrap ingest Job
-# (0.1.0) has run and is removed; ingest is bounded by a 2-year lookback since 0.1.1.
+# then retain into Hindsight). These pods only talk to Postgres. Ingest is bounded by a
+# 2-year lookback since 0.1.1.
 #
-# One-off re-run of the retains cancelled on 2026-09-29 (the unbounded bootstrap): resubmits
-# failed sections of Source Versions inside the ingest lookback (730 days), applying the 8-K
-# selection. Backfill class, so it runs in the nightly window. A Job's spec is immutable: a
-# later re-run needs a new Job name, never an edit of this one.
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: atlas-retry-failed-v0-1-1
-  namespace: development
-spec:
-  backoffLimit: 6
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: atlas
-        app.kubernetes.io/component: ingest
-    spec:
-      restartPolicy: OnFailure
-      imagePullSecrets:
-        - name: ghcr-pull
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 10001
-        runAsGroup: 10001
-      containers:
-        - name: retry
-          image: ghcr.io/ekenheim/atlas:0.1.2
-          args: ["retention", "retry-failed", "--backfill"]
-          env:
-            - name: ATLAS_ACTOR
-              value: atlas-owner
-            - name: ATLAS_ARCHIVE_ROOT
-              value: /tmp/archive
-          envFrom:
-            - secretRef:
-                name: atlas-postgres
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities: { drop: ["ALL"] }
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-          resources:
-            requests: { cpu: 20m, memory: 128Mi }
-            limits: { memory: 512Mi }
-      volumes:
-        - name: tmp
-          emptyDir: {}
----
+# One-off Jobs (bootstrap ingest, retry-failed 0.1.1, correct-availability 0.1.2) are removed
+# once Complete: Renovate bumps their image tag with the Deployment, and a Job's pod template
+# is immutable, so a bumped Job fails the dry-run and blocks this whole Kustomization.
+# A new one-off gets a new, version-suffixed name and is deleted from Git after it completes.
+#
 # Nightly ingest inside the backfill window (ATLAS_BACKFILL_WINDOW, default 01:00-07:00 UTC):
 # picks up new filings. Unchanged filings create no new Source Version (conditional requests
 # and content hashes), so re-fetching is cheap.
@@ -112,53 +67,3 @@ spec:
           volumes:
             - name: tmp
               emptyDir: {}
----
-# One-off (0.1.2): EDGAR withholds filings accepted after 17:30 ET until the next business day,
-# so available_at for those was too early. Existing Source Versions are immutable; this records
-# append-only, audited corrections (later-only) that every reader applies. It retries until the
-# atlas pod has migrated to 0012. A later re-run needs a new Job name.
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: atlas-correct-availability-v0-1-2
-  namespace: development
-spec:
-  backoffLimit: 10
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: atlas
-        app.kubernetes.io/component: maintenance
-    spec:
-      restartPolicy: OnFailure
-      imagePullSecrets:
-        - name: ghcr-pull
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 10001
-        runAsGroup: 10001
-      containers:
-        - name: correct
-          image: ghcr.io/ekenheim/atlas:0.1.2
-          args: ["ledger", "correct-availability"]
-          env:
-            - name: ATLAS_ACTOR
-              value: atlas-owner
-            - name: ATLAS_ARCHIVE_ROOT
-              value: /tmp/archive
-          envFrom:
-            - secretRef:
-                name: atlas-postgres
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities: { drop: ["ALL"] }
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-          resources:
-            requests: { cpu: 20m, memory: 128Mi }
-            limits: { memory: 512Mi }
-      volumes:
-        - name: tmp
-          emptyDir: {}

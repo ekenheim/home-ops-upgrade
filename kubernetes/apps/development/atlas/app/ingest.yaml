@@ -29,7 +29,7 @@ spec:
         runAsGroup: 10001
       containers:
         - name: retry
-          image: ghcr.io/ekenheim/atlas:0.1.1
+          image: ghcr.io/ekenheim/atlas:0.1.2
           args: ["retention", "retry-failed", "--backfill"]
           env:
             - name: ATLAS_ACTOR

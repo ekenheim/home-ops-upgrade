@@ -91,6 +91,22 @@ spec:
                   fi
                 fi
                 chown -R 10000:10000 /opt/data/plugins
+                # Since v2026.9.24 one gateway multiplexes every profile, and
+                # config placeholder refs then resolve from the profile's .env
+                # ONLY, never the process env (setting multiplex_profiles:
+                # false is retired: hermes rewrites it to true at startup). The
+                # LITELLM_API_KEY that envFrom provides was therefore sent as
+                # the literal placeholder and every turn and cron run 401'd
+                # from 2026-09-26. Copy it into each profile's .env on every
+                # start, so a key rotated in Bitwarden still lands.
+                for envfile in /opt/data/.env /opt/data/profiles/*/.env; do
+                  [ -f "$envfile" ] || continue
+                  grep -v '^LITELLM_API_KEY=' "$envfile" > "$envfile.new" || true
+                  printf 'LITELLM_API_KEY=%s\n' "$LITELLM_API_KEY" >> "$envfile.new"
+                  chown --reference="$envfile" "$envfile.new"
+                  chmod --reference="$envfile" "$envfile.new"
+                  mv "$envfile.new" "$envfile"
+                done
                 # code-server runs as uid 1000 (coder) with supplementary
                 # group 10000, but /opt/data is mode 700 -- mode 700 grants the
                 # group nothing, not even traversal, so the IDE rendered an

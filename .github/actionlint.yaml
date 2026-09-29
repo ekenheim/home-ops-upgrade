@@ -7,3 +7,4 @@ self-hosted-runner:
     - gha-runner-scale-set-ecom
     - gha-runner-scale-set-grid-reliance
     - gha-runner-scale-set-nordic-housing
+    - gha-runner-scale-set-atlas

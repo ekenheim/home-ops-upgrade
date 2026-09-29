@@ -2,8 +2,6 @@
 originRequest:
   originServerName: external.${SECRET_DOMAIN}
 
-# Rollback for the envoy-gateway cutover: point these four back at
-# https://nginx-external-controller.network.svc.cluster.local:443
 ingress:
   - hostname: "${SECRET_DOMAIN}"
     service: https://envoy-external.network.svc.cluster.local:443

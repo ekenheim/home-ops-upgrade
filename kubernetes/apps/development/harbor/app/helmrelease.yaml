@@ -34,8 +34,9 @@ spec:
       targetPath: secretKey
   values:
     expose:
-      # HTTPRoute on envoy-external (public, via the Cloudflare tunnel). The LAN
-      # path for large pushes is httproute-internal.yaml on envoy-internal.
+      # HTTPRoute on envoy-internal only (since 2026-09-30). Its pushers are
+      # the in-cluster banditweb runners, which reach it through the CoreDNS
+      # hosts entry in apps/kube-system/coredns; nothing outside the LAN uses it.
       # No body-size setting needed: envoy has no default request size limit.
       type: route
       tls:
@@ -47,7 +48,7 @@ spec:
         hosts:
           - harbor.${SECRET_DOMAIN}
         parentRefs:
-          - name: envoy-external
+          - name: envoy-internal
             namespace: network
             sectionName: https
 

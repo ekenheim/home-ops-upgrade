@@ -24,6 +24,9 @@ spec:
     - name: external-secrets
     - name: crunchy-postgres-operator-cluster
     - name: crunchy-postgres-stores
+    # litellm-key-secrets (the store) and the key's Secret it reads.
+    - name: litellm-stores
+    - name: litellm-keys
   postBuild:
     substitute:
       APP: atlas

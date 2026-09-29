@@ -13,3 +13,4 @@ resources:
   - ./gha-runner-scale-set-ecom/ks.yaml
   - ./gha-runner-scale-set-banditweb/ks.yaml
   - ./gha-runner-scale-set-grid-reliance/ks.yaml
+  - ./gha-runner-scale-set-atlas/ks.yaml

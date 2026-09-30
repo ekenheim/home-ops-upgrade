@@ -11,11 +11,13 @@
 #   single-dollar SECRET_DOMAIN in the gateway block: substituted by Flux
 #                     from cluster-secrets.
 #
-# Models: the default is Ornith on worker4, falling back to the ChatGPT
-# subscription -- never a China-hosted plan, because this agent sees Home
-# Assistant, memory and whatever you say to it in Discord. MiniMax and the
-# pools are selectable per session (/model minimax) or per cron job for work
-# that carries nothing private.
+# Models: the default is MiniMax-M3 on the flat plan (owner decision
+# 2026-09-30, option 3 of three: the plan sat at 2% while Ornith carried every
+# turn), falling back to Ornith on worker4, then the ChatGPT subscription.
+# The owner accepted, knowingly, that Home Assistant state, memory and what is
+# said to the bot in Discord go to a China-hosted provider; the earlier rule
+# ("never a China-hosted plan for this agent") is withdrawn. Ornith and the
+# pools stay selectable per session (/model local) or per cron job.
 #
 # The init container copies this file into the PVC read-only (0400) on every
 # start, so edits made through the Control UI do not survive a restart:
@@ -35,8 +37,8 @@ data:
           thinkingDefault: "medium",
           timeoutSeconds: 1800,
           model: {
-            primary: "litellm/self-hosted",
-            fallbacks: ["litellm/chatgpt"],
+            primary: "litellm/MiniMax-M3-chat",
+            fallbacks: ["litellm/self-hosted", "litellm/chatgpt"],
           },
           models: {
             "litellm/self-hosted": { alias: "local", params: { cache_prompt: true } },

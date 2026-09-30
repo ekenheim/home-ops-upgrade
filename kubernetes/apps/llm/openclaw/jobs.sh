@@ -6,7 +6,8 @@
 #   kubectl -n llm exec -i deploy/openclaw -c app -- sh -s < jobs.sh
 #
 # Delivery: DM to the admin user (DISCORD_ADMIN_USER_ID is in the pod env).
-# Private-data jobs run on local Ornith; only the public-repo watch uses MiniMax.
+# All three run on MiniMax-M3 (owner decision 2026-09-30; it is far better at
+# the exact tool calls below than Ornith, which spent whole budgets guessing).
 set -eu
 cd /app 2>/dev/null || true
 oc() { node dist/index.js "$@"; }
@@ -44,7 +45,7 @@ EOF
 # shellcheck disable=SC2086
 oc cron add --declaration-key morning-brief --name morning-brief \
   --display-name "Morning brief" --cron "30 7 * * *" $COMMON \
-  --model litellm/self-hosted --thinking low \
+  --model litellm/MiniMax-M3-chat --thinking low \
   --message "$BRIEF"
 
 # shellcheck disable=SC2086
@@ -85,7 +86,7 @@ EOF
 # shellcheck disable=SC2086
 oc cron add --declaration-key cluster-health --name cluster-health \
   --display-name "Cluster health digest" --cron "0 9 * * *" $COMMON \
-  --model litellm/self-hosted --thinking medium \
+  --model litellm/MiniMax-M3-chat --thinking medium \
   --message "$HEALTH"
 
 oc cron list

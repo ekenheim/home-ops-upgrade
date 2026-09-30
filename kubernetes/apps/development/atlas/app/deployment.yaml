@@ -67,6 +67,10 @@ spec:
             # Discovery (the Scout's web searches) through the in-cluster SearXNG.
             - name: ATLAS_SEARXNG_URL
               value: http://searxng.llm.svc.cluster.local:8080
+            # The engines that answer after the 2026-10-01 SearXNG update: the default
+            # bing,brave return nothing (bing) or are rate-limited (brave) from this egress IP.
+            - name: ATLAS_SEARXNG_ENGINES
+              value: duckduckgo,google,startpage,mojeek
             # Exchange sources (FCA NSM for IQE, AMF for Soitec) behind the fetch gate; they
             # send the generic AtlasResearch User-Agent. HKEXnews stays blocked by its terms.
             - name: ATLAS_EXCHANGE_LIVE

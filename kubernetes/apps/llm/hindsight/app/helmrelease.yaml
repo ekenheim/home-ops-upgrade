@@ -102,18 +102,24 @@ spec:
         # a refresh is a multi-step tool loop on the reflect model that streams past
         # 30s, so every atlas-dev refresh died with CodexRunawayStreamError
         # and retried into the same wall (2026-09-28). Refresh is background
-        # work: give it 5 minutes. Interactive reflect gets 120s, the general
-        # LLM default; its whole operation is still capped at 300s by
-        # DEFAULT_REFLECT_WALL_TIMEOUT.
+        # work: give it 10 minutes (was 5 until 2026-09-30, see below).
+        # Interactive reflect gets 120s, the general LLM default; its whole
+        # operation is capped by REFLECT_WALL_TIMEOUT below.
         HINDSIGHT_API_REFLECT_LLM_TIMEOUT: "120"
-        HINDSIGHT_API_MENTAL_MODEL_REFRESH_LLM_TIMEOUT: "300"
+        HINDSIGHT_API_MENTAL_MODEL_REFRESH_LLM_TIMEOUT: "600"
+        # Reflect gathers evidence until this budget, then forces a final synthesis
+        # over everything it holds (default 100k). Once atlas-ai-infrastructure grew,
+        # every refresh hit ~125k and each synthesis call on 5.6-sol streamed past
+        # 300s, three attempts in a row (2026-09-30). A smaller budget keeps the
+        # synthesis prompt tractable; the per-call refresh deadline above allows
+        # 10 minutes for the rest.
+        HINDSIGHT_API_REFLECT_MAX_CONTEXT_TOKENS: "64000"
         # Whole-task ceiling, shared by interactive reflect and mental-model refresh
-        # (the worker has no separate knob for refresh). At the 300s default it equals
-        # the per-call refresh deadline above, so one slow Codex stream ate the whole
-        # budget and attempt 2/2 never ran (atlas-ai-infrastructure, 2026-09-30).
-        # 900s = two 300s attempts plus backoff. Interactive reflect calls are still
-        # bounded at 120s each by REFLECT_LLM_TIMEOUT.
-        HINDSIGHT_API_REFLECT_WALL_TIMEOUT: "900"
+        # (the worker has no separate knob for refresh; the 300s default equalled the
+        # old per-call deadline, so retries never ran). Tool phase + two 600s
+        # synthesis attempts + backoff. Interactive reflect calls stay capped at
+        # 120s each by REFLECT_LLM_TIMEOUT.
+        HINDSIGHT_API_REFLECT_WALL_TIMEOUT: "1500"
         # --- Embeddings: litellm -> embeddings (Qwen3-Embedding-0.6B, 1024 dims) ---
         # Same model memini uses. Why this model and how it is served:
         # ../../embeddings/app/model.yaml. It replaced bge-m3 on 2026-09-18,

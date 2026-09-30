@@ -45,13 +45,13 @@ EOF
 # shellcheck disable=SC2086
 oc cron add --declaration-key morning-brief --name morning-brief \
   --display-name "Morning brief" --cron "30 7 * * *" $COMMON \
-  --model litellm/MiniMax-M3-chat --thinking low \
+  --model minimax/MiniMax-M3-messages --thinking low \
   --message "$BRIEF"
 
 # shellcheck disable=SC2086
 oc cron add --declaration-key upstream-watch --name upstream-watch \
   --display-name "Upstream homelab watch" --cron "30 8 * * *" $COMMON \
-  --model litellm/MiniMax-M3-chat --tools web_fetch \
+  --model minimax/MiniMax-M3-messages --tools web_fetch \
   --message "Check commits from the last 24 hours in joryirving/home-ops and onedr0p/home-ops.
 Use web_fetch on https://api.github.com/repos/<owner>/<repo>/commits?since=<ISO-8601 time 24h ago>, then fetch individual commits you need detail on.
 Ignore Renovate/dependency bumps and formatting-only changes.
@@ -86,7 +86,7 @@ EOF
 # shellcheck disable=SC2086
 oc cron add --declaration-key cluster-health --name cluster-health \
   --display-name "Cluster health digest" --cron "0 9 * * *" $COMMON \
-  --model litellm/MiniMax-M3-chat --thinking medium \
+  --model minimax/MiniMax-M3-messages --thinking medium \
   --message "$HEALTH"
 
 oc cron list

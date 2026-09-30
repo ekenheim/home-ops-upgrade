@@ -37,7 +37,7 @@ data:
           thinkingDefault: "medium",
           timeoutSeconds: 1800,
           model: {
-            primary: "litellm/MiniMax-M3-chat",
+            primary: "minimax/MiniMax-M3-messages",
             fallbacks: ["litellm/self-hosted", "litellm/chatgpt"],
           },
           models: {
@@ -46,7 +46,8 @@ data:
             "litellm/chatgpt": { alias: "gpt" },
             "litellm/local-pool": { alias: "local-pool" },
             "litellm/local-pool-chat": { alias: "local-pool-chat" },
-            "litellm/MiniMax-M3-chat": { alias: "minimax" },
+            "minimax/MiniMax-M3-messages": { alias: "minimax" },
+            "litellm/MiniMax-M3-chat": { alias: "minimax-chat" },
             "litellm/MiniMax-M2.7": { alias: "minimax-old" },
             "litellm/reasoning-pool": { alias: "reasoning" },
             "litellm/implementation-pool": { alias: "implementation" },
@@ -71,7 +72,12 @@ data:
       tools: {
         elevated: { enabled: true, allowFrom: { discord: ["$${DISCORD_ADMIN_USER_ID}"] } },
         sessions: { visibility: "all" },
-        exec: { mode: "full", strictInlineEval: false },
+        // allowlist, not full (2026-09-30): with a shell the model curled memini
+        // with its key masked to *** (a 6 s retry loop for 10 minutes) and
+        // echoed the key into Discord. Memory, HA, Grafana, kubectl, Flux and
+        // the web all reach it through tools, so it has no everyday need for
+        // a shell; grant single commands from the Control UI if one comes up.
+        exec: { mode: "allowlist", strictInlineEval: false },
         web: { search: { enabled: true, provider: "searxng" }, fetch: { enabled: true } },
       },
       models: {
@@ -92,6 +98,25 @@ data:
               { id: "reasoning-pool", name: "Reasoning pool", reasoning: true, input: ["text"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
               { id: "implementation-pool", name: "Implementation pool", reasoning: true, input: ["text"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 204800, maxTokens: 32768 },
               { id: "frontier-pool", name: "Frontier pool", reasoning: true, input: ["text", "image"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
+            ],
+          },
+          // MiniMax the way OpenClaw's own MiniMax provider speaks it: Anthropic
+          // Messages, here through the same gateway (/v1/messages, so the base
+          // URL has no /v1) to litellm's MiniMax-M3-messages, which passes the
+          // request straight to api.minimax.io/anthropic. M3 returns native
+          // thinking blocks and tool_use there; on the OpenAI endpoint its
+          // reasoning came back as reasoning_content deltas and leaked into
+          // replies, and tool calls sometimes arrived as text (2026-09-30).
+          // M2.7 stays on the chat route: OpenClaw's docs say M2.x leaks
+          // reasoning on the Anthropic streaming endpoint unless thinking is
+          // disabled.
+          minimax: {
+            baseUrl: "http://litellm.llm.svc.cluster.local:4000",
+            apiKey: "$${LITELLM_API_KEY}",
+            api: "anthropic-messages",
+            timeoutSeconds: 1800,
+            models: [
+              { id: "MiniMax-M3-messages", name: "MiniMax M3 (plan, Anthropic Messages)", reasoning: true, input: ["text", "image"], cost: { input: 0.3, output: 1.2, cacheRead: 0.06, cacheWrite: 0.3 }, contextWindow: 1000000, maxTokens: 131072 },
             ],
           },
         },

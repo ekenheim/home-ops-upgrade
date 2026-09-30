@@ -44,7 +44,7 @@ spec:
         # Seed the project on first run, upgrade it when the image ships a newer
         # Strapi than the PVC, and sync the image-owned config.
         - name: seed-and-upgrade
-          image: ghcr.io/ekenheim/strapi-bootstrap:5.55.1@sha256:6ec753a363057d902e5910d27a87319d76b1d527068088d7b4008d67641d7030
+          image: ghcr.io/ekenheim/strapi-bootstrap:5.56.0@sha256:359d08727b54f64ae427623e1c4ff24d5672fdfcc41f50d05081640424ae320a
           imagePullPolicy: Always
           command: ["/usr/local/bin/strapi-sync.sh"]
           volumeMounts:
@@ -52,7 +52,7 @@ spec:
               mountPath: /srv/app
       containers:
         - name: cms
-          image: ghcr.io/ekenheim/strapi-bootstrap:5.55.1@sha256:6ec753a363057d902e5910d27a87319d76b1d527068088d7b4008d67641d7030
+          image: ghcr.io/ekenheim/strapi-bootstrap:5.56.0@sha256:359d08727b54f64ae427623e1c4ff24d5672fdfcc41f50d05081640424ae320a
           imagePullPolicy: Always
           command: ["/bin/sh", "-c"]
           args:

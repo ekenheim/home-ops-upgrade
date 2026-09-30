@@ -192,5 +192,5 @@ data:
           toolhive: { url: "http://vmcp-mcp-gateway.llm.svc.cluster.local:4483/mcp", transport: "streamable-http", headers: { Accept: "application/json, text/event-stream" } },
         },
       },
-      meta: { lastTouchedVersion: "2026.9.6" },
+      meta: { lastTouchedVersion: "2026.9.7" },
     }

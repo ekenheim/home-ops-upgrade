@@ -74,6 +74,19 @@
       "enabled": false
     },
     {
+      // SearXNG tags every commit as <year>.<month>.<day>-<short sha>, several
+      // a day. Renovate's docker versioning treats the "-<sha>" as a
+      // compatibility suffix and only offers updates that share it, so no
+      // update was EVER offered (the image sat on 2025.5.17 for 16 months).
+      // Read the date as major.minor.patch and the sha as build metadata, and
+      // take one bump a month since PRs auto-merge here.
+      "description": ["Date-plus-sha versioning and a monthly cadence for searxng rolling tags"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/searxng/searxng"],
+      "versioning": "regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})-(?<build>[0-9a-f]+)$",
+      "schedule": ["on the first day of the month"]
+    },
+    {
       // MinIO tags look like RELEASE.2025-09-07T16-13-09Z. Without this
       // Renovate cannot parse them as versions and the image never moves.
       // The -cpuv1 variants are excluded so we stay on the default build.

@@ -41,12 +41,20 @@ spec:
             runAsGroup: 10001
           containers:
             - name: enqueue
-              image: ghcr.io/ekenheim/atlas:0.2.0
+              image: ghcr.io/ekenheim/atlas:0.2.1
               command: ["/bin/sh", "-c"]
               args:
+                # The photonics universe (0.2.1 rollout): SEC filers with at most 5 new retains
+                # each per night (a rerun takes the next 5; triage decides what is retained and
+                # the rolling 5 h budgets pace it), then IQE (FCA NSM) and Soitec (AMF).
+                # Innolight is manual import only (HKEX terms). One failure doesn't stop the rest.
                 - >-
-                  atlas ingest --company lumentum --backfill &&
-                  atlas ingest --company coherent --backfill
+                  rc=0;
+                  for c in lumentum coherent axt macom stmicroelectronics marvell
+                  applied-optoelectronics fabrinet ciena; do
+                  atlas ingest --company "$c" --backfill --max-retains 5 || rc=1; done;
+                  for c in iqe soitec; do atlas ingest --company "$c" --backfill || rc=1; done;
+                  exit $rc
               env:
                 - name: ATLAS_ACTOR
                   value: atlas-owner

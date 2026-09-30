@@ -156,14 +156,16 @@ data:
       #
       # Note this alias currently has no backend at all: qwen38-27b is parked
       # at replicas 0 and `deep` falls through to ornith. See qwen38-27b.yaml.
-      # Lingarr's en->sv subtitle work, split 50/50 (2026-09-30) between two
-      # deployments of one alias; the router's simple-shuffle honours `weight`,
-      # and a failing deployment (worker4 down, a MiniMax 429 at the plan's
-      # 300 prompts / 5 h) is cooled down so the other takes every request.
+      # Lingarr's en->sv subtitle work: MiniMax first, gemma as the fallback
+      # (owner decision 2026-09-30, replacing a 50/50 split the same day: the
+      # plan sat far below its cap and gemma was the slow half). `order` is
+      # the pools' failover rule: every request goes to order 1 until it
+      # fails (a MiniMax 429 at the plan's 300 prompts / 5 h, an outage),
+      # which cools it down and sends the rest to order 2 meanwhile.
       #
-      # 1. Gemma 3 27B (dense, unsloth UD-Q4_K_XL) on worker4 -- see
+      # 2. Gemma 3 27B (dense, unsloth UD-Q4_K_XL) on worker4 -- see
       #    ../../llmkube/app/gemma3-27b.yaml. Chosen because ornith's Swedish
-      #    was not usable. Text-only.
+      #    was not usable. Text-only. ~5.6 s a call against MiniMax's ~1 s.
       - model_name: translate
         model_info:
           mode: chat
@@ -174,8 +176,8 @@ data:
           model: openai/gemma3-27b
           api_base: http://gemma3-27b.llm:8080/v1
           api_key: none
-          weight: 1
-      # 2. MiniMax-M3 on the flat plan, thinking OFF. Load-bearing: with
+          order: 2
+      # 1. MiniMax-M3 on the flat plan, thinking OFF. Load-bearing: with
       #    thinking on M3 spends ~900 reasoning tokens and 6-17 s on five
       #    subtitle lines and its first 400 output tokens are all reasoning
       #    (finish=length, empty content); off, 1-1.4 s and ~95 tokens, and
@@ -183,8 +185,8 @@ data:
       #    this gateway). `extra_body` is how the flag reaches MiniMax:
       #    top-level `thinking` / `reasoning_effort` are dropped by
       #    drop_params. Lingarr sends what the plan meters, prompts: ~180 per
-      #    5 h at its weekly average, so the half that lands here stays well
-      #    under the cap even during a bulk run.
+      #    5 h at its weekly average against a 300 cap; a bulk run that
+      #    trips it just spends its cooldown on gemma.
       - model_name: translate
         model_info:
           mode: chat
@@ -198,7 +200,7 @@ data:
           extra_body:
             thinking:
               type: disabled
-          weight: 1
+          order: 1
       - model_name: deep
         model_info:
           mode: chat

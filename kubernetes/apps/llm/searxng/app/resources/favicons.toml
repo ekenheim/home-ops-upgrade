@@ -1,0 +1,12 @@
+# Required since the favicon resolver became a separate subsystem; without it
+# SearXNG logs "missing favicon config" and serves no favicons.
+[favicons]
+
+cfg_schema = 1   # config's schema version no.
+
+[favicons.proxy]
+
+[favicons.cache]
+
+# The root filesystem is read-only; /tmp is an emptyDir.
+db_url = "/tmp/faviconcache.db"

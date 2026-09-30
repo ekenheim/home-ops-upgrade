@@ -35,13 +35,14 @@ spec:
           main:
             image:
               repository: ghcr.io/searxng/searxng
-              tag: 2025.5.17-86373e7@sha256:2f45ccc0b330faa47d8706de883c6e583b38806e32b51172d93c381ce1d92f0b
+              tag: 2026.9.30-a9d990033@sha256:a07a5cd2da2c63d66e559f9e4d3a3db106cfc6c32fb0ac70abe91cc28bcd7350
             env:
               SEARXNG_BASE_URL: https://search.${SECRET_DOMAIN}
               SEARXNG_PORT: &port 8080
-              SEARXNG_REDIS_URL: redis://dragonfly.database.svc.cluster.local:6379
-              UWSGI_WORKERS: "4"
-              UWSGI_THREADS: "4"
+              SEARXNG_VALKEY_URL: redis://dragonfly.database.svc.cluster.local:6379
+              # The image runs granian (uWSGI was dropped upstream in 2025)
+              GRANIAN_WORKERS: "4"
+              GRANIAN_BLOCKING_THREADS: "4"
             envFrom:
               - secretRef:
                   name: *app
@@ -51,7 +52,7 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /stats
+                    path: /healthz
                     port: *port
                   initialDelaySeconds: 0
                   periodSeconds: 10
@@ -104,6 +105,9 @@ spec:
             readOnly: true
           - path: /etc/searxng/limiter.toml
             subPath: limiter.toml
+            readOnly: true
+          - path: /etc/searxng/favicons.toml
+            subPath: favicons.toml
             readOnly: true
       tmpfs:
         enabled: true

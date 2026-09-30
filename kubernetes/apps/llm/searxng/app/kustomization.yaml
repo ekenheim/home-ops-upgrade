@@ -9,6 +9,7 @@ resources:
 configMapGenerator:
   - name: searxng-configmap
     files:
+      - ./resources/favicons.toml
       - ./resources/limiter.toml
       - ./resources/settings.yml
 generatorOptions:

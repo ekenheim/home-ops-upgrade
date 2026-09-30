@@ -67,7 +67,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || steps.prctx.outputs.head_sha }}
 
       - name: Review
-        uses: misospace/pr-reviewer-action@a962cdfc21c378a3b8cf2d8b194c787408e60e6b # v2.5.0
+        uses: misospace/pr-reviewer-action@2c1db8864069b1c747728ce935f469849d32c4c0 # v3.0.0
         with:
           github_token: ${{ github.token }}
           pr_number: ${{ github.event.pull_request.number || inputs.pr_number }}

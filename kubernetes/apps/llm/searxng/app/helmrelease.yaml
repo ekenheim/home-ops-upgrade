@@ -26,6 +26,15 @@ spec:
       retries: 3
 
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 977
+        runAsGroup: 977
+        fsGroup: 977
+        seccompProfile:
+          type: RuntimeDefault
+
     controllers:
       searxng:
         strategy: RollingUpdate
@@ -71,11 +80,6 @@ spec:
               capabilities:
                 drop:
                   - ALL
-                add:
-                  - CHOWN
-                  - SETGID
-                  - SETUID
-                  - DAC_OVERRIDE
     service:
       app:
         controller: *app
@@ -114,8 +118,3 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /tmp
-
-    podSecurityContext:
-      runAsUser: 977
-      runAsGroup: 977
-      fsGroup: 977

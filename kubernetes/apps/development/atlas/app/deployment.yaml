@@ -42,7 +42,7 @@ spec:
       initContainers:
         # Schema to head on the DIRECT primary (see externalsecret.yaml).
         - name: migrate
-          image: &image ghcr.io/ekenheim/atlas:0.1.2
+          image: &image ghcr.io/ekenheim/atlas:0.2.0
           args: ["migrate"]
           env: &env
             - name: ATLAS_ACTOR
@@ -64,6 +64,16 @@ spec:
               value: "true"
             - name: ATLAS_SEC_USER_AGENT
               value: "Atlas Research ${SECRET_ACME_EMAIL}"
+            # Discovery (the Scout's web searches) through the in-cluster SearXNG.
+            - name: ATLAS_SEARXNG_URL
+              value: http://searxng.llm.svc.cluster.local:8080
+            # Exchange sources (FCA NSM for IQE, AMF for Soitec) behind the fetch gate; they
+            # send the generic AtlasResearch User-Agent. HKEXnews stays blocked by its terms.
+            - name: ATLAS_EXCHANGE_LIVE
+              value: "true"
+            # Retention triage is on by default with LiteLLM; LLM work is paced by rolling
+            # 5 h budgets per provider (runbook "Universe rollout and quota budgets").
+            # TradingView (owner override) stays off: ATLAS_TRADINGVIEW_ENABLED unset.
           envFrom: &envFrom
             - secretRef:
                 name: atlas-postgres
@@ -80,6 +90,18 @@ spec:
               mountPath: /data/archive
             - name: tmp
               mountPath: /tmp
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+        # Put Source Versions recorded before 0.2.0 into their Evidence Family (idempotent;
+        # new versions get one at ingest).
+        - name: assign-families
+          image: *image
+          args: ["ledger", "assign-families"]
+          env: *env
+          envFrom: *envFrom
+          securityContext: *securityContext
+          volumeMounts: *mounts
           resources:
             requests: { cpu: 50m, memory: 128Mi }
             limits: { memory: 512Mi }

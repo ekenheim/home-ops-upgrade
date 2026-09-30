@@ -8,9 +8,10 @@
 # is immutable, so a bumped Job fails the dry-run and blocks this whole Kustomization.
 # A new one-off gets a new, version-suffixed name and is deleted from Git after it completes.
 #
-# Nightly ingest inside the backfill window (ATLAS_BACKFILL_WINDOW, default 01:00-07:00 UTC):
-# picks up new filings. Unchanged filings create no new Source Version (conditional requests
-# and content hashes), so re-fetching is cheap.
+# Nightly ingest as backfill class: since 0.2.0 backfill may run at any time, held by the
+# rolling 5 h provider budgets (ATLAS_BACKFILL_WINDOW is unset). Picks up new filings.
+# Unchanged filings create no new Source Version (conditional requests and content hashes),
+# so re-fetching is cheap.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -40,7 +41,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: enqueue
-              image: ghcr.io/ekenheim/atlas:0.1.2
+              image: ghcr.io/ekenheim/atlas:0.2.0
               command: ["/bin/sh", "-c"]
               args:
                 - >-

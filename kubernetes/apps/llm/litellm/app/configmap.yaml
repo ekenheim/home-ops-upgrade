@@ -156,9 +156,14 @@ data:
       #
       # Note this alias currently has no backend at all: qwen38-27b is parked
       # at replicas 0 and `deep` falls through to ornith. See qwen38-27b.yaml.
-      # Gemma 3 27B (dense, unsloth UD-Q4_K_XL) on worker4 -- see
-      # ../../llmkube/app/gemma3-27b.yaml. Exists for Lingarr's en->sv
-      # subtitle work, where ornith's Swedish was not usable. Text-only.
+      # Lingarr's en->sv subtitle work, split 50/50 (2026-09-30) between two
+      # deployments of one alias; the router's simple-shuffle honours `weight`,
+      # and a failing deployment (worker4 down, a MiniMax 429 at the plan's
+      # 300 prompts / 5 h) is cooled down so the other takes every request.
+      #
+      # 1. Gemma 3 27B (dense, unsloth UD-Q4_K_XL) on worker4 -- see
+      #    ../../llmkube/app/gemma3-27b.yaml. Chosen because ornith's Swedish
+      #    was not usable. Text-only.
       - model_name: translate
         model_info:
           mode: chat
@@ -169,6 +174,31 @@ data:
           model: openai/gemma3-27b
           api_base: http://gemma3-27b.llm:8080/v1
           api_key: none
+          weight: 1
+      # 2. MiniMax-M3 on the flat plan, thinking OFF. Load-bearing: with
+      #    thinking on M3 spends ~900 reasoning tokens and 6-17 s on five
+      #    subtitle lines and its first 400 output tokens are all reasoning
+      #    (finish=length, empty content); off, 1-1.4 s and ~95 tokens, and
+      #    the Swedish is as idiomatic as gemma's (tested 2026-09-30 through
+      #    this gateway). `extra_body` is how the flag reaches MiniMax:
+      #    top-level `thinking` / `reasoning_effort` are dropped by
+      #    drop_params. Lingarr sends what the plan meters, prompts: ~180 per
+      #    5 h at its weekly average, so the half that lands here stays well
+      #    under the cap even during a bulk run.
+      - model_name: translate
+        model_info:
+          mode: chat
+          supports_function_calling: false
+          supports_vision: false
+          max_input_tokens: 65536
+        litellm_params:
+          model: openai/MiniMax-M3
+          api_base: https://api.minimax.io/v1
+          api_key: os.environ/MINIMAX_API_KEY
+          extra_body:
+            thinking:
+              type: disabled
+          weight: 1
       - model_name: deep
         model_info:
           mode: chat

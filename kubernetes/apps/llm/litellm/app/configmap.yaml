@@ -408,6 +408,37 @@ data:
               role: system
             - location: message
               index: -1
+      # Same model on MiniMax's ANTHROPIC-compatible endpoint, for callers
+      # that speak Anthropic Messages (OpenClaw's `minimax` provider through
+      # this gateway's /v1/messages). `mode: messages` is load-bearing: it
+      # makes litellm pass the Anthropic request straight through instead
+      # of translating it to chat completions; without it every path 404'd
+      # (the 2026-09-28 test). M3 returns real thinking blocks and tool_use
+      # here, which is what OpenClaw's adapter expects (its bundled MiniMax
+      # provider uses this exact endpoint); on the OpenAI endpoint the
+      # reasoning arrives as reasoning_content deltas and leaks into replies.
+      # Jory's minimax-m3.yaml, verbatim apart from the name.
+      - model_name: MiniMax-M3-messages
+        model_info:
+          mode: messages
+          max_input_tokens: 1000000
+          max_output_tokens: 131072
+          supports_function_calling: true
+          supports_prompt_caching: true
+          supports_vision: true
+          input_cost_per_token: 3.0e-07
+          cache_creation_input_token_cost: 3.0e-07
+          cache_read_input_token_cost: 6.0e-08
+          output_cost_per_token: 1.2e-06
+        litellm_params:
+          model: minimax/MiniMax-M3
+          api_base: https://api.minimax.io/anthropic/v1/messages
+          api_key: os.environ/MINIMAX_API_KEY
+          cache_control_injection_points:
+            - location: message
+              role: system
+            - location: message
+              index: -1
       # Same model on MiniMax's OpenAI-compatible endpoint: the terminal
       # fallback for the local pools, where callers speak chat completions.
       - model_name: MiniMax-M3-chat
@@ -735,19 +766,6 @@ data:
           model: huggingface/cross-encoder/ms-marco-MiniLM-L-6-v2
           api_base: http://hindsight-tei-reranker.llm.svc.cluster.local:8090
           api_key: none
-
-      # --- Cloud providers (placeholders) ---
-      # Add the matching keys to the `litellm` Bitwarden item + externalsecret,
-      # then uncomment. See jory's repo for the full reference set.
-      # - model_name: MiniMax
-      #   model_info:
-      #     mode: messages
-      #     supports_function_calling: true
-      #     supports_vision: true
-      #   litellm_params:
-      #     model: minimax/MiniMax-M3
-      #     api_base: https://api.minimax.io/anthropic/v1/messages
-      #     api_key: os.environ/MINIMAX_API_KEY
 
     general_settings:
       health_check_endpoint: /v1/health

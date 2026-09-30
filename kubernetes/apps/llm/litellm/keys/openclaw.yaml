@@ -17,6 +17,7 @@ spec:
     - local-pool
     - local-pool-chat
     - MiniMax-M3-chat
+    - MiniMax-M3-messages
     - MiniMax-M2.7
     - reasoning-pool
     - implementation-pool

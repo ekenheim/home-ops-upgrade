@@ -42,7 +42,7 @@ spec:
       initContainers:
         # Schema to head on the DIRECT primary (see externalsecret.yaml).
         - name: migrate
-          image: &image ghcr.io/ekenheim/atlas:0.2.3
+          image: &image ghcr.io/ekenheim/atlas:0.2.5
           args: ["migrate"]
           env: &env
             - name: ATLAS_ACTOR

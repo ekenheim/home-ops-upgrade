@@ -71,7 +71,7 @@ spec:
           app:
             image:
               repository: ghcr.io/marimo-team/marimo
-              tag: 0.24.0
+              tag: 0.25.1
             command:
               - /bin/sh
               - -c
@@ -199,7 +199,7 @@ spec:
           shutdown-guard:
             image:
               repository: ghcr.io/marimo-team/marimo
-              tag: 0.24.0
+              tag: 0.25.1
             command:
               - python
               - -c

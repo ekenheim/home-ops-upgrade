@@ -42,7 +42,7 @@ spec:
       initContainers:
         # Schema to head on the DIRECT primary (see externalsecret.yaml).
         - name: migrate
-          image: &image ghcr.io/ekenheim/atlas:0.2.4
+          image: &image ghcr.io/ekenheim/atlas:0.2.5
           args: ["migrate"]
           env: &env
             - name: ATLAS_ACTOR
@@ -109,7 +109,7 @@ spec:
           resources:
             requests: { cpu: 50m, memory: 128Mi }
             limits: { memory: 512Mi }
-        # 0.2.4 pilot backfills (pilot fixes 07 and 11; both idempotent, so they stay).
+        # 0.2.5 pilot backfills (pilot fixes 07 and 11; both idempotent, so they stay).
         # Normalize companyfacts recorded before XBRL normalization existed (production had
         # no financial observation); a company's failure is logged, not fatal to the pod.
         - name: normalize-financials
@@ -127,7 +127,7 @@ spec:
         # parser; the worker does the work. The fixed key makes a repeat a no-op.
         - name: reparse
           image: *image
-          args: ["ledger", "reparse", "--key", "reparse-text-v3-0.2.4"]
+          args: ["ledger", "reparse", "--key", "reparse-text-v3-0.2.5"]
           env: *env
           envFrom: *envFrom
           securityContext: *securityContext

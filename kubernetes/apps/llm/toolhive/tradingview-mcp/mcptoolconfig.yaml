@@ -1,0 +1,45 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcptoolconfig_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPToolConfig
+metadata:
+  name: tradingview-mcp
+spec:
+  # Explicit allow list of read-only tools, from the TradingView MCP docs
+  # (2026-10). Pins the surface so the beta server cannot silently add tools,
+  # and keeps every watchlist/alert write off a gateway that is anonymous.
+  toolsFilter:
+    # watchlists
+    - list_watchlists
+    - get_watchlist
+    - get_active_watchlist
+    # market data
+    - get_ohlcv
+    - get_economic_data
+    - get_economic_symbols
+    # symbol search
+    - search_symbols
+    # screener
+    - get_symbol_data
+    - get_symbol_data_batch
+    - run_screener
+    - get_screener_columns
+    - get_technicals_rating
+    # news
+    - get_news
+    - get_news_story
+    # fundamentals and forecasts
+    - get_forecasts
+    - get_financials
+    - get_financial_history
+    # documents (filings, earnings call transcripts)
+    - get_documents
+    - get_document_view
+    # calendars
+    - get_earnings_calendar
+    - get_economic_calendar
+    - get_dividends_calendar
+    # alerts (read)
+    - list_alerts
+    - get_alerts
+    - get_alerts_log

@@ -313,6 +313,32 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: &app tradingview-mcp
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/llm/toolhive/tradingview-mcp
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  targetNamespace: llm
+  dependsOn:
+    - name: toolhive
+    - name: rook-ceph-cluster
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  # The server cannot become healthy until the one-time TradingView sign-in
+  # is done by hand (see mcpserver.yaml), so don't hold the Kustomization on it.
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: &app mcp-gateway
   namespace: flux-system
 spec:

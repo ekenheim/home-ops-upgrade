@@ -8,12 +8,9 @@
 # holds the refresh token on the PVC and refreshes it itself, so the account
 # is signed in once rather than once per client.
 #
-# One-time sign-in (and again only if the refresh token is revoked):
-#   1. kubectl -n llm logs -f <tradingview-mcp pod> -c mcp
-#      -> prints the TradingView authorization URL
-#   2. kubectl -n llm port-forward <tradingview-mcp pod> 3334:3334
-#   3. open the URL locally and sign in; the redirect to
-#      http://localhost:3334/oauth/callback lands in the pod via the forward.
+# Sign-in (once, and again only when the refresh token stops working): run
+# reauth.ps1 on the Windows machine with the TradingView app and click
+# Accept. README.md has the manual steps and the pitfalls.
 #
 # The gateway is anonymous and cluster-internal, so anything that reaches it
 # acts as this TradingView account. Writes are blocked twice: --ignore-tool

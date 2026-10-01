@@ -11,5 +11,5 @@ spec:
     operation: copy
   ref:
     # renovate: datasource=docker depName=ghcr.io/home-operations/charts/litellm-operator
-    tag: 0.0.19
+    tag: 0.0.20
   url: oci://ghcr.io/home-operations/charts/litellm-operator

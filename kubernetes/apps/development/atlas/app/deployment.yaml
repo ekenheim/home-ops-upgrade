@@ -59,6 +59,18 @@ spec:
               value: MiniMax-M3
             - name: ATLAS_LLM_REFLECT_ALIAS
               value: MiniMax-M3
+            # The MiniMax subscription is dedicated to Atlas (owner, 2026-10-01): the rolling 5 h
+            # token budget goes from the cautious default 400k to 4M, an investigation may spend
+            # 1M tokens, each Investigator reads 72 passages (default 24) and the Skeptic 48.
+            # A 429 from MiniMax still pauses the queue; lower the budget if a quota pause shows.
+            - name: ATLAS_MINIMAX_BUDGET_TOKENS
+              value: "4000000"
+            - name: ATLAS_RUN_TOKEN_BUDGET
+              value: "1000000"
+            - name: ATLAS_INVESTIGATION_MAX_PASSAGES
+              value: "72"
+            - name: ATLAS_INVESTIGATOR_MAX_PASSAGES
+              value: "48"
             # SEC EDGAR fair access: live fetching with a contact address.
             - name: ATLAS_SEC_LIVE
               value: "true"

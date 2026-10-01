@@ -97,6 +97,29 @@ spec:
         HINDSIGHT_API_LLM_MODEL: gpt-5.6-luna
         HINDSIGHT_API_REFLECT_LLM_PROVIDER: openai-codex
         HINDSIGHT_API_REFLECT_LLM_MODEL: gpt-5.6-sol
+        # --- A second extraction model, for Atlas's retains only ---
+        #
+        # Hindsight's multi-LLM chain with the `metadata` strategy (retain only,
+        # since 0.10.0): a retained item whose own metadata says
+        # `extractor: minimax` is extracted by member 1 (MiniMax-M3 through
+        # litellm, thinking off, as Atlas's bake-off measured it); every other
+        # item, from every bank, stays on the Codex primary above. Recall,
+        # reflect, consolidation and mental-model refresh are unaffected: they
+        # always use the primary. Nothing is routed until a client sends that
+        # metadata key, so this is inert on its own. Atlas sends it so its
+        # filing and transcript backfill stops spending the ChatGPT quota that
+        # hermes and the codex CLI share.
+        #
+        # A routed item does NOT fall back: if member 1 fails, that item's
+        # retain operation fails (verified on 0.10.2), and the client retries.
+        # Member 1's key is the litellm key this release already uses for
+        # embeddings (HINDSIGHT_API_LLM_1_API_KEY in externalsecret.yaml); that
+        # key must be allowed to call MiniMax-M3.
+        HINDSIGHT_API_LLM_1_PROVIDER: openai
+        HINDSIGHT_API_LLM_1_BASE_URL: http://litellm.llm:4000/v1
+        HINDSIGHT_API_LLM_1_MODEL: MiniMax-M3
+        HINDSIGHT_API_LLM_1_EXTRA_BODY: '{"thinking":{"type":"disabled"}}'
+        HINDSIGHT_API_LLM_STRATEGY: '{"mode":"metadata","routes":[{"key":"extractor","value":"minimax","member":1}]}'
         # Per-request Codex deadlines. Reflect's upstream default is 30s
         # (DEFAULT_REFLECT_LLM_TIMEOUT) and mental-model refresh inherits it;
         # a refresh is a multi-step tool loop on the reflect model that streams past

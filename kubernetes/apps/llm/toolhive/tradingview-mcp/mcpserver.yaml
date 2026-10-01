@@ -1,0 +1,106 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcpserver_v1beta1.json
+# TradingView's hosted MCP (https://www.tradingview.com/mcp/docs), shared by
+# every client of mcp-gateway on one TradingView account.
+#
+# TradingView only offers per-user OAuth 2.1 (browser sign-in, Essential plan
+# or above). mcp-remote bridges that to stdio: it registers an OAuth client,
+# holds the refresh token on the PVC and refreshes it itself, so the account
+# is signed in once rather than once per client.
+#
+# One-time sign-in (and again only if the refresh token is revoked):
+#   1. kubectl -n llm logs -f <tradingview-mcp pod> -c mcp
+#      -> prints the TradingView authorization URL
+#   2. kubectl -n llm port-forward <tradingview-mcp pod> 3334:3334
+#   3. open the URL locally and sign in; the redirect to
+#      http://localhost:3334/oauth/callback lands in the pod via the forward.
+#
+# The gateway is anonymous and cluster-internal, so anything that reaches it
+# acts as this TradingView account. Writes are blocked twice: --ignore-tool
+# below drops them inside mcp-remote, and the MCPToolConfig allow-lists only
+# read tools. Rate limit is ~100 calls/min for the whole account.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: &name tradingview-mcp
+spec:
+  groupRef:
+    name: mcp-tools
+  image: docker.io/node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+  transport: stdio
+  proxyMode: streamable-http
+  proxyPort: 8080
+  # stdio backends serve a single client connection and cannot be scaled.
+  backendReplicas: 1
+  toolConfigRef:
+    name: *name
+  audit:
+    enabled: true
+  env:
+    - name: HOME
+      value: /tmp
+    - name: NPM_CONFIG_CACHE
+      value: /tmp/.npm
+    - name: MCP_REMOTE_CONFIG_DIR
+      value: /data/.mcp-auth
+  # The CRD documents spec.resources as "the resource requirements for the MCP
+  # server container", but on operator v0.42.0 it is applied to the toolhive
+  # proxy Deployment instead -- the backend StatefulSet's `mcp` container comes
+  # out with resources:{}. Set both here so limits hold either way.
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: mcp
+          command: ["npx"]
+          args:
+            - -y
+            # npm package moved from geelen/mcp-remote to punkpeye/mcp-remote
+            # (a repo transfer, not a fork) at 0.2.5.
+            - mcp-remote@0.14.3
+            - https://mcp.tradingview.com/mcp
+            # Explicit callback port: pinned so the registered redirect_uri
+            # stays valid across restarts, and known for the port-forward.
+            - "3334"
+            - --transport
+            - http-only
+            # Default is 30s, too short to read the URL from the logs and
+            # sign in by hand.
+            - --auth-timeout
+            - "900"
+            - --ignore-tool
+            - create_*
+            - --ignore-tool
+            - update_*
+            - --ignore-tool
+            - delete_*
+            - --ignore-tool
+            - add_to_*
+            - --ignore-tool
+            - remove_from_*
+            - --ignore-tool
+            - stop_alerts
+            - --ignore-tool
+            - restart_alerts
+          resources:
+            requests:
+              cpu: 10m
+              memory: 128Mi
+            limits:
+              memory: 384Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          persistentVolumeClaim:
+            claimName: *name

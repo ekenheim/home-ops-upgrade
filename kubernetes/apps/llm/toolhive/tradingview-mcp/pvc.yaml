@@ -1,0 +1,15 @@
+---
+# Holds mcp-remote's OAuth state (client registration + refresh token), so
+# the one-time TradingView sign-in survives pod restarts.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tradingview-mcp
+  namespace: llm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ceph-block
+  resources:
+    requests:
+      storage: 1Gi

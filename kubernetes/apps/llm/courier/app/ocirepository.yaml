@@ -10,6 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.1.3
+    tag: 0.1.4
   # bjw-s common library chart, so values have the app-template shape.
   url: oci://ghcr.io/misospace/charts/courier

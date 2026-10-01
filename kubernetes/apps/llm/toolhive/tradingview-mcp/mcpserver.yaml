@@ -74,19 +74,19 @@ spec:
             - --auth-timeout
             - "900"
             - --ignore-tool
-            - create_*
+            - "*-create-*"
             - --ignore-tool
-            - update_*
+            - "*-update-*"
             - --ignore-tool
-            - delete_*
+            - "*-delete-*"
             - --ignore-tool
-            - add_to_*
+            - "*-add-to-*"
             - --ignore-tool
-            - remove_from_*
+            - "*-remove-from-*"
             - --ignore-tool
-            - stop_alerts
+            - "*-stop-alerts"
             - --ignore-tool
-            - restart_alerts
+            - "*-restart-alerts"
           resources:
             requests:
               cpu: 10m

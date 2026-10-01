@@ -5,41 +5,46 @@ kind: MCPToolConfig
 metadata:
   name: tradingview-mcp
 spec:
-  # Explicit allow list of read-only tools, from the TradingView MCP docs
-  # (2026-10). Pins the surface so the beta server cannot silently add tools,
-  # and keeps every watchlist/alert write off a gateway that is anonymous.
+  # Explicit allow list of read tools, taken from the live tools/list
+  # (2026-10-01, 35 tools). The docs page names them get_ohlcv etc.; the
+  # server actually serves mcp-tv-* and mcp-watchlist-* names. Pins the
+  # surface so the beta server cannot silently add tools, and keeps every
+  # watchlist/alert write off a gateway that is anonymous.
   toolsFilter:
     # watchlists
-    - list_watchlists
-    - get_watchlist
-    - get_active_watchlist
+    - mcp-watchlist-list-watchlists
+    - mcp-watchlist-get-watchlist
+    # Not annotated read-only: it activates the first custom watchlist when
+    # none is active, and creates a default one for an account with none.
+    # Harmless on this account, and it is the "my watchlist" read.
+    - mcp-watchlist-get-active-watchlist
     # market data
-    - get_ohlcv
-    - get_economic_data
-    - get_economic_symbols
+    - mcp-tv-get-ohlcv
+    - mcp-tv-get-economic-data
+    - mcp-tv-get-economic-symbols
     # symbol search
-    - search_symbols
+    - mcp-tv-search-symbols
     # screener
-    - get_symbol_data
-    - get_symbol_data_batch
-    - run_screener
-    - get_screener_columns
-    - get_technicals_rating
+    - mcp-tv-get-symbol-data
+    - mcp-tv-get-symbol-data-batch
+    - mcp-tv-run-screener
+    - mcp-tv-get-screener-columns
+    - mcp-tv-get-technicals-rating
     # news
-    - get_news
-    - get_news_story
+    - mcp-tv-get-news
+    - mcp-tv-get-news-story
     # fundamentals and forecasts
-    - get_forecasts
-    - get_financials
-    - get_financial_history
+    - mcp-tv-get-forecasts
+    - mcp-tv-get-financials
+    - mcp-tv-get-financial-history
     # documents (filings, earnings call transcripts)
-    - get_documents
-    - get_document_view
+    - mcp-tv-get-documents
+    - mcp-tv-get-document-view
     # calendars
-    - get_earnings_calendar
-    - get_economic_calendar
-    - get_dividends_calendar
+    - mcp-tv-get-earnings-calendar
+    - mcp-tv-get-economic-calendar
+    - mcp-tv-get-dividends-calendar
     # alerts (read)
-    - list_alerts
-    - get_alerts
-    - get_alerts_log
+    - mcp-tv-list-alerts
+    - mcp-tv-get-alerts
+    - mcp-tv-get-alerts-log

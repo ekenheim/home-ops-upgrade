@@ -42,7 +42,7 @@ spec:
       initContainers:
         # Schema to head on the DIRECT primary (see externalsecret.yaml).
         - name: migrate
-          image: &image ghcr.io/ekenheim/atlas:0.2.3
+          image: &image ghcr.io/ekenheim/atlas:0.2.5
           args: ["migrate"]
           env: &env
             - name: ATLAS_ACTOR
@@ -67,6 +67,10 @@ spec:
             # Discovery (the Scout's web searches) through the in-cluster SearXNG.
             - name: ATLAS_SEARXNG_URL
               value: http://searxng.llm.svc.cluster.local:8080
+            # The engines that answer after the 2026-10-01 SearXNG update: the default
+            # bing,brave return nothing (bing) or are rate-limited (brave) from this egress IP.
+            - name: ATLAS_SEARXNG_ENGINES
+              value: duckduckgo,google,startpage,mojeek
             # Exchange sources (FCA NSM for IQE, AMF for Soitec) behind the fetch gate; they
             # send the generic AtlasResearch User-Agent. HKEXnews stays blocked by its terms.
             - name: ATLAS_EXCHANGE_LIVE
@@ -98,6 +102,32 @@ spec:
         - name: assign-families
           image: *image
           args: ["ledger", "assign-families"]
+          env: *env
+          envFrom: *envFrom
+          securityContext: *securityContext
+          volumeMounts: *mounts
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+        # 0.2.5 pilot backfills (pilot fixes 07 and 11; both idempotent, so they stay).
+        # Normalize companyfacts recorded before XBRL normalization existed (production had
+        # no financial observation); a company's failure is logged, not fatal to the pod.
+        - name: normalize-financials
+          image: *image
+          command: ["/bin/sh", "-c"]
+          args: ["atlas financials normalize || echo 'financials normalize: a company failed or its submissions were unavailable (see above); the next ingest retries'"]
+          env: *env
+          envFrom: *envFrom
+          securityContext: *securityContext
+          volumeMounts: *mounts
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+        # Enqueue one re-parse (parser text-v3) of the Source Versions recorded under an earlier
+        # parser; the worker does the work. The fixed key makes a repeat a no-op.
+        - name: reparse
+          image: *image
+          args: ["ledger", "reparse", "--key", "reparse-text-v3-0.2.5"]
           env: *env
           envFrom: *envFrom
           securityContext: *securityContext

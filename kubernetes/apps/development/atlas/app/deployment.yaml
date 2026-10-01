@@ -61,16 +61,30 @@ spec:
               value: MiniMax-M3
             # The MiniMax subscription is dedicated to Atlas (owner, 2026-10-01): the rolling 5 h
             # token budget goes from the cautious default 400k to 4M, an investigation may spend
-            # 1M tokens, each Investigator reads 72 passages (default 24) and the Skeptic 48.
+            # 2M tokens (1M before 0.3.0), each Investigator reads 72 passages (default 24) and
+            # the Skeptic 48.
             # A 429 from MiniMax still pauses the queue; lower the budget if a quota pause shows.
+            # The plan (MiniMax Plus) allows about 1.7 billion M3 tokens a month, roughly 11.8M
+            # per 5 h window on average, and 3-4 concurrent agents. 8M leaves room for the
+            # shared Hindsight's MiniMax extraction, whose tokens Atlas does not count.
+            # Concurrency is the tighter limit: Atlas's worker makes one role call at a time
+            # and Hindsight extracts with at most two.
             - name: ATLAS_MINIMAX_BUDGET_TOKENS
-              value: "4000000"
+              value: "8000000"
             - name: ATLAS_RUN_TOKEN_BUDGET
-              value: "1000000"
+              value: "2000000"
             - name: ATLAS_INVESTIGATION_MAX_PASSAGES
               value: "72"
             - name: ATLAS_INVESTIGATOR_MAX_PASSAGES
               value: "48"
+            # 0.3.0: an investigation reads the companies Memory points to, up to six
+            # Investigators a round (the default), so its token budget above is 2M.
+            # Atlas's retains are extracted by MiniMax-M3 on the shared Hindsight (its
+            # `metadata` routing strategy, llm/hindsight helmrelease): every retain item is
+            # marked `extractor: minimax`, and those retains have their own budget of
+            # operations per rolling 5 h (default 200) instead of the Codex one.
+            - name: ATLAS_RETAIN_EXTRACTOR
+              value: minimax
             # TradingView (the owner's override, docs/decisions.md in the atlas repo) through the
             # cluster's read-only MCP proxy (kubernetes/apps/llm/toolhive/tradingview-mcp): the
             # proxy holds the sign-in, so Atlas needs no OAuth of its own. Atlas calls three

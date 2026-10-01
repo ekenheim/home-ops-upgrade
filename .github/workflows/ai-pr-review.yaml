@@ -69,35 +69,35 @@ jobs:
       - name: Review
         uses: misospace/pr-reviewer-action@aa12ad9909b1ee8a5a7fe00dceeb1a8c97ab27dd # v3.1.0
         with:
-          github_token: ${{ github.token }}
-          pr_number: ${{ github.event.pull_request.number || inputs.pr_number }}
-          force_review: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
+          github-token: ${{ github.token }}
+          pr-number: ${{ github.event.pull_request.number || inputs.pr_number }}
+          force-review: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
           # Primary: Ornith on worker4 (thinking), MiniMax floor when it is
           # down. Smart: reasoning-pool, which boring PRs never reach
-          # (review_routing_mode: auto escalates by risk class). The action
+          # (review-routing-mode: auto escalates by risk class). The action
           # does not stream, so the ChatGPT rungs are skipped -- see the
           # pools' comment in litellm's configmap.
-          ai_base_url: http://litellm.llm.svc.cluster.local:4000/v1
-          ai_api_key: ${{ secrets.LITELLM_PR_REVIEW_API_KEY }}
-          ai_model: local-pool
-          ai_response_format: json_object
+          ai-base-url: http://litellm.llm.svc.cluster.local:4000/v1
+          ai-api-key: ${{ secrets.LITELLM_PR_REVIEW_API_KEY }}
+          ai-model: local-pool
+          ai-response-format: json_object
           # Ornith thinks before it answers; the default budget can be spent
           # entirely on reasoning, leaving no JSON verdict.
-          ai_max_tokens: "16000"
-          ai_primary_retries: "2"
-          ai_primary_retry_delay_sec: "15"
-          review_routing_mode: auto
-          ai_smart_base_url: http://litellm.llm.svc.cluster.local:4000/v1
-          ai_smart_api_key: ${{ secrets.LITELLM_PR_REVIEW_API_KEY }}
-          ai_smart_model: reasoning-pool
-          ai_fallback_base_url: http://litellm.llm.svc.cluster.local:4000/v1
-          ai_fallback_api_key: ${{ secrets.LITELLM_PR_REVIEW_API_KEY }}
-          ai_fallback_model: implementation-pool
-          standards_file_candidates: "AGENTS.md"
-          context_limit_mode: normal
-          ci_status_check: "true"
-          ci_timeout_sec: "600"
-          on_model_failure: notice
-          fail_on_request_changes: "true"
-          publish_mode: review_comment
-          inline_findings: "true"
+          ai-max-tokens: "16000"
+          ai-primary-retries: "2"
+          ai-primary-retry-delay-sec: "15"
+          review-routing-mode: auto
+          ai-smart-base-url: http://litellm.llm.svc.cluster.local:4000/v1
+          ai-smart-api-key: ${{ secrets.LITELLM_PR_REVIEW_API_KEY }}
+          ai-smart-model: reasoning-pool
+          ai-fallback-base-url: http://litellm.llm.svc.cluster.local:4000/v1
+          ai-fallback-api-key: ${{ secrets.LITELLM_PR_REVIEW_API_KEY }}
+          ai-fallback-model: implementation-pool
+          standards-file-candidates: "AGENTS.md"
+          context-limit-mode: normal
+          ci-status-check: "true"
+          ci-timeout-sec: "600"
+          on-model-failure: notice
+          fail-on-request-changes: "true"
+          publish-mode: review_comment
+          inline-findings: "true"

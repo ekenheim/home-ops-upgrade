@@ -48,12 +48,18 @@ spec:
                 # each per night (a rerun takes the next 5; triage decides what is retained and
                 # the rolling 5 h budgets pace it), then IQE (FCA NSM) and Soitec (AMF).
                 # Innolight is manual import only (HKEX terms). One failure doesn't stop the rest.
+                # Then each company's TradingView catalog (transcripts and headline leads through the
+                # cluster's MCP proxy; at most 20 calls a job, so a long history takes several nights).
                 - >-
                   rc=0;
                   for c in lumentum coherent axt macom stmicroelectronics marvell
                   applied-optoelectronics fabrinet ciena; do
                   atlas ingest --company "$c" --backfill --max-retains 5 || rc=1; done;
                   for c in iqe soitec; do atlas ingest --company "$c" --backfill || rc=1; done;
+                  for c in lumentum coherent axt applied-optoelectronics fabrinet marvell macom
+                  ciena stmicroelectronics iqe soitec innolight; do
+                  atlas jobs enqueue tradingview_catalog --backfill --key "tradingview-$c-$(date -u +%F)"
+                  --payload "{\"company\": \"$c\"}" || rc=1; done;
                   exit $rc
               env:
                 - name: ATLAS_ACTOR

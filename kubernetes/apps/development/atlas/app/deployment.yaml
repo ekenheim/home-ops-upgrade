@@ -71,6 +71,17 @@ spec:
               value: "72"
             - name: ATLAS_INVESTIGATOR_MAX_PASSAGES
               value: "48"
+            # TradingView (the owner's override, docs/decisions.md in the atlas repo) through the
+            # cluster's read-only MCP proxy (kubernetes/apps/llm/toolhive/tradingview-mcp): the
+            # proxy holds the sign-in, so Atlas needs no OAuth of its own. Atlas calls three
+            # tools (the document catalog, transcript views, news headlines), at most 0.5/s.
+            # The access token is a placeholder: the proxy ignores it and it is no secret.
+            - name: ATLAS_TRADINGVIEW_ENABLED
+              value: "true"
+            - name: ATLAS_TRADINGVIEW_MCP_URL
+              value: http://mcp-tradingview-mcp-proxy.llm.svc.cluster.local:8080/mcp
+            - name: ATLAS_TRADINGVIEW_ACCESS_TOKEN
+              value: unused-behind-the-cluster-proxy
             # SEC EDGAR fair access: live fetching with a contact address.
             - name: ATLAS_SEC_LIVE
               value: "true"

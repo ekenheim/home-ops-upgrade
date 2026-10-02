@@ -42,7 +42,7 @@ spec:
       initContainers:
         # Schema to head on the DIRECT primary (see externalsecret.yaml).
         - name: migrate
-          image: &image ghcr.io/ekenheim/atlas:0.3.0
+          image: &image ghcr.io/ekenheim/atlas:0.3.1
           args: ["migrate"]
           env: &env
             - name: ATLAS_ACTOR
@@ -73,6 +73,12 @@ spec:
               value: "8000000"
             - name: ATLAS_RUN_TOKEN_BUDGET
               value: "2000000"
+            # 0.3.1: the Editor's card for a multi-hop investigation may be asked for with an
+            # output cap of up to 16,384 tokens (the first call's cap is 8,192). MiniMax-M3
+            # writes about 75 tokens a second, so the largest answer can take well over the
+            # default 180 s per role call; a timeout would read as an outage and pause the queue.
+            - name: ATLAS_LLM_ROLE_TIMEOUT_SECONDS
+              value: "360"
             - name: ATLAS_INVESTIGATION_MAX_PASSAGES
               value: "72"
             - name: ATLAS_INVESTIGATOR_MAX_PASSAGES

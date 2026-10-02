@@ -91,6 +91,13 @@ spec:
             # operations per rolling 5 h (default 200) instead of the Codex one.
             - name: ATLAS_RETAIN_EXTRACTOR
               value: minimax
+            # The retain budget (default 200 operations per 5 h, the backfill 70% of it) was
+            # set before the MiniMax subscription was Atlas's. During the 0.4.1 memory backfill
+            # it held the worker idle half the time: the worker alone does about 48 operations
+            # an hour (one job at a time, Hindsight extracting at most two), about 240 per
+            # 5 h. 400 lets the backfill (280) run at the worker's pace.
+            - name: ATLAS_RETAIN_BUDGET_OPERATIONS
+              value: "400"
             # 0.4.1: Atlas, not Hindsight, asks for the research bank's consolidation (bank
             # template 1.4.0 turns auto-consolidation off). It runs on the owner's ChatGPT
             # subscription (gpt-5.6-luna, ~10 s a memory), so it stays off until the owner

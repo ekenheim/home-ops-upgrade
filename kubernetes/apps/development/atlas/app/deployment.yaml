@@ -42,7 +42,7 @@ spec:
       initContainers:
         # Schema to head on the DIRECT primary (see externalsecret.yaml).
         - name: migrate
-          image: &image ghcr.io/ekenheim/atlas:0.3.1
+          image: &image ghcr.io/ekenheim/atlas:0.4.1
           args: ["migrate"]
           env: &env
             - name: ATLAS_ACTOR
@@ -91,6 +91,14 @@ spec:
             # operations per rolling 5 h (default 200) instead of the Codex one.
             - name: ATLAS_RETAIN_EXTRACTOR
               value: minimax
+            # 0.4.1: Atlas, not Hindsight, asks for the research bank's consolidation (bank
+            # template 1.4.0 turns auto-consolidation off). It runs on the owner's ChatGPT
+            # subscription (gpt-5.6-luna, ~10 s a memory), so it stays off until the owner
+            # chooses: every consolidate job (daily, by hand, the memory backfill's) is
+            # recorded skipped (consolidation_off) and nothing reaches Hindsight. Recall still
+            # returns the raw facts; only observations are not formed.
+            - name: ATLAS_CONSOLIDATION_ENABLED
+              value: "false"
             # TradingView (the owner's override, docs/decisions.md in the atlas repo) through the
             # cluster's read-only MCP proxy (kubernetes/apps/llm/toolhive/tradingview-mcp): the
             # proxy holds the sign-in, so Atlas needs no OAuth of its own. Atlas calls three

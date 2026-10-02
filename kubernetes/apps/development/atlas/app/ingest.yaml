@@ -50,10 +50,13 @@ spec:
                 # Innolight is manual import only (HKEX terms). One failure doesn't stop the rest.
                 # Then each company's TradingView catalog (transcripts and headline leads through the
                 # cluster's MCP proxy; at most 20 calls a job, so a long history takes several nights).
-                # 0.4.1: the memory backfill (atlas runbook "Memory backfill"): at most 300 sections
+                # 0.4.1: the memory backfill (atlas runbook "Memory backfill"): at most 2,000 sections
                 # a night brought to the current retain profile (delete and retain again; the
-                # cancelled ones first, the pilot's seeds first), paced by the retain budget. A
-                # night that finds nothing below the profile enqueues nothing.
+                # cancelled ones first, the pilot's seeds first). The retain budget sets the pace,
+                # not this cap: measured on the first run (2026-10-02), about 2.6 sections per
+                # retain operation and the backfill's 140 of 200 operations per 5 h, so roughly
+                # 85 sections an hour, about 2,000 a day. A night that finds nothing below the
+                # profile enqueues nothing.
                 - >-
                   rc=0;
                   for c in lumentum coherent axt macom stmicroelectronics marvell
@@ -64,7 +67,7 @@ spec:
                   ciena stmicroelectronics iqe soitec innolight; do
                   atlas jobs enqueue tradingview_catalog --backfill --key "tradingview-$c-$(date -u +%F)"
                   --payload "{\"company\": \"$c\"}" || rc=1; done;
-                  atlas memory backfill --theme photonics --max-sections 300
+                  atlas memory backfill --theme photonics --max-sections 2000
                   --key "memory-backfill-$(date -u +%F)" || rc=1;
                   exit $rc
               env:

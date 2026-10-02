@@ -171,6 +171,18 @@ spec:
         # isolation is by bank, one bank per consumer.
         HINDSIGHT_API_TENANT_EXTENSION: hindsight_api.extensions.builtin.tenant:ApiKeyTenantExtension
         HINDSIGHT_API_VECTOR_EXTENSION: pgvector
+        # --- Memory integrity (Atlas memory-quality ticket 11) ---
+        # A retain whose fact extraction hit errors is marked failed instead of
+        # completed, so facts lost from a chunk surface instead of vanishing
+        # (default false: the operation completes and the lost facts are never
+        # reported). Every bank on this server sees such retains as failed;
+        # Atlas reads each section's own document and retries the rest.
+        HINDSIGHT_API_FAIL_ON_EXTRACTION_ERRORS: "true"
+        # The reranker fails open: if the TEI sidecar is down or errors, recall
+        # keeps the fusion order instead of failing every recall on the server.
+        # The primary (the chart's TEI sidecar) is unchanged; this only adds a
+        # last member to the chain.
+        HINDSIGHT_API_RERANKER_1_PROVIDER: rrf
       extraVolumes:
         - name: codex-auth
           persistentVolumeClaim:

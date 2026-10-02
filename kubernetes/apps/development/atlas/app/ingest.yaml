@@ -41,7 +41,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: enqueue
-              image: ghcr.io/ekenheim/atlas:0.3.1
+              image: ghcr.io/ekenheim/atlas:0.4.1
               command: ["/bin/sh", "-c"]
               args:
                 # The photonics universe (0.2.1 rollout): SEC filers with at most 5 new retains
@@ -50,6 +50,10 @@ spec:
                 # Innolight is manual import only (HKEX terms). One failure doesn't stop the rest.
                 # Then each company's TradingView catalog (transcripts and headline leads through the
                 # cluster's MCP proxy; at most 20 calls a job, so a long history takes several nights).
+                # 0.4.1: the memory backfill (atlas runbook "Memory backfill"): at most 300 sections
+                # a night brought to the current retain profile (delete and retain again; the
+                # cancelled ones first, the pilot's seeds first), paced by the retain budget. A
+                # night that finds nothing below the profile enqueues nothing.
                 - >-
                   rc=0;
                   for c in lumentum coherent axt macom stmicroelectronics marvell
@@ -60,15 +64,24 @@ spec:
                   ciena stmicroelectronics iqe soitec innolight; do
                   atlas jobs enqueue tradingview_catalog --backfill --key "tradingview-$c-$(date -u +%F)"
                   --payload "{\"company\": \"$c\"}" || rc=1; done;
+                  atlas memory backfill --theme photonics --max-sections 300
+                  --key "memory-backfill-$(date -u +%F)" || rc=1;
                   exit $rc
               env:
                 - name: ATLAS_ACTOR
                   value: atlas-owner
                 - name: ATLAS_ARCHIVE_ROOT
                   value: /tmp/archive
+                # The memory backfill names the research bank (it makes no Hindsight call here).
+                - name: ATLAS_HINDSIGHT_URL
+                  value: http://hindsight-api.llm.svc.cluster.local:8888
+                - name: ATLAS_HINDSIGHT_BANK_ID
+                  value: atlas-ai-infrastructure
               envFrom:
                 - secretRef:
                     name: atlas-postgres
+                - secretRef:
+                    name: atlas-hindsight
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true

@@ -92,14 +92,14 @@ spec:
             - name: ATLAS_RETAIN_EXTRACTOR
               value: minimax
             # Atlas, not Hindsight, asks for the research bank's consolidation (bank template
-            # 1.4.0 turns auto-consolidation off). On since 0.4.2 (the owner, 2026-10-03): one
-            # backfill-class run a day from 04:30 UTC, on the owner's ChatGPT subscription
-            # (counted in Atlas's codex budget, one unit per request), and from 0.4.2 it no
-            # longer waits for the backfill's queued retains, only for a retain in flight. Set
-            # "false" to stop every consolidation again (each job is then recorded skipped,
-            # consolidation_off).
+            # 1.4.0 turns auto-consolidation off). Off again from 2026-10-03 until Atlas 0.4.3:
+            # Hindsight consolidates in rounds of 100 memories that chain by themselves, and
+            # 0.4.2 records a run completed after its first round and counts one codex unit for
+            # all of them. The research bank's observations are being cleared and rebuilt;
+            # nothing may consolidate until 0.4.3 follows a run to its end and counts it.
+            # Set "true" again with the 0.4.3 image.
             - name: ATLAS_CONSOLIDATION_ENABLED
-              value: "true"
+              value: "false"
             # TradingView (the owner's override, docs/decisions.md in the atlas repo) through the
             # cluster's read-only MCP proxy (kubernetes/apps/llm/toolhive/tradingview-mcp): the
             # proxy holds the sign-in, so Atlas needs no OAuth of its own. Atlas calls three

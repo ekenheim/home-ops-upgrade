@@ -1,0 +1,24 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/servicemonitor_v1.json
+# Atlas's /metrics (atlas_build_info, the queue, budgets, memory health, reconciliation drift)
+# is read from Atlas's database at scrape time, so the interval is a minute, not seconds.
+# The endpoint needs no auth (curl https://atlas.ekenhome.se/metrics).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: atlas
+  labels:
+    app.kubernetes.io/name: atlas
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: atlas
+      app.kubernetes.io/component: app
+  namespaceSelector:
+    matchNames:
+      - development
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 60s
+      scrapeTimeout: 30s

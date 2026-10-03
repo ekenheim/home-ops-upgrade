@@ -42,7 +42,7 @@ spec:
       initContainers:
         # Schema to head on the DIRECT primary (see externalsecret.yaml).
         - name: migrate
-          image: &image ghcr.io/ekenheim/atlas:0.4.2
+          image: &image ghcr.io/ekenheim/atlas:0.4.3
           args: ["migrate"]
           env: &env
             - name: ATLAS_ACTOR
@@ -92,14 +92,16 @@ spec:
             - name: ATLAS_RETAIN_EXTRACTOR
               value: minimax
             # Atlas, not Hindsight, asks for the research bank's consolidation (bank template
-            # 1.4.0 turns auto-consolidation off). Off again from 2026-10-03 until Atlas 0.4.3:
-            # Hindsight consolidates in rounds of 100 memories that chain by themselves, and
-            # 0.4.2 records a run completed after its first round and counts one codex unit for
-            # all of them. The research bank's observations are being cleared and rebuilt;
-            # nothing may consolidate until 0.4.3 follows a run to its end and counts it.
-            # Set "true" again with the 0.4.3 image.
+            # 1.4.0 turns auto-consolidation off). On again with 0.4.3 (the owner, 2026-10-03):
+            # Atlas follows each run's chain of rounds (Hindsight consolidates 100 memories a
+            # round and chains the next by itself), looking every 5 minutes, and counts each
+            # round in its own budget, hindsight_consolidation: 40 rounds per 5 h (Hindsight's
+            # own pace, on the owner's ChatGPT subscription). At the budget it cancels the
+            # running round; the next try resumes. Set "false" to stop every consolidation.
             - name: ATLAS_CONSOLIDATION_ENABLED
-              value: "false"
+              value: "true"
+            - name: ATLAS_CONSOLIDATE_BUDGET_ROUNDS
+              value: "40"
             # TradingView (the owner's override, docs/decisions.md in the atlas repo) through the
             # cluster's read-only MCP proxy (kubernetes/apps/llm/toolhive/tradingview-mcp): the
             # proxy holds the sign-in, so Atlas needs no OAuth of its own. Atlas calls three

@@ -8,5 +8,7 @@ resources:
   - ./deployment.yaml
   - ./ingest.yaml
   - ./service.yaml
+  - ./servicemonitor.yaml
+  - ./prometheusrule.yaml
   - ../../../../templates/gatus/guarded
   - ./httproute-internal.yaml

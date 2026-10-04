@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: renovate-cache
+spec:
+  # Renovate's package cache, kept between runs. Every job is a fresh pod, so
+  # without it each hourly run re-fetched ~60 docker.io manifests (the label
+  # lookups are cached 24h, digests 28d) against the anonymous Docker Hub
+  # quota of 100/h shared with every node behind our IP; a manual run on top
+  # tripped HTTP 429 on 2026-10-04. RWX so a webhook run can overlap a
+  # scheduled one without an RBD multi-attach wait. Disposable: no VolSync.
+  accessModes: ["ReadWriteMany"]
+  storageClassName: ceph-filesystem
+  resources:
+    requests:
+      storage: 2Gi

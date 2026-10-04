@@ -98,17 +98,18 @@ spec:
             # round in its own budget, hindsight_consolidation: 40 rounds per 5 h (Hindsight's
             # own pace, on the owner's ChatGPT subscription). At the budget it cancels the
             # running round; the next try resumes.
-            # 2026-10-04 (the owner): a round costs about 4% of the ChatGPT 5 h window and 0.8%
-            # of the weekly one (73% used, resets 10 Oct), so the budget goes from 40 to 3: a
-            # backfill run may count 2 rounds per 5 h (70%), about 2 to 3 a day, and the round
-            # running now is cancelled at the next look. Don't throttle with
+            # 2026-10-04 (the owner): consolidation runs on both subscriptions, 3 calls in 10
+            # on ChatGPT and 7 on MiniMax-M3 (the llm/hindsight helmrelease), so the budget
+            # stays at 40. On ChatGPT alone a round cost about 4% of the 5 h window and 0.8%
+            # of the weekly one; watch the ChatGPT usage and lower this, or the Codex weight
+            # there, if it runs hot. To throttle, lower this budget. Don't throttle with
             # ATLAS_CONSOLIDATION_ENABLED=false: it also stops the follow-ups, the only thing
             # that cancels Hindsight's self-chaining rounds, so a running chain would go on
             # uncounted.
             - name: ATLAS_CONSOLIDATION_ENABLED
               value: "true"
             - name: ATLAS_CONSOLIDATE_BUDGET_ROUNDS
-              value: "3"
+              value: "40"
             # TradingView (the owner's override, docs/decisions.md in the atlas repo) through the
             # cluster's read-only MCP proxy (kubernetes/apps/llm/toolhive/tradingview-mcp): the
             # proxy holds the sign-in, so Atlas needs no OAuth of its own. Atlas calls three

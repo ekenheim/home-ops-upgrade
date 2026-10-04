@@ -32,8 +32,11 @@ spec:
         containers:
           app:
             image:
-              repository: quay.io/minio/minio
-              tag: RELEASE.2025-09-07T16-13-09Z
+              # MinIO no longer publishes images (quay.io and Docker Hub both
+              # 401). Silo is the maintained community fork; it keeps the
+              # MINIO_* env, the /minio/health paths and the `server` argv.
+              repository: docker.io/pgsty/silo
+              tag: RELEASE.2026-09-16T00-00-00Z
             securityContext:
               runAsUser: 0
               runAsGroup: 0

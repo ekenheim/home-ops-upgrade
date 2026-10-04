@@ -97,7 +97,7 @@ spec:
               # ../../litellm/app/configmap.yaml.
               DISPATCH_LANE_CONFIG_JSON: >-
                 {"lanes":[{"id":"local","title":"Local","claimable":true,"role":"default","description":"Local
-                lane (courier: planner on reasoning-pool, coder on implementation-pool, Ornith reviewer) — all groomed, ready work
+                lane (courier: planner on reasoning-pool, coder on implementation-pool, local reviewer) — all groomed, ready work
                 starts here.","color":"#3b82f6"},{"id":"backlog","title":"Backlog","claimable":false,"description":"Needs
                 grooming before work can start. Not directly
                 claimable.","color":"#6b7280"}],"laneAliases":{"normal":"local","escalated":"local","cloud":"local","frontier":"local"}}

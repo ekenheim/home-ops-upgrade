@@ -7,37 +7,30 @@ data:
   config.yaml: |
     model_list:
       # --- Chat: LLMKube on worker4's Strix Halo iGPU ---
-      # Ornith-1.0-35B (MoE, ~3B of 35B active), served by llama.cpp/ROCm.
-      # Replaced Qwen3.6-35B-A3B, which is the same architecture and size but
-      # weaker on every agentic-coding benchmark -- see ornith-35b.yaml.
+      # Qwen3.8-Flash-Next (MoE, 6B of 125B active, plus a 51B n-gram table
+      # that stays in page cache), served by llama.cpp/ROCm. Replaced Ornith
+      # 2026-10-04: `deep`-class coding quality (SWE-bench Pro 62.5 vs Ornith's
+      # 50.4) at roughly half Ornith's speed -- ~23 t/s generation and ~530 t/s
+      # prefill on this APU by community numbers, unmeasured here yet. See
+      # ../../llmkube/app/qwen38-flash-next.yaml for the budget, the runtime
+      # caveats, and the rollback to ornith-35b (parked, weights still cached).
       #
-      # Throughput measured on this endpoint 2026-08-14, immediately after the
-      # Ornith rollout (llama.cpp build 0b1bad14f, gfx1151, rocm-6.4.4):
-      #   50.5 t/s generation, three consecutive runs, variance under 0.1
-      #   34 GiB GTT of 124 GiB with contextSize 1048576 across 8 slots
-      #     (contextSize is 2097152 as of 2026-09-01, i.e. ~47 GiB -- the
-      #      throughput number above is unaffected, KV size is not in the
-      #      per-token read path)
+      # EVERY local alias below is this one server. They differ only in how
+      # hard the model thinks, set per alias through chat_template_kwargs:
+      #   reasoning_effort  xhigh (the template default) | medium | low | none
+      # chat_template_kwargs is a server-side default here, so callers need not
+      # send anything. It survives `drop_params: true` (verified on Ornith's
+      # enable_thinking) and reaches llama.cpp because the InferenceService
+      # runs with `jinja: true`. It does NOT survive litellm's /v1/responses
+      # bridge -- see marimo.toml -- so thinking-off callers must use chat.
       #
-      # That lands on kyuz0's public Strix Halo reference of 50.3 t/s for this
-      # model class, quant and backend, i.e. this node performs as expected.
-      #   https://kyuz0.github.io/amd-strix-halo-toolboxes/
-      #
-      # Worth recording because the *predecessor* served only ~24-28 t/s when
-      # measured on a pod that had been up 46 hours, and that was briefly
-      # mistaken for a hardware deficit. It was not: identical architecture,
-      # identical quant, identical serving config, roughly double the
-      # throughput on a fresh pod. The degradation tracks pod uptime, not the
-      # model. If this endpoint drifts back toward the mid-20s, restart it
-      # before investigating anything else.
-      #
-      # One lever remains untaken and is independent of model choice: MTP
-      # self-speculative decoding is off because unsloth ships no MTP build of
-      # these weights. Documented in ornith-35b.yaml, along with why the
-      # faster-looking vulkan backends are NOT the win they appear to be.
+      # medium, not the default xhigh, for the general aliases: at ~23 t/s an
+      # xhigh answer can spend minutes thinking, and every response is capped
+      # at 16384 tokens (--n-predict) including the thinking. `deep` keeps
+      # xhigh for the jobs that can wait.
       #
       # The served id must match the InferenceService's --alias. Verify with:
-      #   curl http://ornith-35b.llm:8080/v1/models
+      #   curl http://qwen38-flash-next.llm:8080/v1/models
       # litellm does not validate this at startup; a wrong name 404s per request
       # while the proxy still reports healthy.
       #
@@ -45,6 +38,7 @@ data:
       # output tokens thinking before answering. Callers with a tight max_tokens
       # get an empty content and finish_reason=length. drop_params below keeps
       # litellm from choking on the extra field.
+      #
       # max_input_tokens is the InferenceService's *per-slot* window
       # (contextSize / parallelSlots), not the total KV budget. openai/<custom>
       # is absent from litellm's cost map, so without this litellm has no idea
@@ -52,13 +46,11 @@ data:
       # forwards a doomed request and surfaces the backend's 400 instead of
       # catching it. Note hermes does NOT learn the window from this: it reads
       # /v1/models, which returns bare ids. Set model.context_length in the
-      # hermes ConfigMap too, and move all three with contextSize.
+      # hermes ConfigMap too, and move all of them with contextSize.
       #
-      # 262144 as of 2026-09-01 (contextSize 2097152 / parallelSlots 8), which
-      # is Ornith's full native window. It was 131072 while qwen38-27b shared
-      # the GPU; that model is parked at replicas 0, so ornith took the whole
-      # budget. self-hosted, review and fast all point at the same backend and
-      # must carry the same number.
+      # 262144 = contextSize 524288 / parallelSlots 2, the model's full native
+      # window -- the same number Ornith served, so no client limit moved in
+      # the swap. Every local alias and pool rung must carry the same value.
       - model_name: self-hosted
         model_info:
           mode: chat
@@ -66,9 +58,11 @@ data:
           supports_vision: true
           max_input_tokens: 262144
         litellm_params:
-          model: openai/ornith-35b
-          api_base: http://ornith-35b.llm:8080/v1
+          model: openai/qwen38-flash-next
+          api_base: http://qwen38-flash-next.llm:8080/v1
           api_key: none
+          chat_template_kwargs:
+            reasoning_effort: medium
 
       # `review` was the alias agentmemory pointed ANTHROPIC_MODEL at (removed 2026-09-17).
       - model_name: review
@@ -78,28 +72,20 @@ data:
           supports_vision: true
           max_input_tokens: 262144
         litellm_params:
-          model: openai/ornith-35b
-          api_base: http://ornith-35b.llm:8080/v1
+          model: openai/qwen38-flash-next
+          api_base: http://qwen38-flash-next.llm:8080/v1
           api_key: none
+          chat_template_kwargs:
+            reasoning_effort: medium
 
       # `fast` is the same backend as `self-hosted` with thinking switched off.
       #
-      # Ornith is a reasoning model -- its chat template opens the assistant
-      # turn with a <think> block -- so it burns output budget thinking before
-      # it answers. For mechanical work (translation, extraction,
-      # classification) that is pure overhead. Measured on this cluster on the
-      # predecessor, same prompt and same weights, translating one line to
-      # Swedish:
+      # For mechanical work (extraction, classification, the `auto` router's
+      # classifier) thinking is pure overhead. Measured on this cluster on an
+      # earlier model, same prompt and same weights:
       #
       #   self-hosted (thinking on)   7.9s   300 completion tokens
       #   fast        (thinking off)  0.4s     7 completion tokens
-      #
-      # Identical output ("Han är bakom dig."). ~20x faster for 43x fewer tokens.
-      #
-      # chat_template_kwargs is a server-side default here, so callers need not
-      # send anything -- point them at `fast` and they get the non-thinking path.
-      # It survives `drop_params: true` (verified) and reaches llama.cpp because
-      # the InferenceService runs with `jinja: true`.
       #
       # Use `self-hosted`/`review` when the reasoning is the point; use `fast`
       # for bulk throughput.
@@ -110,83 +96,28 @@ data:
           supports_vision: true
           max_input_tokens: 262144
         litellm_params:
-          model: openai/ornith-35b
-          api_base: http://ornith-35b.llm:8080/v1
+          model: openai/qwen38-flash-next
+          api_base: http://qwen38-flash-next.llm:8080/v1
           api_key: none
           chat_template_kwargs:
-            enable_thinking: false
+            reasoning_effort: none
 
-      # `deep` is the OTHER model on worker4 -- Qwen3.8-27B, dense, served by a
-      # second llama.cpp pod sharing the same iGPU. See qwen38-27b.yaml.
+      # Lingarr's en->sv subtitle work, MiniMax only. gemma3-27b was the
+      # order-2 fallback and was removed with it from worker4 on 2026-10-04,
+      # so when MiniMax cools down (a 429 at the plan's 300 prompts / 5 h, an
+      # outage) Lingarr gets errors and retries rather than a slow local
+      # answer. If that starts to matter, add a `translate: ["fast"]` fallback
+      # -- but check this model's Swedish first: Ornith's was not usable, which
+      # is why gemma existed at all.
       #
-      # This is the slow-and-smarter endpoint, and the speed difference is not
-      # marginal: ~12 t/s here against ornith-35b's measured 50.5, because a
-      # dense model reads its entire 16.7 GiB per generated token while
-      # ornith reads only its routed experts. Both numbers degrade further if
-      # the two are generating at once -- they share one LPDDR5X pool.
-      #
-      # So route by task, not by preference:
-      #   deep         cron jobs, hard one-shots, second-opinion review of
-      #                ornith's output -- anywhere a 90s answer is fine
-      #   self-hosted  interactive/agentic turns (hermes, courier)
-      #   fast         bulk mechanical work (Lingarr translation)
-      #
-      # Qwen3.8 beats Ornith on the published agentic-coding benchmarks
-      # (Terminal Bench 2.1 73.0 vs 64.2, SWE-bench Pro 61.7 vs 50.4), though
-      # those runs use different harnesses and are not apples-to-apples.
-      #
-      # NOTHING IN THIS REPO POINTS HERE YET, deliberately -- it is available
-      # in Open WebUI's model picker and to anything you aim at it by hand. To
-      # move the reviewer workloads over, change `model:` and `api_base:` on
-      # the `review` block above to this backend; the router fallback below already catches an
-      # outage. Verify
-      # tool calling on the live endpoint first -- see qwen38-27b.yaml.
-      #
-      # max_input_tokens is the per-slot window (contextSize 524288 /
-      # parallelSlots 2). `deep` runs Qwen3.8-27B at its full native 262144 --
-      # gguf `qwen35.context_length = 262144`, no rope_scaling -- because the
-      # jobs routed here are the ones that want the whole window and can wait.
-      #
-      # As of 2026-09-01 the ornith aliases advertise 262144 too, so all four
-      # numbers match again -- but that is a coincidence of both models being
-      # 262144-native and both now running at their full window, NOT a rule.
-      # They are independent backends with independent contextSize; do not
-      # collapse them to one value, and keep naming which alias a hardcoded
-      # window means (hermes' model.context_length tracks `self-hosted`).
-      #
-      # Note this alias currently has no backend at all: qwen38-27b is parked
-      # at replicas 0 and `deep` falls through to ornith. See qwen38-27b.yaml.
-      # Lingarr's en->sv subtitle work: MiniMax first, gemma as the fallback
-      # (owner decision 2026-09-30, replacing a 50/50 split the same day: the
-      # plan sat far below its cap and gemma was the slow half). `order` is
-      # the pools' failover rule: every request goes to order 1 until it
-      # fails (a MiniMax 429 at the plan's 300 prompts / 5 h, an outage),
-      # which cools it down and sends the rest to order 2 meanwhile.
-      #
-      # 2. Gemma 3 27B (dense, unsloth UD-Q4_K_XL) on worker4 -- see
-      #    ../../llmkube/app/gemma3-27b.yaml. Chosen because ornith's Swedish
-      #    was not usable. Text-only. ~5.6 s a call against MiniMax's ~1 s.
-      - model_name: translate
-        model_info:
-          mode: chat
-          supports_function_calling: false
-          supports_vision: false
-          max_input_tokens: 65536
-        litellm_params:
-          model: openai/gemma3-27b
-          api_base: http://gemma3-27b.llm:8080/v1
-          api_key: none
-          order: 2
-      # 1. MiniMax-M3 on the flat plan, thinking OFF. Load-bearing: with
-      #    thinking on M3 spends ~900 reasoning tokens and 6-17 s on five
-      #    subtitle lines and its first 400 output tokens are all reasoning
-      #    (finish=length, empty content); off, 1-1.4 s and ~95 tokens, and
-      #    the Swedish is as idiomatic as gemma's (tested 2026-09-30 through
-      #    this gateway). `extra_body` is how the flag reaches MiniMax:
-      #    top-level `thinking` / `reasoning_effort` are dropped by
-      #    drop_params. Lingarr sends what the plan meters, prompts: ~180 per
-      #    5 h at its weekly average against a 300 cap; a bulk run that
-      #    trips it just spends its cooldown on gemma.
+      # MiniMax-M3 on the flat plan, thinking OFF. Load-bearing: with thinking
+      # on M3 spends ~900 reasoning tokens and 6-17 s on five subtitle lines
+      # and its first 400 output tokens are all reasoning (finish=length,
+      # empty content); off, 1-1.4 s and ~95 tokens, and the Swedish is
+      # idiomatic (tested 2026-09-30 through this gateway). `extra_body` is how
+      # the flag reaches MiniMax: top-level `thinking` / `reasoning_effort` are
+      # dropped by drop_params. Lingarr sends ~180 prompts per 5 h at its
+      # weekly average against a 300 cap.
       - model_name: translate
         model_info:
           mode: chat
@@ -200,7 +131,13 @@ data:
           extra_body:
             thinking:
               type: disabled
-          order: 1
+
+      # `deep` is the same server again at the template's full xhigh effort.
+      # It used to be a separate model (Qwen3.8-27B, dense, ~12 t/s) that sat
+      # parked for its whole life; this model matches it on SWE-bench Pro, so
+      # the alias survives as an effort level. Route cron jobs, hard one-shots
+      # and second-opinion reviews here -- anywhere a multi-minute answer is
+      # fine. Nothing in this repo points here yet.
       - model_name: deep
         model_info:
           mode: chat
@@ -208,9 +145,11 @@ data:
           supports_vision: true
           max_input_tokens: 262144
         litellm_params:
-          model: openai/qwen38-27b
-          api_base: http://qwen38-27b.llm:8080/v1
+          model: openai/qwen38-flash-next
+          api_base: http://qwen38-flash-next.llm:8080/v1
           api_key: none
+          chat_template_kwargs:
+            reasoning_effort: xhigh
 
       # --- ChatGPT subscription (OpenAI Codex OAuth) ---
       #
@@ -260,7 +199,7 @@ data:
       # MODEL CHOICE. gpt-5.4, not the gpt-5.5 hermes defaults to: 5.5 and the
       # 5.6 family are absent from litellm's registry, so they would arrive
       # with no context metadata and make enable_pre_call_checks inert for
-      # this entry -- the same blind spot the openai/ornith-35b entries above
+      # this entry -- the same blind spot the openai/qwen38-flash-next entries above
       # have to work around with a hand-set max_input_tokens. Registered here
       # are 5.4 and 5.4-pro (1050000), and 5.3-codex, 5.3-codex-spark,
       # 5.3-instant, 5.3-chat-latest, 5.2, 5.2-codex, 5.1-codex-max,
@@ -581,7 +520,7 @@ data:
           order: 3
 
       # --- reasoning-pool: planning ---
-      # MiniMax-M3 is the flat-plan floor, Ornith the free one. Kimi K2.7's
+      # MiniMax-M3 is the flat-plan floor, worker4 (Qwen3.8-Flash-Next) the free one. Kimi K2.7's
       # 262k window is the pool's ceiling.
       - model_name: reasoning-pool
         model_info:
@@ -629,9 +568,11 @@ data:
           supports_function_calling: true
           supports_vision: true
         litellm_params:
-          model: openai/ornith-35b
-          api_base: http://ornith-35b.llm:8080/v1
+          model: openai/qwen38-flash-next
+          api_base: http://qwen38-flash-next.llm:8080/v1
           api_key: none
+          chat_template_kwargs:
+            reasoning_effort: medium
           order: 5
 
       # --- implementation-pool: carrying out a plan (the coder role) ---
@@ -664,13 +605,15 @@ data:
           max_input_tokens: 204800
           supports_function_calling: true
         litellm_params:
-          model: openai/ornith-35b
-          api_base: http://ornith-35b.llm:8080/v1
+          model: openai/qwen38-flash-next
+          api_base: http://qwen38-flash-next.llm:8080/v1
           api_key: none
+          chat_template_kwargs:
+            reasoning_effort: medium
           order: 3
 
       # --- local-pool / local-pool-chat: worker4 first ---
-      # Same Ornith server behind two doors, like self-hosted/fast: the bare
+      # Same worker4 server behind two doors, like self-hosted/fast: the bare
       # name thinks, -chat does not. Unlike self-hosted, these fall back to
       # MiniMax-M3-chat (router_settings.fallbacks) when worker4 is down, so
       # only point work that may leave the house at them.
@@ -681,9 +624,11 @@ data:
           supports_function_calling: true
           supports_vision: true
         litellm_params:
-          model: openai/ornith-35b
-          api_base: http://ornith-35b.llm:8080/v1
+          model: openai/qwen38-flash-next
+          api_base: http://qwen38-flash-next.llm:8080/v1
           api_key: none
+          chat_template_kwargs:
+            reasoning_effort: medium
       - model_name: local-pool-chat
         model_info:
           mode: chat
@@ -691,11 +636,11 @@ data:
           supports_function_calling: true
           supports_vision: true
         litellm_params:
-          model: openai/ornith-35b
-          api_base: http://ornith-35b.llm:8080/v1
+          model: openai/qwen38-flash-next
+          api_base: http://qwen38-flash-next.llm:8080/v1
           api_key: none
           chat_template_kwargs:
-            enable_thinking: false
+            reasoning_effort: none
 
       # --- auto: classifier routing for interactive clients only ---
       # LLM classifier on `fast` (local, free, in every request's path). It
@@ -833,14 +778,10 @@ data:
     router_settings:
       enable_pre_call_checks: true
       fallbacks:
-        - review: ["self-hosted"]
-        # Both models live on the same node and the same GPU, so this covers
-        # one pod being down or mid-rollout -- NOT the node being down. Note it
-        # silently swaps a slower, stronger model for a faster, weaker one:
-        # the caller gets an answer rather than an error, but not the answer it
-        # asked for. Acceptable for cron work; check the litellm logs before
-        # concluding `deep` produced a given output.
-        - deep: ["self-hosted"]
+        # No review/deep -> self-hosted fallbacks any more: since 2026-10-04
+        # every local alias is the same qwen38-flash-next server, so falling
+        # back between them would only retry the pod that just failed.
+        #
         # The local pools' cloud floor, for when worker4 is down. The
         # classic local aliases above deliberately have none.
         - local-pool: ["MiniMax-M3-chat"]

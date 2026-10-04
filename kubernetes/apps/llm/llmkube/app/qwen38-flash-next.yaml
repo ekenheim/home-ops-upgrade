@@ -1,0 +1,214 @@
+---
+# Qwen3.8-Flash-Next on worker4's Strix Halo iGPU -- the only model on it.
+#
+# Replaced three tenants on 2026-10-04 (owner decision):
+#   ornith-35b   parked at replicas 0, kept for rollback -- see ROLLING BACK
+#   qwen38-27b   removed; it was already parked, and `deep` now lands here
+#   gemma3-27b   removed; Lingarr translates on MiniMax (litellm `translate`)
+#
+# WHY THIS MODEL
+#
+# Same reasoning that picked Ornith -- active parameters set the read volume
+# per token, and that is what this ~256 GB/s LPDDR5X part is bound by -- one
+# size up. 125B total, 6B active (512 experts, top-10, gated shared expert),
+# plus a 51B n-gram hash table (per-layer embeddings) and a 4B MTP head.
+# Multimodal (Qwen3-VL ViT), 262144 native context, hybrid thinking.
+#
+#   benchmark (vendor-reported)  Ornith-1.5-35B   Qwen3.8-27B   this
+#   SWE-bench Pro                          50.4          61.7    62.5
+#
+# i.e. `deep`'s quality, which ran at ~12 t/s here and was parked, at roughly
+# twice that speed -- and the GPU serves one model instead of juggling two.
+#
+# WHAT IT COSTS: SPEED. This is slower than Ornith, and that is accepted.
+# Community numbers on the same APU (Ryzen AI Max+ 395, ROCm, IQ4_XS):
+#   generation ~23 t/s      (Ornith measured 50.5 here)
+#   prefill    ~530 t/s     (Ornith ~1114)
+# Hermes opens every turn with ~28k tokens of system prompt and tools, so time
+# to first token goes from ~25s to ~55s. Measure on this node before quoting
+# either number; these are someone else's box.
+#   https://huggingface.co/unsloth/Qwen3.8-Flash-Next-GGUF/discussions/3
+#
+# RUNTIME SUPPORT -- VERIFIED IN THE PINNED IMAGE, NOT ASSUMED
+#
+# The architecture is `qwen4exp` (Qwen4ExpForConditionalGeneration), added to
+# llama.cpp by ggml-org/llama.cpp#27742, merged 2026-08-27. The toolbox image
+# below is build 11223 / commit 4da633776, 563 commits past that merge, and
+# its libllama.so carries the qwen4exp symbols:
+#   kubectl -n llm exec deploy/<pod> -- grep -a -c qwen4exp /usr/local/lib64/libllama.so.0
+# So no image change: same digest ornith runs on.
+#
+# What that build does NOT have, checked against src/models/qwen4exp.cpp at
+# 4da633776:
+#   - sparse flash attention on HIP. It exists for CUDA (#28770) and Metal
+#     (#28098) only. On ROCm the QSA layers build a top-k MASK over a dense
+#     attention call (build_attn_qsa -> build_attn_mha), so flashAttention and
+#     the q8_0 KV cache below still work -- but decode cost grows with the
+#     context actually in the slot, not with QSA's 2048-token budget. Expect
+#     generation to sag on long Hermes sessions.
+#   - MTP. unsloth's MTP support is on a branch (danielhanchen/llama.cpp
+#     qwen4exp/mtp), not mainline. Same rule as Ornith: no third-party
+#     builds on this endpoint. Worth 1.3-1.7x when it lands upstream.
+# Multi-slot is fine: the QSA inputs are built per n_stream.
+#
+# THE N-GRAM TABLE STAYS OFF THE GPU, AND THAT IS THE POINT
+#
+# The table is loaded TENSOR_READ_LAZY, i.e. it is left in the mmap'd file
+# and paged in on demand instead of being uploaded with -ngl. Only a handful
+# of rows are touched per token, so this costs little speed -- and it keeps
+# ~29 GB of the 90 GB file out of pinned GTT. That matters more than anything
+# else in this file: worker4's hard resets correlate with pinned GTT eating
+# host headroom (MemAvailable ~26 GiB when it crashed; see the git history of
+# qwen38-27b.yaml), because GTT is not charged to the pod cgroup and the
+# kernel panics instead of OOM-killing. File-backed pages are reclaimable.
+#
+# DO NOT force it onto the GPU with `-ot per_layer_token_embd=ROCm0`. That is
+# exactly the configuration that HIP-faults during warmup on gfx1151:
+#   https://github.com/ggml-org/llama.cpp/issues/28201
+#
+# WHY UD-Q3_K_XL
+#
+# unsloth's own guidance is 3-bit for 96 GB devices, and their KLD table puts
+# it at the knee: UD-IQ3_XXS 82.0 GB / KLD 0.165, UD-Q3_K_XL 90.0 / 0.107,
+# UD-IQ4_XS 93.7 / 0.084, UD-Q4_K_XL 111.3 / 0.047. Q4_K_XL does not leave a
+# safe margin on 128 GB. IQ4_XS is the step up if Q3 output looks degraded and
+# the BUDGET numbers below have room for +3.7 GB.
+#
+# BUDGET -- MEASURE THIS AFTER ROLLOUT, IT IS NOT YET KNOWN
+#
+# Expected: ~60 GB of weights + 0.9 GB mmproj pinned in GTT, the n-gram table
+# in page cache, plus KV. The KV cost per token is unmeasured for this
+# architecture (Ornith's was ~10 KB/token). Ornith ran ~47 GiB GTT, so this
+# lands higher regardless. Record:
+#   talosctl -n 192.168.50.38 read /proc/meminfo | grep MemAvailable
+#   GTT: mem_info_gtt_used under /sys/class/drm/card*/device/
+# STOP CONDITION: if MemAvailable sits under ~35 GiB with both slots warm,
+# halve contextSize before anything else. That is ~9 GiB above the band the
+# qwen38-27b bisect crashed in.
+#
+# ROLLING BACK
+#
+# ornith-35b.yaml is still in the kustomization at replicas: 0 with its weights
+# in the cache PV. Rollback is: replicas 0 here, replicas 1 there, and point
+# litellm's local aliases back at http://ornith-35b.llm:8080/v1 -- or simply
+# `git revert` the commit that introduced this file.
+#
+# DOWNLOAD
+#
+# ~90 GB in three shards. Ornith's 22 GB took ~9 minutes, so budget ~40.
+# prefetch pulls it into the cache through a Job; the Kustomization (wait:
+# true, timeout: 5m) will read NotReady until the serving pod is up -- watch
+# the pod, not the Kustomization.
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen38-flash-next
+spec:
+  source: hf://unsloth/Qwen3.8-Flash-Next-GGUF
+  # The first entry is what llama.cpp is handed; it finds the -0000N-of-00003
+  # siblings next to it on its own, but all three must be staged.
+  files:
+    - UD-Q3_K_XL/Qwen3.8-Flash-Next-UD-Q3_K_XL-00001-of-00003.gguf
+    - UD-Q3_K_XL/Qwen3.8-Flash-Next-UD-Q3_K_XL-00002-of-00003.gguf
+    - UD-Q3_K_XL/Qwen3.8-Flash-Next-UD-Q3_K_XL-00003-of-00003.gguf
+  mmproj: mmproj-F16.gguf
+  format: gguf
+  quantization: UD-Q3_K_XL
+  prefetch: true
+  # The cache PV is pinned to worker4, which is tainted; without these the
+  # prefetch Job sits Pending. Same as gemma3-27b had (#6848).
+  prefetchTolerations:
+    - key: llm-workload
+      operator: Exists
+      effect: NoSchedule
+    - key: tuppr.home-operations.com/outdated
+      operator: Exists
+      effect: PreferNoSchedule
+  hardware:
+    accelerator: rocm
+    gpu:
+      enabled: true
+      vendor: amd
+      layers: 99
+      resourceClaims:
+        # resourceClaimName, not a template -- see resourceclaim.yaml.
+        - name: gpu
+          resourceClaimName: llama-strix-gpu
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen38-flash-next
+  labels:
+    krr/ignore: "true"
+spec:
+  modelRef: qwen38-flash-next
+  modelCache:
+    claimName: llmkube-model-cache
+  # Do NOT set skipModelInit, despite the operator advising it: it drops the
+  # downloader and passes an empty --model, and llama.cpp then serves nothing
+  # while the pod reports Ready. Full story in ornith-35b.yaml.
+  runtime: llamacpp
+  # Same ROCm build as ornith, and NOT vulkan-radv: Vulkan on AMD produces
+  # subtle numerical errors that degrade long-context reasoning and tool
+  # calls from ~70-80k tokens. Full citation in ornith-35b.yaml.
+  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-10.0@sha256:3e7e6289520b33d110137473c6e5869a5b74f74a78ec86faffeb2b6f82f9d750
+  command:
+    - llama-server
+  replicas: 1
+  nodeSelector:
+    topology.kubernetes.io/gpus: amd
+  tolerations:
+    - key: llm-workload
+      operator: Exists
+      effect: NoSchedule
+  # 524288 / 2 = 262144 per slot, the model's full native window, and the
+  # number every client of the local aliases already hardcodes (litellm
+  # max_input_tokens, hermes context_length, opencode/courier/openclaw
+  # limits). Keeping it means none of those move.
+  #
+  # 2 slots, not Ornith's 8. Those were sized for Lingarr batches fanning out
+  # beside Hermes, and Lingarr is on MiniMax now. Generation here is
+  # bandwidth-bound, so more slots split ~23 t/s further rather than adding
+  # throughput -- they only buy KV, which is the unmeasured cost above. A third
+  # concurrent caller queues; litellm's `local-pool*` aliases fall back to
+  # MiniMax, the classic aliases do not.
+  contextSize: 524288
+  parallelSlots: 2
+  rolloutPolicy:
+    waitForIdle: true
+    idleTimeoutSeconds: 600
+  flashAttention: true
+  jinja: true
+  cacheTypeK: q8_0
+  cacheTypeV: q8_0
+  batchSize: 2048
+  uBatchSize: 512
+  resources:
+    cpu: "500m"
+    # Ornith ran at 32Gi. The n-gram table is ~29 GB of file-backed mmap that
+    # IS charged to this cgroup as page cache; at a tight limit the kernel
+    # evicts it and tokens turn into random reads off NVMe. 48Gi keeps it
+    # resident with room for the CPU-side buffers.
+    memory: 48Gi
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  extraArgs:
+    # Must match litellm's `model: openai/<id>` for every local alias.
+    - --alias
+    - qwen38-flash-next
+    - --cont-batching
+    # Same runaway cap as ornith (dispatch's abandoned-request incident). At
+    # ~23 t/s, 16384 tokens is ~12 minutes of one slot.
+    - --n-predict
+    - "16384"
+# VERIFY BEFORE CALLING THE ROLLOUT DONE -- each of these has failed silently
+# on a previous model here:
+#   1. /v1/models lists qwen38-flash-next; capabilities include multimodal
+#   2. tool call -> finish_reason "tool_calls" (the probe in ornith-35b.yaml,
+#      with "model":"qwen38-flash-next"). A 400 about the parser means the
+#      chat template does not survive --jinja; roll back.
+#   3. `fast` returns a handful of completion tokens, i.e. reasoning_effort
+#      none reached the template through litellm.
+#   4. three-run generation throughput, and GTT + MemAvailable per BUDGET.

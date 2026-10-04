@@ -51,7 +51,7 @@ base_url = "http://litellm.llm:4000/v1"
 # Picking the model is LiteLLM's job: marimo names an alias and LiteLLM decides
 # which backend serves it.
 #
-#   self-hosted / review / fast  Ornith-1.0-35B on worker4's iGPU (llmkube)
+#   self-hosted / review / fast  Qwen3.8-Flash-Next on worker4's iGPU (llmkube)
 #   chatgpt                      gpt-5.4 on the metered ChatGPT subscription
 #
 # WHY `litellm/` AND NOT `openai/` FOR THE LOCAL MODELS. Both reach the same

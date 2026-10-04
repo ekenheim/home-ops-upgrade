@@ -49,7 +49,7 @@ data:
           "prompt": "You are a coordinator. Do the high-level reasoning and synthesis yourself; delegate the legwork to subagents via the task tool: explorer for recon and 'where/how is X', implementer for multi-file edits of a settled plan, reviewer for an adversarial pass over a finished diff. Give each subagent a self-contained brief (goal, files, constraints, what to return). Read AGENTS.md in the repository first; it is the standard. Never push to the default branch or merge."
         },
         "coordinator-local": {
-          "description": "Local-only coordinator on Ornith (worker4). Use for anything private: no lane it uses leaves the house.",
+          "description": "Local-only coordinator on Qwen3.8 Flash-Next (worker4). Use for anything private: no lane it uses leaves the house.",
           "mode": "primary",
           "model": "litellm/self-hosted",
           "prompt": "You are a LOCAL-ONLY coordinator. Plan, delegate edits and recon to agentic-local, integrate and verify. Never delegate to explorer, implementer or reviewer: they run on cloud plans. Read AGENTS.md first. Never push to the default branch or merge."
@@ -60,12 +60,12 @@ data:
           "model": "litellm/MiniMax-M2.7"
         },
         "implementer": {
-          "description": "Carrying out a settled plan: multi-file edits. implementation-pool (MiniMax M2.7 -> ChatGPT luna -> Ornith).",
+          "description": "Carrying out a settled plan: multi-file edits. implementation-pool (MiniMax M2.7 -> ChatGPT luna -> Qwen3.8 Flash-Next).",
           "mode": "subagent",
           "model": "litellm/implementation-pool"
         },
         "agentic-local": {
-          "description": "Local lane on Ornith (worker4, 262k, vision). Free, private, slower. The only subagent coordinator-local may use.",
+          "description": "Local lane on Qwen3.8 Flash-Next (worker4, 262k, vision). Free, private, slower. The only subagent coordinator-local may use.",
           "mode": "subagent",
           "model": "litellm/self-hosted"
         },
@@ -87,10 +87,10 @@ data:
           },
           "models": {
             "auto": { "name": "Auto (classifier router)", "limit": { "context": 262144, "output": 16384 } },
-            "self-hosted": { "name": "Ornith 35B (worker4, thinking)", "limit": { "context": 262144, "output": 32768 } },
-            "fast": { "name": "Ornith 35B (worker4, no thinking)", "limit": { "context": 262144, "output": 16384 } },
+            "self-hosted": { "name": "Qwen3.8 Flash-Next (worker4, thinking)", "limit": { "context": 262144, "output": 32768 } },
+            "fast": { "name": "Qwen3.8 Flash-Next (worker4, no thinking)", "limit": { "context": 262144, "output": 16384 } },
             "chatgpt": { "name": "ChatGPT gpt-6-astra (subscription)", "limit": { "context": 272000, "output": 128000 } },
-            "local-pool": { "name": "Local pool (Ornith -> MiniMax)", "limit": { "context": 262144, "output": 32768 } },
+            "local-pool": { "name": "Local pool (Qwen3.8 Flash-Next -> MiniMax)", "limit": { "context": 262144, "output": 32768 } },
             "local-pool-chat": { "name": "Local pool, no thinking", "limit": { "context": 262144, "output": 16384 } },
             "reasoning-pool": { "name": "Reasoning pool", "limit": { "context": 262144, "output": 32768 } },
             "implementation-pool": { "name": "Implementation pool", "limit": { "context": 204800, "output": 32768 } },

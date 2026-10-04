@@ -11,10 +11,21 @@ spec:
   # into /app/node_modules, so the `npx` entrypoint resolves locally and does
   # NOT fetch from the registry at pod start (unlike arr-mcp in downloads).
   image: ghcr.io/stacklok/dockyard/npx/context7:4.0.4@sha256:e9f79daa02163a9058f1949872495e3abf53b0c89b1236487ec5594d0df31c7e
-  transport: stdio
-  proxyMode: streamable-http
+  # HTTP, not stdio. Every 4.x release is built on MCP SDK v2, whose stdio
+  # entry pins the protocol era of the FIRST client for the process lifetime.
+  # toolhive multiplexes all clients onto that one stdio pipe, so once Hermes
+  # (2026-07-28, direct) got there first, every 2025-11-25 health check from
+  # the mcp-gateway was rejected with -32022 and context7 sat "unavailable"
+  # (17k failures). The HTTP entry is stateless and classifies each request
+  # on its own, so both eras are served side by side, as ha-mcp/unifi-mcp do.
+  transport: streamable-http
+  mcpPort: 3000
   proxyPort: 8080
-  # stdio backends serve a single client connection and cannot be scaled.
+  args:
+    - --transport
+    - http
+    - --port
+    - "3000"
   backendReplicas: 1
   toolConfigRef:
     name: *name
@@ -28,12 +39,10 @@ spec:
     - name: NPM_CONFIG_CACHE
       value: /tmp/.npm
   # Context7 works anonymously. Registering at context7.com/dashboard yields an
-  # API key for higher rate limits — to use one, create a Bitwarden item and an
-  # ExternalSecret producing `toolhive-context7`, then uncomment:
-  # secrets:
-  #   - name: toolhive-context7
-  #     key: CONTEXT7_API_KEY
-  #     targetEnvName: CONTEXT7_API_KEY
+  # API key for higher rate limits. In HTTP mode the server ignores
+  # CONTEXT7_API_KEY / --api-key and reads the key per request from a header
+  # (Authorization: Bearer or X-Context7-Api-Key), so a key has to be injected
+  # by the caller or by toolhive header forwarding, not as an env var.
   #
   # The CRD documents spec.resources as "the resource requirements for the MCP
   # server container", but on operator v0.42.0 it is applied to the toolhive

@@ -97,7 +97,15 @@ spec:
             # round and chains the next by itself), looking every 5 minutes, and counts each
             # round in its own budget, hindsight_consolidation: 40 rounds per 5 h (Hindsight's
             # own pace, on the owner's ChatGPT subscription). At the budget it cancels the
-            # running round; the next try resumes. Set "false" to stop every consolidation.
+            # running round; the next try resumes.
+            # 2026-10-04 (the owner): consolidation runs on both subscriptions, 3 calls in 10
+            # on ChatGPT and 7 on MiniMax-M3 (the llm/hindsight helmrelease), so the budget
+            # stays at 40. On ChatGPT alone a round cost about 4% of the 5 h window and 0.8%
+            # of the weekly one; watch the ChatGPT usage and lower this, or the Codex weight
+            # there, if it runs hot. To throttle, lower this budget. Don't throttle with
+            # ATLAS_CONSOLIDATION_ENABLED=false: it also stops the follow-ups, the only thing
+            # that cancels Hindsight's self-chaining rounds, so a running chain would go on
+            # uncounted.
             - name: ATLAS_CONSOLIDATION_ENABLED
               value: "true"
             - name: ATLAS_CONSOLIDATE_BUDGET_ROUNDS

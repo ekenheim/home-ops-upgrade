@@ -108,8 +108,12 @@ spec:
             # uncounted.
             - name: ATLAS_CONSOLIDATION_ENABLED
               value: "true"
+            # 2026-10-04 (the owner): consolidation runs on the owner's 5090 (llm/hindsight),
+            # non-stop: about 13 rounds an hour, so 100 rounds per 5 h (backfill: 70) never
+            # holds it while the PC is on. With the PC off the rounds fall back to
+            # MiniMax-M3; a MiniMax 429 pauses the queue as usual.
             - name: ATLAS_CONSOLIDATE_BUDGET_ROUNDS
-              value: "40"
+              value: "100"
             # TradingView (the owner's override, docs/decisions.md in the atlas repo) through the
             # cluster's read-only MCP proxy (kubernetes/apps/llm/toolhive/tradingview-mcp): the
             # proxy holds the sign-in, so Atlas needs no OAuth of its own. Atlas calls three

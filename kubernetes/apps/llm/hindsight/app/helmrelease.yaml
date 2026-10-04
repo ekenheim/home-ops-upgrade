@@ -120,26 +120,23 @@ spec:
         HINDSIGHT_API_LLM_1_MODEL: MiniMax-M3
         HINDSIGHT_API_LLM_1_EXTRA_BODY: '{"thinking":{"type":"disabled"}}'
         HINDSIGHT_API_LLM_STRATEGY: '{"mode":"metadata","routes":[{"key":"extractor","value":"minimax","member":1}]}'
-        # --- Consolidation on both subscriptions (2026-10-04) ---
+        # --- Consolidation on the 5090 (2026-10-04) ---
         #
-        # Consolidation has its own chain (per-operation chains: the CONSOLIDATION_
-        # prefix). Its primary is the global one (Codex, gpt-5.6-luna); member 1 is
-        # MiniMax-M3 through litellm, thinking off, like the extraction member above.
-        # Weighted round-robin sends 3 calls in 10 to Codex and 7 to MiniMax, and a
-        # call that fails on one (a quota error included) falls through to the other.
-        # Member 1 is litellm's `hindsight-consolidation` alias: MiniMax-M3 with the
-        # local model (qwen38-flash-next, reasoning off, through local-pool-chat) as
-        # litellm's fallback, so when both subscriptions are capped consolidation goes
-        # on, slowly, instead of stopping.
-        # Atlas's backlog (~65k memories) cost about 4% of the ChatGPT 5 h window and
-        # 0.8% of the weekly one per 100-memory round on Codex alone. This applies to
-        # every bank's consolidation, not only Atlas's. Retain routing, reflect and
-        # mental-model refresh are unchanged.
-        HINDSIGHT_API_CONSOLIDATION_LLM_1_PROVIDER: openai
-        HINDSIGHT_API_CONSOLIDATION_LLM_1_BASE_URL: http://litellm.llm:4000/v1
-        HINDSIGHT_API_CONSOLIDATION_LLM_1_MODEL: hindsight-consolidation
-        HINDSIGHT_API_CONSOLIDATION_LLM_1_EXTRA_BODY: '{"thinking":{"type":"disabled"}}'
-        HINDSIGHT_API_CONSOLIDATION_LLM_STRATEGY: '{"mode":"round-robin","weights":[3,7]}'
+        # Consolidation has its own model (the CONSOLIDATION_ prefix): litellm's
+        # `hindsight-consolidation` alias, qwen3.8 27B on the owner's RTX 5090 with
+        # MiniMax-M3 as litellm's fallback when the PC is off. Codex is out of
+        # consolidation (it cost ~4% of the ChatGPT 5 h window per 100-memory round),
+        # so its quota stays for reflect and mental models. The extra body turns
+        # thinking off on both: Ollama reads "think", MiniMax "thinking"; each ignores
+        # the other's. For the dev cycle (atlas ticket 21): get the ~65k backlog
+        # through fast and free, then re-consolidate on a frontier model once the
+        # consolidation setup is stable. Applies to every bank's consolidation.
+        # Retain routing, reflect and mental-model refresh are unchanged.
+        HINDSIGHT_API_CONSOLIDATION_LLM_PROVIDER: openai
+        HINDSIGHT_API_CONSOLIDATION_LLM_BASE_URL: http://litellm.llm:4000/v1
+        HINDSIGHT_API_CONSOLIDATION_LLM_MODEL: hindsight-consolidation
+        HINDSIGHT_API_CONSOLIDATION_LLM_EXTRA_BODY: '{"think":false,"thinking":{"type":"disabled"}}'
+        HINDSIGHT_API_CONSOLIDATION_LLM_TIMEOUT: "600"
         # Per-request Codex deadlines. Reflect's upstream default is 30s
         # (DEFAULT_REFLECT_LLM_TIMEOUT) and mental-model refresh inherits it;
         # a refresh is a multi-step tool loop on the reflect model that streams past

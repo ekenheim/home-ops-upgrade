@@ -27,8 +27,12 @@ spec:
     - --port
     - "3000"
   backendReplicas: 1
-  toolConfigRef:
-    name: *name
+  # toolConfigRef: { name: *name }  -- off until stacklok/toolhive#6684 ships.
+  # The proxy's tool-filter middleware rebuilds tools/list as {"tools":[...]}
+  # and drops the 2026-07-28 resultType, so the mcp-gateway rejected every
+  # health check ("Legacy-shaped body (no resultType)") once context7 spoke
+  # the modern revision over HTTP. ./mcptoolconfig.yaml stays applied but
+  # unreferenced; restore this ref (and the library-ID hints) when fixed.
   audit:
     enabled: true
   env:

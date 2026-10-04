@@ -90,9 +90,13 @@
       // MinIO tags look like RELEASE.2025-09-07T16-13-09Z. Without this
       // Renovate cannot parse them as versions and the image never moves.
       // The -cpuv1 variants are excluded so we stay on the default build.
+      // MinIO pulled its images from quay.io and Docker Hub (both 401 since
+      // 2026-09). pgsty/silo, the maintained community fork (formerly
+      // pgsty/minio), keeps the tag scheme; the same anchors exclude its
+      // -distroless and per-arch (-amd64/-arm64) tags.
       "description": ["Date-based versioning for MinIO RELEASE.* tags"],
       "matchDatasources": ["docker"],
-      "matchPackageNames": ["quay.io/minio/minio"],
+      "matchPackageNames": ["quay.io/minio/minio", "docker.io/pgsty/silo"],
       "versioning": "regex:^RELEASE\\.(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})T(?<build>[\\d-]+)Z$"
     },
     {
@@ -199,6 +203,23 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["docker.io/kyuz0/amd-strix-halo-toolboxes"],
       "pinDigests": true
+    },
+    {
+      // These devcontainer features ship a zero-byte OCI config blob. With a
+      // digest pinned, Renovate's docker datasource reads that blob to match
+      // the architecture, fails schema validation (ZodError) and reports
+      // "Could not determine new digest for update" on every run. Reproduced
+      // with renovate 44.132.6 on 2026-10-04. Features are fetched when the
+      // devcontainer is built, so the floating major tag is enough.
+      "description": ["Do not pin digests on devcontainer features with an empty config blob"],
+      "matchManagers": ["devcontainer"],
+      "matchPackageNames": [
+        "ghcr.io/audacioustux/devcontainers/cilium",
+        "ghcr.io/dhoeric/features/stern",
+        "ghcr.io/jsburckhardt/devcontainer-features/flux",
+        "ghcr.io/rio/features/kustomize"
+      ],
+      "pinDigests": false
     },
     // The dispatch hold at <0.5.41 was removed here on 2026-08-29. It existed
     // because 0.5.41 tightened the CSP to `script-src 'self'` without a nonce,

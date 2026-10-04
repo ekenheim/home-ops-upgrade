@@ -392,6 +392,30 @@ data:
           model: openai/MiniMax-M3
           api_base: https://api.minimax.io/v1
           api_key: os.environ/MINIMAX_API_KEY
+      # Hindsight's consolidation member (llm/hindsight helmrelease, "Consolidation
+      # on both subscriptions"): MiniMax-M3 like the alias above, but with the local
+      # model as its floor (router_settings.fallbacks), so a capped Token Plan (the
+      # 402 "usage limit has been reached") slows consolidation down instead of
+      # stopping it. A separate alias so MiniMax-M3's other callers, Atlas's roles
+      # among them, never get a local answer they didn't ask for.
+      - model_name: hindsight-consolidation
+        model_info:
+          mode: chat
+          max_input_tokens: 1000000
+          max_output_tokens: 131072
+          supports_function_calling: true
+          supports_prompt_caching: true
+          input_cost_per_token: 3.0e-07
+          output_cost_per_token: 1.2e-06
+        litellm_params:
+          model: minimax/MiniMax-M3
+          api_base: https://api.minimax.io/v1
+          api_key: os.environ/MINIMAX_API_KEY
+          cache_control_injection_points:
+            - location: message
+              role: system
+            - location: message
+              index: -1
       - model_name: MiniMax-M2.7
         model_info:
           mode: chat
@@ -786,6 +810,10 @@ data:
         # classic local aliases above deliberately have none.
         - local-pool: ["MiniMax-M3-chat"]
         - local-pool-chat: ["MiniMax-M3-chat"]
+        # Hindsight's consolidation: the subscriptions first, the local model
+        # (qwen38-flash-next, reasoning off) when MiniMax is capped or down. Slower
+        # (2 slots on worker4, shared with the other local callers), never stopped.
+        - hindsight-consolidation: ["local-pool-chat"]
 
     litellm_settings:
       drop_params: true

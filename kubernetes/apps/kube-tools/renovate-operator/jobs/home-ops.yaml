@@ -25,11 +25,24 @@ spec:
     # Commits through the API as the app, so they show as verified.
     - name: RENOVATE_PLATFORM_COMMIT_ENABLED
       value: "true"
-    # Reuse the app's installation token as the ghcr.io credential, so
-    # private ghcr.io/ekenheim/* images resolve with no separate PAT. The app
-    # can only read packages linked to repos in its installation.
-    - name: RENOVATE_X_GITHUB_HOST_RULES
+    # ghcr.io credential for the private ghcr.io/ekenheim/* images. GHCR only
+    # accepts a classic PAT for those: the app's installation token is denied
+    # ("installation not allowed to Read organization package") even with the
+    # source repos in the installation (tested 2026-10-04). The PAT is
+    # read:packages only. Renovate turns these two variables into a
+    # {hostType: docker, matchHost: ghcr.io} host rule. The secret is optional:
+    # without it, public GHCR lookups still work anonymously and only the
+    # private images fail.
+    - name: RENOVATE_DETECT_HOST_RULES_FROM_ENV
       value: "true"
+    - name: RENOVATE_DOCKER_GHCR_IO_USERNAME
+      value: ekenheim
+    - name: RENOVATE_DOCKER_GHCR_IO_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: renovate-ghcr
+          key: token
+          optional: true
   resources:
     requests:
       cpu: 100m

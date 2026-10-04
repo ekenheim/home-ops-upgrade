@@ -397,30 +397,25 @@ data:
           model: openai/MiniMax-M3
           api_base: https://api.minimax.io/v1
           api_key: os.environ/MINIMAX_API_KEY
-      # Hindsight's consolidation member (llm/hindsight helmrelease, "Consolidation
-      # on both subscriptions"): MiniMax-M3 like the alias above, but with the local
-      # model as its floor (router_settings.fallbacks), so a capped Token Plan (the
-      # 402 "usage limit has been reached") slows consolidation down instead of
-      # stopping it. A separate alias so MiniMax-M3's other callers, Atlas's roles
-      # among them, never get a local answer they didn't ask for.
+      # Hindsight's consolidation model (llm/hindsight helmrelease, "Consolidation on
+      # the 5090"), 2026-10-04: qwen3.8 27B (Q4_K_M) on Ollama on the owner's main PC
+      # (RTX 5090), free and about twice as fast as Codex luna per fact; Atlas's blind
+      # review found it as faithful as luna (atlas ticket 21). Thinking off: Hindsight
+      # sends "think": false. The PC is not always on: when it is off or busy, the
+      # router falls back to MiniMax-M3 (router_settings.fallbacks), never to worker4
+      # (too slow for consolidation). 192.168.1.182 is the PC's DHCP lease, the same
+      # address the UI-added `qwen3.8:latest` route uses: reserve it in DHCP.
+      # num_ctx pinned at Ollama's VRAM default for this card (32768); the largest
+      # consolidation call is about 20k tokens.
       - model_name: hindsight-consolidation
         model_info:
           mode: chat
-          max_input_tokens: 1000000
-          max_output_tokens: 131072
-          supports_function_calling: true
-          supports_prompt_caching: true
-          input_cost_per_token: 3.0e-07
-          output_cost_per_token: 1.2e-06
+          max_input_tokens: 32768
         litellm_params:
-          model: minimax/MiniMax-M3
-          api_base: https://api.minimax.io/v1
-          api_key: os.environ/MINIMAX_API_KEY
-          cache_control_injection_points:
-            - location: message
-              role: system
-            - location: message
-              index: -1
+          model: ollama/qwen3.8:latest
+          api_base: http://192.168.1.182:11434
+          num_ctx: 32768
+          timeout: 600
       - model_name: MiniMax-M2.7
         model_info:
           mode: chat
@@ -815,10 +810,9 @@ data:
         # classic local aliases above deliberately have none.
         - local-pool: ["MiniMax-M3-chat"]
         - local-pool-chat: ["MiniMax-M3-chat"]
-        # Hindsight's consolidation: the subscriptions first, the local model
-        # (qwen38-flash-next, reasoning off) when MiniMax is capped or down. Slower
-        # (2 slots on worker4, shared with the other local callers), never stopped.
-        - hindsight-consolidation: ["local-pool-chat"]
+        # Hindsight's consolidation: the 5090 first; MiniMax-M3 (Hindsight sends
+        # thinking off) when the PC is off or fails.
+        - hindsight-consolidation: ["MiniMax-M3-chat"]
 
     litellm_settings:
       drop_params: true

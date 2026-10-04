@@ -25,12 +25,11 @@ spec:
     # Commits through the API as the app, so they show as verified.
     - name: RENOVATE_PLATFORM_COMMIT_ENABLED
       value: "true"
-    # {{ secrets.* }} for the repo config (see renovate-secrets).
-    - name: RENOVATE_SECRETS
-      valueFrom:
-        secretKeyRef:
-          name: renovate-secrets
-          key: RENOVATE_SECRETS
+    # Reuse the app's installation token as the ghcr.io credential, so
+    # private ghcr.io/ekenheim/* images resolve with no separate PAT. The app
+    # can only read packages linked to repos in its installation.
+    - name: RENOVATE_X_GITHUB_HOST_RULES
+      value: "true"
   resources:
     requests:
       cpu: 100m

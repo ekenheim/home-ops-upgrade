@@ -1,19 +1,11 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   rebaseWhen: 'behind-base-branch',
-  // PAT in Mend UI (credentials): needed for private repo API + GHCR image tag lookups
-  hostRules: [
-    {
-      matchHost: 'https://api.github.com/repos/ekenheim/nordic-housing',
-      token: '{{ secrets.hempriser }}',
-    },
-    // GHCR: Renovate discovers new image tags by querying ghcr.io, not api.github.com
-    {
-      matchHost: 'ghcr.io',
-      hostType: 'docker',
-      token: '{{ secrets.hempriser }}',
-    },
-  ],
+  // No hostRules: the self-hosted job (renovate-operator) authenticates as the
+  // mini-smurf-cluster GitHub App and RENOVATE_X_GITHUB_HOST_RULES reuses that
+  // installation token for ghcr.io. Private ghcr.io/ekenheim/* images resolve
+  // because their source repos (talos-and-tensors, nordic-housing) are in the
+  // app's installation.
   extends: [
     ':skipStatusChecks',
     'github>ekenheim/renovate-config',

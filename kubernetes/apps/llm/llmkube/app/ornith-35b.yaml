@@ -314,7 +314,18 @@ spec:
   image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-10.0@sha256:3e7e6289520b33d110137473c6e5869a5b74f74a78ec86faffeb2b6f82f9d750
   command:
     - llama-server
-  replicas: 1
+  # PARKED AT 0 -- 2026-10-04. Replaced by qwen38-flash-next and kept only as
+  # the rollback target: the Model CR stays, so its weights stay in the cache
+  # PV and coming back costs a model load, not a 22GB download.
+  #
+  # Do NOT run this beside qwen38-flash-next. Its ~47 GiB GTT on top of that
+  # model's would put worker4 well past the host-headroom band its hard
+  # resets happened in. To roll back, set that one to 0 first, then this to 1,
+  # and point litellm's local aliases back at ornith-35b.llm:8080.
+  #
+  # Scaling the Deployment does not hold -- the llmkube controller restores
+  # spec.replicas from this CR within ~70s. It has to be parked here.
+  replicas: 0
   # worker4 is the only node with an AMD GPU, and it is tainted as a dedicated
   # LLM node -- both are required or the pod cannot be placed.
   nodeSelector:

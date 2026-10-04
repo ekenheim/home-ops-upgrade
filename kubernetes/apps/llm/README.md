@@ -9,7 +9,7 @@ lives here.
 | --- | --- |
 | `litellm-operator` | Mints per-app LiteLLM virtual keys (`litellm/keys/`). Does NOT run the proxy — see below. |
 | `litellm` | The gateway. Still a bjw-s app-template HelmRelease + hand-written `config.yaml`. |
-| `llmkube` | llama.cpp InferenceServices (`ornith-35b`, `qwen38-27b`) on worker4's Strix Halo iGPU. |
+| `llmkube` | llama.cpp InferenceService `qwen38-flash-next` on worker4's Strix Halo iGPU (`ornith-35b` parked at 0 as the rollback target). |
 | `embeddings` | `qwen3-embedding-0.6b`: two llmkube InferenceServices on CPU (llama.cpp) for memini and hindsight, layout after joryirving/home-ops. Replaced `ollama-igpu`, then bge-m3, 2026-09-18. |
 | `toolhive` | MCP operator + `ha-mcp`, `context7`, `memory-mcp`, `platform-mcp`, `wiki-mcp`. |
 | `memini` | Memory service (REST + MCP). Hermes' provider plugin talks to this one. |
@@ -46,7 +46,7 @@ without coupling gateway availability to an operator that has nothing to do.
 
 `llmkube.autoRegister: true` is the near-term payoff — it mints a `LiteLLMModel`
 whenever an `InferenceService` goes Ready, which removes the hand-mirroring of
-`ornith-35b` / `qwen38-27b` into `config.yaml`'s `model_list`. That registration
+`qwen38-flash-next` into `config.yaml`'s `model_list`. That registration
 is inert until a `LiteLLMProxy` exists to adopt it.
 
 Conversion reference (jory's, same chart):

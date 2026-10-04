@@ -136,11 +136,11 @@ data:
       # Raise this and contextSize together or the reactive-compaction loop
       # comes straight back.
       #
-      # 262144 as of 2026-09-01 -- contextSize 2097152 / parallelSlots 8, which
-      # is the model's full native window. Was 131072 while qwen38-27b shared
-      # the GPU. Note the 256,000 hermes falls back to is now slightly
-      # *under* the real window rather than far over it, so the "Could not
-      # determine context length" path stopped being dangerous by accident.
+      # 262144 -- qwen38-flash-next's contextSize 524288 / parallelSlots 2, which
+      # is the model's full native window (Ornith served the same 262144 at
+      # 2097152 / 8 until 2026-10-04). Note the 256,000 hermes falls back to is
+      # slightly *under* the real window rather than far over it, so the "Could
+      # not determine context length" path is not dangerous by accident.
       # Keep the setting anyway: that only holds at this contextSize, and the
       # fallback goes back to over-budgeting the moment it drops.
       context_length: 262144
@@ -161,7 +161,7 @@ data:
     #   hermes -m gpt-5.5 --provider openai-codex
     # or pick it from the dashboard model picker. Everything left alone --
     # the Discord gateway, cron jobs, and every `auxiliary.*` helper below --
-    # stays on the local Ornith through litellm and burns no subscription
+    # stays on the local worker4 model through litellm and burns no subscription
     # quota.
     #
     # WHERE THE CREDENTIAL LIVES, AND WHY IT IS NOT IN THIS FILE

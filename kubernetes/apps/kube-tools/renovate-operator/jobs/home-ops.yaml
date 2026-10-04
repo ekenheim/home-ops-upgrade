@@ -43,6 +43,17 @@ spec:
           name: renovate-ghcr
           key: token
           optional: true
+    # Package cache on the renovate-cache PVC (see pvc.yaml) instead of the
+    # per-pod /tmp emptyDir, so lookups survive between runs.
+    - name: RENOVATE_CACHE_DIR
+      value: /cache
+  extraVolumes:
+    - name: cache
+      persistentVolumeClaim:
+        claimName: renovate-cache
+  extraVolumeMounts:
+    - name: cache
+      mountPath: /cache
   resources:
     requests:
       cpu: 100m

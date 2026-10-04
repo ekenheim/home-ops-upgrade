@@ -87,6 +87,11 @@ data:
       #   self-hosted (thinking on)   7.9s   300 completion tokens
       #   fast        (thinking off)  0.4s     7 completion tokens
       #
+      # Thinking goes off with enable_thinking: false, not reasoning_effort:
+      # none. This template accepts only xhigh/medium/low (and high, read as
+      # xhigh) and raises on anything else, so `none` 500s every request; the
+      # check sits inside `if enable_thinking`, which false skips.
+      #
       # Use `self-hosted`/`review` when the reasoning is the point; use `fast`
       # for bulk throughput.
       - model_name: fast
@@ -100,7 +105,7 @@ data:
           api_base: http://qwen38-flash-next.llm:8080/v1
           api_key: none
           chat_template_kwargs:
-            reasoning_effort: none
+            enable_thinking: false
 
       # Lingarr's en->sv subtitle work, MiniMax only. gemma3-27b was the
       # order-2 fallback and was removed with it from worker4 on 2026-10-04,
@@ -664,7 +669,7 @@ data:
           api_base: http://qwen38-flash-next.llm:8080/v1
           api_key: none
           chat_template_kwargs:
-            reasoning_effort: none
+            enable_thinking: false
 
       # --- auto: classifier routing for interactive clients only ---
       # LLM classifier on `fast` (local, free, in every request's path). It

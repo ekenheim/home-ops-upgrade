@@ -5,6 +5,8 @@ kind: MCPToolConfig
 metadata:
   name: context7
 spec:
+  # NOT referenced by the context7 MCPServer while stacklok/toolhive#6684 is
+  # open -- see the note at toolConfigRef in ./mcpserver.yaml.
   # Explicit allow list — pins the surface so an image bump cannot silently add
   # tools.
   toolsFilter:

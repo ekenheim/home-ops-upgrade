@@ -120,6 +120,22 @@ spec:
         HINDSIGHT_API_LLM_1_MODEL: MiniMax-M3
         HINDSIGHT_API_LLM_1_EXTRA_BODY: '{"thinking":{"type":"disabled"}}'
         HINDSIGHT_API_LLM_STRATEGY: '{"mode":"metadata","routes":[{"key":"extractor","value":"minimax","member":1}]}'
+        # --- Consolidation on both subscriptions (2026-10-04) ---
+        #
+        # Consolidation has its own chain (per-operation chains: the CONSOLIDATION_
+        # prefix). Its primary is the global one (Codex, gpt-5.6-luna); member 1 is
+        # MiniMax-M3 through litellm, thinking off, like the extraction member above.
+        # Weighted round-robin sends 3 calls in 10 to Codex and 7 to MiniMax, and a
+        # call that fails on one (a quota error included) falls through to the other.
+        # Atlas's backlog (~65k memories) cost about 4% of the ChatGPT 5 h window and
+        # 0.8% of the weekly one per 100-memory round on Codex alone. This applies to
+        # every bank's consolidation, not only Atlas's. Retain routing, reflect and
+        # mental-model refresh are unchanged.
+        HINDSIGHT_API_CONSOLIDATION_LLM_1_PROVIDER: openai
+        HINDSIGHT_API_CONSOLIDATION_LLM_1_BASE_URL: http://litellm.llm:4000/v1
+        HINDSIGHT_API_CONSOLIDATION_LLM_1_MODEL: MiniMax-M3
+        HINDSIGHT_API_CONSOLIDATION_LLM_1_EXTRA_BODY: '{"thinking":{"type":"disabled"}}'
+        HINDSIGHT_API_CONSOLIDATION_LLM_STRATEGY: '{"mode":"round-robin","weights":[3,7]}'
         # Per-request Codex deadlines. Reflect's upstream default is 30s
         # (DEFAULT_REFLECT_LLM_TIMEOUT) and mental-model refresh inherits it;
         # a refresh is a multi-step tool loop on the reflect model that streams past

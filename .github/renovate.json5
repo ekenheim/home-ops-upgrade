@@ -1,11 +1,9 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   rebaseWhen: 'behind-base-branch',
-  // No hostRules: the self-hosted job (renovate-operator) authenticates as the
-  // mini-smurf-cluster GitHub App and RENOVATE_X_GITHUB_HOST_RULES reuses that
-  // installation token for ghcr.io. Private ghcr.io/ekenheim/* images resolve
-  // because their source repos (talos-and-tensors, nordic-housing) are in the
-  // app's installation.
+  // No hostRules here. The self-hosted job (renovate-operator) supplies the
+  // ghcr.io credential for the private ghcr.io/ekenheim/* images from its env:
+  // see kubernetes/apps/kube-tools/renovate-operator/jobs/home-ops.yaml.
   extends: [
     ':skipStatusChecks',
     'github>ekenheim/renovate-config',

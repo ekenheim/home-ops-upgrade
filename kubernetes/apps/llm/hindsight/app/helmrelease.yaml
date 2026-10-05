@@ -120,17 +120,18 @@ spec:
         HINDSIGHT_API_LLM_1_MODEL: MiniMax-M3
         HINDSIGHT_API_LLM_1_EXTRA_BODY: '{"thinking":{"type":"disabled"}}'
         HINDSIGHT_API_LLM_STRATEGY: '{"mode":"metadata","routes":[{"key":"extractor","value":"minimax","member":1}]}'
-        # --- Consolidation on the 5090 (2026-10-04) ---
+        # --- Consolidation: MiniMax-M3 first, then the 5090 (2026-10-05) ---
         #
         # Consolidation has its own model (the CONSOLIDATION_ prefix): litellm's
-        # `hindsight-consolidation` alias, qwen3.8 27B on the owner's RTX 5090 with
-        # MiniMax-M3 as litellm's fallback when the PC is off. Codex is out of
-        # consolidation (it cost ~4% of the ChatGPT 5 h window per 100-memory round),
-        # so its quota stays for reflect and mental models. The extra body turns
-        # thinking off on both: Ollama reads "think", MiniMax "thinking"; each ignores
-        # the other's. For the dev cycle (atlas ticket 21): get the ~65k backlog
-        # through fast and free, then re-consolidate on a frontier model once the
-        # consolidation setup is stable. Applies to every bank's consolidation.
+        # `hindsight-consolidation` alias, MiniMax-M3 first (since the weekly
+        # allowance reset on 2026-10-05) and qwen3.8 27B on the owner's RTX 5090
+        # when MiniMax caps out or fails (2026-10-04 it was the 5090 first). Codex
+        # is out of consolidation (it cost ~4% of the ChatGPT 5 h window per
+        # 100-memory round), so its quota stays for reflect and mental models. The
+        # extra body turns thinking off on both: Ollama reads "think", MiniMax
+        # "thinking"; each ignores the other's. For the dev cycle (atlas ticket 21):
+        # get the backlog through fast, then re-consolidate on a frontier model once
+        # the consolidation setup is stable. Applies to every bank's consolidation.
         # Retain routing, reflect and mental-model refresh are unchanged.
         HINDSIGHT_API_CONSOLIDATION_LLM_PROVIDER: openai
         HINDSIGHT_API_CONSOLIDATION_LLM_BASE_URL: http://litellm.llm:4000/v1

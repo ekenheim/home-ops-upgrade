@@ -397,16 +397,32 @@ data:
           model: openai/MiniMax-M3
           api_base: https://api.minimax.io/v1
           api_key: os.environ/MINIMAX_API_KEY
-      # Hindsight's consolidation model (llm/hindsight helmrelease, "Consolidation on
-      # the 5090"), 2026-10-04: qwen3.8 27B (Q4_K_M) on Ollama on the owner's main PC
-      # (RTX 5090), free and about twice as fast as Codex luna per fact; Atlas's blind
-      # review found it as faithful as luna (atlas ticket 21). Thinking off: Hindsight
-      # sends "think": false. The PC is not always on: when it is off or busy, the
-      # router falls back to MiniMax-M3 (router_settings.fallbacks), never to worker4
-      # (too slow for consolidation). 192.168.1.182 is the PC's DHCP lease, the same
-      # address the UI-added `qwen3.8:latest` route uses: reserve it in DHCP.
-      # num_ctx pinned at Ollama's VRAM default for this card (32768); the largest
-      # consolidation call is about 20k tokens.
+      # Hindsight's consolidation model (llm/hindsight helmrelease, "Consolidation:
+      # MiniMax-M3 first, then the 5090"), an ordered pool like the ones below.
+      # Order 1, since 2026-10-05 (the weekly MiniMax allowance reset): MiniMax-M3 on
+      # the flat plan, thinking off (Hindsight sends "thinking": disabled). When it
+      # caps out (429) or fails, order 2 answers: qwen3.8 27B (Q4_K_M) on Ollama on
+      # the owner's main PC (RTX 5090), free, which Atlas's blind review found as
+      # faithful as Codex luna (atlas ticket 21); Hindsight sends "think": false.
+      # Never worker4 (too slow for consolidation). The PC is not always on: with
+      # MiniMax capped and the PC off, consolidation fails until one is back.
+      # 192.168.1.182 is the PC's DHCP lease, the same address the UI-added
+      # `qwen3.8:latest` route uses: reserve it in DHCP. num_ctx pinned at Ollama's
+      # VRAM default for this card (32768); the largest consolidation call is about
+      # 20k tokens.
+      - model_name: hindsight-consolidation
+        model_info:
+          mode: chat
+          max_input_tokens: 1000000
+          max_output_tokens: 131072
+          input_cost_per_token: 3.0e-07
+          output_cost_per_token: 1.2e-06
+        litellm_params:
+          model: openai/MiniMax-M3
+          api_base: https://api.minimax.io/v1
+          api_key: os.environ/MINIMAX_API_KEY
+          timeout: 600
+          order: 1
       - model_name: hindsight-consolidation
         model_info:
           mode: chat
@@ -416,6 +432,7 @@ data:
           api_base: http://192.168.1.182:11434
           num_ctx: 32768
           timeout: 600
+          order: 2
       - model_name: MiniMax-M2.7
         model_info:
           mode: chat
@@ -810,9 +827,8 @@ data:
         # classic local aliases above deliberately have none.
         - local-pool: ["MiniMax-M3-chat"]
         - local-pool-chat: ["MiniMax-M3-chat"]
-        # Hindsight's consolidation: the 5090 first; MiniMax-M3 (Hindsight sends
-        # thinking off) when the PC is off or fails.
-        - hindsight-consolidation: ["MiniMax-M3-chat"]
+        # hindsight-consolidation needs no entry: its two rungs (MiniMax-M3, then
+        # the 5090) fail over by `order:`.
 
     litellm_settings:
       drop_params: true

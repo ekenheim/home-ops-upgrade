@@ -400,7 +400,9 @@ data:
       # Hindsight's consolidation model (llm/hindsight helmrelease, "Consolidation:
       # MiniMax-M3 first, then the 5090"), an ordered pool like the ones below.
       # Order 1, since 2026-10-05 (the weekly MiniMax allowance reset): MiniMax-M3 on
-      # the flat plan, thinking off (Hindsight sends "thinking": disabled). When it
+      # the flat plan, thinking off by `extra_body` here, as on `translate`: the
+      # top-level "thinking" Hindsight sends is dropped by drop_params on this
+      # route (the first call after the switch: 14.7k thinking tokens, 137 s). When it
       # caps out (429) or fails, order 2 answers: qwen3.8 27B (Q4_K_M) on Ollama on
       # the owner's main PC (RTX 5090), free, which Atlas's blind review found as
       # faithful as Codex luna (atlas ticket 21); Hindsight sends "think": false.
@@ -421,6 +423,9 @@ data:
           model: openai/MiniMax-M3
           api_base: https://api.minimax.io/v1
           api_key: os.environ/MINIMAX_API_KEY
+          extra_body:
+            thinking:
+              type: disabled
           timeout: 600
           order: 1
       - model_name: hindsight-consolidation

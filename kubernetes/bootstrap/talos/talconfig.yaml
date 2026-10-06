@@ -25,6 +25,8 @@ nodes:
     # 2026-09-22 replacing the worn Kingston A400. Pinned by WWID, not serial:
     # the HPE firmware leaves the Disk resource's serial field empty, so a
     # serial selector would never match. The 980 PRO on nvme0n1 is osd.2.
+    # master1's board died 2026-09-30 and this S3710 now boots master2; give
+    # master1 a new disk and WWID before re-adding it.
     installDiskSelector:
       wwid: "naa.55cd2e414db5ee67"
     talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de
@@ -53,9 +55,21 @@ nodes:
           ip: "192.168.50.10"
   - hostname: "master2"
     ipAddress: "192.168.50.33"
-    installDisk: "/dev/sda"
+    # Intel DC S3710 200GB (HPE MK0200GEYKC), moved over from the dead master1
+    # on 2026-10-06 to replace the SanDisk SSD Plus, whose ~740 ms writes
+    # stalled etcd. Pinned by WWID like master3. The 980 PRO on nvme0n1 is osd.3.
+    installDiskSelector:
+      wwid: "naa.55cd2e414db5ee67"
     talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de
     controlPlane: true
+    patches:
+      # See master1: /var/mnt is read-only on Talos 1.13, openebs local-hostpath
+      # needs this directory volume on every reinstalled node.
+      - |-
+        apiVersion: v1alpha1
+        kind: UserVolumeConfig
+        name: local-hostpath
+        volumeType: directory
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: 48:21:0b:51:95:9d

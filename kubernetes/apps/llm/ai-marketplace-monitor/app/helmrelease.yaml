@@ -63,7 +63,7 @@ spec:
           seed-config:
             image: &image
               repository: ghcr.io/bopeng/ai-marketplace-monitor
-              tag: 0.10.3@sha256:4559040af3092e5f7b92371a8344c65498823ab91411464910cc3090c36cbfcc
+              tag: 0.10.4@sha256:efa68ab70af5cde605019200bb3dc0068c6e9d07948887ca44bc980859b0ea96
             # Copy the starter only if there is no config yet; see
             # configmap.yaml. No braces or positional parameters in here: Flux
             # envsubst runs over this file too.

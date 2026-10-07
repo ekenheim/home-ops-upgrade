@@ -35,7 +35,11 @@ spec:
     runnerScaleSetName: gha-runner-scale-set-atlas
     githubConfigUrl: https://github.com/ekenheim/atlas
     minRunners: 1
-    maxRunners: 10
+    # Each Atlas CI run starts Postgres, an S3 server, Playwright and up to 8 pytest
+    # workers. Ten unrequested runners at once starved each other past the 60-minute
+    # job timeout (13 Renovate branches, 9 cancelled); excess jobs now queue in GitHub,
+    # where the timeout does not run.
+    maxRunners: 3
     containerMode:
       type: dind
     template:
@@ -44,6 +48,10 @@ spec:
           - name: runner
             image: ghcr.io/joryirving/actions-runner:2.338.0@sha256:f4d9628a9a922ccaaaed7059c86979c44c9cd8407e172cb18c9fd91355dd4f0c
             command: ["/home/runner/run.sh"]
+            resources:
+              requests:
+                cpu: "4"
+                memory: 8Gi
     controllerServiceAccount:
       name: gha-runner-scale-set-controller
       namespace: actions-runner-system

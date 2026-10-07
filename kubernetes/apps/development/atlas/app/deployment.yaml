@@ -42,7 +42,7 @@ spec:
       initContainers:
         # Schema to head on the DIRECT primary (see externalsecret.yaml).
         - name: migrate
-          image: &image ghcr.io/ekenheim/atlas:0.5.0
+          image: &image ghcr.io/ekenheim/atlas:0.5.1
           args: ["migrate"]
           env: &env
             - name: ATLAS_ACTOR
@@ -252,6 +252,29 @@ spec:
             periodSeconds: 15
             failureThreshold: 6
         - name: worker
+          image: *image
+          args: ["worker"]
+          env: *env
+          envFrom: *envFrom
+          securityContext: *securityContext
+          volumeMounts: *mounts
+          resources:
+            requests: { cpu: 100m, memory: 512Mi }
+            limits: { memory: 2Gi }
+        # Two more workers on the same queue (claims are FOR UPDATE SKIP LOCKED; scheduled jobs
+        # are keyed, so a schedule enqueued twice is one job): an argument investigation's six
+        # Readers run side by side instead of one after another.
+        - name: worker-2
+          image: *image
+          args: ["worker"]
+          env: *env
+          envFrom: *envFrom
+          securityContext: *securityContext
+          volumeMounts: *mounts
+          resources:
+            requests: { cpu: 100m, memory: 512Mi }
+            limits: { memory: 2Gi }
+        - name: worker-3
           image: *image
           args: ["worker"]
           env: *env

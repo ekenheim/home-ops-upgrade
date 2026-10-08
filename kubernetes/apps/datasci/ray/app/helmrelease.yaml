@@ -42,9 +42,12 @@ spec:
         limits:
           cpu: "4"
           memory: "8G"
+        # Requests are scheduler reservations only: KubeRay derives Ray's
+        # num-cpus/memory from the limits above, so job capacity is unchanged.
+        # Idle the head uses ~50m / 1.3Gi; at 2 CPU / 4G it held worker3 full.
         requests:
-          cpu: "2"
-          memory: "4G"
+          cpu: 500m
+          memory: "2G"
       containerEnv:
         - name: RAY_LOG_TO_STDERR
           value: "1"
@@ -134,9 +137,11 @@ spec:
         limits:
           cpu: "8"
           memory: "16G"
+        # See the head: limits set Ray's capacity. The idle min-replica worker
+        # uses ~25m / 300Mi, and every autoscaled worker reserves this again.
         requests:
-          cpu: "4"
-          memory: "8G"
+          cpu: "1"
+          memory: "2G"
       containerEnv:
         - name: RAY_LOG_TO_STDERR
           value: "1"

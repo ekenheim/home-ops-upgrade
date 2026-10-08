@@ -89,8 +89,11 @@ spec:
               # tested rather than assumed here.
               readOnlyRootFilesystem: true
             resources:
+              # Bursty TTS that idles at ~2m. No cpu limit, so a reply can still
+              # use every free core; 4 CPU reserved for it kept other pods off
+              # worker3 and onto the control plane.
               requests:
-                cpu: "4"
+                cpu: "1"
                 memory: 2Gi
               limits:
                 memory: 8Gi

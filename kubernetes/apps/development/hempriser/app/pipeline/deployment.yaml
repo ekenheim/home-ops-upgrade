@@ -53,8 +53,9 @@ spec:
             - name: AREA_MAPPING_PATH
               value: "/app/data/comprehensive_area_mapping_full.json"
           resources:
+            # Idles at ~5m; the 4000m limit still covers a pipeline run.
             requests:
-              cpu: 2000m
+              cpu: 250m
               memory: 256Mi
             limits:
               cpu: 4000m

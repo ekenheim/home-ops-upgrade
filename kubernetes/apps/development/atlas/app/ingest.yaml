@@ -41,7 +41,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: enqueue
-              image: ghcr.io/ekenheim/atlas:0.5.3
+              image: ghcr.io/ekenheim/atlas:0.5.4
               command: ["/bin/sh", "-c"]
               args:
                 # The photonics universe (0.2.1 rollout): SEC filers with at most 5 new retains

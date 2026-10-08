@@ -75,6 +75,16 @@ spec:
             # statement, the counter-judge); at 2M the judge's rewrites could not run.
             - name: ATLAS_RUN_TOKEN_BUDGET
               value: "3000000"
+            # 0.5.5 (2026-10-08): a worker holds a job for ATLAS_JOB_LEASE_SECONDS (default 300)
+            # and does not renew the lease while it runs. The argument Editor, with two judge
+            # votes per statement and the rewrites, now runs past 5 minutes, so the queue gave
+            # every pilot Editor to a second worker while the first was still working (and 3
+            # Readers on 0.5.4): duplicate MiniMax calls, the first attempt's card standing.
+            # 30 minutes covers the longest task; a job held by a crashed worker then waits
+            # up to 30 minutes before another worker reclaims it. A lease heartbeat in the
+            # worker is the proper fix (an Atlas ticket); then this can come down again.
+            - name: ATLAS_JOB_LEASE_SECONDS
+              value: "1800"
             # 0.3.1: the Editor's card for a multi-hop investigation may be asked for with an
             # output cap of up to 16,384 tokens (the first call's cap is 8,192). MiniMax-M3
             # writes about 75 tokens a second, so the largest answer can take well over the

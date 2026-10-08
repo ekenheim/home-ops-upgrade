@@ -71,8 +71,10 @@ spec:
             # and Hindsight extracts with at most two.
             - name: ATLAS_MINIMAX_BUDGET_TOKENS
               value: "8000000"
+            # 0.5.4: an argument investigation spends about 1.9M tokens (two judge votes per
+            # statement, the counter-judge); at 2M the judge's rewrites could not run.
             - name: ATLAS_RUN_TOKEN_BUDGET
-              value: "2000000"
+              value: "3000000"
             # 0.3.1: the Editor's card for a multi-hop investigation may be asked for with an
             # output cap of up to 16,384 tokens (the first call's cap is 8,192). MiniMax-M3
             # writes about 75 tokens a second, so the largest answer can take well over the

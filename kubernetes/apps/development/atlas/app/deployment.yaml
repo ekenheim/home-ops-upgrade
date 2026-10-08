@@ -69,8 +69,12 @@ spec:
             # shared Hindsight's MiniMax extraction, whose tokens Atlas does not count.
             # Concurrency is the tighter limit: Atlas's worker makes one role call at a time
             # and Hindsight extracts with at most two.
+            # HOLD (2026-10-08): the owner's weekly MiniMax allowance is at 96% and resets on
+            # 2026-10-12 (~00:15 UTC). A budget of 1 token holds every MiniMax-backed Atlas job
+            # (role calls, triage) in the queue; nothing is lost, queued investigations continue
+            # when this is set back to "8000000" after the reset.
             - name: ATLAS_MINIMAX_BUDGET_TOKENS
-              value: "8000000"
+              value: "1"
             # 0.5.4: an argument investigation spends about 1.9M tokens (two judge votes per
             # statement, the counter-judge); at 2M the judge's rewrites could not run.
             - name: ATLAS_RUN_TOKEN_BUDGET

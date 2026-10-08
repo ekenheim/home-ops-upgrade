@@ -138,6 +138,12 @@ spec:
         HINDSIGHT_API_CONSOLIDATION_LLM_MODEL: hindsight-consolidation
         HINDSIGHT_API_CONSOLIDATION_LLM_EXTRA_BODY: '{"think":false,"thinking":{"type":"disabled"}}'
         HINDSIGHT_API_CONSOLIDATION_LLM_TIMEOUT: "600"
+        # A ceiling on one consolidation answer (2026-10-08). Unset, the provider keeps
+        # its own budget; with MiniMax thinking on (before home-ops #7242) some batches
+        # ran past it and were bisected, 16 failed facts in ~950 rounds. Generous on
+        # purpose: a batch of 8 facts answers in well under 2k tokens, and a cap that
+        # truncates would fail facts instead of protecting them.
+        HINDSIGHT_API_CONSOLIDATION_MAX_COMPLETION_TOKENS: "8192"
         # Per-request Codex deadlines. Reflect's upstream default is 30s
         # (DEFAULT_REFLECT_LLM_TIMEOUT) and mental-model refresh inherits it;
         # a refresh is a multi-step tool loop on the reflect model that streams past

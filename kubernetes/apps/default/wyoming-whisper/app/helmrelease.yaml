@@ -123,8 +123,11 @@ spec:
               # mount hangs; with the mount it returns in ~700ms.
               readOnlyRootFilesystem: true
             resources:
+              # Idles at ~1m between voice commands. With no cpu limit the
+              # request is only a reservation, and 1 CPU still guarantees it a
+              # core when the node is busy.
               requests:
-                cpu: "2"
+                cpu: "1"
                 memory: 1Gi
               # No cpu limit on purpose: cgroup throttling against a fixed
               # OpenMP thread pool costs more in context switches than it

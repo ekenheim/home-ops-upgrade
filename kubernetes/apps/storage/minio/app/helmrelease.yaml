@@ -70,9 +70,10 @@ spec:
               runAsGroup: 0
               allowPrivilegeEscalation: true
             resources:
+              # ~20m outside backup windows; no cpu limit, so backups still burst.
               requests:
                 memory: 2Gi
-                cpu: "2"
+                cpu: 500m
               limits:
                 memory: 16Gi
     service:

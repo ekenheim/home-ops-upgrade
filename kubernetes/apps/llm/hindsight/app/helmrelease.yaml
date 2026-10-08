@@ -120,6 +120,12 @@ spec:
         HINDSIGHT_API_LLM_1_MODEL: MiniMax-M3
         HINDSIGHT_API_LLM_1_EXTRA_BODY: '{"thinking":{"type":"disabled"}}'
         HINDSIGHT_API_LLM_STRATEGY: '{"mode":"metadata","routes":[{"key":"extractor","value":"minimax","member":1}]}'
+        # Retain's LLM fan-out (2026-10-08): sub-batches extract concurrently under
+        # HINDSIGHT_API_LLM_MAX_CONCURRENT (default 32). MiniMax rate-controls automated
+        # batch concurrency and a routed item has no fallback, so cap retain's LLM calls
+        # at 2, which the Atlas deployment's budget comments already assume. Applies to
+        # every bank's retains, Codex-routed ones included.
+        HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT: "2"
         # --- Consolidation: MiniMax-M3 first, then the 5090 (2026-10-05) ---
         #
         # Consolidation has its own model (the CONSOLIDATION_ prefix): litellm's

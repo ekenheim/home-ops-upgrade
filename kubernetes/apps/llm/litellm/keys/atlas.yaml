@@ -27,8 +27,13 @@ spec:
   keyAlias: atlas
   secretName: litellm-key-atlas
   secretKey: api-key
-  maxBudget: "25"
-  budgetDuration: 30d
+  # A backstop, not the budget: Atlas paces itself at 8M MiniMax tokens per 5 h window
+  # (ATLAS_MINIMAX_BUDGET_TOKENS), about $2.4 at list price per window. MiniMax is a flat
+  # plan, so list-price spend here is informational. A daily cap that resets clears a trip
+  # by itself; the old $25 per 30 days was >10x below Atlas's own budget and would have
+  # stalled Atlas for the rest of the month once reached (2026-10-08 audit).
+  maxBudget: "20"
+  budgetDuration: 1d
   maxParallelRequests: 3
   models:
     - MiniMax-M3

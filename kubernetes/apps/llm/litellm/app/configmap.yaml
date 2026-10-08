@@ -352,6 +352,18 @@ data:
               role: system
             - location: message
               index: -1
+          # Thinking off at the deployment, not only in the callers (2026-10-08): the
+          # minimax/ provider passes a top-level `thinking` only while litellm's cost map
+          # says M3 supports_reasoning, and drop_params removes it silently otherwise
+          # (what the openai/ rungs did until #7242, 14.7k thinking tokens a call).
+          # extra_body is merged verbatim. Callers: Atlas's roles and Hindsight's retain.
+          extra_body:
+            thinking:
+              type: disabled
+          # Atlas abandons a role call at 360 s (ATLAS_LLM_ROLE_TIMEOUT_SECONDS). Without a
+          # deployment timeout the upstream call runs on for up to request_timeout x
+          # (1 + num_retries) and holds one of the atlas key's 3 parallel slots.
+          timeout: 400
       # Same model on MiniMax's ANTHROPIC-compatible endpoint, for callers
       # that speak Anthropic Messages (OpenClaw's `minimax` provider through
       # this gateway's /v1/messages). `mode: messages` is load-bearing: it

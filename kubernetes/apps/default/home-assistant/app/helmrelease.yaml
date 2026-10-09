@@ -66,10 +66,19 @@ spec:
               tag: 4.141.0
             env:
               TZ: ${TIMEZONE}
+              # code-server reads PASSWORD for --auth password. optional: this
+              # container shares the pod with HA, and a missing secret must not
+              # keep HA from starting (code-server then just stays locked).
+              PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: home-assistant-codeserver
+                    key: PASSWORD
+                    optional: true
             args:
               - "/config"
               - --auth
-              - "none"
+              - "password"
               - --user-data-dir
               - "/config/.vscode"
               - --extensions-dir

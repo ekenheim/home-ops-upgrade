@@ -637,11 +637,13 @@ views:
                     entity: select.dreamebot_l10s_ultra_cleaning_mode
                     name: Mode
                     icon: mdi:broom
+                    show_state: true
                   - type: custom:bubble-card
                     card_type: select
                     entity: select.dreamebot_l10s_ultra_suction_level
                     name: Suction
                     icon: mdi:fan
+                    show_state: true
               - type: custom:xiaomi-vacuum-map-card
                 entity: vacuum.dreamebot_l10s_ultra
                 vacuum_platform: default

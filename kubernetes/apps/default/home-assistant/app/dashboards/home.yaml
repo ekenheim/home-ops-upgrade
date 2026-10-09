@@ -38,7 +38,7 @@ views:
                 entity: person.robin
                 use_entity_picture: true
               - type: weather
-                entity: weather.forecast_home
+                entity: weather.smhi_home
                 show_conditions: true
                 show_temperature: true
               - type: entity
@@ -444,13 +444,41 @@ views:
             today_indicator: true
             remove_location_country: true
             weather:
-              entity: weather.forecast_home
+              entity: weather.smhi_home
               position: date
             tap_action: { action: expand }
 
       # ---- Room pop-ups (hidden until their #hash is opened) ----
       - type: grid
         cards:
+          # Bottom navigation bar (fixed to the screen edge): one tap to each
+          # room pop-up; a button lights up while that room's lights are on.
+          - type: custom:bubble-card
+            card_type: horizontal-buttons-stack
+            1_name: Living
+            1_icon: mdi:sofa
+            1_link: "#living-room"
+            1_entity: light.tv_room
+            2_name: Kitchen
+            2_icon: mdi:countertop
+            2_link: "#kitchen"
+            2_entity: light.kitchen
+            3_name: Computer
+            3_icon: mdi:desktop-tower-monitor
+            3_link: "#computer-room"
+            3_entity: light.computer_room
+            4_name: Bedroom
+            4_icon: mdi:bed-king-outline
+            4_link: "#bedroom"
+            4_entity: light.bedroom
+            5_name: Bath
+            5_icon: mdi:shower-head
+            5_link: "#bathroom"
+            5_entity: light.bathroom
+            6_name: Hallway
+            6_icon: mdi:door
+            6_link: "#hallway"
+            6_entity: light.floalt_panel_ws_60x60
           # Living room
           - type: custom:bubble-card
             card_type: pop-up
@@ -1178,7 +1206,7 @@ views:
             heading: Outside
             heading_style: title
           - type: weather-forecast
-            entity: weather.forecast_home
+            entity: weather.smhi_home
             forecast_type: daily
             show_current: true
             show_forecast: true
@@ -1190,6 +1218,73 @@ views:
             entity: sensor.sun_next_setting
             name: Sunset
             grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.home_thunder_probability
+            name: Thunder risk
+            icon: mdi:weather-lightning
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.home_precipitation_category
+            name: Precipitation
+            icon: mdi:weather-pouring
+            grid_options: { columns: 6 }
+      # SILAM pollen (alder, birch, grass, hazel, mugwort). Each type only
+      # shows while it is actually in the air.
+      - type: grid
+        cards:
+          - type: heading
+            heading: Pollen
+            heading_style: title
+          - type: tile
+            entity: weather.silam_pollen_home_forecast
+            name: Pollen level
+            icon: mdi:flower-pollen
+            grid_options: { columns: full }
+          - type: tile
+            entity: sensor.silam_pollen_home_birch
+            name: Birch
+            icon: mdi:tree
+            grid_options: { columns: 6 }
+            visibility:
+              - condition: numeric_state
+                entity: sensor.silam_pollen_home_birch
+                above: 0
+          - type: tile
+            entity: sensor.silam_pollen_home_grass
+            name: Grass
+            icon: mdi:grass
+            grid_options: { columns: 6 }
+            visibility:
+              - condition: numeric_state
+                entity: sensor.silam_pollen_home_grass
+                above: 0
+          - type: tile
+            entity: sensor.silam_pollen_home_alder
+            name: Alder
+            icon: mdi:tree-outline
+            grid_options: { columns: 6 }
+            visibility:
+              - condition: numeric_state
+                entity: sensor.silam_pollen_home_alder
+                above: 0
+          - type: tile
+            entity: sensor.silam_pollen_home_hazel
+            name: Hazel
+            icon: mdi:nut
+            grid_options: { columns: 6 }
+            visibility:
+              - condition: numeric_state
+                entity: sensor.silam_pollen_home_hazel
+                above: 0
+          - type: tile
+            entity: sensor.silam_pollen_home_mugwort
+            name: Mugwort
+            icon: mdi:sprout
+            grid_options: { columns: 6 }
+            visibility:
+              - condition: numeric_state
+                entity: sensor.silam_pollen_home_mugwort
+                above: 0
       - type: grid
         cards:
           - type: heading
@@ -1632,6 +1727,107 @@ views:
                 stroke_width: 3
                 color: "#e91e63"
                 statistics: { type: mean, period: day }
+
+  # ------------------------------------------------------------- Homelab ----
+  # Read-only on purpose: no node "schedulable" switches (they cordon nodes)
+  # and no rack/plug switches.
+  - title: Homelab
+    path: homelab
+    icon: mdi:server-network
+    type: sections
+    max_columns: 3
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Cluster
+            heading_style: title
+          - type: tile
+            entity: binary_sensor.default_cluster_health
+            name: Cluster health
+            icon: mdi:kubernetes
+            grid_options: { columns: full }
+          - type: tile
+            entity: sensor.default_master2
+            name: master2
+            icon: mdi:server
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.default_master3
+            name: master3
+            icon: mdi:server
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.default_worker3
+            name: worker3
+            icon: mdi:server
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.computer_room_default_worker4
+            name: worker4
+            icon: mdi:expansion-card
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.default_pods_count
+            name: Pods
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.default_deployments_count
+            name: Deployments
+            grid_options: { columns: 6 }
+      - type: grid
+        cards:
+          - type: heading
+            heading: Power
+            heading_style: title
+          - type: gauge
+            entity: sensor.server_rack_power
+            name: Rack draw
+            min: 0
+            max: 1500
+            needle: true
+            severity: { green: 0, yellow: 1000, red: 1300 }
+            grid_options: { columns: full }
+          - type: tile
+            entity: sensor.riello_status
+            name: Riello
+            icon: mdi:battery-charging-high
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.riello_battery_runtime
+            name: Riello runtime
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.ups_2u_battery_level
+            name: UPS 2U
+            icon: mdi:battery-charging-high
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.ups_2u_battery_runtime
+            name: UPS 2U runtime
+            grid_options: { columns: 6 }
+      - type: grid
+        cards:
+          - type: heading
+            heading: Rack power (48 h)
+            heading_style: title
+          - type: custom:apexcharts-card
+            grid_options: { columns: full }
+            header: { show: true, show_states: true, colorize_states: true }
+            graph_span: 48h
+            series:
+              - entity: sensor.server_rack_power
+                name: Rack
+                type: area
+                stroke_width: 2
+                color: "#7e57c2"
+                group_by: { func: avg, duration: 15min }
+              - entity: sensor.ups_2u_output_power
+                name: UPS 2U load
+                type: line
+                stroke_width: 2
+                color: "#26a69a"
+                group_by: { func: avg, duration: 15min }
 
   # --------------------------------------------------------------- Media ----
   - title: Media

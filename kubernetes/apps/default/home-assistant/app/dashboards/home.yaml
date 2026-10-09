@@ -1299,17 +1299,27 @@ views:
           - type: heading
             heading: UniFi UPS 2U
             heading_style: title
-          - type: tile
+          - type: gauge
             entity: sensor.ups_2u_battery_level
             name: Battery
+            min: 0
+            max: 100
+            needle: true
+            severity: { green: 60, yellow: 30, red: 0 }
+            grid_options: { columns: 6 }
+          # The UPS 2U reports load in W, not %. Scale is its 1000 W rating;
+          # thresholds mirror the Riello load gauge (60% / 85%).
+          - type: gauge
+            entity: sensor.ups_2u_output_power
+            name: Load
+            min: 0
+            max: 1000
+            needle: true
+            severity: { green: 0, yellow: 600, red: 850 }
             grid_options: { columns: 6 }
           - type: tile
             entity: sensor.ups_2u_battery_runtime
             name: Runtime
-            grid_options: { columns: 6 }
-          - type: tile
-            entity: sensor.ups_2u_output_power
-            name: Load
             grid_options: { columns: 6 }
           - type: tile
             entity: sensor.ups_2u_output_voltage

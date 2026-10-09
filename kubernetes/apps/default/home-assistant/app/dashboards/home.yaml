@@ -278,6 +278,7 @@ views:
                     - light.extended_color_light_1
                     - light.192_168_1_222
                     - light.192_168_1_231
+                    - light.living_room_3_lamp
                     # Kitchen
                     - light.kitchen
                     - light.stove_light
@@ -313,11 +314,12 @@ views:
                   area_id: [living_room, kitchen, computer_room, bedroom, bathroom, hallway]
                 confirmation:
                   text: Turn off every light in the house?
-          # Plain lamp on a Z-Wave plug; the only plug that is safe to toggle.
+          # Plain lamp on a Z-Wave plug, exposed as a light via a "Change device
+          # type of a switch" helper so the area-wide "All lights off" catches it.
           - type: custom:bubble-card
             card_type: button
             button_type: switch
-            entity: switch.3_lamp
+            entity: light.living_room_3_lamp
             name: Dog bowl lamp
             icon: mdi:lamp
             grid_options: { columns: 12 }
@@ -555,7 +557,7 @@ views:
               - type: custom:bubble-card
                 card_type: button
                 button_type: switch
-                entity: switch.3_lamp
+                entity: light.living_room_3_lamp
                 name: Dog bowl lamp
                 icon: mdi:lamp
                 sub_button:

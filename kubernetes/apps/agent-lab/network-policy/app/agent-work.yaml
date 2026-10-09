@@ -28,6 +28,13 @@ spec:
     # DNS, through Cilium's DNS proxy so the toFQDNs rules below (and in
     # agent-work-tools) can learn which IPs a name resolved to. Without the
     # `dns` rule the FQDN allow list never matches anything.
+    #
+    # Only cluster names and the allow-listed FQDNs resolve; the proxy
+    # answers REFUSED for anything else. A "*" here would let a pod tunnel
+    # data out through CoreDNS to the upstream resolvers as query names.
+    # Cluster names are answered by CoreDNS itself and never forwarded, and
+    # `**.` also covers the search-path expansions (ndots 5) of every name
+    # below. Keep the matchName list in step with the toFQDNs rule.
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
@@ -40,7 +47,12 @@ spec:
               protocol: TCP
           rules:
             dns:
-              - matchPattern: "*"
+              - matchPattern: "**.cluster.local"
+              - matchName: registry.npmjs.org
+              - matchName: registry.yarnpkg.com
+              - matchName: pypi.org
+              - matchName: files.pythonhosted.org
+              - matchName: context7.com
     # The only way to an LLM: agent-egress in agent-control injects the real
     # LiteLLM key, so workers carry a dummy one. With kube-proxy replacement
     # the policy sees the backend pod and port, i.e. Envoy's 10080 behind the
@@ -56,7 +68,10 @@ spec:
             - port: "10080"
               protocol: TCP
     # Package registries for the install and test steps, and Context7 for
-    # the base image's `docs` script.
+    # the base image's `docs` script. Known leak: TLS hides the method, so
+    # `npm publish` with a token the agent was handed would also get out.
+    # The fix is a read-only in-cluster proxy (Verdaccio or a Harbor
+    # proxy-cache) as the only allowed registry, later.
     - toFQDNs:
         - matchName: registry.npmjs.org
         - matchName: registry.yarnpkg.com
@@ -70,9 +85,15 @@ spec:
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
 # stage (clone) and collect (commit + push) are the only pods that talk to
-# GitHub, and the only ones that mount agent-factory-github. Workers never
-# reach github.com, so a prompt-injected agent has nowhere to push to and no
-# token to push with.
+# GitHub, and the only ones that mount agent-factory-github. Worker and exec
+# pods never reach github.com and never hold a token.
+#
+# That is only true while stage and collect never run worker-written code,
+# which is the orchestrator's job (README, "Orchestrator contract"): install
+# runs in an exec Job, collect copies the worker's tree into a fresh clone
+# and never runs git inside the worker's .git (hooks, fsmonitor, filters),
+# and the token travels by env (GIT_ASKPASS), never in .git/config on the
+# PVC. Until the orchestrator does all of that, the CronJob stays suspended.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -83,6 +104,24 @@ spec:
     matchLabels:
       app.kubernetes.io/component: tools
   egress:
+    # Lets these pods (only) resolve the GitHub names. Cilium merges this
+    # with the baseline's DNS rule.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchName: github.com
+              - matchName: api.github.com
+              - matchName: codeload.github.com
+              - matchName: objects.githubusercontent.com
     - toFQDNs:
         - matchName: github.com
         - matchName: api.github.com
@@ -130,7 +169,11 @@ spec:
         - host
         - remote-node
         - kube-apiserver
-    # The home LAN: NAS, router, IoT. Pod and Service traffic is matched by
-    # identity, never by these CIDRs, so the gateway path is unaffected.
+    # The home LAN (NAS, router, IoT), the rest of RFC 1918 outside the pod
+    # and Service ranges (10.42/16, 10.43/16), and the tailnet's CGNAT range.
+    # Pod and Service traffic is matched by identity, never by these CIDRs,
+    # so the gateway path is unaffected.
     - toCIDRSet:
         - cidr: 192.168.0.0/16
+        - cidr: 172.16.0.0/12
+        - cidr: 100.64.0.0/10

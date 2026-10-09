@@ -4,7 +4,8 @@
 # so a Flux sync + browser refresh picks up changes without a restart.
 #
 # Custom cards (HACS, already loaded as lovelace resources): Bubble Card,
-# Mushroom, ha-bambulab cards, xiaomi-vacuum-map-card, custom-sonos-card.
+# Mushroom, ha-bambulab cards, xiaomi-vacuum-map-card, custom-sonos-card,
+# apexcharts-card.
 #
 # This repo is public: no credentials, URLs with userinfo, or address-derived
 # entity IDs in here.
@@ -1360,6 +1361,245 @@ views:
             entity: sensor.riello_output_voltage
             name: Output
             grid_options: { columns: 6 }
+
+  # -------------------------------------------------------------- Health ----
+  # Withings (Body Cardio scale + Health Mate activity). Long-term statistics
+  # start 2026-09, so trend charts fill in from there. The *_today sensors are
+  # state_class total and reset at midnight: daily charts use the day's last
+  # `state`, not sum/change, so the reset doesn't read as a negative day.
+  - title: Health
+    path: health
+    icon: mdi:heart-pulse
+    type: sections
+    max_columns: 3
+    sections:
+      - type: grid
+        column_span: 3
+        cards:
+          - type: custom:mushroom-template-card
+            entity: sensor.withings_weight
+            icon: mdi:scale-bathroom
+            icon_color: blue
+            primary: "{{ states('sensor.withings_weight') | float(0) | round(1) }} kg"
+            secondary: >-
+              {% set d = states('sensor.withings_weight') | float(0)
+                 - states('sensor.withings_weight_goal') | float(0) %}
+              {% if d > 0 %}{{ d | round(1) }} kg to goal{% else %}Goal reached{% endif %}
+              ({{ states('sensor.withings_weight_goal') | float(0) | round(0) | int }} kg)
+            tap_action: { action: more-info }
+            grid_options: { columns: 12 }
+          - type: custom:mushroom-template-card
+            entity: sensor.withings_fat_ratio
+            icon: mdi:water-percent
+            icon_color: orange
+            primary: "{{ states('sensor.withings_fat_ratio') | float(0) | round(1) }} % body fat"
+            secondary: >-
+              Fat {{ states('sensor.withings_fat_mass') | float(0) | round(1) }} kg
+              · Muscle {{ states('sensor.withings_muscle_mass') | float(0) | round(1) }} kg
+            tap_action: { action: more-info }
+            grid_options: { columns: 12 }
+          - type: custom:mushroom-template-card
+            entity: sensor.bathroom_withings_steps_today
+            icon: mdi:shoe-print
+            icon_color: >-
+              {{ 'green' if states('sensor.bathroom_withings_steps_today') | int(0)
+                 >= states('sensor.withings_step_goal') | int(10000) else 'teal' }}
+            primary: >-
+              {{ states('sensor.bathroom_withings_steps_today') | int(0) }} steps
+            secondary: >-
+              {% set p = (states('sensor.bathroom_withings_steps_today') | int(0) * 100
+                 / (states('sensor.withings_step_goal') | int(10000))) | round(0) | int %}
+              {{ p }} % of the {{ states('sensor.withings_step_goal') | int(10000) }}-step goal
+            tap_action: { action: more-info }
+            grid_options: { columns: 12 }
+
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Body
+            heading_style: title
+          - type: custom:apexcharts-card
+            grid_options: { columns: full }
+            header: { show: true, title: Weight, show_states: true, colorize_states: true }
+            graph_span: 90d
+            span: { end: day }
+            yaxis:
+              - decimals: 1
+            series:
+              - entity: sensor.withings_weight
+                name: Weight
+                type: line
+                stroke_width: 3
+                statistics: { type: mean, period: day }
+              - entity: sensor.withings_weight_goal
+                name: Goal
+                type: line
+                stroke_width: 2
+                color: "#4caf50"
+                statistics: { type: mean, period: day }
+            apex_config:
+              stroke: { dashArray: [0, 6] }
+          - type: custom:apexcharts-card
+            grid_options: { columns: full }
+            header: { show: true, title: Body composition, show_states: true, colorize_states: true }
+            graph_span: 90d
+            span: { end: day }
+            yaxis:
+              - id: pct
+                decimals: 1
+              - id: kg
+                opposite: true
+                decimals: 1
+            series:
+              - entity: sensor.withings_fat_ratio
+                name: Body fat
+                yaxis_id: pct
+                type: line
+                stroke_width: 3
+                color: "#ff9800"
+                statistics: { type: mean, period: day }
+              - entity: sensor.withings_muscle_mass
+                name: Muscle
+                yaxis_id: kg
+                type: line
+                stroke_width: 3
+                color: "#03a9f4"
+                statistics: { type: mean, period: day }
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Today
+            heading_style: title
+          - type: gauge
+            entity: sensor.bathroom_withings_steps_today
+            name: Steps
+            min: 0
+            max: 10000
+            needle: true
+            severity: { red: 0, yellow: 5000, green: 8000 }
+            grid_options: { columns: full }
+          - type: tile
+            entity: sensor.bathroom_withings_distance_travelled_today
+            name: Distance
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.bathroom_withings_active_time_today
+            name: Active time
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.bathroom_withings_active_calories_burnt_today
+            name: Active kcal
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.bathroom_withings_total_calories_burnt_today
+            name: Total kcal
+            grid_options: { columns: 6 }
+          - type: custom:apexcharts-card
+            grid_options: { columns: full }
+            chart_type: donut
+            header: { show: true, title: Activity intensity (min), show_states: false }
+            series:
+              - entity: sensor.bathroom_withings_soft_activity_today
+                name: Soft
+                color: "#8bc34a"
+              - entity: sensor.bathroom_withings_moderate_activity_today
+                name: Moderate
+                color: "#ff9800"
+              - entity: sensor.bathroom_withings_intense_activity_today
+                name: Intense
+                color: "#f44336"
+
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Activity
+            heading_style: title
+          - type: custom:apexcharts-card
+            grid_options: { columns: full }
+            header: { show: true, title: Daily steps (14 days), show_states: false }
+            graph_span: 14d
+            span: { end: day }
+            series:
+              - entity: sensor.bathroom_withings_steps_today
+                name: Steps
+                type: column
+                color: "#26a69a"
+                statistics: { type: state, period: day, align: start }
+            apex_config:
+              annotations:
+                yaxis:
+                  - y: 10000
+                    borderColor: "#4caf50"
+                    strokeDashArray: 6
+                    label:
+                      text: Goal
+                      style: { color: "#fff", background: "#4caf50" }
+          - type: custom:apexcharts-card
+            grid_options: { columns: full }
+            header: { show: true, title: Active minutes by intensity (14 days), show_states: false }
+            graph_span: 14d
+            span: { end: day }
+            stacked: true
+            series:
+              - entity: sensor.bathroom_withings_soft_activity_today
+                name: Soft
+                type: column
+                color: "#8bc34a"
+                statistics: { type: state, period: day, align: start }
+              - entity: sensor.bathroom_withings_moderate_activity_today
+                name: Moderate
+                type: column
+                color: "#ff9800"
+                statistics: { type: state, period: day, align: start }
+              - entity: sensor.bathroom_withings_intense_activity_today
+                name: Intense
+                type: column
+                color: "#f44336"
+                statistics: { type: state, period: day, align: start }
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Workouts
+            heading_style: title
+          - type: custom:bubble-card
+            card_type: button
+            button_type: state
+            entity: sensor.bathroom_withings_last_workout_type
+            name: Last workout
+            icon: mdi:run
+            show_last_changed: true
+            sub_button:
+              - entity: sensor.bathroom_withings_last_workout_duration
+                icon: mdi:timer-outline
+                show_state: true
+                show_background: false
+          - type: calendar
+            initial_view: listWeek
+            entities:
+              - calendar.bathroom_withings_workouts
+
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Heart
+            heading_style: title
+          - type: custom:apexcharts-card
+            grid_options: { columns: full }
+            header: { show: true, title: Standing pulse (scale), show_states: true, colorize_states: true }
+            graph_span: 90d
+            span: { end: day }
+            series:
+              - entity: sensor.bathroom_withings_heart_pulse
+                name: Pulse
+                type: line
+                stroke_width: 3
+                color: "#e91e63"
+                statistics: { type: mean, period: day }
 
   # --------------------------------------------------------------- Media ----
   - title: Media

@@ -1,0 +1,29 @@
+---
+# The agent-lab software factory (apps/agent-lab). No agent pod ever holds
+# this key: the agent-egress gateway in agent-control injects it, reading
+# litellm-key-agent-lab through its own litellm-key-secrets-agent-lab store
+# (../clustersecretstore). Workers send a dummy key.
+#
+# The budget is the real safety net for a loop that runs unattended: $10 a
+# day, 8 requests in flight (FACTORY_CONCURRENCY is 5) and 120 rpm across
+# every worker and reviewer combined.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: agent-lab
+spec:
+  proxyRef: litellm-admin
+  keyAlias: agent-lab
+  secretName: litellm-key-agent-lab
+  secretKey: api-key
+  models:
+    - implementation-pool
+    - reasoning-pool
+    - review
+    - fast
+    - self-hosted
+    - qwen3-embedding-0.6b
+  maxBudget: "10"
+  budgetDuration: 1d
+  maxParallelRequests: 8
+  rpmLimit: 120

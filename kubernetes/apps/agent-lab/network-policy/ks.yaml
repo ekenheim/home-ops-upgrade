@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app agent-lab-network-policy
+  namespace: flux-system
+spec:
+  # No targetNamespace: the policies, LimitRanges and quotas cover all three
+  # agent namespaces and name theirs explicitly.
+  path: ./kubernetes/apps/agent-lab/network-policy/app
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  dependsOn:
+    # CiliumNetworkPolicy CRD.
+    - name: cilium
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: *app

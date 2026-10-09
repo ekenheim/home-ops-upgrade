@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/referencegrant_v1beta1.json
+# Lives in `llm` (a ReferenceGrant must sit in the namespace of the thing it
+# grants) but is owned by agent-lab-egress-gateway, so removing agent-lab
+# prunes it with everything else. It admits exactly one route source and one
+# Service: HTTPRoutes in agent-control -> Service litellm.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: agent-control-to-litellm
+  namespace: llm
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: agent-control
+  to:
+    - group: ""
+      kind: Service
+      name: litellm

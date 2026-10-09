@@ -71,7 +71,8 @@ metadata:
   namespace: flux-system
 spec:
   # The `litellm-key-secrets` ClusterSecretStore, which lets development read
-  # litellm-key-atlas out of `llm` (see clustersecretstore/). Like
+  # litellm-key-atlas out of `llm`, and `litellm-key-secrets-agent-lab`, which
+  # lets agent-control read litellm-key-agent-lab (see clustersecretstore/). Like
   # crunchy-postgres-stores, it needs only external-secrets. A consumer
   # dependsOn both this and `litellm-keys`, which mints the Secret it reads.
   path: ./kubernetes/apps/llm/litellm/clustersecretstore

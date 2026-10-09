@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/gateway_v1.json
+# In-cluster egress gateway for the agent sandboxes. Workers call it with a
+# dummy key; the route swaps in the real one. Plain HTTP on purpose: the hop
+# is pod-to-pod inside the cluster and the workers hold nothing worth
+# stealing, while TLS would mean shipping a CA into every sandbox.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: agent-egress
+  namespace: agent-control
+spec:
+  gatewayClassName: envoy
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: agent-egress
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same

@@ -1,0 +1,127 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# agent-control is trusted code (the orchestrator image and Envoy), but it
+# holds every credential in the lab: the LiteLLM key, the ledger's Postgres
+# login and the GitHub PAT. Default-deny here too, with one policy per pod
+# kind so the proxy cannot reach Postgres and the orchestrator cannot reach
+# LiteLLM except through the proxy.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: agent-control-baseline
+  namespace: agent-control
+spec:
+  endpointSelector: {}
+  enableDefaultDeny:
+    egress: true
+    ingress: true
+  # Ingress is opened only for the proxy, in agent-control-egress-proxy.
+  ingress:
+    - {}
+  egress:
+    # DNS via Cilium's DNS proxy (needed for the orchestrator's toFQDNs).
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# The agent-egress Envoy pods (envoy-gateway deploys them here because the
+# controller runs with deploy.type GatewayNamespace).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: agent-control-egress-proxy
+  namespace: agent-control
+spec:
+  endpointSelector:
+    matchLabels:
+      gateway.envoyproxy.io/owning-gateway-name: agent-egress
+  ingress:
+    # Workers, verifiers and the orchestrator. 10080 is the container port
+    # envoy-gateway maps the listener's 80 to (Service 80 -> 10080).
+    - fromEndpoints:
+        - matchExpressions:
+            - key: k8s:io.kubernetes.pod.namespace
+              operator: In
+              values: ["agent-work", "agent-verify", "agent-control"]
+      toPorts:
+        - ports:
+            - port: "10080"
+              protocol: TCP
+  egress:
+    # The only upstream: LiteLLM itself.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: llm
+            app.kubernetes.io/name: litellm
+      toPorts:
+        - ports:
+            - port: "4000"
+              protocol: TCP
+    # xDS from the envoy-gateway controller in `network`. Without it the
+    # proxy starts with no listeners and never turns ready.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            control-plane: envoy-gateway
+      toPorts:
+        - ports:
+            - port: "18000"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# The agent-factory orchestrator (CronJob pods).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: agent-control-orchestrator
+  namespace: agent-control
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: agent-factory
+      app.kubernetes.io/component: orchestrator
+  egress:
+    # Creates and watches Jobs in agent-work / agent-verify, reads pod logs.
+    - toEntities:
+        - kube-apiserver
+    # The ledger. Crunchy's postgres-primary is a headless Service, so this is
+    # the primary pod itself; the role label follows a Patroni failover.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: database
+            postgres-operator.crunchydata.com/cluster: postgres
+            postgres-operator.crunchydata.com/role: master
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    # Planning/integration calls go through the same gateway as the workers.
+    - toEndpoints:
+        - matchLabels:
+            gateway.envoyproxy.io/owning-gateway-name: agent-egress
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "10080"
+              protocol: TCP
+    # Issues, PRs and branch reads; Context7 for docs lookups.
+    - toFQDNs:
+        - matchName: github.com
+        - matchName: api.github.com
+        - matchName: context7.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

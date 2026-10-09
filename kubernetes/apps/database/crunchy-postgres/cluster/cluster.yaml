@@ -237,6 +237,12 @@ spec:
       databases: ["dispatch"]
       password:
         type: AlphaNumeric
+    # agent-factory's run ledger (apps/agent-lab). Read only by the
+    # orchestrator in agent-control, through agentlab-db-secret.
+    - name: "agentlab"
+      databases: ["agentlab"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

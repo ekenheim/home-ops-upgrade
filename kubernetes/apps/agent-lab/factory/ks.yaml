@@ -1,0 +1,37 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app agent-lab-factory
+  namespace: flux-system
+spec:
+  # The orchestrator: ServiceAccount, its namespaced RBAC in agent-work and
+  # agent-verify, the GitHub credentials in all three namespaces, and the
+  # (suspended) CronJob. No targetNamespace: the Roles and Secrets live in
+  # the two sandbox namespaces too.
+  #
+  # Stays not-Ready until the Bitwarden item `agent_factory_github` exists
+  # (see app/externalsecret-github.yaml). Nothing else waits on this one.
+  path: ./kubernetes/apps/agent-lab/factory/app
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  dependsOn:
+    # bitwarden-secrets-manager, for agent-factory-github.
+    - name: external-secrets-stores
+    # agentlab-db-secret.
+    - name: agent-lab-ledger
+    # FACTORY_GATEWAY_URL must answer before a run starts.
+    - name: agent-lab-egress-gateway
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: *app

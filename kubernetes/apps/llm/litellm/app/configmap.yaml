@@ -107,6 +107,28 @@ data:
           chat_template_kwargs:
             enable_thinking: false
 
+      # Home Assistant's Assist agent (Extended OpenAI Conversation in HA).
+      # Same local backend as `fast` -- thinking off, tool calls supported --
+      # but with a voice-sized per-call timeout: the global request_timeout
+      # (1800 s) is sized for long reasoning jobs, and nobody waits that long
+      # for "turn off the lights". When worker4 is down or slow, the router
+      # falls back to MiniMax, then the ChatGPT subscription (see
+      # router_settings.fallbacks). HA only ever asks for `home-assistant`, so
+      # reordering or swapping providers never needs a change in HA.
+      - model_name: home-assistant
+        model_info:
+          mode: chat
+          supports_function_calling: true
+          supports_vision: true
+          max_input_tokens: 262144
+        litellm_params:
+          model: openai/qwen38-flash-next
+          api_base: http://qwen38-flash-next.llm:8080/v1
+          api_key: none
+          timeout: 20
+          chat_template_kwargs:
+            enable_thinking: false
+
       # Lingarr's en->sv subtitle work, MiniMax only. gemma3-27b was the
       # order-2 fallback and was removed with it from worker4 on 2026-10-04,
       # so when MiniMax cools down (a 429 at the plan's 300 prompts / 5 h, an
@@ -844,6 +866,10 @@ data:
         # classic local aliases above deliberately have none.
         - local-pool: ["MiniMax-M3-chat"]
         - local-pool-chat: ["MiniMax-M3-chat"]
+        # Home Assistant voice: local first, then MiniMax (300 prompts / 5 h
+        # plan), then the ChatGPT subscription when MiniMax is capped or out.
+        # Reorder here to change HA's provider; HA itself is untouched.
+        - home-assistant: ["MiniMax-M3-chat", "chatgpt"]
         # hindsight-consolidation needs no entry: its two rungs (MiniMax-M3, then
         # the 5090) fail over by `order:`.
 

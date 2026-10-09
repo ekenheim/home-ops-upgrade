@@ -115,6 +115,12 @@ spec:
                   value: "2400"
                 - name: FACTORY_REVIEW_TIMEOUT_S
                   value: "1800"
+                # Branches are <prefix>/issue-N. A new prefix per benchmark run
+                # keeps its branches and PRs apart from the previous run's
+                # (collect force-pushes, and GitHub refuses a second PR for the
+                # same head). Bump it before each full rerun of the same repo.
+                - name: FACTORY_BRANCH_PREFIX
+                  value: factory/run2
                 - name: DATABASE_URL
                   valueFrom:
                     secretKeyRef:

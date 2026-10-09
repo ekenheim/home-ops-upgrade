@@ -8,3 +8,14 @@ resources:
   - ./helmrelease.yaml
   - ../../../../templates/gatus/external
   - ../../../../templates/volsync
+configMapGenerator:
+  - name: home-assistant-dashboards
+    files:
+      - home.yaml=./dashboards/home.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    # Dashboard YAML is reloaded by HA on mtime; don't restart the pod on edits.
+    reloader.stakater.com/ignore: "true"
+    # Keeps Flux from touching ${...} that card templates may contain.
+    kustomize.toolkit.fluxcd.io/substitute: disabled

@@ -1,0 +1,1310 @@
+# Home dashboard (YAML mode). Mounted read-only at /config/dashboards/home.yaml
+# from the home-assistant-dashboards ConfigMap; registered in configuration.yaml
+# under lovelace.dashboards.dashboard-home. HA re-reads the file on its mtime,
+# so a Flux sync + browser refresh picks up changes without a restart.
+#
+# Custom cards (HACS, already loaded as lovelace resources): Bubble Card,
+# Mushroom, ha-bambulab cards, xiaomi-vacuum-map-card, custom-sonos-card,
+# weather-radar-card.
+#
+# This repo is public: no credentials, URLs with userinfo, or address-derived
+# entity IDs in here.
+title: Home
+views:
+  # ---------------------------------------------------------------- Home ----
+  - title: Home
+    path: home
+    icon: mdi:home-variant
+    type: sections
+    max_columns: 3
+    header:
+      layout: responsive
+      card:
+        type: markdown
+        text_only: true
+        content: >-
+          ## {% set h = now().hour %}{{ 'Good night' if h < 5 else 'Good morning'
+          if h < 12 else 'Good afternoon' if h < 18 else 'Good evening' }}, {{ user }}
+    sections:
+      - type: grid
+        column_span: 3
+        cards:
+          - type: custom:mushroom-chips-card
+            alignment: center
+            grid_options:
+              columns: full
+            chips:
+              - type: entity
+                entity: person.robin
+                use_entity_picture: true
+              - type: weather
+                entity: weather.forecast_home
+                show_conditions: true
+                show_temperature: true
+              - type: entity
+                entity: sensor.tibber_electricity_price
+                icon: mdi:flash
+                icon_color: amber
+              - type: template
+                icon: mdi:lightbulb-group
+                icon_color: amber
+                content: >-
+                  {{ ['living_room', 'kitchen', 'computer_room', 'bedroom', 'bathroom', 'hallway']
+                  | map('area_entities') | sum(start=[])
+                  | select('match', 'light\.')
+                  | reject('is_state_attr', 'is_hue_group', true)
+                  | reject('search', 'chamber_light')
+                  | select('is_state', 'on') | list | count }} on
+              - type: conditional
+                conditions:
+                  - condition: state
+                    entity: binary_sensor.door_window_door_is_open_2
+                    state: "on"
+                chip:
+                  type: entity
+                  entity: binary_sensor.door_window_door_is_open_2
+                  name: Door open
+                  icon_color: red
+                  content_info: name
+              - type: conditional
+                conditions:
+                  - condition: state
+                    entity: vacuum.dreamebot_l10s_ultra
+                    state_not: docked
+                chip:
+                  type: template
+                  entity: vacuum.dreamebot_l10s_ultra
+                  icon: mdi:robot-vacuum
+                  icon_color: teal
+                  content: >-
+                    {{ states('vacuum.dreamebot_l10s_ultra') | replace('_', ' ') }}
+                    · {{ states('sensor.dreamebot_l10s_ultra_battery_level') }}%
+                  tap_action:
+                    action: navigate
+                    navigation_path: "#kitchen"
+
+      # Room tiles: tap the card for the room pop-up, tap the icon to toggle
+      # the room's Hue group.
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Rooms
+            heading_style: title
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            card_layout: large
+            entity: light.tv_room
+            name: Living room
+            icon: mdi:sofa
+            grid_options: { columns: 6 }
+            tap_action: { action: toggle }
+            button_action:
+              tap_action: { action: navigate, navigation_path: "#living-room" }
+            sub_button:
+              - entity: sensor.tv_room_sensor_temperature
+                show_state: true
+                show_background: false
+              - entity: binary_sensor.tv_room_sensor_motion
+                show_background: false
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            card_layout: large
+            entity: light.kitchen
+            name: Kitchen
+            icon: mdi:countertop
+            grid_options: { columns: 6 }
+            tap_action: { action: toggle }
+            button_action:
+              tap_action: { action: navigate, navigation_path: "#kitchen" }
+            sub_button:
+              - entity: sensor.kitchen_sensor_temperature
+                show_state: true
+                show_background: false
+              - entity: binary_sensor.kitchen_sensor_motion
+                show_background: false
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            card_layout: large
+            entity: light.computer_room
+            name: Computer room
+            icon: mdi:desktop-tower-monitor
+            grid_options: { columns: 6 }
+            tap_action: { action: toggle }
+            button_action:
+              tap_action: { action: navigate, navigation_path: "#computer-room" }
+            sub_button:
+              - entity: sensor.computer_sensor_temperature
+                show_state: true
+                show_background: false
+              - entity: sensor.office_pm2_5
+                icon: mdi:air-filter
+                show_state: true
+                show_background: false
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            card_layout: large
+            entity: light.bedroom
+            name: Bedroom
+            icon: mdi:bed-king-outline
+            grid_options: { columns: 6 }
+            tap_action: { action: toggle }
+            button_action:
+              tap_action: { action: navigate, navigation_path: "#bedroom" }
+            sub_button:
+              - entity: sensor.bedroom_sensor_temperature
+                show_state: true
+                show_background: false
+              - entity: sensor.multisensor_6_humidity_2
+                show_state: true
+                show_background: false
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            card_layout: large
+            entity: light.bathroom
+            name: Bathroom
+            icon: mdi:shower-head
+            grid_options: { columns: 6 }
+            tap_action: { action: toggle }
+            button_action:
+              tap_action: { action: navigate, navigation_path: "#bathroom" }
+            sub_button:
+              - entity: sensor.bathroom_sensor_temperature
+                show_state: true
+                show_background: false
+              - entity: binary_sensor.bathroom_sensor_motion
+                show_background: false
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            card_layout: large
+            # No Hue group for the hallway; the ceiling panel stands in.
+            entity: light.floalt_panel_ws_60x60
+            name: Hallway
+            icon: mdi:door
+            grid_options: { columns: 6 }
+            tap_action: { action: toggle }
+            button_action:
+              tap_action: { action: navigate, navigation_path: "#hallway" }
+            sub_button:
+              - entity: sensor.hallway_temperature
+                show_state: true
+                show_background: false
+              - entity: binary_sensor.door_window_door_is_open_2
+                show_background: false
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Quick actions
+            heading_style: title
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            name: Day lights
+            icon: mdi:white-balance-sunny
+            grid_options: { columns: 6 }
+            button_action:
+              tap_action:
+                action: call-service
+                service: scene.turn_on
+                target: { entity_id: scene.day_time_lights }
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            name: Kitchen lights
+            icon: mdi:silverware-fork-knife
+            grid_options: { columns: 6 }
+            button_action:
+              tap_action:
+                action: call-service
+                service: scene.turn_on
+                target: { entity_id: scene.kitchen_lights }
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            name: Bathroom night
+            icon: mdi:weather-night
+            grid_options: { columns: 6 }
+            button_action:
+              tap_action:
+                action: call-service
+                service: scene.turn_on
+                target: { entity_id: scene.bathroom_night }
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            name: All lights off
+            icon: mdi:lightbulb-group-off
+            grid_options: { columns: 6 }
+            button_action:
+              tap_action:
+                action: call-service
+                service: light.turn_off
+                target:
+                  area_id: [living_room, kitchen, computer_room, bedroom, bathroom, hallway]
+                confirmation:
+                  text: Turn off every light in the house?
+
+      # Only shows what is actually playing / running.
+      - type: grid
+        cards:
+          - type: heading
+            heading: Now
+            heading_style: title
+          - type: custom:bubble-card
+            card_type: media-player
+            entity: media_player.lg_tv
+            name: LG TV
+            grid_options: { columns: full }
+            visibility:
+              - condition: state
+                entity: media_player.lg_tv
+                state_not: "off"
+              - condition: state
+                entity: media_player.lg_tv
+                state_not: unavailable
+          - type: custom:bubble-card
+            card_type: media-player
+            entity: media_player.shield_android_tv
+            name: Shield
+            grid_options: { columns: full }
+            visibility:
+              - condition: state
+                entity: media_player.shield_android_tv
+                state: playing
+          - type: custom:bubble-card
+            card_type: media-player
+            entity: media_player.kok
+            name: Kök
+            grid_options: { columns: full }
+            visibility:
+              - condition: state
+                entity: media_player.kok
+                state: playing
+          - type: custom:bubble-card
+            card_type: media-player
+            entity: media_player.badrum
+            name: Badrum
+            grid_options: { columns: full }
+            visibility:
+              - condition: state
+                entity: media_player.badrum
+                state: playing
+          - type: custom:bubble-card
+            card_type: button
+            button_type: state
+            entity: vacuum.dreamebot_l10s_ultra
+            name: Vacuum
+            icon: mdi:robot-vacuum
+            grid_options: { columns: full }
+            visibility:
+              - condition: state
+                entity: vacuum.dreamebot_l10s_ultra
+                state_not: docked
+            button_action:
+              tap_action: { action: navigate, navigation_path: "#kitchen" }
+            sub_button:
+              - entity: sensor.dreamebot_l10s_ultra_battery_level
+                show_state: true
+                show_background: false
+              - icon: mdi:home-import-outline
+                tap_action:
+                  action: call-service
+                  service: vacuum.return_to_base
+                  target: { entity_id: vacuum.dreamebot_l10s_ultra }
+          - type: markdown
+            text_only: true
+            content: "*Nothing playing.*"
+            visibility:
+              - condition: state
+                entity: media_player.lg_tv
+                state: ["off", unavailable]
+              - condition: state
+                entity: media_player.shield_android_tv
+                state_not: playing
+              - condition: state
+                entity: media_player.kok
+                state_not: playing
+              - condition: state
+                entity: media_player.badrum
+                state_not: playing
+              - condition: state
+                entity: vacuum.dreamebot_l10s_ultra
+                state: docked
+
+      # ---- Room pop-ups (hidden until their #hash is opened) ----
+      - type: grid
+        cards:
+          # Living room
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: "#living-room"
+            name: Living room
+            icon: mdi:sofa
+            entity: light.tv_room
+            sub_button:
+              - entity: sensor.tv_room_sensor_temperature
+                show_state: true
+              - entity: sensor.multisensor_6_humidity_3
+                show_state: true
+            cards:
+              - type: custom:bubble-card
+                card_type: separator
+                name: Lights
+                icon: mdi:lightbulb-group
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.tv_light
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.randa_pc
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.hue_play_left
+                    name: Play left
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.hue_play_right
+                    name: Play right
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.hue_essential_spot_1
+                    name: Spot
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.extended_color_light_1
+                    name: TV strip
+                    icon: mdi:led-strip-variant
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.192_168_1_222
+                    name: Desk strip
+                    icon: mdi:led-strip-variant
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.192_168_1_231
+                    name: Sofa strip
+                    icon: mdi:led-strip-variant
+              - type: custom:bubble-card
+                card_type: separator
+                name: Scenes
+                icon: mdi:palette
+              - type: grid
+                columns: 4
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Bright
+                    icon: mdi:brightness-7
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.tv_room_bright }
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Relax
+                    icon: mdi:sofa-outline
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.tv_room_relax }
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Dimmed
+                    icon: mdi:brightness-4
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.tv_room_dimmed }
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Night
+                    icon: mdi:weather-night
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.tv_room_nightlight }
+              - type: custom:bubble-card
+                card_type: separator
+                name: Plugs
+                icon: mdi:power-socket-eu
+              - type: custom:bubble-card
+                card_type: button
+                button_type: switch
+                entity: switch.tv_plug
+                name: TV
+                icon: mdi:television
+                sub_button:
+                  - entity: sensor.tv_plug_power
+                    show_state: true
+                    show_background: false
+              - type: custom:bubble-card
+                card_type: button
+                button_type: switch
+                entity: switch.computer_desk
+                name: Computer desk
+                icon: mdi:desk
+                sub_button:
+                  - entity: sensor.computer_desk_power
+                    show_state: true
+                    show_background: false
+              - type: custom:bubble-card
+                card_type: button
+                button_type: switch
+                entity: switch.3_lamp
+                name: Dog bowl lamp
+                icon: mdi:lamp
+                sub_button:
+                  - entity: sensor.3_lamp_power
+                    show_state: true
+                    show_background: false
+              - type: custom:bubble-card
+                card_type: separator
+                name: Plants
+                icon: mdi:flower
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: plant-status
+                    entity: plant.livingroom_left_plant
+                    name: Left
+                  - type: plant-status
+                    entity: plant.livingroom_right_plant
+                    name: Right
+              - type: custom:bubble-card
+                card_type: separator
+                name: TV
+                icon: mdi:television-play
+              - type: custom:bubble-card
+                card_type: media-player
+                entity: media_player.lg_tv
+                name: LG TV
+
+          # Kitchen
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: "#kitchen"
+            name: Kitchen
+            icon: mdi:countertop
+            entity: light.kitchen
+            sub_button:
+              - entity: sensor.kitchen_sensor_temperature
+                show_state: true
+            cards:
+              - type: custom:bubble-card
+                card_type: separator
+                name: Lights
+                icon: mdi:lightbulb-group
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.stove_light
+                    name: Stove
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.kitchen_table_lamp
+                    name: Table lamp
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.foset_lamp
+              - type: custom:bubble-card
+                card_type: separator
+                name: Scenes
+                icon: mdi:palette
+              - type: grid
+                columns: 4
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Bright
+                    icon: mdi:brightness-7
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.kitchen_bright }
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Cooking
+                    icon: mdi:chef-hat
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.kitchen_concentrate }
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Relax
+                    icon: mdi:sofa-outline
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.kitchen_relax }
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Night
+                    icon: mdi:weather-night
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.kitchen_nightlight }
+              - type: custom:bubble-card
+                card_type: separator
+                name: Vacuum
+                icon: mdi:robot-vacuum
+              - type: custom:bubble-card
+                card_type: button
+                button_type: state
+                entity: vacuum.dreamebot_l10s_ultra
+                name: Dreame L10s Ultra
+                icon: mdi:robot-vacuum
+                sub_button:
+                  - entity: sensor.dreamebot_l10s_ultra_battery_level
+                    show_state: true
+                    show_background: false
+                  - icon: mdi:play
+                    tap_action:
+                      action: call-service
+                      service: vacuum.start
+                      target: { entity_id: vacuum.dreamebot_l10s_ultra }
+                  - icon: mdi:pause
+                    tap_action:
+                      action: call-service
+                      service: vacuum.pause
+                      target: { entity_id: vacuum.dreamebot_l10s_ultra }
+                  - icon: mdi:home-import-outline
+                    tap_action:
+                      action: call-service
+                      service: vacuum.return_to_base
+                      target: { entity_id: vacuum.dreamebot_l10s_ultra }
+              - type: custom:xiaomi-vacuum-map-card
+                entity: vacuum.dreamebot_l10s_ultra
+                vacuum_platform: default
+                map_source:
+                  camera: camera.dreamebot_l10s_ultra_map
+                calibration_source:
+                  camera: true
+                map_locked: true
+              - type: custom:bubble-card
+                card_type: separator
+                name: Music
+                icon: mdi:speaker
+              - type: custom:bubble-card
+                card_type: media-player
+                entity: media_player.kok
+                name: Kök
+
+          # Computer room
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: "#computer-room"
+            name: Computer room
+            icon: mdi:desktop-tower-monitor
+            entity: light.computer_room
+            sub_button:
+              - entity: sensor.computer_sensor_temperature
+                show_state: true
+              - entity: sensor.office_pm2_5
+                icon: mdi:air-filter
+                show_state: true
+            cards:
+              - type: custom:bubble-card
+                card_type: separator
+                name: Lights
+                icon: mdi:lightbulb-group
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.lifx_beam
+                    name: Beam
+                    icon: mdi:led-strip-variant
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.hue_essential_lamp_2
+                    name: Lamp 2
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.hue_essential_lamp_3
+                    name: Lamp 3
+              - type: custom:bubble-card
+                card_type: separator
+                name: Air
+                icon: mdi:air-purifier
+              - type: custom:bubble-card
+                card_type: button
+                button_type: switch
+                entity: fan.office
+                name: Air purifier
+                icon: mdi:air-purifier
+                sub_button:
+                  - entity: sensor.office_pm2_5
+                    show_state: true
+                    show_background: false
+                  - entity: sensor.office_indoor_allergen_index
+                    icon: mdi:flower-pollen
+                    show_state: true
+                    show_background: false
+              - type: custom:bubble-card
+                card_type: separator
+                name: Rack
+                icon: mdi:server
+              # Read-only on purpose: switch.server_rack powers the cluster.
+              - type: custom:bubble-card
+                card_type: button
+                button_type: state
+                entity: sensor.server_rack_power
+                name: Server rack
+                icon: mdi:server
+                sub_button:
+                  - entity: sensor.riello_status
+                    name: UPS
+                    show_state: true
+                    show_background: false
+                  - entity: sensor.riello_battery_charge
+                    show_state: true
+                    show_background: false
+                  - entity: sensor.riello_load
+                    icon: mdi:gauge
+                    show_state: true
+                    show_background: false
+              - type: custom:bubble-card
+                card_type: separator
+                name: 3D printer
+                icon: mdi:printer-3d
+              - type: custom:ha-bambulab-print_status-card
+                printer: 96b30e31b7ae9abf1d1b115aa1060215
+                style: simple
+              - type: custom:bubble-card
+                card_type: separator
+                name: Speakers
+                icon: mdi:speaker
+              - type: custom:bubble-card
+                card_type: media-player
+                entity: media_player.my_kef_speakers
+                name: KEF LS50
+
+          # Bedroom
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: "#bedroom"
+            name: Bedroom
+            icon: mdi:bed-king-outline
+            entity: light.bedroom
+            sub_button:
+              - entity: sensor.bedroom_sensor_temperature
+                show_state: true
+              - entity: sensor.multisensor_6_humidity_2
+                show_state: true
+            cards:
+              - type: custom:bubble-card
+                card_type: separator
+                name: Lights
+                icon: mdi:lightbulb-group
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.bedroom_lamp
+                    name: Lamp
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.hue_go_1
+                    name: Hue Go
+              - type: custom:bubble-card
+                card_type: separator
+                name: Scenes
+                icon: mdi:palette
+              - type: grid
+                columns: 4
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Bright
+                    icon: mdi:brightness-7
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.bedroom_bright }
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Read
+                    icon: mdi:book-open-variant
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.bedroom_read }
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Relax
+                    icon: mdi:sofa-outline
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.bedroom_relax }
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Night
+                    icon: mdi:weather-night
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.bedroom_nightlight }
+              - type: custom:bubble-card
+                card_type: separator
+                name: Plant
+                icon: mdi:flower
+              - type: plant-status
+                entity: plant.bedroom_plant
+                name: Bedroom plant
+
+          # Bathroom
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: "#bathroom"
+            name: Bathroom
+            icon: mdi:shower-head
+            entity: light.bathroom
+            sub_button:
+              - entity: sensor.bathroom_sensor_temperature
+                show_state: true
+            cards:
+              - type: custom:bubble-card
+                card_type: separator
+                name: Lights
+                icon: mdi:lightbulb-group
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.hue_essential_lamp_1
+                    name: Lamp
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: switch
+                    entity: input_boolean.bathroom_night
+                    name: Night mode
+                    icon: mdi:weather-night
+              - type: custom:bubble-card
+                card_type: separator
+                name: Scenes
+                icon: mdi:palette
+              - type: grid
+                columns: 4
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Bright
+                    icon: mdi:brightness-7
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.bathroom_bright }
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Relax
+                    icon: mdi:sofa-outline
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.bathroom_relax }
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: Night
+                    icon: mdi:weather-night
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.bathroom_night }
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: name
+                    name: "Off"
+                    icon: mdi:lightbulb-off-outline
+                    card_layout: large
+                    button_action:
+                      tap_action:
+                        action: call-service
+                        service: scene.turn_on
+                        target: { entity_id: scene.bathroom_off }
+              - type: custom:bubble-card
+                card_type: separator
+                name: Health
+                icon: mdi:scale-bathroom
+              - type: custom:bubble-card
+                card_type: button
+                button_type: state
+                entity: sensor.withings_weight
+                name: Weight
+                icon: mdi:scale-bathroom
+                show_last_changed: true
+              - type: custom:bubble-card
+                card_type: separator
+                name: Music
+                icon: mdi:speaker
+              - type: custom:bubble-card
+                card_type: media-player
+                entity: media_player.badrum
+                name: Badrum
+
+          # Hallway
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: "#hallway"
+            name: Hallway
+            icon: mdi:door
+            sub_button:
+              - entity: sensor.hallway_temperature
+                show_state: true
+              - entity: binary_sensor.door_window_door_is_open_2
+                show_state: true
+            cards:
+              - type: custom:bubble-card
+                card_type: separator
+                name: Lights
+                icon: mdi:lightbulb-group
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.floalt_panel_ws_60x60
+                    name: Ceiling panel
+                    icon: mdi:ceiling-light
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.tradfri_panel_3
+                    name: Panel
+                    icon: mdi:ceiling-light
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.extended_color_light_2
+                    name: Color light
+              - type: custom:bubble-card
+                card_type: separator
+                name: Front door
+                icon: mdi:cctv
+              - type: picture-entity
+                entity: camera.hallway
+                camera_view: live
+                show_name: false
+                show_state: false
+              - type: custom:bubble-card
+                card_type: separator
+                name: Devices
+                icon: mdi:power-socket-eu
+              - type: custom:bubble-card
+                card_type: button
+                button_type: switch
+                entity: fan.air_circulator
+                name: Air circulator
+                icon: mdi:fan
+                sub_button:
+                  - entity: switch.air_circulator_horizontally_oscillating
+                    icon: mdi:arrow-left-right
+                    tap_action: { action: toggle }
+                  - entity: sensor.air_circulator_temperature
+                    show_state: true
+                    show_background: false
+              - type: custom:bubble-card
+                card_type: button
+                button_type: switch
+                entity: switch.hallway_charger
+                name: Charger
+                icon: mdi:ev-plug-type2
+                sub_button:
+                  - entity: sensor.hallway_charger_power
+                    show_state: true
+                    show_background: false
+
+  # ------------------------------------------------------------- Climate ----
+  - title: Climate
+    path: climate
+    icon: mdi:thermometer
+    type: sections
+    max_columns: 3
+    sections:
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Temperature
+            heading_style: title
+          - type: statistics-graph
+            chart_type: line
+            period: hour
+            days_to_show: 3
+            stat_types: [mean]
+            grid_options: { columns: full, rows: 5 }
+            entities:
+              - entity: sensor.tv_room_sensor_temperature
+                name: Living room
+              - entity: sensor.kitchen_sensor_temperature
+                name: Kitchen
+              - entity: sensor.computer_sensor_temperature
+                name: Computer room
+              - entity: sensor.bedroom_sensor_temperature
+                name: Bedroom
+              - entity: sensor.bathroom_sensor_temperature
+                name: Bathroom
+              - entity: sensor.hallway_temperature
+                name: Hallway
+          - type: heading
+            heading: Humidity
+            heading_style: title
+          - type: statistics-graph
+            chart_type: line
+            period: hour
+            days_to_show: 3
+            stat_types: [mean]
+            grid_options: { columns: full, rows: 4 }
+            entities:
+              - entity: sensor.multisensor_6_humidity_3
+                name: Living room
+              - entity: sensor.multisensor_6_humidity_2
+                name: Bedroom
+              - entity: sensor.multisensor_6_humidity
+                name: Hallway
+              - entity: sensor.multisensor2_6_humidity
+                name: Hallway 2
+      - type: grid
+        cards:
+          - type: heading
+            heading: Outside
+            heading_style: title
+          - type: weather-forecast
+            entity: weather.forecast_home
+            forecast_type: daily
+            show_current: true
+            show_forecast: true
+          - type: custom:weather-radar-card
+            zoom_level: 8
+            show_scale: false
+            show_range: false
+            show_snow: true
+            markers:
+              - entity: zone.home
+          - type: tile
+            entity: sensor.sun_next_rising
+            name: Sunrise
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.sun_next_setting
+            name: Sunset
+            grid_options: { columns: 6 }
+      - type: grid
+        cards:
+          - type: heading
+            heading: Air quality
+            heading_style: title
+          - type: statistics-graph
+            chart_type: line
+            period: hour
+            days_to_show: 3
+            stat_types: [mean, max]
+            entities:
+              - entity: sensor.office_pm2_5
+                name: PM2.5 (computer room)
+          - type: tile
+            entity: sensor.office_indoor_allergen_index
+            name: Allergen index
+          - type: tile
+            entity: fan.office
+            name: Air purifier
+            features:
+              - type: fan-preset-modes
+                style: dropdown
+      - type: grid
+        cards:
+          - type: heading
+            heading: Plants
+            heading_style: title
+          - type: plant-status
+            entity: plant.livingroom_left_plant
+            name: Living room left
+          - type: plant-status
+            entity: plant.livingroom_right_plant
+            name: Living room right
+          - type: plant-status
+            entity: plant.bedroom_plant
+            name: Bedroom
+      - type: grid
+        cards:
+          - type: heading
+            heading: Motion (24h)
+            heading_style: title
+          - type: history-graph
+            hours_to_show: 24
+            grid_options: { columns: full, rows: 4 }
+            entities:
+              - entity: binary_sensor.tv_room_sensor_motion
+                name: Living room
+              - entity: binary_sensor.kitchen_sensor_motion
+                name: Kitchen
+              - entity: binary_sensor.computer_sensor_motion
+                name: Computer room
+              - entity: binary_sensor.bedroom_sensor_motion
+                name: Bedroom
+              - entity: binary_sensor.bathroom_sensor_motion
+                name: Bathroom
+              - entity: binary_sensor.hallway_motion
+                name: Hallway
+              - entity: binary_sensor.door_window_door_is_open_2
+                name: Front door
+
+  # -------------------------------------------------------------- Energy ----
+  - title: Energy
+    path: energy
+    icon: mdi:lightning-bolt
+    type: sections
+    max_columns: 3
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Electricity
+            heading_style: title
+          - type: tile
+            entity: sensor.tibber_electricity_price
+            name: Price now
+            icon: mdi:flash
+            grid_options: { columns: full }
+          - type: tile
+            entity: sensor.tibber_monthly_cost
+            name: This month
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.tibber_monthly_net_consumption
+            name: Consumption
+            grid_options: { columns: 6 }
+          - type: history-graph
+            hours_to_show: 48
+            entities:
+              - entity: sensor.tibber_electricity_price
+                name: Price
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Usage
+            heading_style: title
+          - type: energy-date-selection
+            grid_options: { columns: full }
+          - type: energy-usage-graph
+            grid_options: { columns: full, rows: 5 }
+          - type: energy-devices-graph
+            grid_options: { columns: full, rows: 5 }
+      - type: grid
+        cards:
+          - type: heading
+            heading: Power now
+            heading_style: title
+          - type: tile
+            entity: sensor.server_rack_power
+            name: Server rack
+            icon: mdi:server
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.tv_plug_power
+            name: TV
+            icon: mdi:television
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.computer_desk_power
+            name: Desk
+            icon: mdi:desk
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.hallway_charger_power
+            name: Charger
+            icon: mdi:ev-plug-type2
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.vacuum_power
+            name: Vacuum plug
+            icon: mdi:robot-vacuum
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.3_lamp_power
+            name: Dog bowl lamp
+            icon: mdi:lamp
+            grid_options: { columns: 6 }
+          - type: history-graph
+            hours_to_show: 24
+            grid_options: { columns: full, rows: 4 }
+            entities:
+              - entity: sensor.server_rack_power
+                name: Server rack
+              - entity: sensor.tv_plug_power
+                name: TV
+              - entity: sensor.computer_desk_power
+                name: Desk
+              - entity: sensor.hallway_charger_power
+                name: Charger
+      - type: grid
+        cards:
+          - type: heading
+            heading: UPS
+            heading_style: title
+          - type: gauge
+            entity: sensor.riello_battery_charge
+            name: Battery
+            min: 0
+            max: 100
+            needle: true
+            severity: { green: 60, yellow: 30, red: 0 }
+            grid_options: { columns: 6 }
+          - type: gauge
+            entity: sensor.riello_load
+            name: Load
+            min: 0
+            max: 100
+            needle: true
+            severity: { green: 0, yellow: 60, red: 85 }
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.riello_status
+            name: Status
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.riello_input_voltage
+            name: Input
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.riello_output_voltage
+            name: Output
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.riello_status_data
+            name: Status detail
+            grid_options: { columns: 6 }
+
+  # --------------------------------------------------------------- Media ----
+  - title: Media
+    path: media
+    icon: mdi:play-circle-outline
+    type: sections
+    max_columns: 3
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: TV
+            heading_style: title
+          - type: custom:bubble-card
+            card_type: media-player
+            entity: media_player.lg_tv
+            name: LG TV
+          - type: custom:bubble-card
+            card_type: media-player
+            entity: media_player.shield_android_tv
+            name: Shield
+          - type: custom:bubble-card
+            card_type: media-player
+            entity: media_player.sc_lx901
+            name: Receiver
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Sonos
+            heading_style: title
+          - type: custom:sonos-card
+            grid_options: { columns: full }
+      - type: grid
+        cards:
+          - type: heading
+            heading: Speakers
+            heading_style: title
+          - type: custom:bubble-card
+            card_type: media-player
+            entity: media_player.my_kef_speakers
+            name: KEF LS50

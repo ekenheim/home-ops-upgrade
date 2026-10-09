@@ -58,7 +58,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: orchestrator
-              image: ghcr.io/ekenheim/agent-factory:v0.1.2@sha256:c473e6f3a9d25356bb95092db8e4acedfaa6d341f52ee2b56e47a3ec04a072e7
+              image: ghcr.io/ekenheim/agent-factory:v0.1.2@sha256:9fb4b1b3128d2c943e49a578e470a4b6a00da426c4b1d6b687cfccd85c649d15
               env:
                 # Target repository (owner/name form, `github.com/` prefixed,
                 # as the upstream run.ts expects). Phase 1 points at a copy

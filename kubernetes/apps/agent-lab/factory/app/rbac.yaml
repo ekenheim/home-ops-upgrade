@@ -9,8 +9,24 @@ kind: ServiceAccount
 metadata:
   name: agent-factory
   namespace: agent-control
-imagePullSecrets:
-  - name: ghcr-pull
+---
+# Defense in depth for the sandboxes: every orchestrator Job sets
+# automountServiceAccountToken: false, but a Job that forgets would get the
+# `default` token, and tools pods are not covered by the kube-apiserver
+# egressDeny. With this, a forgotten flag still mounts nothing.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: default
+  namespace: agent-work
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: default
+  namespace: agent-verify
+automountServiceAccountToken: false
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

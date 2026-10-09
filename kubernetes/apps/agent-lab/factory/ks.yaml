@@ -7,8 +7,12 @@ metadata:
   namespace: flux-system
 spec:
   # The orchestrator: ServiceAccount, its namespaced RBAC in agent-work and
-  # agent-verify, and the (suspended) CronJob. No targetNamespace: the Roles
-  # live in the two sandbox namespaces.
+  # agent-verify, the GitHub credentials in all three namespaces, and the
+  # (suspended) CronJob. No targetNamespace: the Roles and Secrets live in
+  # the two sandbox namespaces too.
+  #
+  # Stays not-Ready until the Bitwarden item `agent_factory_github` exists
+  # (see app/externalsecret-github.yaml). Nothing else waits on this one.
   path: ./kubernetes/apps/agent-lab/factory/app
   commonMetadata:
     labels:
@@ -18,7 +22,9 @@ spec:
     kind: GitRepository
     name: home-kubernetes
   dependsOn:
-    # agentlab-db-secret, agent-factory-github, ghcr-pull.
+    # bitwarden-secrets-manager, for agent-factory-github.
+    - name: external-secrets-stores
+    # agentlab-db-secret.
     - name: agent-lab-ledger
     # FACTORY_GATEWAY_URL must answer before a run starts.
     - name: agent-lab-egress-gateway

@@ -6,8 +6,8 @@ metadata:
   name: &app agent-lab-ledger
   namespace: flux-system
 spec:
-  # Credentials and storage for the factory: the Postgres ledger, the GitHub
-  # PAT and ghcr pull secret (in all three namespaces), and two buckets.
+  # Storage for the factory: the Postgres ledger credential and two buckets.
+  # The GitHub credentials sit in agent-lab-factory instead.
   # No targetNamespace for the same reason as the other agent-lab components.
   path: ./kubernetes/apps/agent-lab/ledger/app
   commonMetadata:
@@ -18,8 +18,6 @@ spec:
     kind: GitRepository
     name: home-kubernetes
   dependsOn:
-    # bitwarden-secrets-manager (GitHub PAT, ghcr pull secret).
-    - name: external-secrets-stores
     # crunchy-pgo-secrets, and the cluster that generates
     # postgres-pguser-agentlab from the `agentlab` user in cluster.yaml.
     - name: crunchy-postgres-stores

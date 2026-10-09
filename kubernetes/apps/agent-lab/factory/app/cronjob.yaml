@@ -7,8 +7,14 @@
 # ===FACTORY_REPORT_BEGIN=== and ===FACTORY_REPORT_END===. Results go to the
 # `agentlab` Postgres ledger.
 #
-# SUSPENDED until the images exist and a manual run has gone through; see
-# README.md for how to trigger one and how to unsuspend.
+# SUSPENDED. Work through the README's "Before the first run" checklist
+# (target repo, public images, dedicated GitHub token, orchestrator contract,
+# network checks) before triggering a manual run or unsuspending.
+#
+# The images are pulled anonymously: the three ghcr.io/ekenheim/agent-factory*
+# packages must be public (GHCR does not take fine-grained PATs, and a pull
+# secret would copy a GitHub token into all three namespaces). Pin by digest
+# once v0.1.0 is built.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -74,10 +80,6 @@ spec:
                   value: ghcr.io/ekenheim/agent-factory-tools:v0.1.0
                 - name: FACTORY_CONCURRENCY
                   value: "5"
-                # Not part of the original contract; harmless if unread. The
-                # Jobs need it as imagePullSecrets while the images are private.
-                - name: FACTORY_IMAGE_PULL_SECRET
-                  value: ghcr-pull
                 - name: DATABASE_URL
                   valueFrom:
                     secretKeyRef:

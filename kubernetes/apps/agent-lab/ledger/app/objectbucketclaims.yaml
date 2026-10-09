@@ -1,0 +1,26 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/objectbucket.io/objectbucketclaim_v1alpha1.json
+# Phase 2: run artifacts (transcripts, diffs, score reports). Unused in phase 1
+# but claimed now; an empty RGW bucket costs nothing. Rook writes the
+# credentials to a Secret and ConfigMap of the same name in agent-control.
+# generateBucketName, not bucketName: the bucket name is global to RGW.
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: agent-artifacts
+  namespace: agent-control
+spec:
+  generateBucketName: agent-artifacts
+  storageClassName: ceph-bucket
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/objectbucket.io/objectbucketclaim_v1alpha1.json
+# Phase 2: holdout tests the verifier scores against. Claimed in agent-verify,
+# so its credentials exist only there and agent-work has no path to them.
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: agent-holdout
+  namespace: agent-verify
+spec:
+  generateBucketName: agent-holdout
+  storageClassName: ceph-bucket

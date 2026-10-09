@@ -121,3 +121,9 @@ spec:
     persistence:
       config:
         existingClaim: *app
+      dashboards:
+        type: configMap
+        name: home-assistant-dashboards
+        globalMounts:
+          - path: /config/dashboards
+            readOnly: true

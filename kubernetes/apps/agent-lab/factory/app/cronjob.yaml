@@ -75,9 +75,9 @@ spec:
                 - name: FACTORY_VERIFY_NAMESPACE
                   value: agent-verify
                 - name: FACTORY_BASE_IMAGE
-                  value: ghcr.io/ekenheim/agent-factory-base:v0.1.1@sha256:6139a64014838bb73a24fc7e51221ad60aee765fe987c9b386d2a8221cf61df2
+                  value: ghcr.io/ekenheim/agent-factory-base:v0.1.2@sha256:95b323c18f93a48a57280a15d9a5c13f3eb464ec89d950f80762965abcfab408
                 - name: FACTORY_TOOLS_IMAGE
-                  value: ghcr.io/ekenheim/agent-factory-tools:v0.1.1@sha256:1a81ba939139d25bb50c2dda231aa061ff9208e268984be047c06b02f4eaeac1
+                  value: ghcr.io/ekenheim/agent-factory-tools:v0.1.2@sha256:2458a2740975400698d1e2da7bd97e0ee501b204967dd3cdf4579862665660bd
                 # Empty on purpose: the orchestrator defaults to `ghcr-pull`,
                 # which does not exist here (public images, see above), and an
                 # empty name makes it omit imagePullSecrets from the Jobs.

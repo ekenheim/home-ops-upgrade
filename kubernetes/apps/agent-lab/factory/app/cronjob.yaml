@@ -83,8 +83,27 @@ spec:
                 # empty name makes it omit imagePullSecrets from the Jobs.
                 - name: FACTORY_IMAGE_PULL_SECRET
                   value: ""
+                # Three lanes, not five: every lane's triage and worker share
+                # the local model's two llama.cpp slots. Run one (five lanes)
+                # left reviewers queueing for minutes per call.
                 - name: FACTORY_CONCURRENCY
-                  value: "5"
+                  value: "3"
+                # Reviews stay on the local `review` alias for now. In run one
+                # the reviewer re-read the repository and sent ~60k-token
+                # prompts; at ~380 prompt tokens/s that is 160 s before the
+                # first output token, and three of them queued on two slots
+                # exceeded the review deadline for 5 of 9 issues. agent-factory
+                # v0.1.2 hands the reviewer the diff and the test output
+                # instead, and the cap below keeps reviews from queueing. If
+                # reviews still time out, point this at a hosted alias that is
+                # on the agent-lab key's model list (MiniMax's plan is used up
+                # until 2026-10-11; kimi-k3, glm-5.3 or chatgpt are the options).
+                - name: FACTORY_REVIEW_MODEL
+                  value: review
+                # Honoured from agent-factory v0.1.2: at most this many reviews
+                # in flight regardless of lane count.
+                - name: FACTORY_REVIEW_CONCURRENCY
+                  value: "1"
                 - name: DATABASE_URL
                   valueFrom:
                     secretKeyRef:

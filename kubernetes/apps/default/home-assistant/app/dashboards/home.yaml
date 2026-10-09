@@ -799,6 +799,10 @@ views:
                     icon: mdi:gauge
                     show_state: true
                     show_background: false
+                  - entity: sensor.riello_battery_runtime
+                    icon: mdi:timer-outline
+                    show_state: true
+                    show_background: false
               - type: custom:bubble-card
                 card_type: button
                 button_type: state
@@ -1335,16 +1339,16 @@ views:
             name: Status
             grid_options: { columns: 6 }
           - type: tile
+            entity: sensor.riello_battery_runtime
+            name: Runtime
+            grid_options: { columns: 6 }
+          - type: tile
             entity: sensor.riello_input_voltage
             name: Input
             grid_options: { columns: 6 }
           - type: tile
             entity: sensor.riello_output_voltage
             name: Output
-            grid_options: { columns: 6 }
-          - type: tile
-            entity: sensor.riello_status_data
-            name: Status detail
             grid_options: { columns: 6 }
 
   # --------------------------------------------------------------- Media ----

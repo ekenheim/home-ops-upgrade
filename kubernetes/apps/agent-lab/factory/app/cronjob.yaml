@@ -104,6 +104,17 @@ spec:
                 # in flight regardless of lane count.
                 - name: FACTORY_REVIEW_CONCURRENCY
                   value: "1"
+                # Per-stage deadlines (seconds, v0.1.2 knobs), set wide on
+                # purpose: everything runs on the local model, which is slow
+                # under load, and a lane that finishes late is better than one
+                # killed at the deadline. The Job's activeDeadlineSeconds (5.5 h)
+                # and the gateway's 30 min upstream timeout still bound a run.
+                - name: FACTORY_TRIAGE_TIMEOUT_S
+                  value: "600"
+                - name: FACTORY_WORK_TIMEOUT_S
+                  value: "2400"
+                - name: FACTORY_REVIEW_TIMEOUT_S
+                  value: "1800"
                 - name: DATABASE_URL
                   valueFrom:
                     secretKeyRef:

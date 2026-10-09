@@ -809,16 +809,14 @@ views:
                     entity: light.lifx_beam
                     name: Beam
                     icon: mdi:led-strip-variant
+                  # Lamp 2 and Lamp 3 are two bulbs in one fixture; the Hue room
+                  # group light.computer_room contains exactly those two.
                   - type: custom:bubble-card
                     card_type: button
                     button_type: slider
-                    entity: light.hue_essential_lamp_2
-                    name: Lamp 2
-                  - type: custom:bubble-card
-                    card_type: button
-                    button_type: slider
-                    entity: light.hue_essential_lamp_3
-                    name: Lamp 3
+                    entity: light.computer_room
+                    name: Lamp
+                    icon: mdi:floor-lamp
               - type: custom:bubble-card
                 card_type: separator
                 name: Air

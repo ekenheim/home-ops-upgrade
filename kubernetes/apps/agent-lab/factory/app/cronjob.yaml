@@ -83,8 +83,24 @@ spec:
                 # empty name makes it omit imagePullSecrets from the Jobs.
                 - name: FACTORY_IMAGE_PULL_SECRET
                   value: ""
+                # Three lanes, not five: every lane's triage and worker share
+                # the local model's two llama.cpp slots. Run one (five lanes)
+                # left reviewers queueing for minutes per call.
                 - name: FACTORY_CONCURRENCY
-                  value: "5"
+                  value: "3"
+                # Reviews go to a hosted model. The local qwen38-flash-next
+                # ingests ~380 prompt tokens/s; a 60k-token review prompt is
+                # 160 s before the first output token, and three of them on
+                # two slots exceeded the review deadline for 5 of 9 issues in
+                # run one. Triage (`fast`) and workers (`implementation-pool`)
+                # stay local. The alias must be on the agent-lab key's model
+                # list (llm/litellm/keys/agent-lab.yaml).
+                - name: FACTORY_REVIEW_MODEL
+                  value: MiniMax-M3
+                # Honoured from agent-factory v0.1.2: at most this many reviews
+                # in flight regardless of lane count.
+                - name: FACTORY_REVIEW_CONCURRENCY
+                  value: "2"
                 - name: DATABASE_URL
                   valueFrom:
                     secretKeyRef:

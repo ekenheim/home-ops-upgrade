@@ -5,8 +5,15 @@
 # (../clustersecretstore). Workers send a dummy key.
 #
 # The budget is the real safety net for a loop that runs unattended: $10 a
-# day, 8 requests in flight (FACTORY_CONCURRENCY is 5) and 120 rpm across
+# day, 8 requests in flight (FACTORY_CONCURRENCY is 3) and 120 rpm across
 # every worker and reviewer combined.
+#
+# MiniMax-M3 is on the list for the reviewer only (FACTORY_REVIEW_MODEL in
+# apps/agent-lab/factory). Run one showed the local qwen38-flash-next cannot
+# carry reviews: 2 slots, ~380 prompt tokens/s, so three queued 60k-token
+# review prompts blew the 8-minute review budget. Triage and workers stay on
+# the local aliases, which were fast. MiniMax is a flat plan; the maxBudget
+# counts its list price, which keeps a runaway review loop from spinning.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMVirtualKey
 metadata:
@@ -23,6 +30,7 @@ spec:
     - fast
     - self-hosted
     - qwen3-embedding-0.6b
+    - MiniMax-M3
   maxBudget: "10"
   budgetDuration: 1d
   maxParallelRequests: 8

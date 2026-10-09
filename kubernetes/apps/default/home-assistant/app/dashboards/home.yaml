@@ -4,8 +4,7 @@
 # so a Flux sync + browser refresh picks up changes without a restart.
 #
 # Custom cards (HACS, already loaded as lovelace resources): Bubble Card,
-# Mushroom, ha-bambulab cards, xiaomi-vacuum-map-card, custom-sonos-card,
-# weather-radar-card.
+# Mushroom, ha-bambulab cards, xiaomi-vacuum-map-card, custom-sonos-card.
 #
 # This repo is public: no credentials, URLs with userinfo, or address-derived
 # entity IDs in here.
@@ -98,16 +97,21 @@ views:
             entity: light.tv_room
             name: Living room
             icon: mdi:sofa
-            grid_options: { columns: 6 }
+            grid_options: { columns: 6, rows: 2 }
             tap_action: { action: toggle }
             button_action:
               tap_action: { action: navigate, navigation_path: "#living-room" }
             sub_button:
-              - entity: sensor.tv_room_sensor_temperature
-                show_state: true
-                show_background: false
-              - entity: binary_sensor.tv_room_sensor_motion
-                show_background: false
+              main: []
+              bottom:
+                - buttons_layout: inline
+                  justify_content: start
+                  group:
+                    - entity: sensor.tv_room_sensor_temperature
+                      show_state: true
+                      show_background: false
+                    - entity: binary_sensor.tv_room_sensor_motion
+                      show_background: false
           - type: custom:bubble-card
             card_type: button
             button_type: name
@@ -115,16 +119,21 @@ views:
             entity: light.kitchen
             name: Kitchen
             icon: mdi:countertop
-            grid_options: { columns: 6 }
+            grid_options: { columns: 6, rows: 2 }
             tap_action: { action: toggle }
             button_action:
               tap_action: { action: navigate, navigation_path: "#kitchen" }
             sub_button:
-              - entity: sensor.kitchen_sensor_temperature
-                show_state: true
-                show_background: false
-              - entity: binary_sensor.kitchen_sensor_motion
-                show_background: false
+              main: []
+              bottom:
+                - buttons_layout: inline
+                  justify_content: start
+                  group:
+                    - entity: sensor.kitchen_sensor_temperature
+                      show_state: true
+                      show_background: false
+                    - entity: binary_sensor.kitchen_sensor_motion
+                      show_background: false
           - type: custom:bubble-card
             card_type: button
             button_type: name
@@ -132,18 +141,23 @@ views:
             entity: light.computer_room
             name: Computer room
             icon: mdi:desktop-tower-monitor
-            grid_options: { columns: 6 }
+            grid_options: { columns: 6, rows: 2 }
             tap_action: { action: toggle }
             button_action:
               tap_action: { action: navigate, navigation_path: "#computer-room" }
             sub_button:
-              - entity: sensor.computer_sensor_temperature
-                show_state: true
-                show_background: false
-              - entity: sensor.office_pm2_5
-                icon: mdi:air-filter
-                show_state: true
-                show_background: false
+              main: []
+              bottom:
+                - buttons_layout: inline
+                  justify_content: start
+                  group:
+                    - entity: sensor.computer_sensor_temperature
+                      show_state: true
+                      show_background: false
+                    - entity: sensor.office_pm2_5
+                      icon: mdi:air-filter
+                      show_state: true
+                      show_background: false
           - type: custom:bubble-card
             card_type: button
             button_type: name
@@ -151,17 +165,22 @@ views:
             entity: light.bedroom
             name: Bedroom
             icon: mdi:bed-king-outline
-            grid_options: { columns: 6 }
+            grid_options: { columns: 6, rows: 2 }
             tap_action: { action: toggle }
             button_action:
               tap_action: { action: navigate, navigation_path: "#bedroom" }
             sub_button:
-              - entity: sensor.bedroom_sensor_temperature
-                show_state: true
-                show_background: false
-              - entity: sensor.multisensor_6_humidity_2
-                show_state: true
-                show_background: false
+              main: []
+              bottom:
+                - buttons_layout: inline
+                  justify_content: start
+                  group:
+                    - entity: sensor.bedroom_sensor_temperature
+                      show_state: true
+                      show_background: false
+                    - entity: sensor.multisensor_6_humidity_2
+                      show_state: true
+                      show_background: false
           - type: custom:bubble-card
             card_type: button
             button_type: name
@@ -169,16 +188,21 @@ views:
             entity: light.bathroom
             name: Bathroom
             icon: mdi:shower-head
-            grid_options: { columns: 6 }
+            grid_options: { columns: 6, rows: 2 }
             tap_action: { action: toggle }
             button_action:
               tap_action: { action: navigate, navigation_path: "#bathroom" }
             sub_button:
-              - entity: sensor.bathroom_sensor_temperature
-                show_state: true
-                show_background: false
-              - entity: binary_sensor.bathroom_sensor_motion
-                show_background: false
+              main: []
+              bottom:
+                - buttons_layout: inline
+                  justify_content: start
+                  group:
+                    - entity: sensor.bathroom_sensor_temperature
+                      show_state: true
+                      show_background: false
+                    - entity: binary_sensor.bathroom_sensor_motion
+                      show_background: false
           - type: custom:bubble-card
             card_type: button
             button_type: name
@@ -187,16 +211,21 @@ views:
             entity: light.floalt_panel_ws_60x60
             name: Hallway
             icon: mdi:door
-            grid_options: { columns: 6 }
+            grid_options: { columns: 6, rows: 2 }
             tap_action: { action: toggle }
             button_action:
               tap_action: { action: navigate, navigation_path: "#hallway" }
             sub_button:
-              - entity: sensor.hallway_temperature
-                show_state: true
-                show_background: false
-              - entity: binary_sensor.door_window_door_is_open_2
-                show_background: false
+              main: []
+              bottom:
+                - buttons_layout: inline
+                  justify_content: start
+                  group:
+                    - entity: sensor.hallway_temperature
+                      show_state: true
+                      show_background: false
+                    - entity: binary_sensor.door_window_door_is_open_2
+                      show_background: false
 
       - type: grid
         cards:
@@ -489,20 +518,6 @@ views:
                   - entity: sensor.3_lamp_power
                     show_state: true
                     show_background: false
-              - type: custom:bubble-card
-                card_type: separator
-                name: Plants
-                icon: mdi:flower
-              - type: grid
-                columns: 2
-                square: false
-                cards:
-                  - type: plant-status
-                    entity: plant.livingroom_left_plant
-                    name: Left
-                  - type: plant-status
-                    entity: plant.livingroom_right_plant
-                    name: Right
               - type: custom:bubble-card
                 card_type: separator
                 name: TV
@@ -820,14 +835,6 @@ views:
                       tap_action:
                         action: call-service
                         service: scene.turn_on
-                        target: { entity_id: scene.bedroom_nightlight }
-              - type: custom:bubble-card
-                card_type: separator
-                name: Plant
-                icon: mdi:flower
-              - type: plant-status
-                entity: plant.bedroom_plant
-                name: Bedroom plant
 
           # Bathroom
           - type: custom:bubble-card
@@ -1065,14 +1072,6 @@ views:
             forecast_type: daily
             show_current: true
             show_forecast: true
-          - type: custom:weather-radar-card
-            zoom_level: 8
-            show_scale: false
-            show_range: false
-            show_snow: true
-            markers:
-              - entity: zone.home
-          - type: tile
             entity: sensor.sun_next_rising
             name: Sunrise
             grid_options: { columns: 6 }
@@ -1102,20 +1101,6 @@ views:
             features:
               - type: fan-preset-modes
                 style: dropdown
-      - type: grid
-        cards:
-          - type: heading
-            heading: Plants
-            heading_style: title
-          - type: plant-status
-            entity: plant.livingroom_left_plant
-            name: Living room left
-          - type: plant-status
-            entity: plant.livingroom_right_plant
-            name: Living room right
-          - type: plant-status
-            entity: plant.bedroom_plant
-            name: Bedroom
       - type: grid
         cards:
           - type: heading

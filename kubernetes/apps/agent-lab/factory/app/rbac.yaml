@@ -1,0 +1,87 @@
+---
+# The orchestrator's identity. Its only powers are the two Roles below, in
+# agent-work and agent-verify: run Jobs, read their pods' logs (where each
+# stage prints its JSON report), and manage the per-run PVCs and ConfigMaps.
+# Nothing cluster-wide, no pods/exec, no Secrets: Jobs reference
+# agent-factory-github by name, which needs no read access to it.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agent-factory
+  namespace: agent-control
+imagePullSecrets:
+  - name: ghcr-pull
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: agent-factory
+  namespace: agent-work
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "get", "list", "delete"]
+  # list so a run can sweep the ConfigMaps an earlier, crashed run left.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create", "get", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: &name agent-factory
+  namespace: agent-work
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: *name
+subjects:
+  - kind: ServiceAccount
+    name: agent-factory
+    namespace: agent-control
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: agent-factory
+  namespace: agent-verify
+# Same as agent-work's (YAML anchors do not cross documents).
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "get", "list", "delete"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create", "get", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: &name agent-factory
+  namespace: agent-verify
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: *name
+subjects:
+  - kind: ServiceAccount
+    name: agent-factory
+    namespace: agent-control

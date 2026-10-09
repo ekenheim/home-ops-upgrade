@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Pre Flux-Kustomizations
+  #
+  # Three namespaces, one per trust level. See README.md for the model.
+  - ./namespaces.yaml
+  # Flux-Kustomizations
+  #
+  # None of these sets targetNamespace: every component spans more than one
+  # namespace (and egress-gateway writes a ReferenceGrant into `llm`), and
+  # Flux's targetNamespace overrides EVERY namespaced object, explicit
+  # namespace or not. So each manifest names its namespace itself.
+  #
+  # The LiteLLM virtual key is not here. litellm-operator writes the Secret
+  # next to the CR, so the CR sits with the other keys in
+  # apps/llm/litellm/keys/agent-lab.yaml (Kustomization `litellm-keys`).
+  - ./network-policy/ks.yaml
+  - ./egress-gateway/ks.yaml
+  - ./ledger/ks.yaml
+  - ./factory/ks.yaml

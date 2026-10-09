@@ -5,3 +5,4 @@ kind: Kustomization
 resources:
   - ./rbac.yaml
   - ./secretstore.yaml
+  - ./agent-lab.yaml

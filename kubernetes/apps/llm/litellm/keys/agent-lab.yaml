@@ -1,7 +1,7 @@
 ---
 # The agent-lab software factory (apps/agent-lab). No agent pod ever holds
 # this key: the agent-egress gateway in agent-control injects it, reading
-# litellm-key-agent-lab through the litellm-key-secrets ClusterSecretStore
+# litellm-key-agent-lab through its own litellm-key-secrets-agent-lab store
 # (../clustersecretstore). Workers send a dummy key.
 #
 # The budget is the real safety net for a loop that runs unattended: $10 a

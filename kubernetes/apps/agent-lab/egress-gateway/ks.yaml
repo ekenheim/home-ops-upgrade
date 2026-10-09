@@ -24,7 +24,7 @@ spec:
     - name: envoy-gateway-config
     # The backend.
     - name: litellm
-    # litellm-key-secrets (the store) and litellm-key-agent-lab (the Secret
+    # litellm-key-secrets-agent-lab (the store) and litellm-key-agent-lab (the Secret
     # it reads), for the credential ExternalSecret.
     - name: litellm-stores
     - name: litellm-keys

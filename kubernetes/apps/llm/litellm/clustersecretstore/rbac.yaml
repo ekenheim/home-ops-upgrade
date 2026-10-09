@@ -1,7 +1,6 @@
 ---
 # Modeled on database/crunchy-postgres/clustersecretstore, but namespaced and
-# narrowed. This SA may `get` exactly the Secrets named below in `llm`:
-# litellm-key-atlas (development) and litellm-key-agent-lab (agent-control).
+# narrowed. This SA may `get` exactly one Secret, litellm-key-atlas, in `llm`.
 # Nothing else in `llm` is readable through it, least of all the `litellm`
 # Secret that holds the master key.
 #
@@ -15,7 +14,7 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    resourceNames: ["litellm-key-atlas", "litellm-key-agent-lab"]
+    resourceNames: ["litellm-key-atlas"]
     verbs: ["get"]
   # Kept for parity with the external-secrets docs. SelfSubjectRulesReview is
   # cluster-scoped, so a Role cannot really grant it; system:basic-user

@@ -1,0 +1,65 @@
+---
+# A store of its own for the agent-lab key, so agent-control and development
+# never share a Role: this SA may `get` only litellm-key-agent-lab in `llm`,
+# and only agent-control may use the store. Same shape as ./rbac.yaml and
+# ./secretstore.yaml (the Atlas store); see there for why there is no
+# list/watch.
+#
+# Consumer: agent-control/agent-egress-litellm-credential
+#   remoteRef: {key: litellm-key-agent-lab, property: api-key}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-secrets-llm-agent-lab
+  namespace: llm
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: external-secrets-llm-agent-lab
+  namespace: llm
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["litellm-key-agent-lab"]
+    verbs: ["get"]
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["selfsubjectrulesreviews"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: &name external-secrets-llm-agent-lab
+  namespace: llm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: *name
+subjects:
+  - kind: ServiceAccount
+    name: *name
+    namespace: llm
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/external-secrets.io/clustersecretstore_v1beta1.json
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: litellm-key-secrets-agent-lab
+spec:
+  conditions:
+    - namespaces:
+        - agent-control
+  provider:
+    kubernetes:
+      remoteNamespace: llm
+      server:
+        caProvider:
+          type: "ConfigMap"
+          name: "kube-root-ca.crt"
+          namespace: llm
+          key: "ca.crt"
+      auth:
+        serviceAccount:
+          name: external-secrets-llm-agent-lab
+          namespace: llm

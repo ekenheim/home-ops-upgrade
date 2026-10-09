@@ -66,15 +66,14 @@ spec:
               tag: 4.141.0
             env:
               TZ: ${TIMEZONE}
-              # code-server reads PASSWORD for --auth password. optional: this
-              # container shares the pod with HA, and a missing secret must not
-              # keep HA from starting (code-server then just stays locked).
-              PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: home-assistant-codeserver
-                    key: PASSWORD
-                    optional: true
+            # PASSWORD (read by --auth password) comes from the secret. envFrom,
+            # not secretKeyRef: app-template only allows `optional` here, and
+            # this container shares the pod with HA, so a missing secret must
+            # not keep HA from starting (code-server then just stays locked).
+            envFrom:
+              - secretRef:
+                  name: home-assistant-codeserver
+                  optional: true
             args:
               - "/config"
               - --auth

@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/httproutefilter_v1alpha1.json
+# Replaces whatever Authorization header the caller sent (the workers' dummy
+# key) with the agent-lab virtual key. overwrite matters: OpenAI-compatible
+# clients ALWAYS send a bearer, and without it Envoy keeps theirs.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: HTTPRouteFilter
+metadata:
+  name: agent-egress-litellm-credential
+  namespace: agent-control
+spec:
+  credentialInjection:
+    header: Authorization
+    overwrite: true
+    credential:
+      valueRef:
+        name: agent-egress-litellm-credential
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# /v1 only: the OpenAI-compatible API. LiteLLM's admin and UI paths live
+# outside /v1 and are not routed, so a sandbox cannot reach /key/generate or
+# /ui through here even though the gateway holds a key.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: agent-egress-litellm
+  namespace: agent-control
+  annotations:
+    # No hostnames, nothing to publish.
+    external-dns.alpha.kubernetes.io/controller: none
+spec:
+  parentRefs:
+    - name: agent-egress
+      sectionName: http
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: gateway.envoyproxy.io
+            kind: HTTPRouteFilter
+            name: agent-egress-litellm-credential
+      backendRefs:
+        # Cross-namespace; allowed by the ReferenceGrant in llm.
+        - name: litellm
+          namespace: llm
+          port: 4000
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/backendtrafficpolicy_v1alpha1.json
+# Agent turns are long: a reasoning model can think for minutes before the
+# first token and a large diff can stream for longer. Envoy's 15s route
+# timeout would cut every such call. Bounded rather than 0s so a hung
+# upstream still frees the worker eventually.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: agent-egress-litellm
+  namespace: agent-control
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: agent-egress-litellm
+  timeout:
+    http:
+      requestTimeout: 1800s
+      streamIdleTimeout: 1800s

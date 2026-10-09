@@ -1,0 +1,59 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/envoyproxy_v1alpha1.json
+# Proxy settings for the agent-egress Gateway only. A Gateway-level
+# parametersRef replaces the GatewayClass one (network/envoy) rather than
+# merging with it, so this is self-contained: no LoadBalancer, no L2 VIP, no
+# external-dns names. The lab's LLM path never leaves the cluster.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: agent-egress
+  namespace: agent-control
+spec:
+  logging:
+    level:
+      default: warn
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        replicas: 2
+        container:
+          imageRepository: mirror.gcr.io/envoyproxy/envoy
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+          # envoy-gateway already renders these; spelled out so the pod keeps
+          # passing `restricted` (warned on in agent-control) if a default moves.
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              # Not DoNotSchedule: with worker4 tainted that wedges rollouts.
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  gateway.envoyproxy.io/owning-gateway-name: agent-egress
+      envoyService:
+        type: ClusterIP
+        # Pinned so the workers' URL is stable:
+        #   http://agent-egress.agent-control.svc/v1
+        # (GatewayNamespace mode already names it after the Gateway; this
+        # just makes that a contract instead of a default.)
+        name: agent-egress
+  shutdown:
+    drainTimeout: 60s

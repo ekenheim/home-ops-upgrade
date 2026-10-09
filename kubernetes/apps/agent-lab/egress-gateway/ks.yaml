@@ -1,0 +1,40 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app agent-lab-egress-gateway
+  namespace: flux-system
+spec:
+  # No targetNamespace: everything is in agent-control except the
+  # ReferenceGrant, which has to sit in `llm` next to the Service it grants,
+  # and targetNamespace would rewrite that one too.
+  path: ./kubernetes/apps/agent-lab/egress-gateway/app
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  dependsOn:
+    # Controller + CRDs (EnvoyProxy, HTTPRouteFilter, BackendTrafficPolicy)
+    # and the `envoy` GatewayClass.
+    - name: envoy-gateway
+    - name: envoy-gateway-config
+    # The backend.
+    - name: litellm
+    # litellm-key-secrets (the store) and litellm-key-agent-lab (the Secret
+    # it reads), for the credential ExternalSecret.
+    - name: litellm-stores
+    - name: litellm-keys
+    # Default-deny lands first: the proxy is never reachable more widely
+    # than the policy allows, not even for one reconcile.
+    - name: agent-lab-network-policy
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: *app

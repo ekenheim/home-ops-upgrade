@@ -10,3 +10,4 @@ resources:
   - ./toolhive.yaml
   - ./opencode.yaml
   - ./atlas.yaml
+  - ./agent-lab.yaml

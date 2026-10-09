@@ -416,6 +416,38 @@ views:
                 entity: vacuum.dreamebot_l10s_ultra
                 state: docked
 
+      # calendar.robin is a Remote Calendar (Google secret iCal link, kept in
+      # HA, not here). calendar.sweden is the Holiday integration; it lists
+      # every Sunday as a holiday, so those are filtered out.
+      - type: grid
+        cards:
+          - type: heading
+            heading: Upcoming
+            heading_style: title
+          - type: custom:calendar-card-pro
+            grid_options: { columns: full }
+            entities:
+              - entity: calendar.robin
+                accent_color: "#03a9f4"
+              - entity: calendar.sweden
+                accent_color: "#e53935"
+                label: "🇸🇪"
+                blocklist: "^Sunday$"
+                replace_field: summary
+                replace_pattern: "; Sunday$"
+                replace_with: ""
+            days_to_show: 14
+            compact_events_to_show: 5
+            show_empty_days: false
+            first_day_of_week: monday
+            time_24h: true
+            today_indicator: true
+            remove_location_country: true
+            weather:
+              entity: weather.forecast_home
+              position: date
+            tap_action: { action: expand }
+
       # ---- Room pop-ups (hidden until their #hash is opened) ----
       - type: grid
         cards:

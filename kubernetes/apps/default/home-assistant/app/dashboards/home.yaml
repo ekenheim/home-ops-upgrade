@@ -235,17 +235,6 @@ views:
           - type: custom:bubble-card
             card_type: button
             button_type: name
-            name: Day lights
-            icon: mdi:white-balance-sunny
-            grid_options: { columns: 6 }
-            button_action:
-              tap_action:
-                action: call-service
-                service: scene.turn_on
-                target: { entity_id: scene.day_time_lights }
-          - type: custom:bubble-card
-            card_type: button
-            button_type: name
             name: Kitchen lights
             icon: mdi:silverware-fork-knife
             grid_options: { columns: 6 }
@@ -488,26 +477,24 @@ views:
                 card_type: separator
                 name: Plugs
                 icon: mdi:power-socket-eu
-              - type: custom:bubble-card
-                card_type: button
-                button_type: switch
-                entity: switch.tv_plug
-                name: TV
-                icon: mdi:television
-                sub_button:
-                  - entity: sensor.tv_plug_power
-                    show_state: true
-                    show_background: false
-              - type: custom:bubble-card
-                card_type: button
-                button_type: switch
-                entity: switch.computer_desk
-                name: Computer desk
-                icon: mdi:desk
-                sub_button:
-                  - entity: sensor.computer_desk_power
-                    show_state: true
-                    show_background: false
+              # TV and desk plugs feed the TV / network gear: power readout
+              # only, no switch, so a mis-tap can't cut them.
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: state
+                    entity: sensor.tv_plug_power
+                    name: TV
+                    icon: mdi:television
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: state
+                    entity: sensor.computer_desk_power
+                    name: Computer desk
+                    icon: mdi:desk
               - type: custom:bubble-card
                 card_type: button
                 button_type: switch
@@ -641,6 +628,20 @@ views:
                       action: call-service
                       service: vacuum.return_to_base
                       target: { entity_id: vacuum.dreamebot_l10s_ultra }
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: select
+                    entity: select.dreamebot_l10s_ultra_cleaning_mode
+                    name: Mode
+                    icon: mdi:broom
+                  - type: custom:bubble-card
+                    card_type: select
+                    entity: select.dreamebot_l10s_ultra_suction_level
+                    name: Suction
+                    icon: mdi:fan
               - type: custom:xiaomi-vacuum-map-card
                 entity: vacuum.dreamebot_l10s_ultra
                 vacuum_platform: default
@@ -735,6 +736,20 @@ views:
                     show_background: false
                   - entity: sensor.riello_load
                     icon: mdi:gauge
+                    show_state: true
+                    show_background: false
+              - type: custom:bubble-card
+                card_type: button
+                button_type: state
+                entity: sensor.ups_2u_output_power
+                name: UniFi UPS 2U
+                icon: mdi:battery-charging-high
+                sub_button:
+                  - entity: sensor.ups_2u_battery_level
+                    show_state: true
+                    show_background: false
+                  - entity: sensor.ups_2u_battery_runtime
+                    icon: mdi:timer-outline
                     show_state: true
                     show_background: false
               - type: custom:bubble-card
@@ -1004,14 +1019,10 @@ views:
                     show_background: false
               - type: custom:bubble-card
                 card_type: button
-                button_type: switch
-                entity: switch.hallway_charger
+                button_type: state
+                entity: sensor.hallway_charger_power
                 name: Charger
                 icon: mdi:ev-plug-type2
-                sub_button:
-                  - entity: sensor.hallway_charger_power
-                    show_state: true
-                    show_background: false
 
   # ------------------------------------------------------------- Climate ----
   - title: Climate
@@ -1167,8 +1178,10 @@ views:
             grid_options: { columns: full }
           - type: energy-usage-graph
             grid_options: { columns: full, rows: 5 }
+          # No fixed rows: this graph grows with the device count, and a fixed
+          # height let it spill over the UPS section below.
           - type: energy-devices-graph
-            grid_options: { columns: full, rows: 5 }
+            grid_options: { columns: full }
       - type: grid
         cards:
           - type: heading
@@ -1219,7 +1232,26 @@ views:
       - type: grid
         cards:
           - type: heading
-            heading: UPS
+            heading: UniFi UPS 2U
+            heading_style: title
+          - type: tile
+            entity: sensor.ups_2u_battery_level
+            name: Battery
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.ups_2u_battery_runtime
+            name: Runtime
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.ups_2u_output_power
+            name: Load
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.ups_2u_output_voltage
+            name: Output
+            grid_options: { columns: 6 }
+          - type: heading
+            heading: Riello UPS
             heading_style: title
           - type: gauge
             entity: sensor.riello_battery_charge

@@ -1,6 +1,6 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/batch/cronjob_v1.json
-# The agent-factory orchestrator (github.com/ekenheim/agent-factory). Each run
+# The agent-factory orchestrator (private repo ekenheim/agent-factory). Each run
 # claims issues, and for each one drives stage -> worker -> exec -> collect
 # Jobs in agent-work and stage -> exec -> reviewer Jobs in agent-verify,
 # reading every stage's JSON report from its pod log between

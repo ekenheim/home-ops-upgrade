@@ -1,6 +1,6 @@
 # agent-lab
 
-Kubernetes platform for [agent-factory](https://github.com/ekenheim/agent-factory), a port of
+Kubernetes platform for agent-factory (private repo `ekenheim/agent-factory`), a port of
 PromtEngineer/software-factory from Upstash Box to Kubernetes Jobs. The orchestrator claims GitHub
 issues and runs one sandboxed coding agent per issue, verifies the result in a second sandbox and
 records everything in a Postgres ledger.

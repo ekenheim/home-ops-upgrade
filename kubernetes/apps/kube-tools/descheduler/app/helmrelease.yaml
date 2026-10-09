@@ -44,27 +44,44 @@ spec:
                       operator: NotIn
                       values:
                         - volsync
+            # Namespace filters live under each plugin's `args`; the
+            # v1alpha2 policy ignores a `namespaces:` key next to `name:`.
+            #
+            # Agent sandboxes (apps/agent-lab) are short Jobs with a
+            # run-scoped PVC: any eviction kills the run mid-turn and wastes
+            # its budget, so every evicting plugin skips them.
             - name: RemovePodsViolatingInterPodAntiAffinity
+              args:
+                namespaces:
+                  exclude: &agent-sandboxes
+                    - agent-work
+                    - agent-verify
             - name: RemovePodsViolatingNodeAffinity
               args:
+                namespaces:
+                  exclude: *agent-sandboxes
                 nodeAffinityType:
                   - requiredDuringSchedulingIgnoredDuringExecution
             - name: RemovePodsViolatingNodeTaints
+              args:
+                namespaces:
+                  exclude: *agent-sandboxes
             - name: RemovePodsViolatingTopologySpreadConstraint
               args:
+                namespaces:
+                  exclude: *agent-sandboxes
                 constraints:
                   - DoNotSchedule
             - name: LowNodeUtilization
-              namespaces:
-                exclude:
-                  - database
-                  - media
-                  - remote
-                  # Agent sandboxes are short Jobs with a run-scoped PVC; an
-                  # eviction kills the run mid-turn and wastes its budget.
-                  - agent-work
-                  - agent-verify
               args:
+                # LowNodeUtilization takes evictableNamespaces (exclude only).
+                evictableNamespaces:
+                  exclude:
+                    - database
+                    - media
+                    - remote
+                    - agent-work
+                    - agent-verify
                 thresholds:
                   cpu: 35
                   memory: 35

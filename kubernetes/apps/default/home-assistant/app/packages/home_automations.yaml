@@ -1,0 +1,311 @@
+# Household automations, Git-managed. Notifications go to the HA companion
+# app on Robin's iPhone. Nothing here switches the rack, TV or desk plugs.
+#
+# Reload after a change: Developer tools -> YAML -> Automations (and Scenes).
+automation:
+  # ------------------------------------------------------------------ UPS --
+  # The Riello's NUT feed was dead for 2+ weeks without anyone noticing, and
+  # both UPSes carry the cluster, so be loud about them.
+  - id: ups_riello_on_battery
+    alias: "UPS: Riello on battery"
+    mode: single
+    triggers:
+      - trigger: template
+        value_template: "{{ 'OB' in states('sensor.riello_status_data').split() }}"
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: "⚡ Power cut: Riello on battery"
+          message: >-
+            Battery {{ states('sensor.riello_battery_charge') }} %,
+            about {{ states('sensor.riello_battery_runtime') | int(0) }} min left
+            at {{ states('sensor.riello_load') }} % load.
+          data:
+            push:
+              interruption-level: critical
+              sound: { name: default, critical: 1, volume: 0.6 }
+
+  - id: ups_riello_back_on_mains
+    alias: "UPS: Riello back on mains"
+    mode: single
+    triggers:
+      - trigger: template
+        value_template: "{{ 'OL' in states('sensor.riello_status_data').split() }}"
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.from_state is not none and 'OB' in (trigger.from_state.state | default('')) }}"
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: "✅ Power back"
+          message: "Riello is on mains again (battery {{ states('sensor.riello_battery_charge') }} %)."
+
+  - id: ups_riello_low_battery
+    alias: "UPS: Riello battery low"
+    mode: single
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.riello_battery_charge
+        below: 50
+    conditions:
+      - condition: template
+        value_template: "{{ 'OB' in states('sensor.riello_status_data').split() }}"
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: "🔋 Riello below 50 %"
+          message: "About {{ states('sensor.riello_battery_runtime') | int(0) }} min left. The NAS shuts down after 4 min on battery."
+          data:
+            push:
+              interruption-level: critical
+              sound: { name: default, critical: 1, volume: 0.6 }
+
+  # The UniFi UPS 2U exposes no on-battery flag; a falling charge means it is
+  # discharging.
+  - id: ups_2u_discharging
+    alias: "UPS: UPS 2U discharging"
+    mode: single
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.ups_2u_battery_level
+        below: 95
+        for: { minutes: 2 }
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: "⚡ UPS 2U discharging"
+          message: >-
+            Battery {{ states('sensor.ups_2u_battery_level') }} %, runtime
+            {{ states('sensor.ups_2u_battery_runtime') | int(0) }} min, load
+            {{ states('sensor.ups_2u_output_power') }} W.
+          data:
+            push:
+              interruption-level: time-sensitive
+
+  - id: ups_monitoring_lost
+    alias: "UPS: monitoring lost"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: [sensor.riello_status, sensor.ups_2u_battery_level]
+        to: unavailable
+        for: { minutes: 30 }
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: "UPS monitoring lost"
+          message: >-
+            {{ state_attr(trigger.entity_id, 'friendly_name') or trigger.entity_id }}
+            has been unavailable for 30 min. For the Riello, check NUT on the NAS
+            (Settings -> NUT Settings).
+
+  # --------------------------------------------------------------- Door --
+  - id: front_door_left_open
+    alias: "Door: front door left open"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.door_window_door_is_open_2
+        to: "on"
+        for: { minutes: 5 }
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: "🚪 Front door still open"
+          message: "It has been open for 5 minutes."
+          data:
+            tag: front-door-open
+      - wait_for_trigger:
+          - trigger: state
+            entity_id: binary_sensor.door_window_door_is_open_2
+            to: "off"
+        timeout: { hours: 2 }
+      - action: notify.mobile_app_robins_iphone
+        data:
+          message: clear_notification
+          data:
+            tag: front-door-open
+
+  # ------------------------------------------------------------- Vacuum --
+  # task_status 'completed' rather than vacuum -> docked: the L10s Ultra docks
+  # mid-clean to wash its mop.
+  - id: vacuum_finished
+    alias: "Vacuum: cleaning finished"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: sensor.dreamebot_l10s_ultra_task_status
+        to: completed
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.from_state.state not in ['unavailable', 'unknown', 'completed'] }}"
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: "🧹 Vacuum done"
+          message: "Battery {{ states('sensor.dreamebot_l10s_ultra_battery_level') }} %."
+
+  - id: vacuum_error
+    alias: "Vacuum: error"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: sensor.dreamebot_l10s_ultra_error
+        not_to: [no_error, unavailable, unknown]
+        for: { minutes: 1 }
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: "🧹 Vacuum needs help"
+          message: "{{ states('sensor.dreamebot_l10s_ultra_error') | replace('_', ' ') | capitalize }}."
+
+  # ------------------------------------------------------------ Printer --
+  - id: printer_finished
+    alias: "3D printer: print finished or failed"
+    mode: queued
+    triggers:
+      - trigger: state
+        entity_id: sensor.p1s_print_status
+        to: [finish, failed]
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.from_state.state in ['running', 'pause', 'prepare'] }}"
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: >-
+            {{ '🖨️ Print finished' if trigger.to_state.state == 'finish' else '🖨️ Print failed' }}
+          message: "The P1S is {{ 'done' if trigger.to_state.state == 'finish' else 'stopped with an error' }}."
+
+  # -------------------------------------------------------- Electricity --
+  # Tibber gives today's min / avg / max; flag the first time the price goes
+  # well above the day's average.
+  - id: electricity_price_spike
+    alias: "Electricity: price spike"
+    mode: single
+    triggers:
+      - trigger: template
+        value_template: >-
+          {% set p = states('sensor.tibber_electricity_price') | float(0) %}
+          {% set avg = state_attr('sensor.tibber_electricity_price', 'avg_price') | float(0) %}
+          {{ avg > 0 and p >= 1.0 and p >= 1.5 * avg }}
+    conditions:
+      - condition: template
+        value_template: >-
+          {% set last = state_attr('automation.electricity_price_spike', 'last_triggered') %}
+          {{ last is none or as_local(last).date() != now().date() }}
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: "💸 Expensive electricity"
+          message: >-
+            {{ states('sensor.tibber_electricity_price') }} SEK/kWh now, vs
+            {{ state_attr('sensor.tibber_electricity_price', 'avg_price') }} average today
+            (low {{ state_attr('sensor.tibber_electricity_price', 'min_price') }}).
+
+  # ------------------------------------------------------------- Air ----
+  # Boost the computer-room purifier on bad air, then put back whatever
+  # preset was set before (it is often 'sleep').
+  - id: purifier_boost_on_bad_air
+    alias: "Air: boost purifier on high PM2.5"
+    mode: single
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.office_pm2_5
+        above: 25
+        for: { minutes: 5 }
+    conditions:
+      - condition: state
+        entity_id: fan.office
+        state: "on"
+      - condition: template
+        value_template: "{{ state_attr('fan.office', 'preset_mode') != 'turbo' }}"
+    actions:
+      - action: scene.create
+        data:
+          scene_id: office_purifier_before_boost
+          snapshot_entities: [fan.office]
+      - action: fan.set_preset_mode
+        target: { entity_id: fan.office }
+        data: { preset_mode: turbo }
+      - wait_for_trigger:
+          - trigger: numeric_state
+            entity_id: sensor.office_pm2_5
+            below: 10
+            for: { minutes: 20 }
+        timeout: { hours: 3 }
+      - action: scene.turn_on
+        target: { entity_id: scene.office_purifier_before_boost }
+
+  # ------------------------------------------------------- Leaving home --
+  # Asks instead of acting: lights off and/or start the vacuum.
+  - id: leaving_home_prompt
+    alias: "Presence: leaving home prompt"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: person.robin
+        from: home
+        for: { minutes: 5 }
+    variables:
+      lights_on: >-
+        {{ ['living_room', 'kitchen', 'computer_room', 'bedroom', 'bathroom', 'hallway']
+           | map('area_entities') | sum(start=[])
+           | select('match', 'light\.')
+           | reject('is_state_attr', 'is_hue_group', true)
+           | reject('search', 'chamber_light')
+           | select('is_state', 'on') | list | count }}
+      vacuum_docked: "{{ is_state('vacuum.dreamebot_l10s_ultra', 'docked') }}"
+    conditions:
+      - condition: template
+        value_template: "{{ lights_on | int > 0 or vacuum_docked }}"
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: "🏠 You left home"
+          message: >-
+            {{ lights_on }} light{{ '' if lights_on | int == 1 else 's' }} still on.
+            {{ 'Vacuum is docked.' if vacuum_docked else '' }}
+          data:
+            tag: leaving-home
+            actions:
+              - action: LEAVE_LIGHTS_OFF
+                title: Turn off lights
+              - action: LEAVE_START_VACUUM
+                title: Start vacuum
+              - action: LEAVE_BOTH
+                title: Both
+
+  - id: leaving_home_actions
+    alias: "Presence: leaving home actions"
+    mode: queued
+    triggers:
+      - trigger: event
+        event_type: mobile_app_notification_action
+        event_data: { action: LEAVE_LIGHTS_OFF }
+        id: lights
+      - trigger: event
+        event_type: mobile_app_notification_action
+        event_data: { action: LEAVE_START_VACUUM }
+        id: vacuum
+      - trigger: event
+        event_type: mobile_app_notification_action
+        event_data: { action: LEAVE_BOTH }
+        id: both
+    actions:
+      - if:
+          - condition: trigger
+            id: [lights, both]
+        then:
+          - action: light.turn_off
+            target:
+              area_id: [living_room, kitchen, computer_room, bedroom, bathroom, hallway]
+      - if:
+          - condition: trigger
+            id: [vacuum, both]
+          - condition: state
+            entity_id: vacuum.dreamebot_l10s_ultra
+            state: docked
+        then:
+          - action: vacuum.start
+            target: { entity_id: vacuum.dreamebot_l10s_ultra }

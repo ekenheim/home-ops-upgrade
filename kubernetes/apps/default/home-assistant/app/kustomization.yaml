@@ -18,6 +18,7 @@ configMapGenerator:
   - name: home-assistant-packages
     files:
       - apple_health.yaml=./packages/apple_health.yaml
+      - home_automations.yaml=./packages/home_automations.yaml
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

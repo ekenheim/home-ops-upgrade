@@ -835,6 +835,7 @@ views:
                       tap_action:
                         action: call-service
                         service: scene.turn_on
+                        target: { entity_id: scene.bedroom_nightlight }
 
           # Bathroom
           - type: custom:bubble-card
@@ -1072,6 +1073,7 @@ views:
             forecast_type: daily
             show_current: true
             show_forecast: true
+          - type: tile
             entity: sensor.sun_next_rising
             name: Sunrise
             grid_options: { columns: 6 }

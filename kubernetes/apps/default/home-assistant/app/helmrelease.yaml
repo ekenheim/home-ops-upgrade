@@ -127,3 +127,9 @@ spec:
         globalMounts:
           - path: /config/dashboards
             readOnly: true
+      packages:
+        type: configMap
+        name: home-assistant-packages
+        globalMounts:
+          - path: /config/packages
+            readOnly: true

@@ -1,0 +1,142 @@
+# Apple Health (Apple Watch) -> Home Assistant, without third-party apps.
+#
+# An iOS Shortcut (personal automation, runs when Sleep Focus turns off) reads
+# Health samples and runs the Home Assistant companion app's "Fire Event"
+# action with event type `apple_health_daily` and a dictionary of numbers:
+#
+#   resting_hr, hrv, walking_hr, vo2max, respiratory_rate     (latest values)
+#   sleep_asleep_min, sleep_deep_min, sleep_rem_min,
+#   sleep_core_min, sleep_awake_min                           (last night)
+#   active_kcal, exercise_min, stand_hours, steps             (yesterday)
+#
+# Any key may be missing; that sensor then keeps its previous value. Values
+# may arrive as text with a Swedish decimal comma, so they are normalised.
+# state_class: measurement gives long-term statistics for the Health view.
+template:
+  - triggers:
+      - trigger: event
+        event_type: apple_health_daily
+    sensor:
+      - name: Apple Health resting heart rate
+        unique_id: apple_health_resting_heart_rate
+        unit_of_measurement: bpm
+        state_class: measurement
+        icon: mdi:heart-pulse
+        state: >-
+          {% set v = trigger.event.data.get('resting_hr') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health heart rate variability
+        unique_id: apple_health_heart_rate_variability
+        unit_of_measurement: ms
+        state_class: measurement
+        icon: mdi:heart-flash
+        state: >-
+          {% set v = trigger.event.data.get('hrv') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health walking heart rate
+        unique_id: apple_health_walking_heart_rate
+        unit_of_measurement: bpm
+        state_class: measurement
+        icon: mdi:walk
+        state: >-
+          {% set v = trigger.event.data.get('walking_hr') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health VO2 max
+        unique_id: apple_health_vo2_max
+        unit_of_measurement: mL/kg/min
+        state_class: measurement
+        icon: mdi:lungs
+        state: >-
+          {% set v = trigger.event.data.get('vo2max') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health respiratory rate
+        unique_id: apple_health_respiratory_rate
+        unit_of_measurement: breaths/min
+        state_class: measurement
+        icon: mdi:weather-windy
+        state: >-
+          {% set v = trigger.event.data.get('respiratory_rate') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health sleep
+        unique_id: apple_health_sleep_asleep
+        unit_of_measurement: min
+        device_class: duration
+        state_class: measurement
+        icon: mdi:sleep
+        state: >-
+          {% set v = trigger.event.data.get('sleep_asleep_min') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health deep sleep
+        unique_id: apple_health_sleep_deep
+        unit_of_measurement: min
+        device_class: duration
+        state_class: measurement
+        icon: mdi:power-sleep
+        state: >-
+          {% set v = trigger.event.data.get('sleep_deep_min') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health REM sleep
+        unique_id: apple_health_sleep_rem
+        unit_of_measurement: min
+        device_class: duration
+        state_class: measurement
+        icon: mdi:eye-outline
+        state: >-
+          {% set v = trigger.event.data.get('sleep_rem_min') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health core sleep
+        unique_id: apple_health_sleep_core
+        unit_of_measurement: min
+        device_class: duration
+        state_class: measurement
+        icon: mdi:bed
+        state: >-
+          {% set v = trigger.event.data.get('sleep_core_min') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health awake time
+        unique_id: apple_health_sleep_awake
+        unit_of_measurement: min
+        device_class: duration
+        state_class: measurement
+        icon: mdi:eye
+        state: >-
+          {% set v = trigger.event.data.get('sleep_awake_min') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health active energy
+        unique_id: apple_health_active_energy
+        unit_of_measurement: kcal
+        state_class: measurement
+        icon: mdi:fire
+        state: >-
+          {% set v = trigger.event.data.get('active_kcal') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health exercise minutes
+        unique_id: apple_health_exercise_minutes
+        unit_of_measurement: min
+        device_class: duration
+        state_class: measurement
+        icon: mdi:run-fast
+        state: >-
+          {% set v = trigger.event.data.get('exercise_min') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health stand hours
+        unique_id: apple_health_stand_hours
+        unit_of_measurement: h
+        state_class: measurement
+        icon: mdi:human-handsup
+        state: >-
+          {% set v = trigger.event.data.get('stand_hours') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health steps
+        unique_id: apple_health_steps
+        unit_of_measurement: steps
+        state_class: measurement
+        icon: mdi:shoe-print
+        state: >-
+          {% set v = trigger.event.data.get('steps') %}
+          {{ v | string | replace(',', '.') | float(this.state) if v is not none else this.state }}
+      - name: Apple Health last sync
+        unique_id: apple_health_last_sync
+        device_class: timestamp
+        icon: mdi:cellphone-arrow-down
+        state: "{{ now().isoformat() }}"

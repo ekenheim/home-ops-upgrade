@@ -12,10 +12,17 @@ configMapGenerator:
   - name: home-assistant-dashboards
     files:
       - home.yaml=./dashboards/home.yaml
+  # HA packages (included from configuration.yaml via
+  # homeassistant.packages: !include_dir_named packages). Changes need
+  # Developer tools -> YAML -> reload (or a restart), not a pod bounce.
+  - name: home-assistant-packages
+    files:
+      - apple_health.yaml=./packages/apple_health.yaml
 generatorOptions:
   disableNameSuffixHash: true
   annotations:
-    # Dashboard YAML is reloaded by HA on mtime; don't restart the pod on edits.
+    # Dashboards reload on mtime and packages via a YAML reload; don't restart
+    # the pod on edits.
     reloader.stakater.com/ignore: "true"
     # Keeps Flux from touching ${...} that card templates may contain.
     kustomize.toolkit.fluxcd.io/substitute: disabled

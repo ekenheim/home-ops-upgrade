@@ -1,0 +1,134 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# Same policy set as agent-work.yaml, deliberately identical: the verifier
+# clones the worker's branch (stage, needs GitHub), installs and runs its
+# tests (exec, runs agent-written code) and asks a reviewer agent (worker,
+# needs the gateway). It is exactly as untrusted. Keep the two files in sync.
+#
+# Pod label contract (set by the orchestrator on every Job it creates):
+#   app.kubernetes.io/component: worker | exec   untrusted, no Secrets
+#   app.kubernetes.io/component: tools           stage/collect, holds the PAT
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: agent-verify-baseline
+  namespace: agent-verify
+spec:
+  endpointSelector: {}
+  enableDefaultDeny:
+    egress: true
+    ingress: true
+  # Nothing ever connects INTO a sandbox. The empty rule turns on ingress
+  # enforcement without admitting any peer (Cilium's documented deny-all).
+  ingress:
+    - {}
+  egress:
+    # DNS, through Cilium's DNS proxy so the toFQDNs rules below (and in
+    # agent-verify-tools) can learn which IPs a name resolved to. Without the
+    # `dns` rule the FQDN allow list never matches anything.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    # The only way to an LLM: agent-egress in agent-control injects the real
+    # LiteLLM key, so workers carry a dummy one. With kube-proxy replacement
+    # the policy sees the backend pod and port, i.e. Envoy's 10080 behind the
+    # Service's 80; both are listed so either view matches.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: agent-control
+            gateway.envoyproxy.io/owning-gateway-name: agent-egress
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "10080"
+              protocol: TCP
+    # Package registries for the install and test steps, and Context7 for
+    # the base image's `docs` script.
+    - toFQDNs:
+        - matchName: registry.npmjs.org
+        - matchName: registry.yarnpkg.com
+        - matchName: pypi.org
+        - matchName: files.pythonhosted.org
+        - matchName: context7.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# stage (clone) and collect (commit + push) are the only pods that talk to
+# GitHub, and the only ones that mount agent-factory-github. Workers never
+# reach github.com, so a prompt-injected agent has nowhere to push to and no
+# token to push with.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: agent-verify-tools
+  namespace: agent-verify
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/component: tools
+  egress:
+    - toFQDNs:
+        - matchName: github.com
+        - matchName: api.github.com
+        - matchName: codeload.github.com
+        - matchName: objects.githubusercontent.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# Belt and braces for everything that runs agent-written code. The allow list
+# above already drops all of this; an explicit deny keeps it dropped if a
+# later allow rule is written too wide (deny always wins in Cilium).
+#
+# Selected by NotIn [tools] rather than In [worker, exec], so a pod the
+# orchestrator forgets to label is treated as untrusted. tools is left out
+# because collect will need rook-ceph's RGW for the buckets in phase 2.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: agent-verify-untrusted-deny
+  namespace: agent-verify
+spec:
+  endpointSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/component
+        operator: NotIn
+        values: ["tools"]
+  enableDefaultDeny:
+    egress: true
+    ingress: true
+  egressDeny:
+    # Storage, the LLM stack (LiteLLM directly, bypassing the gateway's key
+    # and budget), the ML stack and the databases.
+    - toEndpoints:
+        - matchExpressions:
+            - key: k8s:io.kubernetes.pod.namespace
+              operator: In
+              values: ["rook-ceph", "storage", "llm", "datasci", "database"]
+    # Nodes (kubelet, Talos apid, hostNetwork pods) and the API server. The
+    # pods carry no ServiceAccount token, but there is no reason to let them
+    # probe either.
+    - toEntities:
+        - host
+        - remote-node
+        - kube-apiserver
+    # The home LAN: NAS, router, IoT. Pod and Service traffic is matched by
+    # identity, never by these CIDRs, so the gateway path is unaffected.
+    - toCIDRSet:
+        - cidr: 192.168.0.0/16

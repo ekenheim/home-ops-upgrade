@@ -1,0 +1,73 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/v1/limitrange.json
+# Defaults for every container the orchestrator creates without resources,
+# and a hard per-container ceiling. The quota below needs requests on every
+# pod, which these defaults guarantee.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: agent-sandbox
+  namespace: agent-work
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 500m
+        memory: 1Gi
+      default:
+        cpu: "2"
+        memory: 4Gi
+      max:
+        cpu: "4"
+        memory: 8Gi
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/v1/limitrange.json
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: agent-sandbox
+  namespace: agent-verify
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 500m
+        memory: 1Gi
+      default:
+        cpu: "2"
+        memory: 4Gi
+      max:
+        cpu: "4"
+        memory: 8Gi
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/v1/resourcequota.json
+# Caps a runaway orchestrator: FACTORY_CONCURRENCY=5 workers at the default
+# request use 2.5 CPU / 5Gi, so this leaves room for stage/exec/collect Jobs
+# alongside without letting the lab starve the cluster. PVC caps catch
+# workspaces the orchestrator forgets to delete.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: agent-sandbox
+  namespace: agent-work
+spec:
+  hard:
+    requests.cpu: "16"
+    requests.memory: 40Gi
+    pods: "40"
+    persistentvolumeclaims: "20"
+    requests.storage: 200Gi
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/v1/resourcequota.json
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: agent-sandbox
+  namespace: agent-verify
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    pods: "20"
+    persistentvolumeclaims: "10"
+    requests.storage: 100Gi

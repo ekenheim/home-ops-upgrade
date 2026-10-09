@@ -1,0 +1,36 @@
+---
+# Trusted control plane: the orchestrator CronJob, its ledger and GitHub
+# credentials, and the agent-egress Envoy proxy that holds the LiteLLM key.
+# `baseline` rather than `restricted` only because envoy-gateway owns the
+# proxy pod spec; warn/audit at `restricted` keep drift visible.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agent-control
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/audit: restricted
+---
+# Untrusted: OpenCode workers, the exec Jobs that run the code they write, and
+# the stage/collect Jobs around them. No volsync: nothing here outlives a run.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agent-work
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/audit: restricted
+---
+# Verifier / scorer: re-clones a worker's branch, runs the tests and a reviewer
+# agent. Kept apart from agent-work so a worker cannot read or tamper with the
+# holdout tests (phase 2: the agent-holdout bucket is claimed here).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agent-verify
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/audit: restricted

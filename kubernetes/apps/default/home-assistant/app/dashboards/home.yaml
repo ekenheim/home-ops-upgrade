@@ -58,11 +58,11 @@ views:
               - type: conditional
                 conditions:
                   - condition: state
-                    entity: binary_sensor.door_window_door_is_open_2
+                    entity: binary_sensor.door_open
                     state: "on"
                 chip:
                   type: entity
-                  entity: binary_sensor.door_window_door_is_open_2
+                  entity: binary_sensor.door_open
                   name: Door open
                   icon_color: red
                   content_info: name
@@ -225,7 +225,7 @@ views:
                     - entity: sensor.hallway_temperature
                       show_state: true
                       show_background: false
-                    - entity: binary_sensor.door_window_door_is_open_2
+                    - entity: binary_sensor.door_open
                       show_background: false
 
       - type: grid
@@ -1087,7 +1087,7 @@ views:
             sub_button:
               - entity: sensor.hallway_temperature
                 show_state: true
-              - entity: binary_sensor.door_window_door_is_open_2
+              - entity: binary_sensor.door_open
                 show_state: true
             cards:
               - type: custom:bubble-card
@@ -1326,7 +1326,7 @@ views:
                 name: Bathroom
               - entity: binary_sensor.hallway_motion
                 name: Hallway
-              - entity: binary_sensor.door_window_door_is_open_2
+              - entity: binary_sensor.door_open
                 name: Front door
 
   # -------------------------------------------------------------- Energy ----

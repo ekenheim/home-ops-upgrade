@@ -1,0 +1,21 @@
+---
+# The repo registry the orchestrator reads at the start of each run
+# (FACTORY_REPOS_FILE in cronjob.yaml). An edit takes effect on the next run.
+#
+# - tinylinks: the build-track benchmark copy, disabled while the analysis
+#   track is first tried, so a manual run spends nothing on it.
+# - factory-analysis-demo: the first analytics repository (Palmer penguins,
+#   CC0). It is worked only because FACTORY_ANALYSIS_IMAGE is set; the GitHub
+#   token must cover it (issues, comments, contents on analysis branches).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agent-factory-repos
+data:
+  repos.json: |
+    {
+      "repos": [
+        { "repo": "github.com/ekenheim/tinylinks", "kind": "build", "enabled": false },
+        { "repo": "github.com/ekenheim/factory-analysis-demo", "kind": "analytics" }
+      ]
+    }

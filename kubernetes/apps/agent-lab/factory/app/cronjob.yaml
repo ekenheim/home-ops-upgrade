@@ -63,11 +63,11 @@ spec:
             - name: orchestrator
               image: ghcr.io/ekenheim/agent-factory:v0.2.0@sha256:a5a6a96247fae691d5dab231adb02eddab3ed693eb58499e8fce1be8e15c7a13
               env:
-                # Target repository (owner/name form, `github.com/` prefixed,
-                # as the upstream run.ts expects). Phase 1 points at a copy
-                # of agent-factory's demo-repo/tinylinks benchmark.
-                - name: FACTORY_REPO
-                  value: github.com/ekenheim/tinylinks
+                # The repositories to work, from the agent-factory-repos
+                # ConfigMap (configmap-repos.yaml). Replaces FACTORY_REPO:
+                # setting both fails the run.
+                - name: FACTORY_REPOS_FILE
+                  value: /etc/agent-factory/repos.json
                 # The agent-egress Service (pinned name, see
                 # egress-gateway/app/envoyproxy.yaml). Workers get this URL
                 # with a dummy key; the gateway injects the real one.
@@ -84,11 +84,9 @@ spec:
                 # The analysis track's image (Python, marimo, PyMC) for the
                 # exec and worker Jobs of `analytics` repositories. It only
                 # takes effect for analytics repositories enabled in the repo
-                # registry (FACTORY_REPOS_FILE). With FACTORY_REPO, as here,
-                # the registry is a single `build` entry, so nothing reads it
-                # and no Job uses it. Before enabling an analytics entry: make
-                # the package public like the others, and widen the GitHub
-                # token to that repository.
+                # registry (configmap-repos.yaml). The package is public like
+                # the others; the GitHub token must cover every enabled
+                # analytics repository.
                 - name: FACTORY_ANALYSIS_IMAGE
                   value: ghcr.io/ekenheim/agent-factory-analysis:v0.2.0@sha256:c6b66918d594bbeb42852bd9542c487ad51b646629ef8698bb3983ffc87fd88a
                 # Empty on purpose: the orchestrator defaults to `ghcr-pull`,
@@ -160,7 +158,13 @@ spec:
               volumeMounts:
                 - name: tmp
                   mountPath: /tmp
+                - name: repos
+                  mountPath: /etc/agent-factory
+                  readOnly: true
           volumes:
             - name: tmp
               emptyDir:
                 sizeLimit: 1Gi
+            - name: repos
+              configMap:
+                name: agent-factory-repos

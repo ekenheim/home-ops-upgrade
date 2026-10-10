@@ -11,10 +11,13 @@
 # (target repo, public images, dedicated GitHub token, orchestrator contract,
 # network checks) before triggering a manual run or unsuspending.
 #
-# The images are pulled anonymously: the three ghcr.io/ekenheim/agent-factory*
+# The images are pulled anonymously: the ghcr.io/ekenheim/agent-factory*
 # packages are public (GHCR does not take fine-grained PATs, and a pull
-# secret would copy a GitHub token into all three namespaces). All three are
-# pinned by digest; bump the tag and digest together, they are one release.
+# secret would copy a GitHub token into all three namespaces). All four refs
+# below (the CronJob image and the three FACTORY_*_IMAGE values) are pinned by
+# digest and are one release: bump tag and digest together, all four at once.
+# Renovate does that in one PR (.github/renovate/customManagers.json5 matches
+# the env values, groups.json5 groups the four packages).
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -58,7 +61,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: orchestrator
-              image: ghcr.io/ekenheim/agent-factory:v0.1.2@sha256:9fb4b1b3128d2c943e49a578e470a4b6a00da426c4b1d6b687cfccd85c649d15
+              image: ghcr.io/ekenheim/agent-factory:v0.2.0@sha256:a5a6a96247fae691d5dab231adb02eddab3ed693eb58499e8fce1be8e15c7a13
               env:
                 # Target repository (owner/name form, `github.com/` prefixed,
                 # as the upstream run.ts expects). Phase 1 points at a copy
@@ -75,9 +78,19 @@ spec:
                 - name: FACTORY_VERIFY_NAMESPACE
                   value: agent-verify
                 - name: FACTORY_BASE_IMAGE
-                  value: ghcr.io/ekenheim/agent-factory-base:v0.1.2@sha256:95b323c18f93a48a57280a15d9a5c13f3eb464ec89d950f80762965abcfab408
+                  value: ghcr.io/ekenheim/agent-factory-base:v0.2.0@sha256:c7957460542f2c7bb266a2840c81212c157f554418c432468716b3532c7cf2da
                 - name: FACTORY_TOOLS_IMAGE
-                  value: ghcr.io/ekenheim/agent-factory-tools:v0.1.2@sha256:2458a2740975400698d1e2da7bd97e0ee501b204967dd3cdf4579862665660bd
+                  value: ghcr.io/ekenheim/agent-factory-tools:v0.2.0@sha256:58aeac652b8c7b0dd83ce1b01918f1d4960a7230dfa1183551219f420a36ea87
+                # The analysis track's image (Python, marimo, PyMC) for the
+                # exec and worker Jobs of `analytics` repositories. It only
+                # takes effect for analytics repositories enabled in the repo
+                # registry (FACTORY_REPOS_FILE). With FACTORY_REPO, as here,
+                # the registry is a single `build` entry, so nothing reads it
+                # and no Job uses it. Before enabling an analytics entry: make
+                # the package public like the others, and widen the GitHub
+                # token to that repository.
+                - name: FACTORY_ANALYSIS_IMAGE
+                  value: ghcr.io/ekenheim/agent-factory-analysis:v0.2.0@sha256:c6b66918d594bbeb42852bd9542c487ad51b646629ef8698bb3983ffc87fd88a
                 # Empty on purpose: the orchestrator defaults to `ghcr-pull`,
                 # which does not exist here (public images, see above), and an
                 # empty name makes it omit imagePullSecrets from the Jobs.

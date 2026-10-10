@@ -26,6 +26,22 @@
       "datasourceTemplate": "{{#if datasource}}{{{datasource}}}{{else}}github-releases{{/if}}"
     },
     {
+      // agent-factory passes its sandbox images to the orchestrator as env
+      // values, which the kubernetes manager does not read (it only reads
+      // `image:`). A `# renovate:` annotation would not do either: the
+      // manager above would take the whole ref as currentValue. This one
+      // splits it, so tag and digest move together with the CronJob image
+      // (groups.json5 puts all four in one PR):
+      // value: ghcr.io/ekenheim/agent-factory-base:v0.2.0@sha256:<64 hex>
+      "customType": "regex",
+      "description": ["agent-factory sandbox images in the orchestrator's env"],
+      "fileMatch": ["(^|/)kubernetes/apps/agent-lab/.+\\.ya?ml$"],
+      "matchStrings": [
+        "value:\\s*[\"']?(?<depName>ghcr\\.io/ekenheim/agent-factory-[a-z]+):(?<currentValue>[^\\s@\"']+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
       "customType": "regex",
       "description": ["Bump README shields.io static badges annotated with renovate comments"],
       "fileMatch": ["(^|/)README\\.md$"],

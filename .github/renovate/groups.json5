@@ -11,6 +11,25 @@
       }
     },
     {
+      // One release, four images: the orchestrator (CronJob image) and the
+      // sandbox images it is told about in its env (customManagers.json5).
+      // The orchestrator relies on its own release's stage.sh and run-agent
+      // (v0.2.0: FACTORY_FETCH_PREFIX, the read-only reviewer), so the four
+      // only ever move together.
+      "description": ["Agent Factory Group"],
+      "groupName": "Agent Factory",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "ghcr.io/ekenheim/agent-factory",
+        "ghcr.io/ekenheim/agent-factory-base",
+        "ghcr.io/ekenheim/agent-factory-tools",
+        "ghcr.io/ekenheim/agent-factory-analysis"
+      ],
+      "group": {
+        "commitMessageTopic": "{{{groupName}}} group"
+      }
+    },
+    {
       "description": ["Cert-Manager Group"],
       "groupName": "Cert-Manager",
       "matchDatasources": ["docker"],

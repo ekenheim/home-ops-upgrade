@@ -22,21 +22,10 @@ spec:
     remediation:
       retries: 3
   values:
-    defaultPodOptions:
-      # Keep the proxy off master1. Its worn SATA SSD stalls etcd and the
-      # node flaps NotReady (2026-09-16 10:40 UTC, five link resets in an
-      # hour); every LLM caller in the cluster lost LiteLLM for those three
-      # minutes. Nothing pins the proxy to a control-plane node, so simply
-      # exclude the sick one. Drop this once master1's disk is replaced
-      # (see kubernetes/bootstrap/talos/talconfig.yaml notes on master1).
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values: ["master1"]
+    # No node affinity any more. A NotIn master1 rule kept the proxy off the
+    # node whose worn SSD stalled etcd (2026-09-16); that board burnt out on
+    # 2026-10-01 and its replacement arrives with a new disk, so the rule
+    # would only have excluded a healthy node.
     controllers:
       litellm:
         annotations:
@@ -65,9 +54,16 @@ spec:
               LITELLM_LOG: INFO
               LITELLM_MODE: PRODUCTION
               TZ: "${TIMEZONE}"
-              # Lets the admin UI add/edit models at runtime and persist them
-              # alongside the ones declared in config.yaml.
-              STORE_MODEL_IN_DB: "True"
+              # Models are declared in config.yaml ONLY (2026-10-11, #7441).
+              # "True" let the admin UI add models that bypassed Git, which is
+              # how two Ollama routes to the main PC drifted in; the last DB
+              # models were deleted through the API that day and the operator's
+              # llmkube autoRegister is off. "False" also stops the proxy
+              # polling the DB model table and makes the UI-saved
+              # `store_model_in_db: true` row in LiteLLM_Config inert (it is
+              # only read when this is true). Keys and teams are unaffected:
+              # they are DB-native regardless of this flag.
+              STORE_MODEL_IN_DB: "False"
               # Payloads written to LiteLLM_SpendLogs are truncated head+tail
               # by default, which shows up as a "litellm_truncated skipped N
               # chars" marker mid-string in the UI. Only the DB copy is cut,

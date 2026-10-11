@@ -768,8 +768,16 @@ data:
       # just the bodies; key and team spend totals live on their own tables and
       # are unaffected. Postgres reuses the freed space but does not shrink the
       # file until a VACUUM FULL.
+      #
+      # The cleanup runs on a CRON, not the `_retention_interval` setting. The
+      # interval is an APScheduler IntervalTrigger whose first fire is start +
+      # interval, and this pod restarts on every ConfigMap change (reloader),
+      # five times on 2026-10-11 alone -- so a 24h interval never fired once:
+      # 26.6k rows older than 30 days were still there that evening. A cron
+      # fires at wall-clock time whenever the pod happens to be up. One run is
+      # bounded (1000 rows x 500 batches, 300 s), enough for a day's worth.
       maximum_spend_logs_retention_period: "30d"
-      maximum_spend_logs_retention_interval: "24h"
+      maximum_spend_logs_cleanup_cron: "30 3 * * *"
 
     router_settings:
       enable_pre_call_checks: true
@@ -818,10 +826,14 @@ data:
       # hermes' watchdog fired at 900s mid-retry and killed a PyMC Teacher run
       # 2h42m in (2026-08-19). Change either value and re-check that pairing.
       #
-      # 1800 per attempt is sized for the slowest real request: `deep`
-      # (Qwen3.8-27B dense, ~8-9 t/s) answering with a long reasoning block on
-      # top of prompt processing for a six-figure context. streaming.enabled is
-      # false in hermes, so nothing comes back until the whole answer is done.
+      # 1800 per attempt was sized for `deep` (Qwen3.8-27B dense, ~8-9 t/s)
+      # answering with a long reasoning block on top of prompt processing for a
+      # six-figure context. `deep` went on 2026-10-11 and every local alias is
+      # now the faster Flash-Next, but the value stays: hermes' watchdog is
+      # tuned to the 3600 s product, streaming.enabled is false there so
+      # nothing comes back until the whole answer is done, and a `self-hosted`
+      # call on medium reasoning over a large context still runs for many
+      # minutes.
       #
       # num_retries dropped 2 -> 1 deliberately. Retries earn their keep against
       # the fast connection-error class (worker4 rebooting mid-call, which is

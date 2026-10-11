@@ -15,6 +15,11 @@
 # A hosted alias for reviews only (chatgpt, the one cloud plan with headroom;
 # MiniMax's was exhausted 2026-10-09, and Kimi / Z.AI are not bought) goes on
 # this list if local still misses the review deadline.
+#
+# factory-fast, factory-agent and factory-review (2026-10-11) are what the
+# CronJob now asks for: the owner's RTX 5090 first, then hosted rungs (see
+# their block in ../app/configmap.yaml). The `coding` team lists them too, or
+# LiteLLM rejects this key. The older names stay.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMVirtualKey
 metadata:
@@ -32,6 +37,9 @@ spec:
     - fast
     - self-hosted
     - qwen3-embedding-0.6b
+    - factory-fast
+    - factory-agent
+    - factory-review
   maxBudget: "10"
   budgetDuration: 1d
   maxParallelRequests: 8

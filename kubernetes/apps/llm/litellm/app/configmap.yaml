@@ -608,6 +608,181 @@ data:
             reasoning_effort: medium
           order: 3
 
+      # --- factory-fast / factory-agent / factory-review: agent-factory, 5090 first ---
+      # The agent-lab software factory (apps/agent-lab/factory) asks only for
+      # these three names. The owner asked for the 5090 first (2026-10-11), so
+      # order 1 of each is qwen3.8 27B on Ollama on the owner's main PC -- the
+      # same Ollama as pc/* and hindsight-consolidation's order 2 -- and the
+      # later orders are the hosted rungs the factory used before:
+      #   factory-fast    triage (single non-streaming calls with no max_tokens
+      #                   that want the JSON alone) and OpenCode's small_model.
+      #                   PC with thinking off, then a copy of `fast`.
+      #   factory-agent   the OpenCode worker: streams and calls tools. PC with
+      #                   thinking on, then implementation-pool's rungs.
+      #   factory-review  the read-only reviewer and the analysis verifier. PC,
+      #                   then reasoning-pool's rungs. No "gpt-" in the name on
+      #                   purpose: agent-factory refuses a review model whose
+      #                   name has one (unless it also has gpt-4 or oss), since
+      #                   OpenCode would then give the reviewer apply_patch.
+      # The hosted rungs are copied verbatim, params and windows included; keep
+      # them in step with the pools above when those change.
+      #
+      # Unlike pc/*, these ARE production paths, so the PC must be able to
+      # disappear. A PC that is off fails its rung with a connection error, and
+      # `order:` moves the call to order 2 (no `fallbacks:` entry needed). A
+      # prompt over the tag's 64k window never reaches the PC: max_input_tokens
+      # 65536 makes enable_pre_call_checks skip that rung and route to order 2.
+      # Ollama would otherwise truncate the prompt silently to num_ctx, which
+      # the qwen3.8:ctx64k tag bakes in at 65536.
+      #
+      # `litellm_provider: ollama_chat` in the PC rungs' model_info is
+      # load-bearing for that skip, on litellm v1.105.0. Without it the router
+      # registers the window under the bare tag with provider `ollama`, the
+      # lookup for an ollama_chat/ deployment rejects the provider mismatch
+      # (ModelNotMappedError, logged by _pre_call_checks), and the deployment
+      # is kept: in one long-lived router, as here, an 80k-token prompt went to
+      # the PC rung every time. With it, the same prompt went to order 2 and a
+      # short one to the PC. Tested 2026-10-11 against litellm==1.105.0 with
+      # this pool shape and a stub Ollama, including a refused connection
+      # standing in for a PC that is off.
+      #
+      # THINKING OFF on factory-fast is Ollama's own top-level `think: false`,
+      # set in litellm_params. litellm passes it through: ollama_chat/ is not an
+      # OpenAI-compatible provider, so an unknown param lands in optional_params
+      # (add_provider_specific_params_to_optional_params, utils.py), and
+      # OllamaChatConfig.transform_request pops `think` into the /api/chat body
+      # (llms/ollama/chat/transformation.py at v1.105.0). Not `fast`'s
+      # chat_template_kwargs.enable_thinking: that is a llama.cpp template
+      # switch, and on this provider an unknown param ends up in the body's
+      # `options`, which is not where Ollama reads think. Capturing the body
+      # litellm sends: `extra_body: {think: false}` and `reasoning_effort: none`
+      # also arrive as top-level think=false, but a caller's own
+      # reasoning_effort replaces the latter; `think: false` held even against a
+      # caller's reasoning_effort: high.
+      # Live through litellm 1.105.0 to this Ollama on 2026-10-11, the same
+      # triage-style JSON prompt with no max_tokens: think false -> 13
+      # completion tokens, no reasoning_content, content the JSON alone; no
+      # think -> 133 tokens, 479 characters of reasoning. A streamed tool call
+      # on the thinking rung came back as a proper tool_calls delta.
+      #
+      # Timeouts: 600 s on the agent and review rungs, as on pc/* (swapping a
+      # 24 GB model into VRAM takes a while, and a long tool turn with thinking
+      # on is slow). 180 s on factory-fast: triage gives a whole call 600 s
+      # (FACTORY_TRIAGE_TIMEOUT_S), and with num_retries 1 a stuck PC costs
+      # 2 x 180 s before `fast` gets its turn. Ollama on the PC runs with its
+      # default parallelism (no OLLAMA_NUM_PARALLEL set), so the factory's
+      # lanes queue there, and time spent queued counts against the timeout.
+      #
+      # Public code only (the `coding` team), so the hosted floors are allowed.
+      # Same DHCP lease as pc/*. A different tag on the PC means editing the
+      # model and max_input_tokens on all three PC rungs.
+      - model_name: factory-fast
+        model_info:
+          mode: chat
+          max_input_tokens: 65536
+          litellm_provider: ollama_chat
+          supports_function_calling: true
+        litellm_params:
+          model: ollama_chat/qwen3.8:ctx64k
+          api_base: http://192.168.1.182:11434
+          think: false
+          timeout: 180
+          order: 1
+      - model_name: factory-fast
+        model_info:
+          mode: chat
+          supports_function_calling: true
+          supports_vision: true
+          max_input_tokens: 262144
+        litellm_params:
+          <<: *worker4
+          chat_template_kwargs:
+            enable_thinking: false
+          order: 2
+      - model_name: factory-agent
+        model_info:
+          mode: chat
+          max_input_tokens: 65536
+          litellm_provider: ollama_chat
+          supports_function_calling: true
+        litellm_params:
+          model: ollama_chat/qwen3.8:ctx64k
+          api_base: http://192.168.1.182:11434
+          timeout: 600
+          order: 1
+      - model_name: factory-agent
+        model_info:
+          mode: chat
+          max_input_tokens: 204800
+          supports_function_calling: true
+        litellm_params:
+          model: openai/MiniMax-M2.7
+          api_base: https://api.minimax.io/v1
+          api_key: os.environ/MINIMAX_API_KEY
+          order: 2
+      - model_name: factory-agent
+        model_info:
+          mode: chat
+          max_input_tokens: 204800
+          supports_function_calling: true
+        litellm_params:
+          model: chatgpt/gpt-5.6-luna
+          additional_drop_params: [temperature]
+          order: 3
+      - model_name: factory-agent
+        model_info:
+          mode: chat
+          max_input_tokens: 204800
+          supports_function_calling: true
+        litellm_params:
+          <<: *worker4
+          chat_template_kwargs:
+            reasoning_effort: medium
+          order: 4
+      - model_name: factory-review
+        model_info:
+          mode: chat
+          max_input_tokens: 65536
+          litellm_provider: ollama_chat
+          supports_function_calling: true
+        litellm_params:
+          model: ollama_chat/qwen3.8:ctx64k
+          api_base: http://192.168.1.182:11434
+          timeout: 600
+          order: 1
+      - model_name: factory-review
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          model: chatgpt/gpt-5.6-terra
+          additional_drop_params: [temperature]
+          order: 2
+      - model_name: factory-review
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          model: openai/MiniMax-M3
+          api_base: https://api.minimax.io/v1
+          api_key: os.environ/MINIMAX_API_KEY
+          order: 3
+      - model_name: factory-review
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          <<: *worker4
+          chat_template_kwargs:
+            reasoning_effort: medium
+          order: 4
+
       # --- local-pool / local-pool-chat: worker4 first ---
       # Same worker4 server behind two doors, like self-hosted/fast: the bare
       # name thinks, -chat does not. Unlike self-hosted, these fall back to
@@ -796,7 +971,8 @@ data:
         # Reorder here to change HA's provider; HA itself is untouched.
         - home-assistant: ["chatgpt"]
         # hindsight-consolidation needs no entry: its two rungs (MiniMax-M3, then
-        # the 5090) fail over by `order:`.
+        # the 5090) fail over by `order:`. Nor do factory-fast, factory-agent and
+        # factory-review: the 5090 first, then their hosted rungs, by `order:`.
 
     litellm_settings:
       drop_params: true

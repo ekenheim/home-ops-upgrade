@@ -72,3 +72,21 @@ spec:
               (auth/quota -- check the upstream key or plan cap)
           labels:
             severity: warning
+        # A team over budget blocks EVERY key in it, embeddings included (see
+        # maxBudget in ../keys/teams.yaml), and the counters reset daily, so
+        # the useful warning is "a fifth left" rather than "gone". The join
+        # restricts this to teams that have a max budget at all: a team
+        # without one exports remaining=+Inf and no max metric.
+        - alert: LiteLLMTeamBudgetLow
+          expr: |-
+            litellm_remaining_team_budget_metric
+            / on (team, team_alias) litellm_team_max_budget_metric
+            < 0.2
+          for: 15m
+          annotations:
+            summary: >-
+              LiteLLM team {{ $labels.team_alias }} has
+              {{ $value | humanizePercentage }} of its budget left -- every key in it
+              blocks at zero
+          labels:
+            severity: warning

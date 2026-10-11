@@ -36,6 +36,10 @@ spec:
     authentik:
       redis:
         host: dragonfly.database.svc.cluster.local
+    # Mounted on the worker at /blueprints/mounted/secret-<name>.
+    blueprints:
+      secrets:
+        - authentik-trackinizer-oidc  # trackinizer-oidc.yaml
     server:
       autoscaling:
         enabled: true

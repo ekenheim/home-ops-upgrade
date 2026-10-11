@@ -146,14 +146,26 @@ The analysis track writes its Intents, Experiments and Findings to Trackinizer (
 "The analysis ledger"), set by `FACTORY_TRACKINIZER_URL=http://trackinizer.trackinizer.svc:8765` on the
 CronJob. It runs in its own namespace so the factory's component-keyed policies never select it. Its
 policy admits only the orchestrator's pods and the envoy-internal proxies on 8765, and lets the pod reach
-only DNS and the Postgres primary. The web UI is at `https://trackinizer.${SECRET_DOMAIN}` (LAN only, via
-`envoy-internal`). The image mounts no browser sign-in provider, so the page's Google button stays
-off; the API and `/app/` accept `Authorization: Bearer <key>`, so a browser gets in only by sending one.
+only DNS and the Postgres primary.
+
+The web UI is at `https://trackinizer.${SECRET_DOMAIN}` (LAN only, via `envoy-internal`). The image mounts
+no browser sign-in provider (its Google button stays off), so Envoy signs the browser in instead:
+
+- `trackinizer/app/securitypolicy.yaml` sends every request on the route, `/api` included, through
+  Authentik OIDC (application `trackinizer`, **authentik Admins only**).
+- `trackinizer/app/httproutefilter.yaml` then sets `Authorization: Bearer <browser key>` from the
+  Bitwarden item `trackinizer_web`, overwriting whatever the browser sent.
+- The Authentik provider, application and group binding are a blueprint in
+  `security/authentik/app/trackinizer-oidc.yaml`. Its client secret is generated in-cluster and shared
+  with Envoy through a ReferenceGrant.
+
+Sign out at `/oauth2/logout`. Scripts and tests cannot use the URL, since it now needs a browser
+session; they go through the Service or a port-forward with their own key.
 The orchestrator's key, `FACTORY_TRACKINIZER_TOKEN`, comes from the Bitwarden item
 `agent_factory_trackinizer` and is read with `optional: true`. Every ledger failure is logged and
 ignored, so a missing or broken Trackinizer never stops a run.
 
-One-time bootstrap, in order. All seven steps were done on 2026-10-11; they are kept here for a rebuild:
+One-time bootstrap, in order. Steps 1–7 were done on 2026-10-11; they are kept here for a rebuild:
 
 1. Make the GHCR package `agent-factory-trackinizer` **public**, like the other agent-factory images,
    and check that an anonymous pull of the pinned digest works.
@@ -184,7 +196,7 @@ One-time bootstrap, in order. All seven steps were done on 2026-10-11; they are 
    ```
 
    The port-forward goes through the kubelet, not the pod network, so the ingress policy does not block
-   it. `https://trackinizer.${SECRET_DOMAIN}/api/me/tokens` works too. Set `ADMIN_KEY` in the same shell
+   it. Set `ADMIN_KEY` in the same shell
    first: an empty one gets a 401 `invalid bearer token` and mints nothing. Check the result with
    `GET /api/me/tokens`, which should list an `agent-factory` key with role `writer`.
 6. Delete the `TRACKINIZER_BOOTSTRAP_ADMIN` env entry from `deployment.yaml` and merge. The pod restarts
@@ -192,6 +204,9 @@ One-time bootstrap, in order. All seven steps were done on 2026-10-11; they are 
 7. From an agent-factory checkout, run the live contract suite against the instance through the same port-forward,
    with the writer key:
    `FACTORY_TEST_TRACKINIZER_URL=http://127.0.0.1:8765 FACTORY_TEST_TRACKINIZER_TOKEN=<writer key> npx tsx --test --import ./test/setup.ts test/analysis-trackinizer.test.ts`.
+8. For the web UI, mint a key named `browser` the same way as step 5 (`"role":"writer"`), and store it in
+   the Bitwarden item `trackinizer_web` as `TRACKINIZER_WEB_TOKEN`. Until that item exists the route
+   has no key to inject and `agent-lab-trackinizer` stays not-Ready.
 
 If the admin key is lost before anything has been written, reset the empty instance as superuser and
 let the pod bootstrap again (not tested):

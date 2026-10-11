@@ -1,0 +1,106 @@
+---
+# Trackinizer's browser sign-in (agent-lab README, "Analysis ledger
+# (Trackinizer)"). The Trackinizer image mounts no sign-in provider, so
+# envoy-internal does it: a SecurityPolicy in `trackinizer` signs the browser
+# in against the application below, then injects a Trackinizer API key.
+#
+# The client secret is generated in-cluster once (refreshInterval "0"), so
+# there is nothing to create in Bitwarden for it. One Secret carries it twice:
+# rendered into the blueprint the worker mounts (blueprints.secrets in
+# helmrelease.yaml; only keys ending .yaml are applied), and as
+# `client-secret`, the key Envoy reads. Authentik and Envoy therefore always
+# hold the same value, even if a spec change regenerates it.
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: authentik-trackinizer-oidc
+spec:
+  length: 64
+  digits: 10
+  symbols: 0
+  noUpper: false
+  allowRepeat: true
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/external-secrets.io/externalsecret_v1beta1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: &name authentik-trackinizer-oidc
+spec:
+  refreshInterval: "0"
+  target:
+    name: *name
+    template:
+      engineVersion: v2
+      data:
+        client-secret: '{{ .password }}'
+        trackinizer.yaml: |
+          version: 1
+          metadata:
+            name: trackinizer
+          entries:
+            - model: authentik_providers_oauth2.oauth2provider
+              id: provider
+              identifiers:
+                name: trackinizer
+              attrs:
+                authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+                invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+                client_type: confidential
+                client_id: trackinizer
+                client_secret: '{{ .password }}'
+                redirect_uris:
+                  - matching_mode: strict
+                    url: https://trackinizer.${SECRET_DOMAIN}/oauth2/callback
+                    redirect_uri_type: authorization
+                property_mappings:
+                  - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+                  - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+                  - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+                  - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
+                signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+                access_token_validity: hours=1
+                refresh_token_validity: days=30
+            - model: authentik_core.application
+              id: app
+              identifiers:
+                slug: trackinizer
+              attrs:
+                name: Trackinizer
+                provider: !KeyOf provider
+                group: Development
+                meta_launch_url: https://trackinizer.${SECRET_DOMAIN}/
+                policy_engine_mode: any
+            # Only authentik Admins may sign in. Envoy injects one shared
+            # Trackinizer key, so whoever gets past Authentik acts as that key.
+            - model: authentik_policies.policybinding
+              identifiers:
+                order: 0
+                target: !KeyOf app
+                group: !Find [authentik_core.group, [name, authentik Admins]]
+              attrs:
+                enabled: true
+                timeout: 30
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: authentik-trackinizer-oidc
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/referencegrant_v1beta1.json
+# Lets the one SecurityPolicy in `trackinizer` read the client secret above,
+# and nothing else in that namespace.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: trackinizer-oidc-client-secret
+spec:
+  from:
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: trackinizer
+  to:
+    - group: ""
+      kind: Secret
+      name: authentik-trackinizer-oidc

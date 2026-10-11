@@ -8,3 +8,5 @@ resources:
   - ./deployment.yaml
   - ./service.yaml
   - ./httproute-internal.yaml
+  - ./httproutefilter.yaml
+  - ./securitypolicy.yaml

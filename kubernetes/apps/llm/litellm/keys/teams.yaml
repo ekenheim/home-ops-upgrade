@@ -26,6 +26,14 @@
 # with its original value (POST /key/generate with `key`, the plaintext from
 # the app's Secret), so the app and Bitwarden need no change.
 #
+# The ROLE must match what LiteLLM holds, since the operator deletes and
+# re-adds a member whose role differs. `admin` on the five teams where LiteLLM
+# added it at creation; `user` on coding/assistants, which lost it, because
+# adding a team admin through the API is Enterprise-only here (member_add 400
+# "Assigning team admins is a premium feature"). The keys in those two teams
+# have no user_id (the restored hermes/repo-wiki included), so they never
+# depended on the membership.
+#
 # maxBudget is list-price spend (the configmap's *_cost_per_token), and only
 # cloud aliases carry a cost: local models and the ChatGPT subscription are $0.
 # A team over budget blocks EVERY key in it, embeddings included, so budgets
@@ -43,7 +51,7 @@ spec:
   # See "members" in the header: never remove this entry.
   members:
     - userID: default_user_id
-      role: admin
+      role: user
   # Public code only, so the cloud plans are allowed.
   # Keys: pr-review, courier, agent-lab, opencode, zed (Git); dispatch,
   # repo-wiki (Bitwarden).
@@ -74,7 +82,7 @@ spec:
   # See "members" in the header: never remove this entry.
   members:
     - userID: default_user_id
-      role: admin
+      role: user
   # Personal agents. Keys: openclaw (Git); hermes (Bitwarden).
   models:
     - self-hosted

@@ -44,9 +44,9 @@
 # merge that changes BOTH ../app/configmap.yaml and this file, check
 #   kubectl -n llm logs deploy/litellm-operator | grep UpdateFailed
 # and if a team is listed, bump its generation with a throwaway spec change
-# (patch `alias`, then patch it back). Fix proposed upstream in
-# home-operations/litellm-operator ("retry a failed LiteLLMTeam update");
-# drop this paragraph once the chart carries it.
+# (patch `alias`, then patch it back). The one-line fix is to gate the update
+# on `ready.Status != True` as well as the generation
+# (internal/controller/litellmteam_controller.go in the operator).
 #
 # maxBudget is list-price spend (the configmap's *_cost_per_token), and only
 # cloud aliases carry a cost: local models and the ChatGPT subscription are $0.

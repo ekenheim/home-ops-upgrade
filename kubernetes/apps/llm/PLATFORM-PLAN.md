@@ -40,6 +40,9 @@ most scheduled jobs stay on Ornith (worker4), as they do on Jory's Strix box.
 The existing aliases (`self-hosted`, `fast`, `review`, `translate`,
 `chatgpt`, `qwen3-embedding-0.6b`) are unchanged, and still never fall back to a
 cloud plan. Only callers that pick a pool alias opt into the cloud.
+`chatgpt` runs gpt-5.6-luna since 2026-10-11; the flagship gpt-6-astra is
+reached only through `frontier-pool`, so everyday calls stop spending the
+subscription at flagship rate.
 
 **Private data never goes into the pools.** MiniMax, Kimi and Z.AI are
 China-based. Email, finance and home data jobs are pinned to `self-hosted` or

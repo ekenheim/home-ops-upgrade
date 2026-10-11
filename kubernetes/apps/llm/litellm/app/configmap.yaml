@@ -294,6 +294,14 @@ data:
       # `mode: responses` here is load-bearing: the router registers this
       # model_info, which makes litellm bridge chat -> /codex/responses
       # (verified: 403 without it, PONG with it). Streaming only, as above.
+      #
+      # 2026-10-11: gpt-6-astra -> gpt-5.6-luna. `chatgpt` is the everyday
+      # alias (openclaw's fallback, memini, marimo, home-assistant's fallback),
+      # and astra on it drew the shared subscription's limits down at flagship
+      # rate for small calls: list price $10 / $50 per M tokens against luna's
+      # $0.20 / $1.20. Astra stays on `frontier-pool`, which is the alias to
+      # name for a hard problem. Luna answered PONG streamed through the
+      # chatgpt/ provider before the switch.
       - model_name: chatgpt
         model_info:
           mode: responses
@@ -302,7 +310,7 @@ data:
           supports_function_calling: true
           supports_vision: true
         litellm_params:
-          model: chatgpt/gpt-6-astra
+          model: chatgpt/gpt-5.6-luna
 
       # === Cloud plans and ordered pools (kubernetes/apps/llm/PLATFORM-PLAN.md) ===
       #

@@ -89,6 +89,33 @@ spec:
                 # analytics repository.
                 - name: FACTORY_ANALYSIS_IMAGE
                   value: ghcr.io/ekenheim/agent-factory-analysis:v0.2.0@sha256:c6b66918d594bbeb42852bd9542c487ad51b646629ef8698bb3983ffc87fd88a
+                # The analysis ledger: Trackinizer in its own namespace
+                # (trackinizer/). Read only while FACTORY_ANALYSIS_IMAGE is
+                # set, so the build track never depends on it. Every ledger
+                # call that fails is logged and ignored, and the issue's stage
+                # never changes because of it.
+                - name: FACTORY_TRACKINIZER_URL
+                  value: http://trackinizer.trackinizer.svc:8765
+                # A writer-role key from the Bitwarden item
+                # `agent_factory_trackinizer` (trackinizer/app/
+                # externalsecret-token.yaml). Optional so the CronJob starts
+                # before that item exists; until then ledger calls get 401.
+                # Orchestrator only: agent-factory never copies it into a Job.
+                - name: FACTORY_TRACKINIZER_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: agent-factory-trackinizer
+                      key: token
+                      optional: true
+                # MLflow in datasci (datasci/mlflow, Service mlflow:5000) would
+                # get one run per run B, in experiment factory/<slug>. Off
+                # until the human decides factory runs belong in that MLflow.
+                # The orchestrator sends no credential, and the in-cluster
+                # Service needs none. To turn it on, uncomment this and the
+                # MLflow egress rule in network-policy/app/agent-control.yaml
+                # together.
+                # - name: FACTORY_MLFLOW_URL
+                #   value: http://mlflow.datasci.svc:5000
                 # Empty on purpose: the orchestrator defaults to `ghcr-pull`,
                 # which does not exist here (public images, see above), and an
                 # empty name makes it omit imagePullSecrets from the Jobs.

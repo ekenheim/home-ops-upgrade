@@ -15,7 +15,11 @@
       // sandbox images it is told about in its env (customManagers.json5).
       // The orchestrator relies on its own release's stage.sh and run-agent
       // (v0.2.0: FACTORY_FETCH_PREFIX, the read-only reviewer), so the four
-      // only ever move together.
+      // only ever move together. agent-factory-trackinizer is built by the
+      // same release (a Deployment `image:`, read by the kubernetes manager);
+      // it is grouped so it moves in the same PR once it is on a v* tag. Its
+      // first pin is a sha- tag, which Renovate cannot order against v*
+      // versions, so until it is switched by hand it gets no updates.
       "description": ["Agent Factory Group"],
       "groupName": "Agent Factory",
       "matchDatasources": ["docker"],
@@ -23,7 +27,8 @@
         "ghcr.io/ekenheim/agent-factory",
         "ghcr.io/ekenheim/agent-factory-base",
         "ghcr.io/ekenheim/agent-factory-tools",
-        "ghcr.io/ekenheim/agent-factory-analysis"
+        "ghcr.io/ekenheim/agent-factory-analysis",
+        "ghcr.io/ekenheim/agent-factory-trackinizer"
       ],
       "group": {
         "commitMessageTopic": "{{{groupName}}} group"

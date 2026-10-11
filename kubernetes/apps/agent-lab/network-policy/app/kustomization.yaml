@@ -6,4 +6,5 @@ resources:
   - ./agent-control.yaml
   - ./agent-work.yaml
   - ./agent-verify.yaml
+  - ./trackinizer.yaml
   - ./limits.yaml

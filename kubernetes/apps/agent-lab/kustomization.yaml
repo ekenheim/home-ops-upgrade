@@ -5,7 +5,8 @@ kind: Kustomization
 resources:
   # Pre Flux-Kustomizations
   #
-  # Three namespaces, one per trust level. See README.md for the model.
+  # Three namespaces, one per trust level, plus `trackinizer` for the
+  # analysis ledger. See README.md for the model.
   - ./namespaces.yaml
   # Flux-Kustomizations
   #
@@ -21,3 +22,4 @@ resources:
   - ./egress-gateway/ks.yaml
   - ./ledger/ks.yaml
   - ./factory/ks.yaml
+  - ./trackinizer/ks.yaml

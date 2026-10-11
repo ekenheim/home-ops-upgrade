@@ -171,8 +171,24 @@ spec:
                 secretKeyRef:
                   name: trackinizer-db-secret
                   key: uri
+            # Browser sessions: the gatewaylogin addon (addons/gatewaylogin.py,
+            # mounted from the trackinizer-addons ConfigMap) trades the
+            # gateway's `browser` key for a session cookie signed with this.
+            # Workspaces, chats and presets refuse API keys, so the web app
+            # needs a session, not just the injected key.
+            - name: TRACKINIZER_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: trackinizer-session
+                  key: TRACKINIZER_SESSION_SECRET
+            - name: TRACKINIZER_ADDONS
+              value: gatewaylogin.deployment
+            - name: PYTHONPATH
+              value: /opt/addons
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
             # Never set TRACKINIZER_NO_AUTH or pass --no-auth: every call must
-            # carry a Bearer key.
+            # carry a Bearer key or a session.
           ports:
             - name: http
               containerPort: 8765
@@ -223,7 +239,13 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: addons
+              mountPath: /opt/addons
+              readOnly: true
       volumes:
         - name: tmp
           emptyDir:
             sizeLimit: 256Mi
+        - name: addons
+          configMap:
+            name: trackinizer-addons

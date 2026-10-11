@@ -5,8 +5,15 @@ kind: Kustomization
 resources:
   - ./externalsecret-db.yaml
   - ./externalsecret-token.yaml
+  - ./externalsecret-session.yaml
   - ./deployment.yaml
   - ./service.yaml
   - ./httproute-internal.yaml
   - ./httproutefilter.yaml
   - ./securitypolicy.yaml
+configMapGenerator:
+  # Hashed name: an edit to the addon rolls the pod.
+  - name: trackinizer-addons
+    namespace: trackinizer
+    files:
+      - addons/gatewaylogin.py

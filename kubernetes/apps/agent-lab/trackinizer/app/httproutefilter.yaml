@@ -1,9 +1,10 @@
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/httproutefilter_v1alpha1.json
-# Adds the browser's Trackinizer key to every request that got past the
-# SecurityPolicy (securitypolicy.yaml), so the web app at /app/ and its /api
-# calls are authenticated. overwrite: whatever Authorization header the browser
-# sent is replaced, so the signed-in user always acts as this one key.
+# Adds the gateway's `browser` key, only on the gatewaylogin path
+# (httproute-internal.yaml) and only after the SecurityPolicy
+# (securitypolicy.yaml) has signed the browser in. The addon trades it for a
+# session cookie. overwrite: whatever Authorization header the browser sent is
+# replaced.
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: HTTPRouteFilter
 metadata:

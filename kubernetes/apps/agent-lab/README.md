@@ -153,9 +153,15 @@ no browser sign-in provider (its Google button stays off), so Envoy signs the br
 
 - `trackinizer/app/securitypolicy.yaml` sends every request on the route, `/api` included, through
   Authentik OIDC (application `trackinizer`, **authentik Admins only**).
-- `trackinizer/app/httproutefilter.yaml` then sets `Authorization: Bearer <browser key>`, overwriting
-  whatever the browser sent. The browser key is generated in-cluster (nothing in Bitwarden), and the
-  Deployment's `register-web-key` init container registers it as the `browser` key (role writer) on
+- Workspaces, chats and presets refuse API keys (`require_browser`), so the web app needs Trackinizer's
+  own session cookie. `trackinizer/app/addons/gatewaylogin.py`, an addon mounted from a ConfigMap
+  (`TRACKINIZER_ADDONS`), issues it. When signed out, Trackinizer sends the browser to
+  `/auth/login_page`. The HTTPRoute redirects that to `/api/addons/gatewaylogin/login`, the only
+  path where `httproutefilter.yaml` injects the gateway's `browser` key. The addon accepts only that
+  key, trades it for a session signed with `TRACKINIZER_SESSION_SECRET`, and redirects back. A
+  session acts with the user's role (admin), which is why no other key may sign in.
+- The browser key and the session secret are generated in-cluster (nothing in Bitwarden). The
+  Deployment's `register-web-key` init container registers the key as `browser` (role writer) on
   every start.
 - The Authentik provider, application and group binding are a blueprint in
   `security/authentik/app/trackinizer-oidc.yaml`. Its client secret is generated in-cluster and shared

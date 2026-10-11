@@ -1,9 +1,17 @@
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
 # The web UI and API on the LAN, through envoy-internal. securitypolicy.yaml
-# signs the browser in with Authentik first, and httproutefilter.yaml then adds
-# the browser's Trackinizer key, so the server's own auth still sees a Bearer
-# key on every request.
+# signs the browser in with Authentik first, on every path. After that the
+# browser runs on Trackinizer's own session cookie:
+#
+#   1. Signed out, Trackinizer sends the browser to /auth/login_page?next=...
+#      Its page offers only a Google button this image cannot serve, so that
+#      path is redirected to the gatewaylogin addon instead (query kept).
+#   2. /api/addons/gatewaylogin/login is the ONLY path that gets the
+#      gateway's `browser` key (httproutefilter.yaml). The addon trades it for
+#      a session cookie and redirects back to `next`.
+#   3. Everything else goes through untouched, so workspaces, chats and
+#      presets (which refuse API keys) see a browser session.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -23,12 +31,30 @@ spec:
       namespace: network
       sectionName: https
   rules:
-    - filters:
+    - matches:
+        - path:
+            type: Exact
+            value: /auth/login_page
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /api/addons/gatewaylogin/login
+            statusCode: 302
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/addons/gatewaylogin
+      filters:
         - type: ExtensionRef
           extensionRef:
             group: gateway.envoyproxy.io
             kind: HTTPRouteFilter
             name: trackinizer-web-credential
       backendRefs:
+        - name: trackinizer
+          port: 8765
+    - backendRefs:
         - name: trackinizer
           port: 8765

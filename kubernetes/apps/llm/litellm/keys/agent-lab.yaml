@@ -12,9 +12,9 @@
 # that model cannot carry the reviewer with 60k-token prompts (2 slots, ~380
 # prompt tokens/s); agent-factory v0.1.2 cuts the review prompt to the diff
 # and test output, and apps/agent-lab/factory caps reviews at one in flight.
-# A hosted alias for reviews only (kimi-k3, glm-5.3 or chatgpt; MiniMax's plan
-# is exhausted as of 2026-10-09) goes on this list if local still misses the
-# review deadline.
+# A hosted alias for reviews only (chatgpt, the one cloud plan with headroom;
+# MiniMax's was exhausted 2026-10-09, and Kimi / Z.AI are not bought) goes on
+# this list if local still misses the review deadline.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMVirtualKey
 metadata:

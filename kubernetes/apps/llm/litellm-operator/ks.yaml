@@ -16,17 +16,15 @@ spec:
     kind: GitRepository
     name: home-kubernetes
   # NOT a dependency of ./litellm/ks.yaml, and that is intentional. The proxy
-  # there is still a plain app-template HelmRelease reading a hand-written
-  # config.yaml; the operator manages nothing until a LiteLLMProxy CR exists.
-  # Installing it first means the CRDs and the LLMKube auto-register watcher are
-  # in place whenever we do convert, without coupling the gateway's availability
-  # to an operator that is currently idle.
+  # there is a plain app-template HelmRelease reading a hand-written
+  # config.yaml, and models stay there. The operator manages only virtual keys
+  # and teams (../litellm/keys, through the inert litellm-admin LiteLLMProxy),
+  # so `litellm-keys` depends on it, but the gateway's availability never does.
   #
-  # llmkube is a dependency only because `llmkube.autoRegister: true` needs the
-  # inference.llmkube.dev CRDs present at operator start -- otherwise the
-  # watcher logs a warning and stays disabled for the life of the pod.
-  dependsOn:
-    - name: llmkube
+  # No dependsOn llmkube since 2026-10-11: that existed only for
+  # `llmkube.autoRegister: true`, which needs the inference.llmkube.dev CRDs at
+  # start. It is off now, and the cleanup controller that replaces it does not
+  # need them.
   wait: true
   interval: 30m
   retryInterval: 1m

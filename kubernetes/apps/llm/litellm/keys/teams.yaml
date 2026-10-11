@@ -35,7 +35,6 @@ spec:
     - auto
     - self-hosted
     - review
-    - deep
     - fast
     - chatgpt
     - local-pool
@@ -60,7 +59,6 @@ spec:
   models:
     - self-hosted
     - review
-    - deep
     - fast
     - chatgpt
     - local-pool

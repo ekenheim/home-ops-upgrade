@@ -22,10 +22,10 @@ spec:
           labels:
             severity: critical
         # Fallbacks firing repeatedly means callers are silently getting a
-        # different model than they asked for. router_settings.fallbacks maps
-        # `review` and `deep` onto `self-hosted`, which is a slower/stronger ->
-        # faster/weaker swap -- see the note in ../app/configmap.yaml. Worth
-        # knowing about rather than discovering in an output review.
+        # different model than they asked for: today the local pools and
+        # home-assistant dropping off worker4 onto MiniMax / ChatGPT (see
+        # router_settings.fallbacks in ../app/configmap.yaml). Worth knowing
+        # about rather than discovering in an output review.
         - alert: LiteLLMModelFailover
           expr: |-
             sum by (requested_model, fallback_model, exception_status, exception_class) (

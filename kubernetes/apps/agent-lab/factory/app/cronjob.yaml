@@ -107,8 +107,8 @@ spec:
                 # v0.1.2 hands the reviewer the diff and the test output
                 # instead, and the cap below keeps reviews from queueing. If
                 # reviews still time out, point this at a hosted alias that is
-                # on the agent-lab key's model list (MiniMax's plan is used up
-                # until 2026-10-11; kimi-k3, glm-5.3 or chatgpt are the options).
+                # on the agent-lab key's model list (chatgpt is the option:
+                # MiniMax's plan ran out, and Kimi / Z.AI are not bought).
                 - name: FACTORY_REVIEW_MODEL
                   value: review
                 # Honoured from agent-factory v0.1.2: at most this many reviews

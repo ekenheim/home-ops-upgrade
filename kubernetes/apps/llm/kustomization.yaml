@@ -9,9 +9,10 @@ resources:
   #
   # litellm-operator renders LiteLLM proxy config from CRDs (LiteLLMProxy,
   # LiteLLMModel, LiteLLMVirtualKey, LiteLLMTeam, LiteLLMGuardrail,
-  # LiteLLMMCPServer). It is installed here but currently drives NOTHING: the
-  # litellm below is still the bjw-s app-template HelmRelease with its
-  # hand-written config.yaml ConfigMap. Adopting the CRDs is a separate change.
+  # LiteLLMMCPServer). Here it drives only virtual keys and teams
+  # (litellm/keys). Models are NOT operator-managed: the litellm below is the
+  # bjw-s app-template HelmRelease with its hand-written config.yaml ConfigMap,
+  # and llmkube auto-registration is off (see litellm-operator/app).
   - ./litellm-operator/ks.yaml
   - ./litellm/ks.yaml
   # LLM explanation of Alertmanager alerts, posted to Discord (misospace).

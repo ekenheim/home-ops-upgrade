@@ -8,6 +8,7 @@ metadata:
 spec:
   proxyRef: litellm-admin
   keyAlias: openclaw
+  teamID: assistants
   secretName: litellm-key-openclaw
   secretKey: api-key
   models:

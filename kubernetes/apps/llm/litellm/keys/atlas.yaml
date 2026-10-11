@@ -25,6 +25,7 @@ metadata:
 spec:
   proxyRef: litellm-admin
   keyAlias: atlas
+  teamID: research
   secretName: litellm-key-atlas
   secretKey: api-key
   # A backstop, not the budget: Atlas paces itself at 8M MiniMax tokens per 5 h window

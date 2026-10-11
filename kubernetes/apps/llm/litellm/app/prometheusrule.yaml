@@ -55,13 +55,15 @@ spec:
           labels:
             severity: warning
         # 403/429 is the shape a spent ChatGPT subscription grant or an expired
-        # upstream key takes. Distinct from the outage alert because the fix is
-        # a credential, not a restart -- see the device-login runbook in
-        # ../app/configmap.yaml.
+        # upstream key takes, and 402 is what MiniMax sends once the plan's
+        # allowance is spent (1,374 unalerted Lingarr failures in the week to
+        # 2026-10-11, before 402 was added). Distinct from the outage alert
+        # because the fix is a credential or a plan, not a restart -- see the
+        # device-login runbook in ../app/configmap.yaml.
         - alert: LiteLLMAuthOrQuotaFailures
           expr: |-
             sum by (litellm_model_name, exception_status) (
-              increase(litellm_deployment_failure_responses_total{exception_status=~"403|429"}[15m])
+              increase(litellm_deployment_failure_responses_total{exception_status=~"402|403|429"}[15m])
             ) > 5
           for: 5m
           annotations:

@@ -6,6 +6,7 @@ metadata:
 spec:
   proxyRef: litellm-admin
   keyAlias: opencode
+  teamID: coding
   secretName: litellm-key-opencode
   secretKey: api-key
   models:
@@ -31,6 +32,7 @@ metadata:
 spec:
   proxyRef: litellm-admin
   keyAlias: zed
+  teamID: coding
   secretName: litellm-key-zed
   secretKey: api-key
   models:

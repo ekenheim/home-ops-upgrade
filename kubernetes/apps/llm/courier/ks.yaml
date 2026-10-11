@@ -18,6 +18,9 @@ spec:
   dependsOn:
     - name: external-secrets-stores
     - name: dispatch
+    # litellm-key-courier and the store courier-executor reads it through.
+    - name: litellm-keys
+    - name: litellm-stores
     - name: litellm
   wait: true
   interval: 30m

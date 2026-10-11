@@ -12,6 +12,7 @@ metadata:
 spec:
   proxyRef: litellm-admin
   keyAlias: pr-review
+  teamID: coding
   secretName: litellm-key-pr-review
   secretKey: api-key
   models:

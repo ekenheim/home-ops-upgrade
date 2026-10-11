@@ -97,17 +97,6 @@ spec:
                 secretKeyRef:
                   name: trackinizer-db-secret
                   key: uri
-            # FIRST START ONLY. On an empty `users` table the server seeds this
-            # admin and writes its API key (mode 0600) to
-            # /tmp/home/.local/share/rekursiv-ai/trackinizer/bootstrap_token,
-            # on the /tmp emptyDir. Read it, mint the factory's writer key,
-            # then delete these two lines in a follow-up commit (README,
-            # "Analysis ledger (Trackinizer)"). Once any user exists the server
-            # never mints another bootstrap key, so leaving it set does no
-            # harm, but it is dead config. The address is the ACME email from
-            # cluster-secrets, so it stays out of this public repo.
-            - name: TRACKINIZER_BOOTSTRAP_ADMIN
-              value: "${SECRET_ACME_EMAIL}"
             # Never set TRACKINIZER_NO_AUTH or pass --no-auth: every call must
             # carry a Bearer key.
           ports:

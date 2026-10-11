@@ -74,17 +74,30 @@
 # safe margin on 128 GB. IQ4_XS is the step up if Q3 output looks degraded and
 # the BUDGET numbers below have room for +3.7 GB.
 #
-# BUDGET -- MEASURE THIS AFTER ROLLOUT, IT IS NOT YET KNOWN
+# BUDGET -- MEASURED 2026-10-11 (pod up 47 min, both slots used, 524288 ctx)
 #
-# Expected: ~60 GB of weights + 0.9 GB mmproj pinned in GTT, the n-gram table
-# in page cache, plus KV. The KV cost per token is unmeasured for this
-# architecture (Ornith's was ~10 KB/token). Ornith ran ~47 GiB GTT, so this
-# lands higher regardless. Record:
-#   talosctl -n 192.168.50.38 read /proc/meminfo | grep MemAvailable
-#   GTT: mem_info_gtt_used under /sys/class/drm/card*/device/
-# STOP CONDITION: if MemAvailable sits under ~35 GiB with both slots warm,
-# halve contextSize before anything else. That is ~9 GiB above the band the
-# qwen38-27b bisect crashed in.
+#   GTT (mem_info_gtt_used)        68.0 GiB  = weights 56.4 + mmproj 0.84 +
+#                                             KV + compute ~10.8 at 524288 tok
+#   llama-server RSS               36.3 GiB  anon, of which ONE 27.4 GiB mapping
+#                                             is the n-gram table
+#   host MemAvailable              10.5 GiB  (MemFree ~1 GiB, Cached ~11 GiB of
+#                                             stale GGUF pages)
+#
+# So the "table stays in the mmap and pages in on demand" story above is NOT
+# what this build does: TENSOR_READ_LAZY lands it in an anonymous CPU buffer.
+# It is resident (no NVMe reads during decode), it is charged to the pod, and
+# it is why the 48Gi limit below is right. Do not shrink the limit.
+#
+# KV + compute is ~10.8 GiB for the whole 524288 window, i.e. halving
+# contextSize buys ~5 GiB of host headroom and quartering ~8 GiB. The old
+# STOP CONDITION (MemAvailable < 35 GiB -> halve contextSize) is withdrawn:
+# the 2026-09-24..10-11 reset series (39 resets) happened at 27-47 GiB of
+# headroom in the Ornith era and 9-21 GiB in this one, always under sustained
+# GPU load, and AMD has root-caused that failure class to AGESA (see
+# fclk-hold.yaml). Headroom is not the trigger, so the window stays at the
+# native 262144 per slot that every client hardcodes. If memory ever has to
+# give, drop parallelSlots to 1 before touching contextSize: it saves the same
+# ~5 GiB and keeps the window the clients expect.
 #
 # ROLLING BACK
 #
@@ -186,10 +199,10 @@ spec:
   uBatchSize: 512
   resources:
     cpu: "500m"
-    # Ornith ran at 32Gi. The n-gram table is ~29 GB of file-backed mmap that
-    # IS charged to this cgroup as page cache; at a tight limit the kernel
-    # evicts it and tokens turn into random reads off NVMe. 48Gi keeps it
-    # resident with room for the CPU-side buffers.
+    # Ornith ran at 32Gi. The n-gram table is a 27.4 GiB anonymous buffer in
+    # this process (measured 2026-10-11, see BUDGET), plus ~9 GiB of other
+    # CPU-side buffers: RSS sits at ~36 GiB. 48Gi leaves ~12 GiB of room; a
+    # tighter limit OOM-kills the server mid-request.
     memory: 48Gi
   endpoint:
     port: 8080

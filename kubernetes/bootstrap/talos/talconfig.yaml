@@ -214,8 +214,11 @@ nodes:
       # grubUseUKICmdline: false) from 2026-09-22 and never reached the kernel,
       # not even after the 2026-09-29 upgrade. Schematic 0d2744ab... is
       # c38bf6e7... plus these two args. Applied by a Talos upgrade (reboot).
-      # Pair the reboot with the BIOS change: UMA Frame Buffer FIXED at 96 GB
-      # (not Auto), so both models load into the carve-out instead of GTT.
+      # BIOS UMA Frame Buffer stays Auto (VRAM 2 GiB, everything in GTT). A
+      # FIXED 96 GB carve-out was planned here, but qwen38-flash-next keeps its
+      # 27 GiB n-gram table in host RAM (measured 2026-10-11), so 96 GB would
+      # leave ~32 GB for host + table + Ceph and not fit. See the BUDGET notes in
+      # apps/llm/llmkube/app/qwen38-flash-next.yaml.
     networkInterfaces:
       # 2x 10G bonded via LACP (switch LAG on USW Pro XG 24 ports 11+12).
       # Both ports are RTL8127 10GbE on r8169 (pciID 10EC:8127, verified
@@ -289,13 +292,17 @@ patches:
       network:
         disableSearchDomain: true
 
-  # Enable cluster discovery
+  # Enable cluster discovery -- service registry only. The Kubernetes registry
+  # needs to list Nodes, which NodeRestriction forbids a worker kubelet, so on
+  # worker4 it failed every ~2s ("cannot list resource nodes") and flooded the
+  # kernel ring buffer: the boot-time "Previous system reset reason" line was
+  # gone within ~35 min of every reset (2026-10-11). It is deprecated upstream.
   - |-
     cluster:
       discovery:
         registries:
           kubernetes:
-            disabled: false
+            disabled: true
           service:
             disabled: false
 

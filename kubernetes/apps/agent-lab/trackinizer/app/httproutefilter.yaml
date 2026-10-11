@@ -1,0 +1,48 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/httproutefilter_v1alpha1.json
+# Adds the browser's Trackinizer key to every request that got past the
+# SecurityPolicy (securitypolicy.yaml), so the web app at /app/ and its /api
+# calls are authenticated. overwrite: whatever Authorization header the browser
+# sent is replaced, so the signed-in user always acts as this one key.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: HTTPRouteFilter
+metadata:
+  name: trackinizer-web-credential
+  namespace: trackinizer
+spec:
+  credentialInjection:
+    header: Authorization
+    overwrite: true
+    credential:
+      valueRef:
+        name: trackinizer-web-credential
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/external-secrets.io/externalsecret_v1beta1.json
+#   Bitwarden Secrets Manager item `trackinizer_web`
+#     TRACKINIZER_WEB_TOKEN  a Trackinizer key named `browser`, minted with the
+#                            admin key (README, "Analysis ledger
+#                            (Trackinizer)"). Never the admin key itself.
+#
+# Shaped for credentialInjection: key `credential` holds the WHOLE header
+# value, scheme included. Only the Envoy proxy reads this Secret.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: &name trackinizer-web-credential
+  namespace: trackinizer
+spec:
+  secretStoreRef:
+    name: bitwarden-secrets-manager
+    kind: ClusterSecretStore
+  refreshInterval: 15m
+  target:
+    name: *name
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      type: Opaque
+      data:
+        credential: 'Bearer {{ .TRACKINIZER_WEB_TOKEN }}'
+  dataFrom:
+    - extract:
+        key: trackinizer_web

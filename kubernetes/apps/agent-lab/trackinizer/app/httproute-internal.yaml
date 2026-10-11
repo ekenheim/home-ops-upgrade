@@ -1,7 +1,9 @@
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
-# The web UI and API on the LAN, through envoy-internal. Every call still needs
-# a Bearer key or a signed-in session: the server runs with auth on.
+# The web UI and API on the LAN, through envoy-internal. securitypolicy.yaml
+# signs the browser in with Authentik first, and httproutefilter.yaml then adds
+# the browser's Trackinizer key, so the server's own auth still sees a Bearer
+# key on every request.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -21,6 +23,12 @@ spec:
       namespace: network
       sectionName: https
   rules:
-    - backendRefs:
+    - filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: gateway.envoyproxy.io
+            kind: HTTPRouteFilter
+            name: trackinizer-web-credential
+      backendRefs:
         - name: trackinizer
           port: 8765

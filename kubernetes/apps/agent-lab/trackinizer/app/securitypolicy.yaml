@@ -1,0 +1,42 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# Browser sign-in for trackinizer.${SECRET_DOMAIN}, done by envoy-internal
+# because the Trackinizer image mounts no sign-in provider of its own. Every
+# request through the route, /api included, must carry an Authentik session
+# (application `trackinizer`, authentik Admins only, defined in
+# security/authentik/app/trackinizer-oidc.yaml). Only then does the
+# HTTPRouteFilter in httproutefilter.yaml add the Trackinizer key; without this
+# policy that filter would open the API to the whole LAN.
+#
+# The orchestrator does not come through here: it calls the Service directly
+# with its own key.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: trackinizer-oidc
+  namespace: trackinizer
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: trackinizer
+  oidc:
+    provider:
+      issuer: https://sso.${SECRET_DOMAIN}/application/o/trackinizer/
+    clientID: trackinizer
+    clientSecret:
+      # Cross-namespace; allowed by the ReferenceGrant in security.
+      name: authentik-trackinizer-oidc
+      namespace: security
+    redirectURL: https://trackinizer.${SECRET_DOMAIN}/oauth2/callback
+    # Not /auth/logout: that path is Trackinizer's own.
+    logoutPath: /oauth2/logout
+    scopes:
+      - openid
+      - email
+      - profile
+      - offline_access
+    # The access token lives an hour; the refresh token keeps the session
+    # without a full redirect, which the web app's background fetches could not
+    # follow.
+    refreshToken: true

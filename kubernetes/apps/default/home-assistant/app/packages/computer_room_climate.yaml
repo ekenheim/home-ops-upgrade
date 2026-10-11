@@ -234,7 +234,9 @@ automation:
               - action: fan.set_preset_mode
                 target: { entity_id: fan.office }
                 data: { preset_mode: "{{ want }}" }
-          - conditions: "{{ want == 'speed50' and (not cur_on or cur_preset in ['turbo', 'sleep', 'auto'] or cur_pct != 50) }}"
+          # On the AC0850, setting 50 % comes back as preset 'sleep' at 50 %:
+          # that IS speed 1, so don't resend it every 10 minutes.
+          - conditions: "{{ want == 'speed50' and (not cur_on or cur_preset in ['turbo', 'auto'] or cur_pct != 50) }}"
             sequence:
               - action: fan.set_percentage
                 target: { entity_id: fan.office }

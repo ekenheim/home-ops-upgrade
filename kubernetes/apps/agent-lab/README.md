@@ -40,7 +40,8 @@ Also outside this directory:
 7. The verifier runs in `agent-verify`, so a worker cannot see or edit the holdout tests.
 8. The orchestrator in `agent-control` is trusted code. Its RBAC covers Jobs, pods/log, PVCs and ConfigMaps in the two sandboxes, nothing cluster-wide, and no exec.
 9. Only the orchestrator reaches the API server. Postgres is reached by the orchestrator and by
-   Trackinizer, each with its own login, and Trackinizer is reached only by the orchestrator.
+   Trackinizer, each with its own login, and Trackinizer is reached only by the orchestrator and,
+   for the web UI, envoy-internal. No sandbox pod reaches either.
 10. GitHub tokens: agent-lab has its own Bitwarden item, `agent_factory_github`, never the shared
     `github_token` PAT (that one is the human account's and can write to every repo dispatch and
     courier use, this one included). `GITHUB_TOKEN` is a fine-grained PAT for the target repo only
@@ -144,7 +145,9 @@ delete the running Job.
 The analysis track writes its Intents, Experiments and Findings to Trackinizer (agent-factory README,
 "The analysis ledger"), set by `FACTORY_TRACKINIZER_URL=http://trackinizer.trackinizer.svc:8765` on the
 CronJob. It runs in its own namespace so the factory's component-keyed policies never select it. Its
-policy admits only the orchestrator's pods on 8765 and lets the pod reach only DNS and the Postgres primary.
+policy admits only the orchestrator's pods and the envoy-internal proxies on 8765, and lets the pod reach
+only DNS and the Postgres primary. The web UI is at `https://trackinizer.${SECRET_DOMAIN}` (LAN only, via
+`envoy-internal`); sign in with an API key.
 The orchestrator's key, `FACTORY_TRACKINIZER_TOKEN`, comes from the Bitwarden item
 `agent_factory_trackinizer` and is read with `optional: true`. Every ledger failure is logged and
 ignored, so a missing or broken Trackinizer never stops a run.

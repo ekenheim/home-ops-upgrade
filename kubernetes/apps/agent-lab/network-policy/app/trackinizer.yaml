@@ -1,9 +1,10 @@
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
 # Trackinizer holds the analysis ledger and its own Postgres login. Default-deny
-# both ways: the orchestrator is the only client, and Postgres and DNS are the
-# only things it needs (the default stub embedder loads no model, so no
-# Hugging Face or other egress). No sandbox namespace gets a path here, and no
+# both ways: the orchestrator and envoy-internal are the only clients, and
+# Postgres and DNS are the only things it needs (the default stub embedder
+# loads no model, so no Hugging Face or other egress). No sandbox namespace
+# gets a path here, and no
 # sandbox policy changes: agent-work and agent-verify are allow lists and
 # Trackinizer is not on them.
 apiVersion: cilium.io/v2
@@ -26,6 +27,16 @@ spec:
             k8s:io.kubernetes.pod.namespace: agent-control
             app.kubernetes.io/name: agent-factory
             app.kubernetes.io/component: orchestrator
+      toPorts:
+        - ports:
+            - port: "8765"
+              protocol: TCP
+    # The envoy-internal proxies, for the trackinizer.<domain> HTTPRoute in
+    # trackinizer/app. LAN only, and the server's own auth still applies.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.envoyproxy.io/owning-gateway-name: envoy-internal
       toPorts:
         - ports:
             - port: "8765"

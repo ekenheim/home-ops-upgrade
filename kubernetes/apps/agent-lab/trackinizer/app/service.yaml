@@ -1,8 +1,8 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/v1/service_v1.json
-# FACTORY_TRACKINIZER_URL = http://trackinizer.trackinizer.svc:8765. ClusterIP
-# only: no HTTPRoute, nothing outside the cluster reaches it, and the network
-# policy admits only the orchestrator. Same port as the container, so the
+# FACTORY_TRACKINIZER_URL = http://trackinizer.trackinizer.svc:8765. ClusterIP;
+# the LAN reaches it through the envoy-internal HTTPRoute, and the network
+# policy admits only the orchestrator and envoy-internal. Same port as the container, so the
 # Service view and Cilium's backend view of the policy agree.
 apiVersion: v1
 kind: Service

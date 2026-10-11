@@ -53,6 +53,12 @@ spec:
                   - matching_mode: strict
                     url: https://trackinizer.${SECRET_DOMAIN}/oauth2/callback
                     redirect_uri_type: authorization
+                # Required: an empty list rejects every authorize request with
+                # "Invalid grant_type for provider". Envoy uses the code flow
+                # and refreshes with the refresh token.
+                grant_types:
+                  - authorization_code
+                  - refresh_token
                 property_mappings:
                   - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
                   - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]

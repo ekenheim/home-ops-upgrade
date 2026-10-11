@@ -155,14 +155,10 @@ One-time bootstrap, in order. None of it has been run against this cluster yet:
    and check that an anonymous pull of the pinned digest works.
 2. Create the Bitwarden Secrets Manager item `agent_factory_trackinizer` with one field,
    `FACTORY_TRACKINIZER_TOKEN`. A placeholder value is fine until step 5.
-3. After Flux has created the `trackinizer` user and database, create the extension as superuser.
-   Until this is done the pod crash-loops:
-
-   ```sh
-   P=$(kubectl get pods -n database -l postgres-operator.crunchydata.com/role=master -o jsonpath='{.items[0].metadata.name}')
-   kubectl exec -n database "$P" -c database -- psql -U postgres -d trackinizer -c 'CREATE EXTENSION IF NOT EXISTS vector;'
-   kubectl -n trackinizer rollout restart deploy/trackinizer
-   ```
+3. Nothing to do by hand for the database. After Flux has created the `trackinizer` user and
+   database, the Deployment's `db-init` container connects as the postgres superuser (through
+   `trackinizer-super-secret`, immich's pattern) and runs `CREATE EXTENSION IF NOT EXISTS vector` and
+   `GRANT USAGE, CREATE ON SCHEMA public TO trackinizer` before every start. Both are no-ops once done.
 
 4. On that first good start `TRACKINIZER_BOOTSTRAP_ADMIN` (set in `trackinizer/app/deployment.yaml`)
    seeds the admin and writes its key to `/tmp`, which is an emptyDir. Read the key **before the pod

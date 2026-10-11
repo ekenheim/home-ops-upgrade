@@ -53,6 +53,41 @@ spec:
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        # Idempotent superuser DDL that the trackinizer role cannot run itself,
+        # immich's db-extension-update pattern. PG16 does not trust `vector`
+        # for the owning role, and Trackinizer's first statements create
+        # tables in public, so the init container creates the extension and
+        # grants the role use of public before every start. Both statements
+        # are no-ops once done. Primary, not pgbouncer; TLS because pg_hba is
+        # hostssl-only.
+        - name: db-init
+          image: docker.io/library/postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+          envFrom:
+            - secretRef:
+                name: trackinizer-super-secret
+          env:
+            - name: PGSSLMODE
+              value: require
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              export PGPASSWORD="$INIT_POSTGRES_PASS"
+              psql -v ON_ERROR_STOP=1 -h "$INIT_POSTGRES_HOST" -U "$INIT_POSTGRES_USER" -d trackinizer \
+                -c "CREATE EXTENSION IF NOT EXISTS vector;" \
+                -c "GRANT USAGE, CREATE ON SCHEMA public TO trackinizer;"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
       containers:
         - name: trackinizer
           image: ghcr.io/ekenheim/agent-factory-trackinizer:sha-83345cf@sha256:f968490db81318b03d43332431a2465f9b72d4e759607f3ba197c4b9519da826

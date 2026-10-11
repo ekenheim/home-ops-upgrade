@@ -246,11 +246,9 @@ spec:
     # Trackinizer (apps/agent-lab/trackinizer), the analysis track's
     # experiment ledger. Read only by the Trackinizer pod, through
     # trackinizer-db-secret. Needs the `vector` extension, which PG16 does not
-    # trust for the owning role, and Trackinizer runs as that role, so after
-    # PGO creates the database a superuser has to run once, before the first
-    # start (the pod crash-loops until then):
-    #   CREATE EXTENSION IF NOT EXISTS vector;   -- in database trackinizer
-    # See apps/agent-lab/README.md, "Analysis ledger (Trackinizer)".
+    # trust for the owning role, and CREATE on schema public: the Deployment's
+    # db-init container runs both as the postgres superuser before every start
+    # (apps/agent-lab/trackinizer/app/deployment.yaml).
     - name: "trackinizer"
       databases: ["trackinizer"]
       password:

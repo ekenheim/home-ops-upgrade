@@ -152,7 +152,7 @@ The orchestrator's key, `FACTORY_TRACKINIZER_TOKEN`, comes from the Bitwarden it
 `agent_factory_trackinizer` and is read with `optional: true`. Every ledger failure is logged and
 ignored, so a missing or broken Trackinizer never stops a run.
 
-One-time bootstrap, in order. None of it has been run against this cluster yet:
+One-time bootstrap, in order. Steps 1–6 were done on 2026-10-11; they are kept here for a rebuild:
 
 1. Make the GHCR package `agent-factory-trackinizer` **public**, like the other agent-factory images,
    and check that an anonymous pull of the pinned digest works.
@@ -163,7 +163,8 @@ One-time bootstrap, in order. None of it has been run against this cluster yet:
    `trackinizer-super-secret`, immich's pattern) and runs `CREATE EXTENSION IF NOT EXISTS vector` and
    `GRANT USAGE, CREATE ON SCHEMA public TO trackinizer` before every start. Both are no-ops once done.
 
-4. On that first good start `TRACKINIZER_BOOTSTRAP_ADMIN` (set in `trackinizer/app/deployment.yaml`)
+4. On that first good start `TRACKINIZER_BOOTSTRAP_ADMIN` (add it back to the `trackinizer` container in
+   `trackinizer/app/deployment.yaml` as `value: "${SECRET_ACME_EMAIL}"`, the ACME email from cluster-secrets)
    seeds the admin and writes its key to `/tmp`, which is an emptyDir. Read the key **before the pod
    restarts**, because the server never mints a second one. Keep it somewhere only you hold:
 
@@ -182,7 +183,9 @@ One-time bootstrap, in order. None of it has been run against this cluster yet:
    ```
 
    The port-forward goes through the kubelet, not the pod network, so the ingress policy does not block
-   it.
+   it. `https://trackinizer.${SECRET_DOMAIN}/api/me/tokens` works too. Set `ADMIN_KEY` in the same shell
+   first: an empty one gets a 401 `invalid bearer token` and mints nothing. Check the result with
+   `GET /api/me/tokens`, which should list an `agent-factory` key with role `writer`.
 6. Delete the `TRACKINIZER_BOOTSTRAP_ADMIN` env entry from `deployment.yaml` and merge. The pod restarts
    and the token file goes with the old `/tmp`.
 7. From an agent-factory checkout, run the live contract suite against the instance through the same port-forward,
@@ -192,7 +195,7 @@ One-time bootstrap, in order. None of it has been run against this cluster yet:
 If the admin key is lost before anything has been written, reset the empty instance as superuser and
 let the pod bootstrap again (not tested):
 `DROP SCHEMA public CASCADE; CREATE SCHEMA public AUTHORIZATION pg_database_owner; CREATE EXTENSION vector;`
-in database `trackinizer`, with `TRACKINIZER_BOOTSTRAP_ADMIN` still set.
+in database `trackinizer`, with `TRACKINIZER_BOOTSTRAP_ADMIN` added back (step 4).
 
 ## Phase 2 notes
 

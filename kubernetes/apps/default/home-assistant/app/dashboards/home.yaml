@@ -835,6 +835,16 @@ views:
                     icon: mdi:flower-pollen
                     show_state: true
                     show_background: false
+              # IR ceiling fan via the BroadLink (packages/ceiling_fan.yaml).
+              # Shows the last speed HA sent; the physical remote desyncs it.
+              - type: tile
+                entity: fan.ceiling_fan
+                name: Ceiling fan
+                icon: mdi:ceiling-fan
+                features_position: bottom
+                features:
+                  - type: fan-speed
+                    style: icon
               - type: custom:bubble-card
                 card_type: separator
                 name: Rack

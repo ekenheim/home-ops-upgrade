@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+# Grafana dashboard for the llama.cpp server on worker4. Rendered as a
+# ConfigMap that Grafana's k8s-sidecar picks up from any namespace (label
+# grafana_dashboard, folder from the grafana_folder annotation -- see
+# apps/observability/grafana/app/helmrelease.yaml). Lives next to llmkube
+# because that is what owns the pod the dashboard describes.
+#
+# substitute: disabled keeps Flux envsubst away from the Grafana template
+# variables ($model, $node, $__rate_interval) in the JSON.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+configMapGenerator:
+  - name: worker4-llm-dashboard
+    files:
+      - worker4-llm.json
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
+    grafana_folder: LLM
+  labels:
+    grafana_dashboard: "1"

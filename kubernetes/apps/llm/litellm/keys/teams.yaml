@@ -34,6 +34,20 @@
 # have no user_id (the restored hermes/repo-wiki included), so they never
 # depended on the membership.
 #
+# A FAILED team update is not retried (operator <= 0.0.24): the controller
+# only sends /team/update when the Ready condition's observedGeneration
+# differs from the CR's, and a failure records that generation too, so the
+# retry skips the update and reports "team reconciled" with the proxy still
+# on the old spec. That is what happened when #7445 added `pc/*` here while
+# the gateway was restarting for the same merge: the keys got the model, the
+# teams did not, and zed/opencode got 403 team_model_access_denied. After any
+# merge that changes BOTH ../app/configmap.yaml and this file, check
+#   kubectl -n llm logs deploy/litellm-operator | grep UpdateFailed
+# and if a team is listed, bump its generation with a throwaway spec change
+# (patch `alias`, then patch it back). The one-line fix is to gate the update
+# on `ready.Status != True` as well as the generation
+# (internal/controller/litellmteam_controller.go in the operator).
+#
 # maxBudget is list-price spend (the configmap's *_cost_per_token), and only
 # cloud aliases carry a cost: local models and the ChatGPT subscription are $0.
 # A team over budget blocks EVERY key in it, embeddings included, so budgets

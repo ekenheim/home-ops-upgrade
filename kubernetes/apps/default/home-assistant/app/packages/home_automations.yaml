@@ -203,39 +203,7 @@ automation:
             {{ state_attr('sensor.tibber_electricity_price', 'avg_price') }} average today
             (low {{ state_attr('sensor.tibber_electricity_price', 'min_price') }}).
 
-  # ------------------------------------------------------------- Air ----
-  # Boost the computer-room purifier on bad air, then put back whatever
-  # preset was set before (it is often 'sleep').
-  - id: purifier_boost_on_bad_air
-    alias: "Air: boost purifier on high PM2.5"
-    mode: single
-    triggers:
-      - trigger: numeric_state
-        entity_id: sensor.office_pm2_5
-        above: 25
-        for: { minutes: 5 }
-    conditions:
-      - condition: state
-        entity_id: fan.office
-        state: "on"
-      - condition: template
-        value_template: "{{ state_attr('fan.office', 'preset_mode') != 'turbo' }}"
-    actions:
-      - action: scene.create
-        data:
-          scene_id: office_purifier_before_boost
-          snapshot_entities: [fan.office]
-      - action: fan.set_preset_mode
-        target: { entity_id: fan.office }
-        data: { preset_mode: turbo }
-      - wait_for_trigger:
-          - trigger: numeric_state
-            entity_id: sensor.office_pm2_5
-            below: 10
-            for: { minutes: 20 }
-        timeout: { hours: 3 }
-      - action: scene.turn_on
-        target: { entity_id: scene.office_purifier_before_boost }
+  # Computer-room purifier control lives in computer_room_climate.yaml.
 
   # ------------------------------------------------------- Leaving home --
   # Asks instead of acting: lights off and/or start the vacuum.

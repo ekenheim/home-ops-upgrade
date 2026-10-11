@@ -845,6 +845,51 @@ views:
                 features:
                   - type: fan-speed
                     style: icon
+              # Climate automation controls (packages/computer_room_climate.yaml).
+              - type: custom:bubble-card
+                card_type: separator
+                name: Climate control
+                icon: mdi:thermostat-auto
+              - type: markdown
+                content: >-
+                  {% set room = states('sensor.computer_sensor_temperature') | float(0) %}
+                  {% set hall = states('sensor.hallway_temperature') | float(0) %}
+                  **{{ room }} °C** here · {{ hall }} °C hallway ({{ (room - hall) | round(1) }} °C difference)
+                  · target {{ states('input_number.computer_room_target_temp') }} °C
+                  {% if is_state('binary_sensor.computer_room_climate_paused', 'on') %}
+                  ⏸️ Paused after a manual change, until
+                  {{ state_attr('input_datetime.computer_room_climate_paused_until', 'timestamp') | timestamp_custom('%H:%M') }}
+                  {% endif %}
+              - type: grid
+                columns: 2
+                square: false
+                cards:
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: switch
+                    entity: input_boolean.computer_room_auto_cooling
+                    name: Auto cooling
+                    icon: mdi:fan-auto
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: switch
+                    entity: input_boolean.computer_room_auto_air
+                    name: Auto purifier
+                    icon: mdi:air-purifier
+              - type: custom:bubble-card
+                card_type: button
+                button_type: slider
+                entity: input_number.computer_room_target_temp
+                name: Target temperature
+                icon: mdi:thermometer-check
+              - type: tile
+                entity: fan.air_circulator
+                name: Hallway fan
+                icon: mdi:fan
+                features_position: bottom
+                features:
+                  - type: fan-speed
+                    style: icon
               - type: custom:bubble-card
                 card_type: separator
                 name: Rack

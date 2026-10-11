@@ -1,0 +1,280 @@
+# Computer room climate: cooling with the three fans, and dust control with
+# the Philips 800i purifier. Git-managed; tune via the dashboard helpers.
+#
+# Measured over 2 weeks (2026-09-27 .. 10-11): the room averages 24.8 C
+# (max 27.6 C, 33 h >= 26 C) with the rack at ~790 W non-stop, while the
+# hallway averages 22.5 C and is >= 1 C cooler 96 % of the time.
+#
+#   - Hallway fan (Dreo, fan.air_circulator) pushes the cooler hallway air in:
+#     the actual cooling. Speed follows how far the room is above target, only
+#     when the hallway is >= 1 C cooler, capped at 50 % at night (noise).
+#   - Ceiling fan (IR, fan.ceiling_fan) cools the person, not the room: only
+#     while the room is occupied. Only sends IR when the speed changes, so
+#     the fan doesn't get the same code every few minutes.
+#   - Purifier (fan.office): the PM2.5 sensor misses the coarse dust that
+#     clogs PC intakes, so it runs on activity and time instead of PM2.5.
+#   - Any manual change from HA to one of these fans pauses automatic
+#     control for an hour (input_datetime below).
+
+input_boolean:
+  computer_room_auto_cooling:
+    name: Computer room auto cooling
+    icon: mdi:fan-auto
+  computer_room_auto_air:
+    name: Computer room auto air purifier
+    icon: mdi:air-purifier
+
+input_number:
+  computer_room_target_temp:
+    name: Computer room target temperature
+    icon: mdi:thermometer-check
+    min: 20
+    max: 27
+    step: 0.5
+    unit_of_measurement: "°C"
+    mode: slider
+
+input_datetime:
+  computer_room_climate_paused_until:
+    name: Computer room climate paused until
+    has_date: true
+    has_time: true
+    icon: mdi:pause-circle-outline
+  computer_room_dust_boost_until:
+    name: Computer room dust boost until
+    has_date: true
+    has_time: true
+    icon: mdi:broom
+
+template:
+  - binary_sensor:
+      - name: Computer room occupied
+        unique_id: computer_room_occupied
+        device_class: occupancy
+        # Hue motion is on while motion is seen; keep 'occupied' for 20 min.
+        state: "{{ is_state('binary_sensor.computer_sensor_motion', 'on') }}"
+        delay_off: { minutes: 20 }
+      - name: Computer room climate paused
+        unique_id: computer_room_climate_paused
+        icon: mdi:pause-circle-outline
+        state: >-
+          {{ state_attr('input_datetime.computer_room_climate_paused_until', 'timestamp') | float(0)
+             > as_timestamp(now()) }}
+
+automation:
+  # ------------------------------------------------------------ Cooling --
+  - id: computer_room_cooling
+    alias: "Computer room: cooling"
+    mode: queued
+    max: 3
+    triggers:
+      - trigger: state
+        entity_id:
+          - sensor.computer_sensor_temperature
+          - sensor.hallway_temperature
+          - binary_sensor.computer_room_occupied
+          - input_boolean.computer_room_auto_cooling
+          - input_number.computer_room_target_temp
+          - binary_sensor.computer_room_climate_paused
+      - trigger: time_pattern
+        minutes: "/5"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.computer_room_auto_cooling
+        state: "on"
+      - condition: state
+        entity_id: binary_sensor.computer_room_climate_paused
+        state: "off"
+      - condition: template
+        value_template: >-
+          {{ states('sensor.computer_sensor_temperature') | is_number
+             and states('sensor.hallway_temperature') | is_number }}
+    variables:
+      room: "{{ states('sensor.computer_sensor_temperature') | float }}"
+      hall: "{{ states('sensor.hallway_temperature') | float }}"
+      target: "{{ states('input_number.computer_room_target_temp') | float(24) }}"
+      excess: "{{ room - target }}"
+      occupied: "{{ is_state('binary_sensor.computer_room_occupied', 'on') }}"
+      night: "{{ now().hour >= 22 or now().hour < 7 }}"
+      hall_cur: >-
+        {{ (state_attr('fan.air_circulator', 'percentage') | int(0))
+           if is_state('fan.air_circulator', 'on') else 0 }}
+      hall_want: >-
+        {%- set w = 0 -%}
+        {%- if hall <= room - 1 -%}
+          {%- if excess >= 3 -%}{%- set w = 100 -%}
+          {%- elif excess >= 2 -%}{%- set w = 75 -%}
+          {%- elif excess >= 1 -%}{%- set w = 50 -%}
+          {%- elif excess >= 0 -%}{%- set w = 25 -%}
+          {%- elif excess >= -0.5 and hall_cur > 0 -%}{%- set w = 25 -%}
+          {%- endif -%}
+        {%- endif -%}
+        {{ [w, 50] | min if night else w }}
+      ceil_cur: >-
+        {{ ((state_attr('fan.ceiling_fan', 'percentage') | int(0)) / 33.3) | round(0) | int
+           if is_state('fan.ceiling_fan', 'on') else 0 }}
+      ceil_want: >-
+        {%- if not occupied -%}0
+        {%- elif excess >= 2.5 -%}3
+        {%- elif excess >= 1.5 -%}2
+        {%- elif excess >= 0.5 -%}1
+        {%- elif excess >= 0 and ceil_cur > 0 -%}1
+        {%- else -%}0{%- endif -%}
+    actions:
+      - if:
+          - condition: template
+            value_template: "{{ hall_want | int != hall_cur | int }}"
+        then:
+          - if:
+              - condition: template
+                value_template: "{{ hall_want | int == 0 }}"
+            then:
+              - action: fan.turn_off
+                target: { entity_id: fan.air_circulator }
+            else:
+              - action: fan.set_percentage
+                target: { entity_id: fan.air_circulator }
+                data: { percentage: "{{ hall_want | int }}" }
+      - if:
+          - condition: template
+            value_template: "{{ ceil_want | int != ceil_cur | int }}"
+        then:
+          - if:
+              - condition: template
+                value_template: "{{ ceil_want | int == 0 }}"
+            then:
+              - action: fan.turn_off
+                target: { entity_id: fan.ceiling_fan }
+            else:
+              - action: fan.set_percentage
+                target: { entity_id: fan.ceiling_fan }
+                data: { percentage: "{{ [0, 33, 66, 100][ceil_want | int] }}" }
+
+  # ------------------------------------------------------- Air purifier --
+  - id: computer_room_purifier
+    alias: "Computer room: air purifier"
+    mode: queued
+    max: 3
+    triggers:
+      - trigger: state
+        entity_id:
+          - binary_sensor.computer_room_occupied
+          - input_boolean.computer_room_auto_air
+          - binary_sensor.computer_room_climate_paused
+          - fan.office
+      - trigger: numeric_state
+        entity_id: sensor.office_pm2_5
+        above: 15
+      - trigger: state
+        entity_id: vacuum.dreamebot_l10s_ultra
+        to: cleaning
+        id: vacuum
+      - trigger: time
+        at: ["07:00:00", "23:00:00"]
+      - trigger: time_pattern
+        minutes: "/10"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.computer_room_auto_air
+        state: "on"
+      - condition: state
+        entity_id: binary_sensor.computer_room_climate_paused
+        state: "off"
+    variables:
+      # Vacuuming raises dust: the vacuum trigger opens a 90 min turbo window.
+      vacuumed_recently: >-
+        {{ trigger.id == 'vacuum'
+           or state_attr('input_datetime.computer_room_dust_boost_until', 'timestamp') | float(0)
+              > as_timestamp(now()) }}
+      want: >-
+        {%- if is_state('binary_sensor.computer_room_occupied', 'on')
+              or states('sensor.office_pm2_5') | float(0) >= 15
+              or vacuumed_recently -%}turbo
+        {%- elif now().hour >= 23 or now().hour < 7 -%}sleep
+        {%- else -%}speed50{%- endif -%}
+      cur_on: "{{ is_state('fan.office', 'on') }}"
+      cur_preset: "{{ state_attr('fan.office', 'preset_mode') or 'none' }}"
+      cur_pct: "{{ state_attr('fan.office', 'percentage') | int(0) }}"
+    actions:
+      - if:
+          - condition: trigger
+            id: vacuum
+        then:
+          - action: input_datetime.set_datetime
+            target: { entity_id: input_datetime.computer_room_dust_boost_until }
+            data:
+              timestamp: "{{ (now() + timedelta(minutes=90)).timestamp() }}"
+      - choose:
+          - conditions: "{{ want in ['turbo', 'sleep'] and (not cur_on or cur_preset != want) }}"
+            sequence:
+              - action: fan.set_preset_mode
+                target: { entity_id: fan.office }
+                data: { preset_mode: "{{ want }}" }
+          - conditions: "{{ want == 'speed50' and (not cur_on or cur_preset in ['turbo', 'sleep', 'auto'] or cur_pct != 50) }}"
+            sequence:
+              - action: fan.set_percentage
+                target: { entity_id: fan.office }
+                data: { percentage: 50 }
+
+  - id: computer_room_purifier_filter
+    alias: "Computer room: purifier filter low"
+    mode: single
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.office_nanoprotect_filter
+        below: 10
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: "🌬️ Purifier filter at {{ states('sensor.office_nanoprotect_filter') }} %"
+          message: "Time to order a NanoProtect filter for the Philips 800i in the computer room."
+
+  # -------------------------------------------------- Manual override --
+  # A fan changed from HA by a person (dashboard, app) rather than by an
+  # automation: hand control back for an hour.
+  - id: computer_room_climate_manual_override
+    alias: "Computer room: manual override pause"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: [fan.ceiling_fan, fan.air_circulator, fan.office]
+    conditions:
+      - condition: template
+        value_template: >-
+          {{ trigger.to_state is not none
+             and trigger.to_state.context.user_id is not none
+             and trigger.to_state.context.parent_id is none }}
+    actions:
+      - action: input_datetime.set_datetime
+        target: { entity_id: input_datetime.computer_room_climate_paused_until }
+        data:
+          timestamp: "{{ (now() + timedelta(hours=1)).timestamp() }}"
+
+  # ------------------------------------------------------- Window hint --
+  - id: computer_room_open_window_hint
+    alias: "Computer room: open-window hint"
+    mode: single
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.computer_sensor_temperature
+        above: input_number.computer_room_target_temp
+        for: { minutes: 15 }
+    conditions:
+      - condition: template
+        value_template: >-
+          {% set room = states('sensor.computer_sensor_temperature') | float(0) %}
+          {% set target = states('input_number.computer_room_target_temp') | float(24) %}
+          {% set out = state_attr('weather.smhi_home', 'temperature') %}
+          {{ out is number and room - target >= 2 and out <= room - 5
+             and not is_state('weather.smhi_home', 'rainy') }}
+      - condition: template
+        value_template: >-
+          {% set last = state_attr('automation.computer_room_open_window_hint', 'last_triggered') %}
+          {{ last is none or as_local(last).date() != now().date() }}
+    actions:
+      - action: notify.mobile_app_robins_iphone
+        data:
+          title: "🪟 Computer room {{ states('sensor.computer_sensor_temperature') }} °C"
+          message: >-
+            It's {{ state_attr('weather.smhi_home', 'temperature') }} °C outside. Opening the
+            window will cool the room faster than the fans.

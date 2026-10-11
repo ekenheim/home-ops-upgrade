@@ -1,0 +1,26 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# The web UI and API on the LAN, through envoy-internal. Every call still needs
+# a Bearer key or a signed-in session: the server runs with auth on.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: trackinizer
+  namespace: trackinizer
+  annotations:
+    gethomepage.dev/description: "Analysis ledger for agent-factory"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: "Development"
+    gethomepage.dev/icon: "mdi-notebook"
+    gethomepage.dev/name: "Trackinizer"
+spec:
+  hostnames:
+    - "trackinizer.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: trackinizer
+          port: 8765

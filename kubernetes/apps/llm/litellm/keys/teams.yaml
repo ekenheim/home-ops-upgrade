@@ -1,0 +1,151 @@
+---
+# LiteLLM teams, grouped by what the data may touch rather than by namespace.
+# Every virtual key belongs to exactly one: the operator keys here set
+# `teamID`, and the hand-made keys the apps read from Bitwarden were moved
+# into these teams through the admin API on 2026-10-11.
+#
+# A team's `models` is a CEILING on its keys, which is the point of having
+# teams: a key scoped too wide (or a UI key left on `all-team-models`) still
+# cannot reach a model its team does not list. So the PRIVACY rule in
+# ../app/configmap.yaml lives here too -- `home` lists no cloud alias at all.
+# Router fallbacks are not checked against these lists, only the model asked
+# for, so a pool's cloud floor still works for a team that lists the pool.
+#
+# Keep every key's own `models` a subset of its team's, or LiteLLM rejects
+# the key update. teamID defaults to the resource name.
+#
+# maxBudget is list-price spend (the configmap's *_cost_per_token), and only
+# cloud aliases carry a cost: local models and the ChatGPT subscription are $0.
+# A team over budget blocks EVERY key in it, embeddings included, so budgets
+# sit only on teams that have no local-only member. `memory` is capped per
+# model on the hindsight key instead (model_tpm_limit, set through the API --
+# the operator cannot express it), so a backlog cannot eat the MiniMax plan
+# without starving memini's local recall.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMTeam
+metadata:
+  name: coding
+spec:
+  proxyRef: litellm-admin
+  alias: coding
+  # Public code only, so the cloud plans are allowed.
+  # Members: pr-review, courier, agent-lab, opencode, zed (Git); dispatch,
+  # repo-wiki (Bitwarden).
+  models:
+    - auto
+    - self-hosted
+    - review
+    - deep
+    - fast
+    - chatgpt
+    - local-pool
+    - local-pool-chat
+    - reasoning-pool
+    - implementation-pool
+    - frontier-pool
+    - MiniMax-M3-chat
+    - MiniMax-M2.7
+    - qwen3-embedding-0.6b
+  maxBudget: "15"
+  budgetDuration: 1d
+---
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMTeam
+metadata:
+  name: assistants
+spec:
+  proxyRef: litellm-admin
+  alias: assistants
+  # Personal agents. Members: openclaw (Git); hermes (Bitwarden).
+  models:
+    - self-hosted
+    - review
+    - deep
+    - fast
+    - chatgpt
+    - local-pool
+    - local-pool-chat
+    - reasoning-pool
+    - implementation-pool
+    - frontier-pool
+    - MiniMax-M3-chat
+    - MiniMax-M3-messages
+    - MiniMax-M2.7
+---
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMTeam
+metadata:
+  name: memory
+spec:
+  proxyRef: litellm-admin
+  alias: memory
+  # Memory services. Members: hindsight, memini (Bitwarden).
+  models:
+    - qwen3-embedding-0.6b
+    - rerank
+    - fast
+    - MiniMax-M3
+    - hindsight-consolidation
+---
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMTeam
+metadata:
+  name: research
+spec:
+  proxyRef: litellm-admin
+  alias: research
+  # Public filings and notebooks. Members: atlas (Git); atlas-dev, marimo
+  # (Bitwarden / UI). atlas carries its own $20/day on top of this.
+  models:
+    - MiniMax-M3
+    - MiniMax-M3-chat
+    - MiniMax-M2.7
+    - qwen3-embedding-0.6b
+    - rerank
+    - self-hosted
+    - fast
+    - local-pool-chat
+    - chatgpt
+  maxBudget: "25"
+  budgetDuration: 1d
+---
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMTeam
+metadata:
+  name: media
+spec:
+  proxyRef: litellm-admin
+  alias: media
+  # Subtitles. Member: lingarr (Bitwarden).
+  models:
+    - translate
+    - fast
+---
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMTeam
+metadata:
+  name: home
+spec:
+  proxyRef: litellm-admin
+  alias: home
+  # Home data: local aliases only. `home-assistant` itself falls back to the
+  # ChatGPT subscription, never MiniMax. Members: homeassistant-chat,
+  # facebook-marketplace (Bitwarden).
+  models:
+    - home-assistant
+    - fast
+    - self-hosted
+---
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMTeam
+metadata:
+  name: platform
+spec:
+  proxyRef: litellm-admin
+  alias: platform
+  # Cluster plumbing. Members: alert-triage, toolhive (Git).
+  models:
+    - local-pool
+    - local-pool-chat
+    - fast
+    - qwen3-embedding-0.6b

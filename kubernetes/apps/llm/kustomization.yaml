@@ -70,8 +70,8 @@ resources:
   #                   is pointed at, so scope it deliberately.
   #   `dispatch`      DISPATCH_AGENT_TOKEN, DISPATCH_AUTH_USERNAME / _PASSWORD,
   #                   LITELLM_API_KEY.
-  #   `foreman`       LITELLM_API_KEY -- the item keeps its old name; courier
-  #                   reads its key from it (courier/app/externalsecret.yaml).
+  # courier's LiteLLM key is operator-minted (litellm/keys/courier.yaml); the
+  # old `foreman` item is unused since 2026-10-11.
   #
   # dispatch needs the `dispatch` Postgres user, declared in
   # apps/database/crunchy-postgres/cluster/cluster.yaml.

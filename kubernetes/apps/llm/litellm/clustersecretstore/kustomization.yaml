@@ -6,3 +6,4 @@ resources:
   - ./rbac.yaml
   - ./secretstore.yaml
   - ./agent-lab.yaml
+  - ./courier.yaml

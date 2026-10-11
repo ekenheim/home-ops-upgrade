@@ -112,9 +112,11 @@ data:
       # but with a voice-sized per-call timeout: the global request_timeout
       # (1800 s) is sized for long reasoning jobs, and nobody waits that long
       # for "turn off the lights". When worker4 is down or slow, the router
-      # falls back to MiniMax, then the ChatGPT subscription (see
-      # router_settings.fallbacks). HA only ever asks for `home-assistant`, so
-      # reordering or swapping providers never needs a change in HA.
+      # falls back to the ChatGPT subscription (see router_settings.fallbacks).
+      # Never to MiniMax: HA prompts carry home state, which the PRIVACY rule
+      # below keeps off the China-based plans. HA only ever asks for
+      # `home-assistant`, so reordering or swapping providers never needs a
+      # change in HA.
       - model_name: home-assistant
         model_info:
           mode: chat
@@ -442,8 +444,9 @@ data:
       # faithful as Codex luna (atlas ticket 21); Hindsight sends "think": false.
       # Never worker4 (too slow for consolidation). The PC is not always on: with
       # MiniMax capped and the PC off, consolidation fails until one is back.
-      # 192.168.1.182 is the PC's DHCP lease, the same address the UI-added
-      # `qwen3.8:latest` route uses: reserve it in DHCP. num_ctx pinned at Ollama's
+      # 192.168.1.182 is the PC's DHCP lease: reserve it in DHCP. (The UI-added
+      # `qwen3.8:latest` route to the same Ollama was deleted 2026-10-11; this
+      # rung never depended on it.) num_ctx pinned at Ollama's
       # VRAM default for this card (32768); the largest consolidation call is about
       # 20k tokens.
       - model_name: hindsight-consolidation
@@ -848,12 +851,16 @@ data:
       # Only affects requests made after this lands; existing rows stay empty.
       #
       # Note this writes full subtitle text (and every other caller's prompts)
-      # into the shared postgres cluster. If that grows uncomfortably, cap it
-      # with -- these delete whole spend rows, not just the bodies, so they
-      # trade history for space:
-      #   maximum_spend_logs_retention_period: "30d"
-      #   maximum_spend_logs_retention_interval: "24h"
+      # into the shared postgres cluster.
       store_prompts_in_spend_logs: true
+      # ...which is why spend rows are kept 30 days. By 2026-10-11 the table was
+      # 6.5 GB / 320k rows after two months, three quarters of them hindsight
+      # embedding calls. These delete whole rows (per-request history), not
+      # just the bodies; key and team spend totals live on their own tables and
+      # are unaffected. Postgres reuses the freed space but does not shrink the
+      # file until a VACUUM FULL.
+      maximum_spend_logs_retention_period: "30d"
+      maximum_spend_logs_retention_interval: "24h"
 
     router_settings:
       enable_pre_call_checks: true
@@ -866,10 +873,11 @@ data:
         # classic local aliases above deliberately have none.
         - local-pool: ["MiniMax-M3-chat"]
         - local-pool-chat: ["MiniMax-M3-chat"]
-        # Home Assistant voice: local first, then MiniMax (300 prompts / 5 h
-        # plan), then the ChatGPT subscription when MiniMax is capped or out.
+        # Home Assistant voice: local first, then the ChatGPT subscription.
+        # MiniMax was the middle rung until 2026-10-11 and is out on purpose:
+        # home state may not go to the China-based plans (PRIVACY, above).
         # Reorder here to change HA's provider; HA itself is untouched.
-        - home-assistant: ["MiniMax-M3-chat", "chatgpt"]
+        - home-assistant: ["chatgpt"]
         # hindsight-consolidation needs no entry: its two rungs (MiniMax-M3, then
         # the 5090) fail over by `order:`.
 

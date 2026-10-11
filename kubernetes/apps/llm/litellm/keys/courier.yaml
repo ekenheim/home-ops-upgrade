@@ -1,0 +1,21 @@
+---
+# courier's CoderRuns (apps/llm/courier), one model per LaneProfile role in
+# ../../courier/config/laneprofile.yaml. Replaced the hand-made `foreman` key
+# courier inherited from the retired foreman on 2026-10-11. The executor takes
+# ONE env Secret, so courier-executor merges this key with the Bitwarden
+# GITHUB_TOKEN through the `litellm-key-secrets-courier` store
+# (../clustersecretstore/courier.yaml).
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: courier
+spec:
+  proxyRef: litellm-admin
+  keyAlias: courier
+  teamID: coding
+  secretName: litellm-key-courier
+  secretKey: api-key
+  models:
+    - reasoning-pool
+    - implementation-pool
+    - self-hosted

@@ -1,0 +1,39 @@
+# Computer room ceiling fan: an IR fan driven by the BroadLink RM4 Pro.
+# Codes were learned into HA on 2026-10-11 (remote.learn_command, IR) and
+# live in .storage/broadlink_remote_<mac>_codes on the PVC as device
+# `ceiling_fan`, commands speed_0 (off) .. speed_3.
+#
+# IR is one-way: HA cannot read the fan's real speed, so this template fan
+# is optimistic (no state/percentage templates) and restores its last known
+# speed after a restart. Using the physical remote desyncs it until the next
+# command from HA.
+template:
+  - fan:
+      - name: Ceiling fan
+        unique_id: computer_room_ceiling_fan
+        icon: mdi:ceiling-fan
+        speed_count: 3
+        turn_on:
+          - action: remote.send_command
+            target: { entity_id: remote.broadlink_universal_remote }
+            data:
+              device: ceiling_fan
+              # Plain "on" (no percentage) starts at speed 1.
+              command: >-
+                {%- set p = percentage | default(0, true) | int(0) -%}
+                speed_{{ [[(p * 3 / 100) | round(0, 'ceil') | int, 1] | max, 3] | min }}
+        turn_off:
+          - action: remote.send_command
+            target: { entity_id: remote.broadlink_universal_remote }
+            data:
+              device: ceiling_fan
+              command: speed_0
+        set_percentage:
+          - action: remote.send_command
+            target: { entity_id: remote.broadlink_universal_remote }
+            data:
+              device: ceiling_fan
+              # 0 -> off, 1-33 -> 1, 34-66 -> 2, 67-100 -> 3
+              command: >-
+                {%- set p = percentage | int(0) -%}
+                speed_{{ [(p * 3 / 100) | round(0, 'ceil') | int, 3] | min }}

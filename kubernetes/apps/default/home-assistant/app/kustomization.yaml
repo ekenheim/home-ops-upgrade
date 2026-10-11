@@ -20,6 +20,7 @@ configMapGenerator:
       - apple_health.yaml=./packages/apple_health.yaml
       - home_automations.yaml=./packages/home_automations.yaml
       - ceiling_fan.yaml=./packages/ceiling_fan.yaml
+      - computer_room_climate.yaml=./packages/computer_room_climate.yaml
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

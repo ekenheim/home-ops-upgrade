@@ -31,13 +31,13 @@ most scheduled jobs stay on Ornith (worker4), as they do on Jory's Strix box.
 
 | Alias | Order | Policy |
 |---|---|---|
-| `frontier-pool` | Kimi K3 → ChatGPT gpt-6-astra → GLM-5.3 | Hard problems. No local floor: fails instead of silently getting dumber |
-| `reasoning-pool` | Kimi K2.7 → ChatGPT gpt-5.6-terra → GLM-5.3-flash → MiniMax-M3 → Ornith | Planning. MiniMax is the flat-plan floor, Ornith the free one |
+| `frontier-pool` | ChatGPT gpt-6-astra | Hard problems. No local floor: fails instead of silently getting dumber |
+| `reasoning-pool` | ChatGPT gpt-5.6-terra → MiniMax-M3 → Qwen3.8-Flash-Next | Planning. MiniMax is the flat-plan floor, worker4 the free one |
 | `implementation-pool` | MiniMax-M2.7 → ChatGPT gpt-5.6-luna → Ornith | Carrying out a plan. MiniMax leads because it has the biggest prompt allowance (300 / 5h) |
 | `local-pool` / `local-pool-chat` | Ornith (thinking / no thinking) → MiniMax-M3-chat | Cheap, private-first work with a cloud fallback for when worker4 is down |
 | `auto` | classifier on `fast` → `local-pool-chat` / `MiniMax-M3-chat` / `reasoning-pool` | Interactive clients only. Never reaches `frontier-pool` |
 
-The existing aliases (`self-hosted`, `fast`, `review`, `deep`, `translate`,
+The existing aliases (`self-hosted`, `fast`, `review`, `translate`,
 `chatgpt`, `qwen3-embedding-0.6b`) are unchanged, and still never fall back to a
 cloud plan. Only callers that pick a pool alias opt into the cloud.
 
@@ -70,7 +70,10 @@ yet ships with its `ks.yaml` commented out and is switched on in a follow-up.
    - Z.AI **GLM Coding Lite** (~$151/yr) → `ZAI_API_KEY`
 
    Buy MiniMax first. It leads `implementation-pool` and is the floor of
-   `reasoning-pool`. Kimi and Z.AI can wait until usage shows they are needed.
+   `reasoning-pool`. Kimi and Z.AI can wait until usage shows they are needed;
+   their pool rungs were removed on 2026-10-11 (an empty key still cost every
+   reasoning-pool call a failed hop) and go back into the litellm ConfigMap
+   from git history when a plan is bought.
 2. **Phase 1c:** add `UNIFI_*`, `GRAFANA_TOKEN` and the arr API keys when you get there.
 3. **Phase 2:** create a GitHub App for Renovate (steps in that PR).
 4. **Phase 3:** create a Discord application + bot and add its token as

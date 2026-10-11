@@ -51,13 +51,22 @@ data:
       # 262144 = contextSize 524288 / parallelSlots 2, the model's full native
       # window -- the same number Ornith served, so no client limit moved in
       # the swap. Every local alias and pool rung must carry the same value.
+      #
+      # `&worker4` below is the one place the server is named. Every other
+      # worker4 entry (review, fast, home-assistant, local-pool*, the pool
+      # rungs) merges it with `<<: *worker4`, so a model swap edits model and
+      # api_base once. Each of them MUST still set its own chat_template_kwargs:
+      # a merge copies the anchor's keys into a new dict, but a nested dict it
+      # does not override is the SAME object in every entry -- the PyYAML trap
+      # the model_info note under "Cloud plans" describes. model_info stays
+      # spelled out per entry for the same reason.
       - model_name: self-hosted
         model_info:
           mode: chat
           supports_function_calling: true
           supports_vision: true
           max_input_tokens: 262144
-        litellm_params:
+        litellm_params: &worker4
           model: openai/qwen38-flash-next
           api_base: http://qwen38-flash-next.llm:8080/v1
           api_key: none
@@ -72,9 +81,7 @@ data:
           supports_vision: true
           max_input_tokens: 262144
         litellm_params:
-          model: openai/qwen38-flash-next
-          api_base: http://qwen38-flash-next.llm:8080/v1
-          api_key: none
+          <<: *worker4
           chat_template_kwargs:
             reasoning_effort: medium
 
@@ -101,9 +108,7 @@ data:
           supports_vision: true
           max_input_tokens: 262144
         litellm_params:
-          model: openai/qwen38-flash-next
-          api_base: http://qwen38-flash-next.llm:8080/v1
-          api_key: none
+          <<: *worker4
           chat_template_kwargs:
             enable_thinking: false
 
@@ -124,9 +129,7 @@ data:
           supports_vision: true
           max_input_tokens: 262144
         litellm_params:
-          model: openai/qwen38-flash-next
-          api_base: http://qwen38-flash-next.llm:8080/v1
-          api_key: none
+          <<: *worker4
           timeout: 20
           chat_template_kwargs:
             enable_thinking: false
@@ -161,24 +164,10 @@ data:
             thinking:
               type: disabled
 
-      # `deep` is the same server again at the template's full xhigh effort.
-      # It used to be a separate model (Qwen3.8-27B, dense, ~12 t/s) that sat
-      # parked for its whole life; this model matches it on SWE-bench Pro, so
-      # the alias survives as an effort level. Route cron jobs, hard one-shots
-      # and second-opinion reviews here -- anywhere a multi-minute answer is
-      # fine. Nothing in this repo points here yet.
-      - model_name: deep
-        model_info:
-          mode: chat
-          supports_function_calling: true
-          supports_vision: true
-          max_input_tokens: 262144
-        litellm_params:
-          model: openai/qwen38-flash-next
-          api_base: http://qwen38-flash-next.llm:8080/v1
-          api_key: none
-          chat_template_kwargs:
-            reasoning_effort: xhigh
+      # `deep` (this server at the template's full xhigh effort) was removed
+      # 2026-10-11: no caller in 30 days and nothing in the repo pointed at it.
+      # Bring it back as one more `<<: *worker4` entry with
+      # chat_template_kwargs.reasoning_effort: xhigh if a job wants it.
 
       # --- ChatGPT subscription (OpenAI Codex OAuth) ---
       #
@@ -324,20 +313,25 @@ data:
       # `order:` is litellm's own failover: within one model_name, lower order
       # is tried first, and once retries are exhausted litellm synthesises a
       # fallback to the next order. No `fallbacks:` entry is needed for that.
-      # Fallbacks fire on ANY exception, so a 401 from a rung whose key is not
-      # in Bitwarden yet just moves on -- the pools work, one rung short, before
-      # every plan is bought.
       #
-      # Cap-out signals differ: MiniMax and Z.AI send 429, Kimi sends 403
-      # (retried, never cooled down -- order-based fallback is what advances),
-      # ChatGPT sends 429 as a bare HTML page.
+      # Only plans that are actually bought get a rung. An unbought plan's rung
+      # does fall through (fallbacks fire on ANY exception), but it costs every
+      # call a failed hop first: Kimi's empty key failed 229 reasoning-pool
+      # calls a week until its rungs were removed on 2026-10-11, along with
+      # Z.AI's. Kimi Coding and Z.AI GLM Coding (PLATFORM-PLAN.md) come back as
+      # rungs when bought; the entries are in git history at that date, and
+      # the externalsecret already templates KIMI_CODE_API_KEY / ZAI_API_KEY.
+      #
+      # Cap-out signals differ: MiniMax sends 429 per window and 402 once the
+      # plan's allowance is spent, ChatGPT sends 429 as a bare HTML page (Kimi
+      # sent 403, Z.AI 429).
       #
       # The chatgpt/ rungs only work for STREAMING callers: litellm v1.103.0
       # still defaults stream=False on the chatgpt chat bridge and the Codex
       # backend only speaks SSE (see the `chatgpt` block above). A
       # non-streaming caller fails that rung and falls through to the next.
       #
-      # PRIVACY: MiniMax, Kimi and Z.AI are China-based. The pools are opt-in
+      # PRIVACY: MiniMax (and Kimi and Z.AI, if bought) are China-based. The pools are opt-in
       # by alias; nothing that carries email, finance or home data may use
       # them. The local aliases above never fall back to a cloud rung.
       #
@@ -488,97 +482,15 @@ data:
           model: openai/MiniMax-M2.7
           api_base: https://api.minimax.io/v1
           api_key: os.environ/MINIMAX_API_KEY
-      - model_name: kimi-k2.7
-        model_info:
-          mode: chat
-          max_input_tokens: 262144
-          max_output_tokens: 32768
-          supports_function_calling: true
-          supports_prompt_caching: true
-          supports_vision: true
-          input_cost_per_token: 9.5e-07
-          output_cost_per_token: 4.0e-06
-        litellm_params: &kimi-k27
-          model: openai/kimi-for-coding
-          api_base: https://api.kimi.com/coding/v1
-          api_key: os.environ/KIMI_CODE_API_KEY
-          # The coding endpoint rejects sampling overrides.
-          additional_drop_params:
-            - frequency_penalty
-            - n
-            - presence_penalty
-            - reasoning_effort
-            - temperature
-            - thinking
-            - top_p
-      - model_name: kimi-k3
-        model_info:
-          mode: chat
-          max_input_tokens: 1048576
-          max_output_tokens: 131072
-          supports_function_calling: true
-          supports_prompt_caching: true
-          supports_vision: true
-          input_cost_per_token: 3.0e-06
-          output_cost_per_token: 1.5e-05
-        litellm_params: &kimi-k3
-          model: openai/k3
-          api_base: https://api.kimi.com/coding/v1
-          api_key: os.environ/KIMI_CODE_API_KEY
-          # K3 takes reasoning_effort; K2.7 does not.
-          additional_drop_params:
-            - frequency_penalty
-            - n
-            - presence_penalty
-            - temperature
-            - thinking
-            - top_p
-      - model_name: glm-5.3
-        model_info:
-          mode: chat
-          max_input_tokens: 1000000
-          max_output_tokens: 131072
-          supports_function_calling: true
-          supports_prompt_caching: true
-          input_cost_per_token: 1.4e-06
-          output_cost_per_token: 4.4e-06
-        litellm_params: &glm-53
-          model: openai/glm-5.3
-          api_base: https://api.z.ai/api/coding/paas/v4
-          api_key: os.environ/ZAI_API_KEY
-          allowed_openai_params:
-            - reasoning_effort
-      - model_name: glm-5.3-flash
-        model_info:
-          mode: chat
-          max_input_tokens: 1000000
-          max_output_tokens: 131072
-          supports_function_calling: true
-          supports_prompt_caching: true
-          supports_vision: true
-          input_cost_per_token: 1.5e-07
-          output_cost_per_token: 5.0e-07
-        litellm_params: &glm-53-flash
-          model: openai/glm-5.3-flash
-          api_base: https://api.z.ai/api/coding/paas/v4
-          api_key: os.environ/ZAI_API_KEY
-          allowed_openai_params:
-            - reasoning_effort
 
       # --- frontier-pool: hard problems ---
       # No local floor on purpose: once every plan has rejected the request it
       # fails, rather than quietly answering with a much weaker model. Use
       # reasoning-pool when a weaker answer is acceptable.
-      # Window = smallest rung (gpt-5.6-sol advertises 272k over Codex).
-      - model_name: frontier-pool
-        model_info:
-          mode: chat
-          max_input_tokens: 262144
-          supports_function_calling: true
-          supports_vision: true
-        litellm_params:
-          <<: *kimi-k3
-          order: 1
+      #
+      # One rung while only ChatGPT is bought. Kimi K3 led and GLM-5.3 trailed
+      # until 2026-10-11 (see "Only plans that are actually bought" above);
+      # either goes back in around this rung, with `order:` on all of them.
       - model_name: frontier-pool
         model_info:
           # responses, not chat: gpt-6-astra has no litellm registry entry,
@@ -591,29 +503,12 @@ data:
         litellm_params:
           model: chatgpt/gpt-6-astra
           additional_drop_params: [temperature]
-          order: 2
-      - model_name: frontier-pool
-        model_info:
-          mode: chat
-          max_input_tokens: 262144
-          supports_function_calling: true
-          supports_vision: true
-        litellm_params:
-          <<: *glm-53
-          order: 3
 
       # --- reasoning-pool: planning ---
-      # MiniMax-M3 is the flat-plan floor, worker4 (Qwen3.8-Flash-Next) the free one. Kimi K2.7's
-      # 262k window is the pool's ceiling.
-      - model_name: reasoning-pool
-        model_info:
-          mode: chat
-          max_input_tokens: 262144
-          supports_function_calling: true
-          supports_vision: true
-        litellm_params:
-          <<: *kimi-k27
-          order: 1
+      # ChatGPT terra first, MiniMax-M3 the flat-plan floor, worker4
+      # (Qwen3.8-Flash-Next) the free one. 262k is worker4's per-slot window
+      # and the smallest rung's. Kimi K2.7 led and GLM-5.3-flash sat third
+      # until 2026-10-11 (see "Only plans that are actually bought" above).
       - model_name: reasoning-pool
         model_info:
           mode: chat
@@ -623,16 +518,7 @@ data:
         litellm_params:
           model: chatgpt/gpt-5.6-terra
           additional_drop_params: [temperature]
-          order: 2
-      - model_name: reasoning-pool
-        model_info:
-          mode: chat
-          max_input_tokens: 262144
-          supports_function_calling: true
-          supports_vision: true
-        litellm_params:
-          <<: *glm-53-flash
-          order: 3
+          order: 1
       - model_name: reasoning-pool
         model_info:
           mode: chat
@@ -643,7 +529,7 @@ data:
           model: openai/MiniMax-M3
           api_base: https://api.minimax.io/v1
           api_key: os.environ/MINIMAX_API_KEY
-          order: 4
+          order: 2
       - model_name: reasoning-pool
         model_info:
           mode: chat
@@ -651,12 +537,10 @@ data:
           supports_function_calling: true
           supports_vision: true
         litellm_params:
-          model: openai/qwen38-flash-next
-          api_base: http://qwen38-flash-next.llm:8080/v1
-          api_key: none
+          <<: *worker4
           chat_template_kwargs:
             reasoning_effort: medium
-          order: 5
+          order: 3
 
       # --- implementation-pool: carrying out a plan (the coder role) ---
       # Jory's coder is a 27B on a 3090; we have no such card, so the coder
@@ -688,9 +572,7 @@ data:
           max_input_tokens: 204800
           supports_function_calling: true
         litellm_params:
-          model: openai/qwen38-flash-next
-          api_base: http://qwen38-flash-next.llm:8080/v1
-          api_key: none
+          <<: *worker4
           chat_template_kwargs:
             reasoning_effort: medium
           order: 3
@@ -707,9 +589,7 @@ data:
           supports_function_calling: true
           supports_vision: true
         litellm_params:
-          model: openai/qwen38-flash-next
-          api_base: http://qwen38-flash-next.llm:8080/v1
-          api_key: none
+          <<: *worker4
           chat_template_kwargs:
             reasoning_effort: medium
       - model_name: local-pool-chat
@@ -719,9 +599,7 @@ data:
           supports_function_calling: true
           supports_vision: true
         litellm_params:
-          model: openai/qwen38-flash-next
-          api_base: http://qwen38-flash-next.llm:8080/v1
-          api_key: none
+          <<: *worker4
           chat_template_kwargs:
             enable_thinking: false
 

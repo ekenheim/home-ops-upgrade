@@ -14,6 +14,18 @@
 # Keep every key's own `models` a subset of its team's, or LiteLLM rejects
 # the key update. teamID defaults to the resource name.
 #
+# members: default_user_id (the proxy admin, i.e. the master key) is declared
+# on EVERY team, and that is load-bearing. LiteLLM adds the creator as an
+# admin when the operator creates a team, and `members` is the complete set:
+# on any spec change the operator removes remote members not listed here. And
+# LiteLLM's /team/member_delete also DELETES THAT USER'S KEYS IN THE TEAM. The
+# hand-made keys belong to default_user_id, so a team without this entry loses
+# them on its next spec change -- which is how `hermes` (assistants) and
+# `repo-wiki` (coding) were deleted on 2026-10-11, when #7441 dropped `deep`
+# from those two teams' model lists. A key lost this way can be re-created
+# with its original value (POST /key/generate with `key`, the plaintext from
+# the app's Secret), so the app and Bitwarden need no change.
+#
 # maxBudget is list-price spend (the configmap's *_cost_per_token), and only
 # cloud aliases carry a cost: local models and the ChatGPT subscription are $0.
 # A team over budget blocks EVERY key in it, embeddings included, so budgets
@@ -28,8 +40,12 @@ metadata:
 spec:
   proxyRef: litellm-admin
   alias: coding
+  # See "members" in the header: never remove this entry.
+  members:
+    - userID: default_user_id
+      role: admin
   # Public code only, so the cloud plans are allowed.
-  # Members: pr-review, courier, agent-lab, opencode, zed (Git); dispatch,
+  # Keys: pr-review, courier, agent-lab, opencode, zed (Git); dispatch,
   # repo-wiki (Bitwarden).
   models:
     - auto
@@ -55,7 +71,11 @@ metadata:
 spec:
   proxyRef: litellm-admin
   alias: assistants
-  # Personal agents. Members: openclaw (Git); hermes (Bitwarden).
+  # See "members" in the header: never remove this entry.
+  members:
+    - userID: default_user_id
+      role: admin
+  # Personal agents. Keys: openclaw (Git); hermes (Bitwarden).
   models:
     - self-hosted
     - review
@@ -77,7 +97,11 @@ metadata:
 spec:
   proxyRef: litellm-admin
   alias: memory
-  # Memory services. Members: hindsight, memini (Bitwarden).
+  # See "members" in the header: never remove this entry.
+  members:
+    - userID: default_user_id
+      role: admin
+  # Memory services. Keys: hindsight, memini (Bitwarden).
   models:
     - qwen3-embedding-0.6b
     - rerank
@@ -92,7 +116,11 @@ metadata:
 spec:
   proxyRef: litellm-admin
   alias: research
-  # Public filings and notebooks. Members: atlas (Git); atlas-dev, marimo
+  # See "members" in the header: never remove this entry.
+  members:
+    - userID: default_user_id
+      role: admin
+  # Public filings and notebooks. Keys: atlas (Git); atlas-dev, marimo
   # (Bitwarden / UI). atlas carries its own $20/day on top of this.
   models:
     - MiniMax-M3
@@ -114,7 +142,11 @@ metadata:
 spec:
   proxyRef: litellm-admin
   alias: media
-  # Subtitles. Member: lingarr (Bitwarden).
+  # See "members" in the header: never remove this entry.
+  members:
+    - userID: default_user_id
+      role: admin
+  # Subtitles. Key: lingarr (Bitwarden).
   models:
     - translate
     - fast
@@ -126,8 +158,12 @@ metadata:
 spec:
   proxyRef: litellm-admin
   alias: home
+  # See "members" in the header: never remove this entry.
+  members:
+    - userID: default_user_id
+      role: admin
   # Home data: local aliases only. `home-assistant` itself falls back to the
-  # ChatGPT subscription, never MiniMax. Members: homeassistant-chat,
+  # ChatGPT subscription, never MiniMax. Keys: homeassistant-chat,
   # facebook-marketplace (Bitwarden).
   models:
     - home-assistant
@@ -141,7 +177,11 @@ metadata:
 spec:
   proxyRef: litellm-admin
   alias: platform
-  # Cluster plumbing. Members: alert-triage, toolhive (Git).
+  # See "members" in the header: never remove this entry.
+  members:
+    - userID: default_user_id
+      role: admin
+  # Cluster plumbing. Keys: alert-triage, toolhive (Git).
   models:
     - local-pool
     - local-pool-chat

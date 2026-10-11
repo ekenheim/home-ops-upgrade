@@ -126,18 +126,40 @@ spec:
                 # left reviewers queueing for minutes per call.
                 - name: FACTORY_CONCURRENCY
                   value: "3"
-                # Reviews run on reasoning-pool: ChatGPT (gpt-5.6-terra) first,
-                # MiniMax-M3 next, local last, the same split Rekursiv uses
-                # (hosted agents, the GPU for experiments). On the local
-                # `review` alias (the Strix model's two llama.cpp slots, shared
-                # with Home Assistant) v0.2.0's read-only reviewer ran 13 min
-                # and failed with a gateway error (af-analysis-2, 2026-10-10).
-                # The analysis track's verifier uses this model too. The alias
-                # has no "gpt-" in it, so OpenCode gives the reviewer no
-                # apply_patch and agent-factory's startup check passes. The
-                # chatgpt rung needs a streaming caller, and OpenCode streams.
+                # Every model below is an agent-factory pool in LiteLLM
+                # (llm/litellm/app/configmap.yaml): qwen3.8 27B on the owner's
+                # RTX 5090 first, as the owner asked (2026-10-11), then the
+                # hosted rungs. A PC that is off, or a prompt over its 64k
+                # window, goes straight to the next rung. The agent-lab key
+                # lists all three. Unset, these default to fast, fast,
+                # implementation-pool and review.
+                #
+                # Triage (single non-streaming JSON calls) and OpenCode's
+                # small_model in the agent pods: the PC with thinking off, then
+                # `fast` (worker4). The planner is off here (no FACTORY_PLAN);
+                # it would use FACTORY_PLAN_MODEL, default `review`.
+                - name: FACTORY_TRIAGE_MODEL
+                  value: factory-fast
+                - name: FACTORY_SMALL_MODEL
+                  value: factory-fast
+                # The OpenCode worker (streams, calls tools): the PC with
+                # thinking on, then implementation-pool's rungs (MiniMax-M2.7,
+                # ChatGPT gpt-5.6-luna, worker4).
+                - name: FACTORY_WORKER_MODEL
+                  value: factory-agent
+                # Reviews run on factory-review: the PC first, then
+                # reasoning-pool's rungs -- ChatGPT (gpt-5.6-terra), MiniMax-M3,
+                # worker4 last. On the local `review` alias (the Strix model's
+                # two llama.cpp slots, shared with Home Assistant) v0.2.0's
+                # read-only reviewer ran 13 min and failed with a gateway error
+                # (af-analysis-2, 2026-10-10), which is why worker4 is the
+                # floor here, not a lead. The analysis track's verifier uses
+                # this model too. The name has no "gpt-" in it, so OpenCode
+                # gives the reviewer no apply_patch and agent-factory's startup
+                # check passes. The chatgpt rung needs a streaming caller, and
+                # OpenCode streams.
                 - name: FACTORY_REVIEW_MODEL
-                  value: reasoning-pool
+                  value: factory-review
                 # Honoured from agent-factory v0.1.2: at most this many reviews
                 # in flight regardless of lane count.
                 - name: FACTORY_REVIEW_CONCURRENCY

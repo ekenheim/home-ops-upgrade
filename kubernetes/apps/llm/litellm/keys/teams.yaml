@@ -84,6 +84,10 @@ spec:
     - MiniMax-M3-chat
     - MiniMax-M2.7
     - qwen3-embedding-0.6b
+    # agent-factory's pools (the 5090 first), for the agent-lab key.
+    - factory-fast
+    - factory-agent
+    - factory-review
   maxBudget: "15"
   budgetDuration: 1d
 ---

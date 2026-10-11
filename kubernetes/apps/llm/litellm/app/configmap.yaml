@@ -469,6 +469,29 @@ data:
           num_ctx: 32768
           timeout: 600
           order: 2
+
+      # --- pc/*: the owner's main PC (RTX 5090, Ollama), for test development ---
+      # A wildcard route: `pc/<ollama tag>` reaches that tag on the PC, so
+      # anything pulled there (`ollama pull`) is callable with no gateway
+      # restart -- e.g. pc/qwen3.8:ctx64k, pc/qwen3.6:35b, pc/qwen3.5:9b.
+      # Replaced the UI-added `qwen3.8:latest` route deleted 2026-10-11.
+      #
+      # Local hardware, so private data may use it. But the PC is not always on
+      # and there is NO fallback: a call while it is off fails fast with a
+      # connection error, which is what a dev route should do. Not a production
+      # path -- hindsight-consolidation reaches the same Ollama on its own rung
+      # above. ollama_chat/ (Ollama's /api/chat), not ollama/ (/api/generate),
+      # so chat templates and tool calls go through. No max_input_tokens: it
+      # differs per tag (the -ctxNNk tags bake num_ctx in). Same DHCP lease as
+      # the rung above. Swapping a 24 GB model into VRAM takes a while, hence
+      # the timeout.
+      - model_name: pc/*
+        model_info:
+          mode: chat
+        litellm_params:
+          model: ollama_chat/*
+          api_base: http://192.168.1.182:11434
+          timeout: 600
       - model_name: MiniMax-M2.7
         model_info:
           mode: chat

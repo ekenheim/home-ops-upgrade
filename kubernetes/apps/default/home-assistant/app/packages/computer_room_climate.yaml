@@ -161,7 +161,12 @@ automation:
           - binary_sensor.computer_room_occupied
           - input_boolean.computer_room_auto_air
           - binary_sensor.computer_room_climate_paused
-          - fan.office
+      # State changes only (to: null): the 800i pushes attribute updates every
+      # few seconds, which would wake this automation constantly. Turned off
+      # is what matters here; preset drift is caught by the 10-min pattern.
+      - trigger: state
+        entity_id: fan.office
+        to: ~
       - trigger: numeric_state
         entity_id: sensor.office_pm2_5
         above: 15

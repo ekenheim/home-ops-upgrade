@@ -126,18 +126,18 @@ spec:
                 # left reviewers queueing for minutes per call.
                 - name: FACTORY_CONCURRENCY
                   value: "3"
-                # Reviews stay on the local `review` alias for now. In run one
-                # the reviewer re-read the repository and sent ~60k-token
-                # prompts; at ~380 prompt tokens/s that is 160 s before the
-                # first output token, and three of them queued on two slots
-                # exceeded the review deadline for 5 of 9 issues. agent-factory
-                # v0.1.2 hands the reviewer the diff and the test output
-                # instead, and the cap below keeps reviews from queueing. If
-                # reviews still time out, point this at a hosted alias that is
-                # on the agent-lab key's model list (chatgpt is the option:
-                # MiniMax's plan ran out, and Kimi / Z.AI are not bought).
+                # Reviews run on reasoning-pool: ChatGPT (gpt-5.6-terra) first,
+                # MiniMax-M3 next, local last, the same split Rekursiv uses
+                # (hosted agents, the GPU for experiments). On the local
+                # `review` alias (the Strix model's two llama.cpp slots, shared
+                # with Home Assistant) v0.2.0's read-only reviewer ran 13 min
+                # and failed with a gateway error (af-analysis-2, 2026-10-10).
+                # The analysis track's verifier uses this model too. The alias
+                # has no "gpt-" in it, so OpenCode gives the reviewer no
+                # apply_patch and agent-factory's startup check passes. The
+                # chatgpt rung needs a streaming caller, and OpenCode streams.
                 - name: FACTORY_REVIEW_MODEL
-                  value: review
+                  value: reasoning-pool
                 # Honoured from agent-factory v0.1.2: at most this many reviews
                 # in flight regardless of lane count.
                 - name: FACTORY_REVIEW_CONCURRENCY

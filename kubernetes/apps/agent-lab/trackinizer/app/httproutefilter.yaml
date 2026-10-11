@@ -17,24 +17,35 @@ spec:
       valueRef:
         name: trackinizer-web-credential
 ---
+# The browser key, generated in-cluster once (refreshInterval "0"), like
+# openclaw's gateway token: nothing to create in Bitwarden. Trackinizer only
+# accepts keys it has a row for, so the Deployment's `register-web-key` init
+# container registers this value as the `browser` key (role writer) on every
+# start and revokes any other `browser` key. If a spec change regenerates the
+# value, Reloader restarts the pod and the new value is registered.
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: trackinizer-web-credential
+  namespace: trackinizer
+spec:
+  length: 43
+  digits: 10
+  symbols: 0
+  noUpper: false
+  allowRepeat: true
+---
 # yaml-language-server: $schema=https://lds-schemas.pages.dev/external-secrets.io/externalsecret_v1beta1.json
-#   Bitwarden Secrets Manager item `trackinizer_web`
-#     TRACKINIZER_WEB_TOKEN  a Trackinizer key named `browser`, minted with the
-#                            admin key (README, "Analysis ledger
-#                            (Trackinizer)"). Never the admin key itself.
-#
-# Shaped for credentialInjection: key `credential` holds the WHOLE header
-# value, scheme included. Only the Envoy proxy reads this Secret.
+# `token` is read by register-web-key; `credential` is shaped for
+# credentialInjection (the WHOLE header value, scheme included) and read only
+# by the Envoy proxy. `trax_` is the prefix Trackinizer's own keys carry.
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: &name trackinizer-web-credential
   namespace: trackinizer
 spec:
-  secretStoreRef:
-    name: bitwarden-secrets-manager
-    kind: ClusterSecretStore
-  refreshInterval: 15m
+  refreshInterval: "0"
   target:
     name: *name
     creationPolicy: Owner
@@ -42,7 +53,11 @@ spec:
       engineVersion: v2
       type: Opaque
       data:
-        credential: 'Bearer {{ .TRACKINIZER_WEB_TOKEN }}'
+        token: 'trax_{{ .password }}'
+        credential: 'Bearer trax_{{ .password }}'
   dataFrom:
-    - extract:
-        key: trackinizer_web
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: trackinizer-web-credential

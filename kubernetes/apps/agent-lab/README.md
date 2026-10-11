@@ -153,8 +153,10 @@ no browser sign-in provider (its Google button stays off), so Envoy signs the br
 
 - `trackinizer/app/securitypolicy.yaml` sends every request on the route, `/api` included, through
   Authentik OIDC (application `trackinizer`, **authentik Admins only**).
-- `trackinizer/app/httproutefilter.yaml` then sets `Authorization: Bearer <browser key>` from the
-  Bitwarden item `trackinizer_web`, overwriting whatever the browser sent.
+- `trackinizer/app/httproutefilter.yaml` then sets `Authorization: Bearer <browser key>`, overwriting
+  whatever the browser sent. The browser key is generated in-cluster (nothing in Bitwarden), and the
+  Deployment's `register-web-key` init container registers it as the `browser` key (role writer) on
+  every start.
 - The Authentik provider, application and group binding are a blueprint in
   `security/authentik/app/trackinizer-oidc.yaml`. Its client secret is generated in-cluster and shared
   with Envoy through a ReferenceGrant.
@@ -204,9 +206,8 @@ One-time bootstrap, in order. Steps 1–7 were done on 2026-10-11; they are kept
 7. From an agent-factory checkout, run the live contract suite against the instance through the same port-forward,
    with the writer key:
    `FACTORY_TEST_TRACKINIZER_URL=http://127.0.0.1:8765 FACTORY_TEST_TRACKINIZER_TOKEN=<writer key> npx tsx --test --import ./test/setup.ts test/analysis-trackinizer.test.ts`.
-8. For the web UI, mint a key named `browser` the same way as step 5 (`"role":"writer"`), and store it in
-   the Bitwarden item `trackinizer_web` as `TRACKINIZER_WEB_TOKEN`. Until that item exists the route
-   has no key to inject and `agent-lab-trackinizer` stays not-Ready.
+8. Nothing to do for the web UI. On a brand-new instance `register-web-key` runs before the schema and
+   the admin exist and skips; restart the pod once after step 4 so it registers the browser key.
 
 If the admin key is lost before anything has been written, reset the empty instance as superuser and
 let the pod bootstrap again (not tested):

@@ -10,6 +10,7 @@ spec:
   secretName: litellm-key-opencode
   secretKey: api-key
   models:
+    - pc/*
     - auto
     - self-hosted
     - fast
@@ -36,6 +37,7 @@ spec:
   secretName: litellm-key-zed
   secretKey: api-key
   models:
+    - pc/*
     - auto
     - self-hosted
     - fast

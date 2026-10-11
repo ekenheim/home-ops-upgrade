@@ -56,6 +56,7 @@ spec:
   # Keys: pr-review, courier, agent-lab, opencode, zed (Git); dispatch,
   # repo-wiki (Bitwarden).
   models:
+    - pc/*
     - auto
     - self-hosted
     - review
@@ -131,6 +132,7 @@ spec:
   # Public filings and notebooks. Keys: atlas (Git); atlas-dev, marimo
   # (Bitwarden / UI). atlas carries its own $20/day on top of this.
   models:
+    - pc/*
     - MiniMax-M3
     - MiniMax-M3-chat
     - MiniMax-M2.7

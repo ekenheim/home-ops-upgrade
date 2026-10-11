@@ -88,6 +88,80 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+        # Registers the in-cluster browser key (httproutefilter.yaml) as the
+        # admin user's `browser` key, role writer, with Trackinizer's own
+        # hashing, and revokes any other live `browser` key. A no-op when the
+        # value is already registered. On a brand-new instance (no schema or
+        # no user yet) it does nothing, and the next start registers the key.
+        - name: register-web-key
+          image: ghcr.io/ekenheim/agent-factory-trackinizer:sha-83345cf@sha256:f968490db81318b03d43332431a2465f9b72d4e759607f3ba197c4b9519da826
+          env:
+            - name: TRACKINIZER_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: trackinizer-db-secret
+                  key: uri
+            - name: WEB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: trackinizer-web-credential
+                  key: token
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+          command: ["python", "-c"]
+          args:
+            - |
+              import asyncio, os, uuid
+              import asyncpg
+              from trackinizer.server.auth import TOKEN_PREFIX_LEN, hash_secret, revoke_api_key, verify_secret
+
+              NAME = "browser"
+
+              async def main():
+                  token = os.environ["WEB_TOKEN"]
+                  conn = await asyncpg.connect(os.environ["TRACKINIZER_DSN"])
+                  try:
+                      if await conn.fetchval("SELECT to_regclass('public.api_keys')") is None:
+                          print("register-web-key: no schema yet, skipped")
+                          return
+                      uid = await conn.fetchval(
+                          "SELECT id FROM users WHERE role = 'admin' AND status = 'active' ORDER BY created_at LIMIT 1")
+                      if uid is None:
+                          print("register-web-key: no admin user yet, skipped")
+                          return
+                      async with conn.transaction():
+                          rows = await conn.fetch(
+                              "SELECT id, secret_hash FROM api_keys WHERE user_id = $1 AND name = $2 AND revoked_at IS NULL",
+                              uid, NAME)
+                          kept = [r["id"] for r in rows if verify_secret(token, r["secret_hash"])]
+                          revoked = 0
+                          for r in rows:
+                              if r["id"] not in kept and await revoke_api_key(conn, key_id=r["id"], user_id=uid):
+                                  revoked += 1
+                          if not kept:
+                              await conn.execute(
+                                  "INSERT INTO api_keys (id, user_id, name, secret_hash, prefix, role) "
+                                  "VALUES ($1, $2, $3, $4, $5, 'writer')",
+                                  uuid.uuid4(), uid, NAME, hash_secret(token), token[:TOKEN_PREFIX_LEN])
+                      print(f"register-web-key: registered={not kept} revoked={revoked}")
+                  finally:
+                      await conn.close()
+
+              asyncio.run(main())
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
       containers:
         - name: trackinizer
           image: ghcr.io/ekenheim/agent-factory-trackinizer:sha-83345cf@sha256:f968490db81318b03d43332431a2465f9b72d4e759607f3ba197c4b9519da826

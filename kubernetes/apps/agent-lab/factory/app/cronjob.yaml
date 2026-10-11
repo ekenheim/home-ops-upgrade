@@ -61,7 +61,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: orchestrator
-              image: ghcr.io/ekenheim/agent-factory:v0.3.1@sha256:8a063e19e3f9360586725c4a93f0e0768e36232b89ef0b379f9a8b6da6c5ebba
+              image: ghcr.io/ekenheim/agent-factory:v0.3.2@sha256:338e9b77d918a06d5316763ced8883db5f2b1e918af0ef594472d504b81d4fa2
               env:
                 # The repositories to work, from the agent-factory-repos
                 # ConfigMap (configmap-repos.yaml). Replaces FACTORY_REPO:
@@ -78,9 +78,9 @@ spec:
                 - name: FACTORY_VERIFY_NAMESPACE
                   value: agent-verify
                 - name: FACTORY_BASE_IMAGE
-                  value: ghcr.io/ekenheim/agent-factory-base:v0.3.1@sha256:894a528f85a53daf2bc60857341b0e08e754b522f1db7adeb4893e3c02499edd
+                  value: ghcr.io/ekenheim/agent-factory-base:v0.3.2@sha256:8c0a160559d93faef74bc21b4b213d7e26e70c69ce36ae5cc606992848391d46
                 - name: FACTORY_TOOLS_IMAGE
-                  value: ghcr.io/ekenheim/agent-factory-tools:v0.3.1@sha256:4c3f7a5f4f21e0cc79ca9f74037125a47e170e88edf1450bb266e72464a0a20a
+                  value: ghcr.io/ekenheim/agent-factory-tools:v0.3.2@sha256:f5f2deaddc2266e3be9a0cff8bb1062f55e79e2c14e87bbf1bac57d1263f2ab4
                 # The analysis track's image (Python, marimo, PyMC) for the
                 # exec and worker Jobs of `analytics` repositories. It only
                 # takes effect for analytics repositories enabled in the repo
@@ -88,7 +88,7 @@ spec:
                 # the others; the GitHub token must cover every enabled
                 # analytics repository.
                 - name: FACTORY_ANALYSIS_IMAGE
-                  value: ghcr.io/ekenheim/agent-factory-analysis:v0.3.1@sha256:a68593c6368d82c399628974ead67efa4fc0a00bc08eecaa9199db7260bf0679
+                  value: ghcr.io/ekenheim/agent-factory-analysis:v0.3.2@sha256:575f5a2d5b07c1a50c5d33604fed543355f4951991bc0019f33fcadc1c96aa2f
                 # The analysis ledger: Trackinizer in its own namespace
                 # (trackinizer/). Read only while FACTORY_ANALYSIS_IMAGE is
                 # set, so the build track never depends on it. Every ledger

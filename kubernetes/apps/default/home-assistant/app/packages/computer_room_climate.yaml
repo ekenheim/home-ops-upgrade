@@ -16,7 +16,9 @@
 #     while the room is occupied. Only sends IR when the speed changes, so
 #     the fan doesn't get the same code every few minutes.
 #   - Purifier (fan.office): the PM2.5 sensor misses the coarse dust that
-#     clogs PC intakes, so it runs on activity and time instead of PM2.5.
+#     clogs PC intakes, so it runs on presence and time instead of PM2.5.
+#     Turbo is loud: it runs while nobody hears it (away, 00-06, after the
+#     vacuum) and drops to speed 1 (50 %) while Robin is likely in the room.
 #   - Any manual change from HA to one of these fans pauses automatic
 #     control for an hour (input_datetime below).
 
@@ -166,6 +168,8 @@ automation:
       - trigger: state
         entity_id:
           - binary_sensor.computer_room_occupied
+          - person.robin
+          - device_tracker.robingaming
           - input_boolean.computer_room_auto_air
           - binary_sensor.computer_room_climate_paused
       # State changes only (to: null): the 800i pushes attribute updates every
@@ -182,7 +186,7 @@ automation:
         to: cleaning
         id: vacuum
       - trigger: time
-        at: ["07:00:00", "23:00:00"]
+        at: ["00:00:00", "06:00:00"]
       - trigger: time_pattern
         minutes: "/10"
     conditions:
@@ -198,11 +202,19 @@ automation:
         {{ trigger.id == 'vacuum'
            or state_attr('input_datetime.computer_room_dust_boost_until', 'timestamp') | float(0)
               > as_timestamp(now()) }}
+      # Turbo is loud, so it runs when nobody hears it (away, 00-06) and the
+      # purifier drops to speed 1 (50 %) while Robin is likely in the room:
+      # home with the PC on, or motion in the room. "Home + PC on" covers
+      # sitting still at the desk when the motion hold has lapsed.
+      present: >-
+        {{ is_state('binary_sensor.computer_room_occupied', 'on')
+           or (is_state('person.robin', 'home') and is_state('device_tracker.robingaming', 'home')) }}
       want: >-
-        {%- if is_state('binary_sensor.computer_room_occupied', 'on')
-              or states('sensor.office_pm2_5') | float(0) >= 15
-              or vacuumed_recently -%}turbo
-        {%- elif now().hour >= 23 or now().hour < 7 -%}sleep
+        {%- if states('sensor.office_pm2_5') | float(0) >= 15 -%}turbo
+        {%- elif present -%}speed50
+        {%- elif not is_state('person.robin', 'home') -%}turbo
+        {%- elif vacuumed_recently -%}turbo
+        {%- elif now().hour < 6 -%}turbo
         {%- else -%}speed50{%- endif -%}
       cur_on: "{{ is_state('fan.office', 'on') }}"
       cur_preset: "{{ state_attr('fan.office', 'preset_mode') or 'none' }}"

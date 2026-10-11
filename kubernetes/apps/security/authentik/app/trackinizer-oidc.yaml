@@ -4,7 +4,7 @@
 # envoy-internal does it: a SecurityPolicy in `trackinizer` signs the browser
 # in against the application below, then injects a Trackinizer API key.
 #
-# The client secret is generated in-cluster once (refreshInterval "0"), so
+# The client secret is generated in-cluster (refreshPolicy OnChange), so
 # there is nothing to create in Bitwarden for it. One Secret carries it twice:
 # rendered into the blueprint the worker mounts (blueprints.secrets in
 # helmrelease.yaml; only keys ending .yaml are applied), and as
@@ -27,6 +27,11 @@ kind: ExternalSecret
 metadata:
   name: &name authentik-trackinizer-oidc
 spec:
+  # OnChange, not a bare refreshInterval "0": "0" alone never re-renders, so an
+  # edit to the blueprint below would not reach Authentik. A spec change
+  # regenerates the client secret too; Authentik and Envoy read this one
+  # Secret, so they stay in step.
+  refreshPolicy: OnChange
   refreshInterval: "0"
   target:
     name: *name

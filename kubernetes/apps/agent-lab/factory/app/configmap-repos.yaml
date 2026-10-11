@@ -11,6 +11,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: agent-factory-repos
+  namespace: agent-control
 data:
   repos.json: |
     {

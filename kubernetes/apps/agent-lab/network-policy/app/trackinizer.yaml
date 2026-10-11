@@ -1,0 +1,61 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# Trackinizer holds the analysis ledger and its own Postgres login. Default-deny
+# both ways: the orchestrator is the only client, and Postgres and DNS are the
+# only things it needs (the default stub embedder loads no model, so no
+# Hugging Face or other egress). No sandbox namespace gets a path here, and no
+# sandbox policy changes: agent-work and agent-verify are allow lists and
+# Trackinizer is not on them.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: trackinizer-baseline
+  namespace: trackinizer
+spec:
+  endpointSelector: {}
+  enableDefaultDeny:
+    egress: true
+    ingress: true
+  ingress:
+    # The agent-factory orchestrator's CronJob pods, by the same labels
+    # agent-control-orchestrator selects them with. With kube-proxy
+    # replacement the policy sees the backend port, which is also the
+    # Service port.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: agent-control
+            app.kubernetes.io/name: agent-factory
+            app.kubernetes.io/component: orchestrator
+      toPorts:
+        - ports:
+            - port: "8765"
+              protocol: TCP
+  egress:
+    # DNS, for postgres-primary.database.svc. Only cluster names resolve
+    # (`**.` also covers the ndots search-path expansions), so DNS is not a
+    # way out either.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "**.cluster.local"
+    # Postgres. Crunchy's postgres-primary is a headless Service, so this is
+    # the primary pod itself; the role label follows a Patroni failover. Same
+    # selector as the orchestrator's ledger rule.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: database
+            postgres-operator.crunchydata.com/cluster: postgres
+            postgres-operator.crunchydata.com/role: master
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP

@@ -116,6 +116,27 @@ spec:
               protocol: TCP
             - port: "10080"
               protocol: TCP
+    # The analysis ledger (FACTORY_TRACKINIZER_URL): Trackinizer in its own
+    # namespace, whose policy admits only this pod. Service port = pod port.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: trackinizer
+            app.kubernetes.io/name: trackinizer
+      toPorts:
+        - ports:
+            - port: "8765"
+              protocol: TCP
+    # MLflow, only if FACTORY_MLFLOW_URL is ever set in the CronJob (it is
+    # not: see the commented line there). Uncomment together with it. MLflow
+    # in datasci has no ingress policy of its own, so this is the only rule.
+    # - toEndpoints:
+    #     - matchLabels:
+    #         k8s:io.kubernetes.pod.namespace: datasci
+    #         app.kubernetes.io/name: mlflow
+    #   toPorts:
+    #     - ports:
+    #         - port: "5000"
+    #           protocol: TCP
     # Issues, PRs and branch reads; Context7 for docs lookups.
     - toFQDNs:
         - matchName: github.com

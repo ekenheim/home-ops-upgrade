@@ -9,16 +9,17 @@ records everything in a Postgres ledger.
 
 | Path | Flux Kustomization | What |
 |------|--------------------|------|
-| `namespaces.yaml` | `cluster-apps` | `agent-control` (PodSecurity baseline), `agent-work` and `agent-verify` (restricted) |
-| `network-policy/` | `agent-lab-network-policy` | Default-deny CiliumNetworkPolicies for all three namespaces, LimitRange and ResourceQuota for the two sandboxes |
+| `namespaces.yaml` | `cluster-apps` | `agent-control` (PodSecurity baseline), `agent-work`, `agent-verify` and `trackinizer` (restricted) |
+| `network-policy/` | `agent-lab-network-policy` | Default-deny CiliumNetworkPolicies for all four namespaces, LimitRange and ResourceQuota for the two sandboxes |
 | `egress-gateway/` | `agent-lab-egress-gateway` | Gateway `agent-egress` (own ClusterIP EnvoyProxy) routing `/v1` to LiteLLM and injecting the agent-lab key; ReferenceGrant in `llm` |
 | `ledger/` | `agent-lab-ledger` | `agentlab-db-secret` (Crunchy user `agentlab`), ObjectBucketClaims `agent-artifacts` / `agent-holdout` (phase 2) |
+| `trackinizer/` | `agent-lab-trackinizer` | Trackinizer, the analysis track's ledger (Deployment + ClusterIP Service in `trackinizer`, Crunchy user `trackinizer`), and the orchestrator's Trackinizer key `agent-factory-trackinizer` in `agent-control`. See [Analysis ledger (Trackinizer)](#analysis-ledger-trackinizer) |
 | `factory/` | `agent-lab-factory` | ServiceAccount `agent-factory`, Roles in `agent-work` / `agent-verify`, `agent-factory-github` in all three namespaces, tokenless `default` ServiceAccounts in the sandboxes, the suspended CronJob |
 | `../llm/litellm/keys/agent-lab.yaml` | `litellm-keys` | LiteLLMVirtualKey `agent-lab` ($10/day, 8 parallel, 120 rpm). Lives in `llm` because the operator writes the Secret next to the CR |
 
 Also outside this directory:
 
-- the `agentlab` user in `database/crunchy-postgres/cluster/cluster.yaml`;
+- the `agentlab` and `trackinizer` users in `database/crunchy-postgres/cluster/cluster.yaml`;
 - ClusterSecretStore `litellm-key-secrets-agent-lab` in `llm/litellm/clustersecretstore/agent-lab.yaml`,
   which can read only `litellm-key-agent-lab` and serves only `agent-control` (Atlas keeps its own
   store, so neither consumer can read the other's key);
@@ -38,7 +39,8 @@ Also outside this directory:
 6. Only stage/collect pods (`app.kubernetes.io/component: tools`) mount a GitHub token and reach github.com.
 7. The verifier runs in `agent-verify`, so a worker cannot see or edit the holdout tests.
 8. The orchestrator in `agent-control` is trusted code. Its RBAC covers Jobs, pods/log, PVCs and ConfigMaps in the two sandboxes, nothing cluster-wide, and no exec.
-9. Only the orchestrator reaches Postgres and the API server.
+9. Only the orchestrator reaches the API server. Postgres is reached by the orchestrator and by
+   Trackinizer, each with its own login, and Trackinizer is reached only by the orchestrator.
 10. GitHub tokens: agent-lab has its own Bitwarden item, `agent_factory_github`, never the shared
     `github_token` PAT (that one is the human account's and can write to every repo dispatch and
     courier use, this one included). `GITHUB_TOKEN` is a fine-grained PAT for the target repo only
@@ -137,6 +139,62 @@ To schedule it every 6 hours, set `suspend: false` in `factory/app/cronjob.yaml`
 patch the live object, because Flux reverts the change. To stop a run, set `suspend: true` and
 delete the running Job.
 
+## Analysis ledger (Trackinizer)
+
+The analysis track writes its Intents, Experiments and Findings to Trackinizer (agent-factory README,
+"The analysis ledger"), set by `FACTORY_TRACKINIZER_URL=http://trackinizer.trackinizer.svc:8765` on the
+CronJob. It runs in its own namespace so the factory's component-keyed policies never select it. Its
+policy admits only the orchestrator's pods on 8765 and lets the pod reach only DNS and the Postgres primary.
+The orchestrator's key, `FACTORY_TRACKINIZER_TOKEN`, comes from the Bitwarden item
+`agent_factory_trackinizer` and is read with `optional: true`. Every ledger failure is logged and
+ignored, so a missing or broken Trackinizer never stops a run.
+
+One-time bootstrap, in order. None of it has been run against this cluster yet:
+
+1. Make the GHCR package `agent-factory-trackinizer` **public**, like the other agent-factory images,
+   and check that an anonymous pull of the pinned digest works.
+2. Create the Bitwarden Secrets Manager item `agent_factory_trackinizer` with one field,
+   `FACTORY_TRACKINIZER_TOKEN`. A placeholder value is fine until step 5.
+3. After Flux has created the `trackinizer` user and database, create the extension as superuser.
+   Until this is done the pod crash-loops:
+
+   ```sh
+   P=$(kubectl get pods -n database -l postgres-operator.crunchydata.com/role=master -o jsonpath='{.items[0].metadata.name}')
+   kubectl exec -n database "$P" -c database -- psql -U postgres -d trackinizer -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+   kubectl -n trackinizer rollout restart deploy/trackinizer
+   ```
+
+4. On that first good start `TRACKINIZER_BOOTSTRAP_ADMIN` (set in `trackinizer/app/deployment.yaml`)
+   seeds the admin and writes its key to `/tmp`, which is an emptyDir. Read the key **before the pod
+   restarts**, because the server never mints a second one. Keep it somewhere only you hold:
+
+   ```sh
+   kubectl -n trackinizer exec deploy/trackinizer -- cat /tmp/home/.local/share/rekursiv-ai/trackinizer/bootstrap_token
+   ```
+
+5. Mint the factory's writer key with the admin key, and put the `secret` from the response in the
+   Bitwarden item as `FACTORY_TRACKINIZER_TOKEN`. Never store the admin key there:
+
+   ```sh
+   kubectl -n trackinizer port-forward svc/trackinizer 8765:8765 &
+   curl -s -X POST http://127.0.0.1:8765/api/me/tokens \
+     -H "Authorization: Bearer $ADMIN_KEY" -H 'Content-Type: application/json' \
+     -d '{"name":"agent-factory","role":"writer"}'
+   ```
+
+   The port-forward goes through the kubelet, not the pod network, so the ingress policy does not block
+   it.
+6. Delete the `TRACKINIZER_BOOTSTRAP_ADMIN` env entry from `deployment.yaml` and merge. The pod restarts
+   and the token file goes with the old `/tmp`.
+7. From an agent-factory checkout, run the live contract suite against the instance through the same port-forward,
+   with the writer key:
+   `FACTORY_TEST_TRACKINIZER_URL=http://127.0.0.1:8765 FACTORY_TEST_TRACKINIZER_TOKEN=<writer key> npx tsx --test --import ./test/setup.ts test/analysis-trackinizer.test.ts`.
+
+If the admin key is lost before anything has been written, reset the empty instance as superuser and
+let the pod bootstrap again (not tested):
+`DROP SCHEMA public CASCADE; CREATE SCHEMA public AUTHORIZATION pg_database_owner; CREATE EXTENSION vector;`
+in database `trackinizer`, with `TRACKINIZER_BOOTSTRAP_ADMIN` still set.
+
 ## Phase 2 notes
 
 The `agent-artifacts` / `agent-holdout` buckets are not reachable yet. `rook-ceph/rgw-allow-datasci`
@@ -146,11 +204,11 @@ add the matching Cilium egress allow.
 
 ## Roll back
 
-Delete `kubernetes/apps/agent-lab/` and merge. `cluster-apps` prunes the four Kustomizations, and they
+Delete `kubernetes/apps/agent-lab/` and merge. `cluster-apps` prunes the five Kustomizations, and they
 prune everything they created, including the namespaces and the ReferenceGrant in `llm`. To revoke
 the LLM key, also remove `../llm/litellm/keys/agent-lab.yaml` from its kustomization; the operator
 deletes the key in LiteLLM. Remove `../llm/litellm/clustersecretstore/agent-lab.yaml` along with it.
 
-The ExternalSecret `agentlab-db-secret` uses `deletionPolicy: Retain`. The Postgres user and
-database stay until the `agentlab` entry is removed from `cluster.yaml`, and Crunchy does not drop
-the database even then.
+The ExternalSecrets `agentlab-db-secret` and `trackinizer-db-secret` use `deletionPolicy: Retain`.
+The Postgres users and databases stay until the `agentlab` and `trackinizer` entries are removed from
+`cluster.yaml`, and Crunchy does not drop the databases even then.

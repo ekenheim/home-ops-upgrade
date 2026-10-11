@@ -1,0 +1,44 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app agent-lab-trackinizer
+  namespace: flux-system
+spec:
+  # Trackinizer, the analysis ledger the orchestrator writes to
+  # (FACTORY_TRACKINIZER_URL), plus the orchestrator's Trackinizer token in
+  # agent-control. No targetNamespace for the same reason as the other
+  # agent-lab components: the token's ExternalSecret lives in agent-control.
+  #
+  # Stays not-Ready until the one-time bootstrap is done (README, "Analysis
+  # ledger (Trackinizer)"): the pod crash-loops until a superuser has created
+  # the `vector` extension, and the token's ExternalSecret fails until the
+  # Bitwarden item `agent_factory_trackinizer` exists. Nothing waits on this
+  # one: agent-lab-factory does not depend on it, and the orchestrator treats
+  # every ledger failure as logged-and-ignored.
+  path: ./kubernetes/apps/agent-lab/trackinizer/app
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  dependsOn:
+    # crunchy-pgo-secrets, and the cluster that generates
+    # postgres-pguser-trackinizer from the `trackinizer` user in cluster.yaml.
+    - name: crunchy-postgres-stores
+    - name: crunchy-postgres-operator-cluster
+    # bitwarden-secrets-manager, for agent-factory-trackinizer.
+    - name: external-secrets-stores
+    # The trackinizer namespace's default-deny policy must exist before the
+    # pod does, so it never runs unpoliced.
+    - name: agent-lab-network-policy
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 10m
+  postBuild:
+    substitute:
+      APP: *app

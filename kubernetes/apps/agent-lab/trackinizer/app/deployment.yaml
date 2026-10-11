@@ -1,0 +1,131 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/apps/deployment_v1.json
+# Trackinizer 0.1.6 (github.com/rekursiv-ai/trackinizer), the experiment ledger
+# agent-factory's analysis track writes Intents, Experiments and Findings to.
+# The image is agent-factory's own (images/trackinizer): a hash-pinned wheel
+# install on Python 3.12 whose entrypoint is
+#   trackinizer --host 0.0.0.0 --port 8765 --engine pg
+# so the DSN is the only required input. With no DSN it exits with
+# `requires --dsn`; there is no local fallback database.
+#
+# Plain manifests rather than app-template, like the rest of agent-lab: the
+# network policies key on exact pod labels, and this keeps them in one place.
+#
+# The image is pulled anonymously (no pull secret, as for the other
+# agent-factory packages), so the GHCR package must be public. It is pinned by
+# digest. The sha- tag is not a version, so Renovate proposes nothing until it
+# is switched to an agent-factory v* tag (images.yaml pushes this image on
+# every v* tag too); groups.json5 then moves it with the other four.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trackinizer
+  namespace: trackinizer
+  labels:
+    app.kubernetes.io/name: trackinizer
+  annotations:
+    # Restart when PGO rotates the password behind trackinizer-db-secret.
+    reloader.stakater.com/auto: "true"
+spec:
+  # One server process, as agent-factory's README asks. Recreate so a rollout
+  # never runs two at once.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: trackinizer
+  template:
+    metadata:
+      labels:
+        # Matched by the trackinizer network policy and the orchestrator's
+        # egress rule. Deliberately no app.kubernetes.io/component: the
+        # factory's policies treat `tools`, `exec` and `worker` specially.
+        app.kubernetes.io/name: trackinizer
+    spec:
+      # Talks to nothing in the Kubernetes API.
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: trackinizer
+          image: ghcr.io/ekenheim/agent-factory-trackinizer:sha-83345cf@sha256:f968490db81318b03d43332431a2465f9b72d4e759607f3ba197c4b9519da826
+          env:
+            - name: TRACKINIZER_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: trackinizer-db-secret
+                  key: uri
+            # FIRST START ONLY. On an empty `users` table the server seeds this
+            # admin and writes its API key (mode 0600) to
+            # /tmp/home/.local/share/rekursiv-ai/trackinizer/bootstrap_token,
+            # on the /tmp emptyDir. Read it, mint the factory's writer key,
+            # then delete these two lines in a follow-up commit (README,
+            # "Analysis ledger (Trackinizer)"). Once any user exists the server
+            # never mints another bootstrap key, so leaving it set does no
+            # harm, but it is dead config. The address is the ACME email from
+            # cluster-secrets, so it stays out of this public repo.
+            - name: TRACKINIZER_BOOTSTRAP_ADMIN
+              value: "${SECRET_ACME_EMAIL}"
+            # Never set TRACKINIZER_NO_AUTH or pass --no-auth: every call must
+            # carry a Bearer key.
+          ports:
+            - name: http
+              containerPort: 8765
+              protocol: TCP
+          # /api/version needs no auth and answers 200 only once the schema is
+          # bootstrapped. The startup probe gives the first start (migrations)
+          # up to five minutes before liveness can kill it; a restart then
+          # would also throw away the bootstrap token in /tmp.
+          startupProbe:
+            httpGet:
+              path: /api/version
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /api/version
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/version
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          # A guess: one uvicorn process with the stub embedder (no model is
+          # loaded unless TRACKINIZER_SESSION_EMBEDDER is set). The image
+          # carries a CPU torch for the optional embedders, which is not
+          # imported by default. Check real usage after a week and adjust.
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # The image points HOME and every XDG dir under /tmp, the only
+          # writable path. It is an emptyDir, so the bootstrap token is gone
+          # after any restart.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi

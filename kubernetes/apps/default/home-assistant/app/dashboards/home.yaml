@@ -856,6 +856,8 @@ views:
                   {% set hall = states('sensor.hallway_temperature') | float(0) %}
                   **{{ room }} °C** here · {{ hall }} °C hallway ({{ (room - hall) | round(1) }} °C difference)
                   · target {{ states('input_number.computer_room_target_temp') }} °C
+                  · {{ 'PC on, door open' if is_state('device_tracker.robingaming', 'home')
+                       else 'PC off, hallway fan idle' }}
                   {% if is_state('binary_sensor.computer_room_climate_paused', 'on') %}
                   ⏸️ Paused after a manual change, until
                   {{ state_attr('input_datetime.computer_room_climate_paused_until', 'timestamp') | timestamp_custom('%H:%M') }}

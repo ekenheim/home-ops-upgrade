@@ -8,6 +8,10 @@
 #   - Hallway fan (Dreo, fan.air_circulator) pushes the cooler hallway air in:
 #     the actual cooling. Speed follows how far the room is above target, only
 #     when the hallway is >= 1 C cooler, capped at 50 % at night (noise).
+#     Only while the main PC is on (device_tracker.robingaming): the door to
+#     the hallway is open then; with the PC off it's nearly closed for noise,
+#     so the fan would only make noise. Matches the UI automations that turn
+#     the hallway fan and KEF speakers on/off with the PC.
 #   - Ceiling fan (IR, fan.ceiling_fan) cools the person, not the room: only
 #     while the room is occupied. Only sends IR when the speed changes, so
 #     the fan doesn't get the same code every few minutes.
@@ -72,6 +76,7 @@ automation:
         entity_id:
           - sensor.computer_sensor_temperature
           - sensor.hallway_temperature
+          - device_tracker.robingaming
           - binary_sensor.computer_room_occupied
           - input_boolean.computer_room_auto_cooling
           - input_number.computer_room_target_temp
@@ -95,13 +100,15 @@ automation:
       target: "{{ states('input_number.computer_room_target_temp') | float(24) }}"
       excess: "{{ room - target }}"
       occupied: "{{ is_state('binary_sensor.computer_room_occupied', 'on') }}"
+      # PC on <=> door to the hallway open (see header).
+      pc_on: "{{ is_state('device_tracker.robingaming', 'home') }}"
       night: "{{ now().hour >= 22 or now().hour < 7 }}"
       hall_cur: >-
         {{ (state_attr('fan.air_circulator', 'percentage') | int(0))
            if is_state('fan.air_circulator', 'on') else 0 }}
       hall_want: >-
         {%- set w = 0 -%}
-        {%- if hall <= room - 1 -%}
+        {%- if pc_on and hall <= room - 1 -%}
           {%- if excess >= 3 -%}{%- set w = 100 -%}
           {%- elif excess >= 2 -%}{%- set w = 75 -%}
           {%- elif excess >= 1 -%}{%- set w = 50 -%}

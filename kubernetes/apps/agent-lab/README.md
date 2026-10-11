@@ -147,12 +147,13 @@ The analysis track writes its Intents, Experiments and Findings to Trackinizer (
 CronJob. It runs in its own namespace so the factory's component-keyed policies never select it. Its
 policy admits only the orchestrator's pods and the envoy-internal proxies on 8765, and lets the pod reach
 only DNS and the Postgres primary. The web UI is at `https://trackinizer.${SECRET_DOMAIN}` (LAN only, via
-`envoy-internal`); sign in with an API key.
+`envoy-internal`). The image mounts no browser sign-in provider, so the page's Google button stays
+off; the API and `/app/` accept `Authorization: Bearer <key>`, so a browser gets in only by sending one.
 The orchestrator's key, `FACTORY_TRACKINIZER_TOKEN`, comes from the Bitwarden item
 `agent_factory_trackinizer` and is read with `optional: true`. Every ledger failure is logged and
 ignored, so a missing or broken Trackinizer never stops a run.
 
-One-time bootstrap, in order. Steps 1–6 were done on 2026-10-11; they are kept here for a rebuild:
+One-time bootstrap, in order. All seven steps were done on 2026-10-11; they are kept here for a rebuild:
 
 1. Make the GHCR package `agent-factory-trackinizer` **public**, like the other agent-factory images,
    and check that an anonymous pull of the pinned digest works.

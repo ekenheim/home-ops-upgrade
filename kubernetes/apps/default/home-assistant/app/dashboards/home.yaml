@@ -1032,6 +1032,27 @@ views:
                         action: call-service
                         service: scene.turn_on
                         target: { entity_id: scene.bedroom_nightlight }
+              - type: custom:bubble-card
+                card_type: separator
+                name: Sleep
+                icon: mdi:sleep
+              - type: custom:bubble-card
+                card_type: button
+                button_type: state
+                entity: sensor.bathroom_withings_sleep_score
+                name: Last night
+                icon: mdi:sleep
+                show_last_changed: true
+                tap_action: { action: navigate, navigation_path: /dashboard-home/health }
+                sub_button:
+                  - entity: sensor.bathroom_withings_wakeup_count
+                    icon: mdi:weather-night
+                    show_state: true
+                    show_background: false
+                  - entity: sensor.bathroom_withings_average_heart_rate
+                    icon: mdi:heart-pulse
+                    show_state: true
+                    show_background: false
 
           # Bathroom
           - type: custom:bubble-card
@@ -1782,6 +1803,185 @@ views:
                 stroke_width: 3
                 color: "#e91e63"
                 statistics: { type: mean, period: day }
+
+      # Withings Sleep Analyzer (under the mattress). The sleep sensors are
+      # `measurement` and only change once a day, around 07:00, when the night's
+      # data lands: a daily `mean` statistic would blend two nights, so the
+      # daily charts take the last hourly mean of each day instead. A bar on
+      # day D is the night that ended on the morning of D.
+      - type: grid
+        cards:
+          - type: heading
+            heading: Last night
+            heading_style: title
+          - type: gauge
+            entity: sensor.bathroom_withings_sleep_score
+            name: Sleep score
+            min: 0
+            max: 100
+            needle: true
+            severity: { red: 0, yellow: 50, green: 75 }
+            grid_options: { columns: full }
+          - type: custom:mushroom-template-card
+            entity: sensor.bathroom_withings_deep_sleep
+            icon: mdi:sleep
+            icon_color: indigo
+            primary: >-
+              {%- set t = states('sensor.bathroom_withings_deep_sleep') | float(0)
+                 + states('sensor.bathroom_withings_light_sleep') | float(0)
+                 + states('sensor.bathroom_withings_rem_sleep') | float(0) -%}
+              {{ t | int }} h {{ ((t % 1) * 60) | round(0) | int }} min asleep
+            secondary: >-
+              Deep {{ (states('sensor.bathroom_withings_deep_sleep') | float(0) * 60) | round(0) | int }} min
+              · Light {{ (states('sensor.bathroom_withings_light_sleep') | float(0) * 60) | round(0) | int }} min
+              · REM {{ (states('sensor.bathroom_withings_rem_sleep') | float(0) * 60) | round(0) | int }} min
+            tap_action: { action: more-info }
+            grid_options: { columns: full }
+          - type: custom:mushroom-template-card
+            entity: sensor.bathroom_withings_wakeup_count
+            icon: mdi:weather-night
+            icon_color: blue
+            primary: >-
+              Asleep in {{ (states('sensor.bathroom_withings_time_to_sleep') | float(0) * 60) | round(0) | int }} min
+              · up in {{ (states('sensor.bathroom_withings_time_to_wakeup') | float(0) * 60) | round(0) | int }} min
+            secondary: >-
+              Awake {{ (states('sensor.bathroom_withings_wakeup_time') | float(0) * 60) | round(0) | int }} min
+              over {{ states('sensor.bathroom_withings_wakeup_count') | int(0) }} wake-ups
+            tap_action: { action: more-info }
+            grid_options: { columns: full }
+          - type: custom:mushroom-template-card
+            entity: sensor.bathroom_withings_snoring
+            icon: mdi:account-voice
+            icon_color: >-
+              {{ 'red' if states('sensor.bathroom_withings_snoring') | float(0) > 30 else 'green' }}
+            primary: >-
+              Snoring {{ states('sensor.bathroom_withings_snoring') | float(0) | round(0) | int }} min
+              · {{ states('sensor.bathroom_withings_snoring_episode_count') | int(0) }} episodes
+            secondary: >-
+              {%- set b = states('sensor.bathroom_withings_breathing_disturbances_intensity') | float(-1) -%}
+              {%- if b < 0 -%}Breathing disturbances: not reported yet
+              {%- elif b < 15 -%}Breathing disturbances low ({{ b | round(0) | int }})
+              {%- elif b < 30 -%}Breathing disturbances moderate ({{ b | round(0) | int }})
+              {%- else -%}Breathing disturbances high ({{ b | round(0) | int }}){%- endif -%}
+            tap_action: { action: more-info }
+            grid_options: { columns: full }
+          - type: tile
+            entity: sensor.bathroom_withings_average_heart_rate
+            name: Sleep HR
+            icon: mdi:heart-pulse
+            color: pink
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.bathroom_withings_average_respiratory_rate
+            name: Breathing
+            icon: mdi:lungs
+            color: cyan
+            grid_options: { columns: 6 }
+          - type: custom:apexcharts-card
+            grid_options: { columns: full }
+            chart_type: donut
+            header: { show: true, title: Sleep stages (h), show_states: false }
+            series:
+              - entity: sensor.bathroom_withings_deep_sleep
+                name: Deep
+                color: "#3f51b5"
+                float_precision: 1
+              - entity: sensor.bathroom_withings_light_sleep
+                name: Light
+                color: "#90caf9"
+                float_precision: 1
+              - entity: sensor.bathroom_withings_rem_sleep
+                name: REM
+                color: "#ab47bc"
+                float_precision: 1
+              - entity: sensor.bathroom_withings_wakeup_time
+                name: Awake
+                color: "#ffb74d"
+                float_precision: 1
+
+      - type: grid
+        column_span: 3
+        cards:
+          - type: heading
+            heading: Sleep
+            heading_style: title
+          - type: custom:apexcharts-card
+            grid_options: { columns: full }
+            header: { show: true, title: Sleep stages per night (14 days), show_states: false }
+            graph_span: 14d
+            span: { end: day }
+            stacked: true
+            yaxis:
+              - decimals: 1
+            all_series_config:
+              type: column
+              float_precision: 1
+              statistics: { type: mean, period: hour, align: start }
+              group_by: { func: last, duration: 1d, fill: "null" }
+            series:
+              - entity: sensor.bathroom_withings_deep_sleep
+                name: Deep
+                color: "#3f51b5"
+              - entity: sensor.bathroom_withings_light_sleep
+                name: Light
+                color: "#90caf9"
+              - entity: sensor.bathroom_withings_rem_sleep
+                name: REM
+                color: "#ab47bc"
+              - entity: sensor.bathroom_withings_wakeup_time
+                name: Awake
+                color: "#ffb74d"
+          - type: custom:apexcharts-card
+            grid_options: { columns: 6 }
+            header: { show: true, title: Sleep score (30 days), show_states: false }
+            graph_span: 30d
+            span: { end: day }
+            yaxis:
+              - min: 0
+                max: 100
+                decimals: 0
+            series:
+              - entity: sensor.bathroom_withings_sleep_score
+                name: Score
+                type: column
+                color: "#5c6bc0"
+                float_precision: 0
+                statistics: { type: mean, period: hour, align: start }
+                group_by: { func: last, duration: 1d, fill: "null" }
+            apex_config:
+              annotations:
+                yaxis:
+                  - y: 75
+                    borderColor: "#4caf50"
+                    strokeDashArray: 6
+                    label:
+                      text: Good
+                      style: { color: "#fff", background: "#4caf50" }
+          - type: custom:apexcharts-card
+            grid_options: { columns: 6 }
+            header: { show: true, title: Sleeping heart rate (30 days), show_states: false }
+            graph_span: 30d
+            span: { end: day }
+            yaxis:
+              - decimals: 0
+            all_series_config:
+              type: line
+              float_precision: 0
+              statistics: { type: mean, period: hour, align: start }
+              group_by: { func: last, duration: 1d, fill: "null" }
+            series:
+              - entity: sensor.bathroom_withings_maximum_heart_rate
+                name: Max
+                color: "#ef9a9a"
+                stroke_width: 1
+              - entity: sensor.bathroom_withings_average_heart_rate
+                name: Average
+                color: "#e91e63"
+                stroke_width: 3
+              - entity: sensor.bathroom_withings_minimum_heart_rate
+                name: Min
+                color: "#ef9a9a"
+                stroke_width: 1
 
   # ------------------------------------------------------------- Homelab ----
   # Read-only on purpose: no node "schedulable" switches (they cordon nodes)

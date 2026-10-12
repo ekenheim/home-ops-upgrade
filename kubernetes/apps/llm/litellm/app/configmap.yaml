@@ -136,8 +136,8 @@ data:
 
       # Lingarr's en->sv subtitle work, MiniMax only. gemma3-27b was the
       # order-2 fallback and was removed with it from worker4 on 2026-10-04,
-      # so when MiniMax cools down (a 429 at the plan's 300 prompts / 5 h, an
-      # outage) Lingarr gets errors and retries rather than a slow local
+      # so when MiniMax cools down (a 429 when the Token Plan's 5-hour window
+      # is spent, a 402 when the week is, an outage) Lingarr gets errors and retries rather than a slow local
       # answer. If that starts to matter, add a `translate: ["fast"]` fallback
       # -- but check this model's Swedish first: Ornith's was not usable, which
       # is why gemma existed at all.
@@ -148,8 +148,10 @@ data:
       # empty content); off, 1-1.4 s and ~95 tokens, and the Swedish is
       # idiomatic (tested 2026-09-30 through this gateway). `extra_body` is how
       # the flag reaches MiniMax: top-level `thinking` / `reasoning_effort` are
-      # dropped by drop_params. Lingarr sends ~180 prompts per 5 h at its
-      # weekly average against a 300 cap.
+      # dropped by drop_params. Lingarr runs 25 episodes every six hours
+      # (its own settings, see apps/downloads/lingarr); the plan's windows, the
+      # quota exporter and the process around them are in
+      # apps/observability/exporters/minimax-quota-exporter/README.md.
       - model_name: translate
         model_info:
           mode: chat
@@ -330,8 +332,8 @@ data:
       # rungs when bought; the entries are in git history at that date, and
       # the externalsecret already templates KIMI_CODE_API_KEY / ZAI_API_KEY.
       #
-      # Cap-out signals differ: MiniMax sends 429 per window and 402 once the
-      # plan's allowance is spent, ChatGPT sends 429 as a bare HTML page (Kimi
+      # Cap-out signals differ: MiniMax sends 429 (code 2056) once the 5-hour
+      # window is spent and 402 (code 2067) once the weekly allowance is, ChatGPT sends 429 as a bare HTML page (Kimi
       # sent 403, Z.AI 429).
       #
       # The chatgpt/ rungs only work for STREAMING callers: litellm v1.103.0
@@ -575,8 +577,10 @@ data:
 
       # --- implementation-pool: carrying out a plan (the coder role) ---
       # Jory's coder is a 27B on a 3090; we have no such card, so the coder
-      # runs cloud-first. MiniMax leads because its plan has the most prompts
-      # per window (300 / 5h) and a coder run is 50-200 calls. Window =
+      # runs cloud-first. MiniMax leads because its Token Plan is the flat-rate
+      # capacity we have (5-hour + weekly windows, metered by weighted usage,
+      # not prompts -- see apps/observability/exporters/minimax-quota-exporter)
+      # and a coder run is 50-200 calls. Window =
       # MiniMax-M2.7's 204800.
       - model_name: implementation-pool
         model_info:

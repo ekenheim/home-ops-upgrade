@@ -33,6 +33,17 @@ spec:
             image:
               repository: ghcr.io/lingarr-translate/lingarr
               tag: 1.4.0@sha256:8f392cf1efe718e0fcbc735d6d82df0b0bf86594bf64998aad85e8f306263774
+            # Automation settings live in Lingarr's SQLite DB, not in env (Lingarr only
+            # reads integration / language / AI-service keys from the environment).
+            # Set 2026-10-12 via POST /api/setting/multiple/set:
+            #   translation_schedule      = "0 1,7,13,19 * * *"  (was "0 1 * * *")
+            #   max_translations_per_run  = 25                   (was 200)
+            # Why: `translate` is MiniMax-M3 on the flat plan, ~300 prompts per
+            # rolling 5 h window shared with every other MiniMax caller. At 150
+            # lines per batch an episode is 5-11 prompts, so a 200-episode run
+            # capped out after ~30 episodes and the rest failed (Oct 10-12). 25
+            # episodes six hours apart is ~200 prompts per window and ~100 a day.
+            # Change these in the Lingarr UI (Settings > Automation), not here.
             env:
               TZ: ${TIMEZONE}
               ASPNETCORE_URLS: "http://+:9876"

@@ -160,6 +160,9 @@ spec:
     - fast
     - local-pool-chat
     - chatgpt
+    # frontier-pool for the atlas-eval key (atlas pilot-review ticket 25): the lead's
+    # frontier-model measurements. The key's own list and this team's cap still bind.
+    - frontier-pool
   maxBudget: "25"
   budgetDuration: 1d
 ---

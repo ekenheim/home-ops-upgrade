@@ -1932,7 +1932,7 @@ views:
                 name: Awake
                 color: "#ffb74d"
           - type: custom:apexcharts-card
-            grid_options: { columns: 6 }
+            grid_options: { columns: 18 }
             header: { show: true, title: Sleep score (30 days), show_states: false }
             graph_span: 30d
             span: { end: day }
@@ -1958,7 +1958,7 @@ views:
                       text: Good
                       style: { color: "#fff", background: "#4caf50" }
           - type: custom:apexcharts-card
-            grid_options: { columns: 6 }
+            grid_options: { columns: 18 }
             header: { show: true, title: Sleeping heart rate (30 days), show_states: false }
             graph_span: 30d
             span: { end: day }

@@ -42,7 +42,7 @@ spec:
       initContainers:
         # Schema to head on the DIRECT primary (see externalsecret.yaml).
         - name: migrate
-          image: &image ghcr.io/ekenheim/atlas:0.5.6
+          image: &image ghcr.io/ekenheim/atlas:0.6.1
           args: ["migrate"]
           env: &env
             - name: ATLAS_ACTOR
@@ -94,6 +94,11 @@ spec:
             # default 180 s per role call; a timeout would read as an outage and pause the queue.
             - name: ATLAS_LLM_ROLE_TIMEOUT_SECONDS
               value: "360"
+            # 0.6.1 (2026-10-12): the finding judge on gpt-5.6-luna (`chatgpt`), which catches 11 of 17
+            # misstatements against MiniMax-M3's 5 (atlas docs/experiments.md); the other roles stay on
+            # ATLAS_LLM_ROLE_MODEL. The atlas key must list `chatgpt` (keys/atlas.yaml).
+            - name: ATLAS_LLM_ROLE_MODELS
+              value: '{"finding_judge": "chatgpt"}'
             - name: ATLAS_INVESTIGATION_MAX_PASSAGES
               value: "72"
             - name: ATLAS_INVESTIGATOR_MAX_PASSAGES

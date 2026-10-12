@@ -40,9 +40,9 @@ _... automated via [Flux](https://fluxcd.io), [Renovate](https://github.com/reno
 
 ## Overview
 
-This is a monorepository for my home Kubernetes cluster. I try to keep everything defined as code and managed through GitOps — if it's running, it should be in Git. The main tools I rely on are [Ansible](https://www.ansible.com/), [Terraform](https://developer.hashicorp.com/terraform), [Kubernetes](https://kubernetes.io/), [Flux](https://github.com/fluxcd/flux2), [Renovate](https://github.com/renovatebot/renovate), and [GitHub Actions](https://github.com/features/actions).
+This is a monorepository for my home Kubernetes cluster. I try to keep everything defined as code and managed through GitOps — if it's running, it should be in Git. The main tools I rely on are [Talos Linux](https://www.talos.dev), [Kubernetes](https://kubernetes.io/), [Flux](https://github.com/fluxcd/flux2), [Renovate](https://github.com/renovatebot/renovate), [GitHub Actions](https://github.com/features/actions), [OpenTofu](https://opentofu.org/) and [Ansible](https://www.ansible.com/).
 
-Started this to learn Kubernetes properly, and it's grown quite a bit since then — it now runs everything from media and smart home automation to a fairly serious data science stack.
+Started this to learn Kubernetes properly, and it's grown quite a bit since then — it now runs everything from media and smart home automation to a data science stack, a self-hosted LLM platform with its own GPU node, and sandboxed coding agents.
 
 ---
 
@@ -50,55 +50,60 @@ Started this to learn Kubernetes properly, and it's grown quite a bit since then
 
 ### Installation
 
-The cluster runs [Talos Linux](https://www.talos.dev), an immutable, API-driven OS purpose-built for Kubernetes. There's no SSH, no package manager — configuration is entirely declarative via `talconfig.yaml` and applied with [talhelper](https://github.com/budimanjojo/talhelper).
+The cluster runs [Talos Linux](https://www.talos.dev), an immutable, API-driven OS purpose-built for Kubernetes. There's no SSH, no package manager — configuration is entirely declarative via `talconfig.yaml` and applied with [talhelper](https://github.com/budimanjojo/talhelper). Node-specific kernel modules and boot args (AMD microcode, `amdgpu` + ROCm args for the GPU node) come from [Talos Image Factory](https://factory.talos.dev) schematics.
 
-The setup is semi-hyper-converged: workloads and block storage share the same nodes, while a separate NAS handles NFS/SMB shares, bulk storage, and off-cluster backups.
+The setup is semi-hyper-converged: workloads and Rook/Ceph block storage share the same nodes, while a separate NAS handles NFS/SMB shares, bulk storage, and off-cluster backups. One worker is a dedicated, tainted LLM node with an AMD Strix Halo iGPU and 128GB of unified memory.
 
 ### Core Components
 
-- [actions-runner-controller](https://github.com/actions/actions-runner-controller): self-hosted GitHub Actions runners inside the cluster
-- [cilium](https://github.com/cilium/cilium): CNI for internal Kubernetes networking, replacing kube-proxy entirely
+- [actions-runner-controller](https://github.com/actions/actions-runner-controller): self-hosted GitHub Actions runners inside the cluster (eight runner scale sets for this repo and other projects)
+- [cilium](https://github.com/cilium/cilium): CNI for internal Kubernetes networking, replacing kube-proxy entirely; also L2 announcements for LoadBalancer VIPs and network policy
 - [cert-manager](https://cert-manager.io/docs/): handles SSL certificate issuance and renewal for all cluster services
 - [cloudflared](https://github.com/cloudflare/cloudflared): Cloudflare Tunnel for exposing services without opening inbound firewall ports
-- [external-dns](https://github.com/kubernetes-sigs/external-dns): automatically creates DNS records from ingress and service definitions
+- [envoy-gateway](https://gateway.envoyproxy.io/): primary ingress via the Gateway API — an `envoy-internal` and an `envoy-external` Gateway, with OIDC in front of apps that lack their own login
+- [istio](https://istio.io/): service mesh, kept for the few workloads (Ray, Dask) that still use its gateway
+- [external-dns](https://github.com/kubernetes-sigs/external-dns): automatically creates DNS records from HTTPRoute and service definitions
 - [external-secrets](https://github.com/external-secrets/external-secrets/): syncs secrets from [Bitwarden](https://bitwarden.com/) into Kubernetes
-- [headscale](https://github.com/juanfont/headscale): self-hosted Tailscale control plane for mesh VPN access
-- [ingress-nginx](https://github.com/kubernetes/ingress-nginx/): ingress controller using NGINX as a reverse proxy and load balancer
+- [tailscale](https://tailscale.com/): mesh VPN access into the cluster network
 - [openebs](https://openebs.io/): local hostpath storage for workloads that need node-local fast storage
-- [rook-ceph](https://rook.io/): distributed block storage across the cluster nodes
+- [rook-ceph](https://rook.io/): distributed block storage across the cluster nodes, one NVMe OSD per node
 - [sops](https://toolkit.fluxcd.io/guides/mozilla-sops/): encrypted secrets committed to Git, used across Kubernetes and Ansible
-- [spegel](https://github.com/XenitAB/spegel): peer-to-peer OCI registry mirror so nodes don't all pull images independently
-- [tofu-controller](https://github.com/flux-iac/tofu-controller): runs OpenTofu (open-source Terraform) from within the cluster, managed by Flux
-- [volsync](https://github.com/backube/volsync): backup and recovery of persistent volume claims
+- [spegel](https://github.com/spegel-org/spegel): peer-to-peer OCI registry mirror so nodes don't all pull images independently
+- [tuppr](https://github.com/home-operations/tuppr): declarative Talos and Kubernetes upgrades driven from Git
+- [renovate-operator](https://github.com/mogenius/renovate-operator): self-hosted Renovate, running in the cluster on a GitHub App token
+- [volsync](https://github.com/backube/volsync): backup and recovery of persistent volume claims, with a restore drill in CI
 
 ### GitOps
 
-[Flux](https://github.com/fluxcd/flux2) watches the `kubernetes/` folder and reconciles the cluster to match whatever is in Git. It recursively searches for the top-level `kustomization.yaml` in each app directory, which in turn points to `HelmRelease` objects and any supporting resources.
+[Flux](https://github.com/fluxcd/flux2) watches the `kubernetes/` folder and reconciles the cluster to match whatever is in Git. The root `cluster-apps` Kustomization points at `kubernetes/apps`; each namespace has a `kustomization.yaml` listing its apps, and each app has a Flux `Kustomization` in `ks.yaml` next to the `HelmRelease` and any supporting resources. SOPS decryption and variable substitution from `cluster-settings` / `cluster-secrets` are patched onto every child Kustomization.
 
 If it's not in Git, it doesn't run — and if it drifts, Flux will bring it back.
 
-[Renovate](https://github.com/renovatebot/renovate) monitors the entire repository for outdated dependencies. When a new chart or image version is available, it opens a PR automatically. Merging that PR is all it takes to trigger a rollout.
+[Renovate](https://github.com/renovatebot/renovate) monitors the entire repository for outdated dependencies — Helm charts, container images and digests, Talos and Kubernetes versions, GitHub Actions. When a new version is available, it opens a PR automatically; `flux-local` and `kubeconform` validate the rendered manifests, and an AI review workflow checks release notes and registry tags against the PR. Merging that PR is all it takes to trigger a rollout.
 
 ### Directories
 
 ```sh
 📁 .
 ├── 📁 .devcontainer/    # Development container configuration
-├── 📁 .github/          # GitHub Actions workflows
-├── 📁 .taskfiles/       # Taskfile configurations
-├── 📁 ansible/          # Ansible playbooks for supporting infrastructure (NAS, etc.)
-├── 📁 clusterconfig/    # Cluster configuration files
+├── 📁 .github/          # GitHub Actions workflows and Renovate config
+├── 📁 .taskfiles/       # Taskfile includes (Flux, Talos, Rook, VolSync, Bitwarden, ...)
+├── 📁 ansible/          # Ansible playbooks for supporting infrastructure
+├── 📁 build/            # Custom OCI images built in CI
+├── 📁 clusterconfig/    # talhelper-generated Talos machine configs
+├── 📁 docs/             # Project notes (currently the Bandit ML platform)
 ├── 📁 kubernetes/       # Kubernetes manifests
-│   ├── 📁 apps/         # Application deployments
-│   ├── 📁 bootstrap/    # Bootstrap procedures and Talos config
-│   ├── 📁 flux/         # Core Flux configuration
+│   ├── 📁 apps/         # Application deployments, grouped by namespace
+│   ├── 📁 base/         # Gateway API CRDs
+│   ├── 📁 bootstrap/    # Flux install and Talos talconfig
+│   ├── 📁 flux/         # Core Flux configuration, Helm/Git repositories, vars
 │   └── 📁 templates/    # Reusable components (VolSync, etc.)
-└── 📁 terraform/        # Terraform/OpenTofu configurations
+└── 📁 terraform/        # OpenTofu for Authentik, Cloudflare and MinIO
 ```
 
 ### Flux Workflow
 
-Here's how Flux handles deployment ordering using real examples from the cluster. `external-secrets` and the Postgres operator have no dependencies so they come up immediately. The Postgres cluster waits for both of those to be healthy, and only then can `authentik` start — since it needs a running database before it can do anything useful.
+Here's how Flux handles deployment ordering using real examples from the cluster. `external-secrets` and the Postgres operator have no dependencies so they come up immediately. The Postgres cluster waits for both of those to be healthy, and only then can `authentik` start — since it needs a running database and a Dragonfly (Redis) cache before it can do anything useful.
 
 ```mermaid
 graph TD;
@@ -106,6 +111,7 @@ graph TD;
   id2>Kustomization: cluster-apps] -->|Creates| id3>Kustomization: external-secrets];
   id2>Kustomization: cluster-apps] -->|Creates| id4>Kustomization: crunchy-postgres-operator];
   id2>Kustomization: cluster-apps] -->|Creates| id6>Kustomization: crunchy-postgres-operator-cluster];
+  id2>Kustomization: cluster-apps] -->|Creates| id11>Kustomization: dragonfly-cluster];
   id2>Kustomization: cluster-apps] -->|Creates| id8>Kustomization: authentik];
   id3>Kustomization: external-secrets] -->|Creates| id5[HelmRelease: external-secrets];
   id4>Kustomization: crunchy-postgres-operator] -->|Creates| id7[HelmRelease: crunchy-postgres-operator];
@@ -113,6 +119,7 @@ graph TD;
   id6>Kustomization: crunchy-postgres-operator-cluster] -->|Depends on| id3>Kustomization: external-secrets];
   id6>Kustomization: crunchy-postgres-operator-cluster] -->|Creates| id9[CrunchyPostgres Cluster];
   id8>Kustomization: authentik] -->|Depends on| id6>Kustomization: crunchy-postgres-operator-cluster];
+  id8>Kustomization: authentik] -->|Depends on| id11>Kustomization: dragonfly-cluster];
   id8>Kustomization: authentik] -->|Creates| id10(HelmRelease: authentik);
 ```
 
@@ -122,23 +129,29 @@ graph TD;
 
 The cluster runs a wide range of workloads, organized by namespace:
 
+### LLM Platform
+Everything that serves, proxies or drives an LLM lives in the `llm` namespace. [LiteLLM](https://github.com/BerriAI/litellm) is the gateway: it fronts local models, cloud APIs and a ChatGPT subscription behind named model pools, and a [litellm-operator](https://github.com/home-operations/litellm-operator) mints a scoped virtual key per app. Local inference runs on the GPU node with [llama.cpp](https://github.com/ggml-org/llama.cpp) via [LLMKube](https://github.com/defilantech/llmkube) (ROCm on the Strix Halo iGPU), plus CPU embedding models, [ComfyUI](https://github.com/comfyanonymous/ComfyUI) for image generation, [whisper.cpp](https://github.com/ggml-org/whisper.cpp) and [Lemonade](https://github.com/lemonade-sdk/lemonade) TTS for speech. Around that: [ToolHive](https://github.com/stacklok/toolhive) runs MCP servers, [SearXNG](https://github.com/searxng/searxng) provides web search, two memory services back the agents, and [Hermes](https://github.com/NousResearch/hermes-agent), [Langflow](https://langflow.org/), [SillyTavern](https://github.com/SillyTavern/SillyTavern) and [OpenCode](https://github.com/sst/opencode) are the frontends. A nightly job writes an LLM-generated wiki of this repo, and an alert-triage service explains Alertmanager pages.
+
+### Agent Lab
+A sandboxed platform for autonomous coding agents: an orchestrator claims GitHub issues, runs one agent per issue in a locked-down namespace, verifies the result in a second sandbox and records everything in a Postgres ledger. Default-deny Cilium policies, resource quotas and a dedicated Envoy egress gateway (which injects the LiteLLM key, so the sandboxes never see it) keep it contained.
+
 ### Data Science
-A fairly deep ML/data stack with [Ray](https://www.ray.io/) and [Dask](https://www.dask.org/) for distributed compute, [Apache Spark](https://spark.apache.org/) for large-scale processing, and [Dagster](https://dagster.io/), [Prefect](https://www.prefect.io/), and [Flyte](https://flyte.org/) for orchestration. [MLflow](https://mlflow.org/) handles experiment tracking, [Jupyter Lab](https://jupyter.org/) and [Marimo](https://marimo.io/) for interactive notebooks. [Kubeflow](https://www.kubeflow.org/) is deployed and being migrated from deployKF to a native install. On the AI/inference side: [Ollama](https://ollama.com/), [vLLM](https://github.com/vllm-project/vllm), [Open WebUI](https://github.com/open-webui/open-webui), and [Langflow](https://langflow.org/) for building LLM workflows. [Qdrant](https://qdrant.tech/) serves as the vector database.
+[Ray](https://www.ray.io/) for distributed compute and [Apache Spark](https://spark.apache.org/) for large-scale processing, with [Dagster](https://dagster.io/) for orchestration. [MLflow](https://mlflow.org/) handles experiment tracking, [Seldon Core](https://github.com/SeldonIO/seldon-core) model serving, [Label Studio](https://labelstud.io/) annotation, and [Jupyter Lab](https://jupyter.org/) and [Marimo](https://marimo.io/) are the notebooks. [Qdrant](https://qdrant.tech/) is the vector database and [FalkorDB](https://www.falkordb.com/) the graph database. The Bandit contextual-bandit platform documented in `docs/` runs here too.
 
 ### Smart Home / IoT
-[Home Assistant](https://www.home-assistant.io/) is the hub, with [Z-Wave JS UI](https://github.com/zwave-js/zwave-js-ui) handling Z-Wave devices. [Music Assistant](https://music-assistant.io/) manages multi-room audio. All backed by a local [Mosquitto](https://mosquitto.org/) MQTT broker.
+[Home Assistant](https://www.home-assistant.io/) is the hub, with [Z-Wave JS UI](https://github.com/zwave-js/zwave-js-ui) handling Z-Wave devices and [Music Assistant](https://music-assistant.io/) for multi-room audio, all backed by a local [Mosquitto](https://mosquitto.org/) MQTT broker. Local voice runs on [Wyoming](https://github.com/rhasspy/wyoming) services: Whisper for speech-to-text, Piper and Kokoro for text-to-speech.
 
 ### Media
-[Plex](https://www.plex.tv/) for media streaming, with [Kavita](https://www.kavitareader.com/) for books and comics. [Overseerr](https://overseerr.dev/) handles requests, [Maintainerr](https://github.com/jorenn92/Maintainerr) handles library cleanup, and the usual *arr stack ([Sonarr](https://sonarr.tv/), [Radarr](https://radarr.video/), [Prowlarr](https://github.com/Prowlarr/Prowlarr), [SABnzbd](https://sabnzbd.org/)) manages downloads.
+[Plex](https://www.plex.tv/) for media streaming, with [Kavita](https://www.kavitareader.com/) for books and comics and [xTeve](https://github.com/xteve-project/xTeVe) for IPTV. [Overseerr](https://overseerr.dev/) handles requests, [Wizarr](https://github.com/wizarrrr/wizarr) invites, [Tautulli](https://tautulli.com/) stats, and [Maintainerr](https://github.com/jorenn92/Maintainerr) library cleanup. The *arr stack ([Sonarr](https://sonarr.tv/), [Radarr](https://radarr.video/) ×2, [Prowlarr](https://github.com/Prowlarr/Prowlarr), [Bazarr](https://www.bazarr.media/), [Kapowarr](https://github.com/Casvt/Kapowarr), [Lingarr](https://github.com/lingarr-translate/lingarr), [Recyclarr](https://recyclarr.dev/), [SABnzbd](https://sabnzbd.org/)) manages downloads.
 
 ### Personal / Productivity
-[Immich](https://immich.app/) for photo management, [Paperless-ngx](https://docs.paperless-ngx.com/) for documents, [Syncthing](https://syncthing.net/) for file sync, and [Actual Budget](https://actualbudget.org/) for personal finance.
+[Immich](https://immich.app/) for photo management, [Paperless-ngx](https://docs.paperless-ngx.com/) for documents, [Syncthing](https://syncthing.net/) for file sync, [Actual Budget](https://actualbudget.org/) for personal finance, [Outline](https://www.getoutline.com/) as a wiki, plus [PairDrop](https://pairdrop.net/), [FileBrowser](https://filebrowser.org/) and [IT-Tools](https://it-tools.tech/).
 
 ### Observability
-Full monitoring stack: [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) with [Grafana](https://grafana.com/), long-term metrics via [Thanos](https://thanos.io/), external health monitoring with [Gatus](https://gatus.dev/), and [Kromgo](https://github.com/kashalls/kromgo) for the README badges above.
+Full monitoring stack: [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) with [Grafana](https://grafana.com/) (dashboards live in Git as ConfigMaps), long-term metrics via [Thanos](https://thanos.io/), [Karma](https://github.com/prymitive/karma) for alerts, [UnPoller](https://unpoller.com/) for the UniFi gear, external health monitoring with [Gatus](https://gatus.dev/), and [Kromgo](https://github.com/kashalls/kromgo) for the README badges above.
 
 ### Development / Internal Tools
-[Harbor](https://goharbor.io/) as a private OCI registry, [Meilisearch](https://www.meilisearch.com/) for search, [Redpanda](https://redpanda.com/) as a Kafka-compatible event streaming platform, and [Metabase](https://www.metabase.com/) for business intelligence dashboards.
+[Harbor](https://goharbor.io/) as a private OCI registry, [Redpanda](https://redpanda.com/) as a Kafka-compatible event streaming platform, [Strapi](https://strapi.io/) and [Medusa](https://medusajs.com/) for headless CMS / commerce, [Rybbit](https://rybbit.io/) for web analytics, and [Bytewax](https://github.com/bytewax/bytewax) for stream processing, plus a handful of side projects. [Authentik](https://goauthentik.io/) provides SSO for everything; [Crunchy Postgres](https://github.com/CrunchyData/postgres-operator) and [Dragonfly](https://www.dragonflydb.io/) are the shared databases.
 
 ---
 
@@ -149,10 +162,11 @@ Most things run locally, but I offload a few things to the cloud where it makes 
 | Service                                   | Use                                                               | Cost           |
 |-------------------------------------------|-------------------------------------------------------------------|----------------|
 | [Bitwarden](https://bitwarden.com/)       | Secrets with [External Secrets](https://external-secrets.io/)     | ~$10/yr        |
-| [Cloudflare](https://www.cloudflare.com/) | Domain and S3                                                     | ~$30/yr        |
+| [Cloudflare](https://www.cloudflare.com/) | Domain, Tunnel and S3 (R2)                                        | ~$30/yr        |
 | [GitHub](https://github.com/)             | Hosting this repository and continuous integration/deployments    | Free           |
-| [Healthcheck.io](https://healthcheck.io/) | Monitoring internet connectivity and external facing applications | Free           |
-|                                           |                                                                   | Total: ~$3.33/mo  |
+| [Healthchecks.io](https://healthchecks.io/) | Monitoring internet connectivity and external facing applications | Free         |
+| [MiniMax](https://www.minimax.io/) / [ChatGPT](https://chatgpt.com/) | Frontier models behind LiteLLM, fallback when the local GPU is down | Usage-based |
+|                                           |                                                                   | Total: ~$3.33/mo + LLM usage |
 
 ---
 
@@ -160,15 +174,15 @@ Most things run locally, but I offload a few things to the cloud where it makes 
 
 ### Main Kubernetes Cluster
 
-| Name    | Device        | CPU      | OS Disk   | Data Disk | RAM   | OS    | Purpose           | Status   |
-|---------|---------------|----------|-----------|-----------|-------|-------|-------------------|----------|
-| master1 | Dell 7080mff  | 16 cores | 113GB SSD | 1TB NVMe  | 64GB  | Talos | k8s control-plane | Ready    |
-| master2 | Dell 7080mff  | 16 cores | 233GB SSD | 1TB NVMe  | 64GB  | Talos | k8s control-plane | Ready    |
-| master3 | Dell 3080mff  | 16 cores | 233GB SSD | 1TB NVMe  | 64GB  | Talos | k8s control-plane | Ready    |
-| worker3 | AMD (32-core) | 32 cores | 101GB SSD | 1TB NVMe  | 96GB  | Talos | k8s worker        | Ready    |
+| Name    | Device                | CPU                                    | OS Disk                  | Data Disk (Ceph OSD)  | RAM   | OS    | Purpose           | Status (2026-10-12) |
+|---------|-----------------------|----------------------------------------|--------------------------|-----------------------|-------|-------|-------------------|---------------------|
+| master1 | Intel NUC12WSHi5      | i5-1240P (12c/16t)                     | —                        | 1TB Samsung 980 PRO   | 64GB  | Talos | k8s control-plane | Dead (board failure); ASRock DeskMini B760 / i3-14100 replacement on order |
+| master2 | Intel NUC12WSHi5      | i5-1240P (12c/16t)                     | 200GB Intel DC S3710     | 1TB Samsung 980 PRO   | 64GB  | Talos | k8s control-plane | Ready, sole etcd member |
+| master3 | Intel NUC12WSHi5      | i5-1240P (12c/16t)                     | 200GB Intel DC S3700     | 1TB Samsung 980 PRO   | 64GB  | Talos | k8s control-plane | Dead (won't power on); ASRock DeskMini B760 / i5-14400 replacement on order |
+| worker3 | Minisforum MS-A2      | AMD Ryzen 9 (16c/32t)                  | 1TB Kingston Fury NVMe   | 1TB Kingston Fury NVMe | 96GB | Talos | k8s worker        | Ready |
+| worker4 | Minisforum MS-S1 MAX  | AMD Ryzen AI MAX+ 395 (16c/32t), Radeon 8060S iGPU | 500GB Samsung 970 EVO Plus | 2TB Kingston NVMe | 128GB | Talos | k8s worker, dedicated LLM / ROCm node | Ready |
 
-Total CPU: 80 cores
-Total RAM: 288GB
+Live right now: 80 threads, 288GB RAM, ~3.7TB raw Ceph across three OSDs. With both replacement masters in: 112 threads, 416GB RAM.
 
 ### Supporting Hardware
 
@@ -180,15 +194,15 @@ Total RAM: 288GB
 
 | Device                    | Purpose                               |
 |---------------------------|---------------------------------------|
-| Rellio 2200 VSD           | UPS - Server Rack                     |
-| Unifi Dream Machine Pro   | Router / Gateway                      |
-| Unifi USW Pro XG 24 PoE  | 24 Port 10G PoE Switch (main rack)    |
-| Unifi USW 16 PoE          | 16 Port PoE Switch                    |
-| Unifi USW Lite 16 PoE     | 16 Port Lite PoE Switch               |
-| Unifi US 8                | 8 Port Switch                         |
-| Unifi US 8                | 8 Port Switch                         |
-| Unifi U7 Pro XGS          | WiFi 7 Access Point                   |
-| Unifi AC Pro              | Access Point                          |
+| UniFi UPS 2U              | UPS / PDU - Server Rack               |
+| UniFi Dream Machine Pro   | Router / Gateway                      |
+| UniFi USW Pro XG 24 PoE   | 24 Port 10G PoE Switch (main rack)    |
+| UniFi USW 16 PoE          | 16 Port PoE Switch                    |
+| UniFi USW Lite 16 PoE     | 16 Port Lite PoE Switch               |
+| UniFi US 8                | 8 Port Switch                         |
+| UniFi US 8                | 8 Port Switch                         |
+| UniFi U7 Pro XGS          | WiFi 7 Access Point                   |
+| UniFi AC Pro              | Access Point                          |
 
 ---
 

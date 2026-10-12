@@ -13,5 +13,6 @@ resources:
   - ./toolhive.yaml
   - ./opencode.yaml
   - ./atlas.yaml
+  - ./atlas-eval.yaml
   - ./agent-lab.yaml
   - ./courier.yaml

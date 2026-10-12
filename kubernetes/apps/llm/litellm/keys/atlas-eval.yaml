@@ -1,0 +1,36 @@
+---
+# Atlas evaluations (atlas pilot-review ticket 25): the lead's offline measurements of a
+# frontier model as the research Editor and finding judge (`.scratch/tools/
+# finding_judge_eval.py`, `editor_replay.py`), run from the lead's machine against this
+# gateway, with MiniMax-M3 as the recorded baseline. Public filings and notes derived
+# from them only, like the atlas key: nothing on this key may carry the owner's email,
+# finance or home data.
+#
+# `frontier-pool` and `chatgpt` are ChatGPT-backed (gpt-6-astra, gpt-5.6-luna) and serve
+# streaming callers only (configmap, "The chatgpt/ rungs only work for STREAMING
+# callers"); Atlas's role caller streams for them (ATLAS_LLM_ROLE_STREAM_MODELS).
+#
+# The Secret lands in `llm` next to the CR; the owner reads it out by hand for the lead's
+# `.env` (ATLAS_LITELLM_URL=https://litellm.ekenhome.se, ATLAS_LITELLM_API_KEY). Nothing
+# in the cluster reads it.
+#
+# maxBudget is list-price spend (astra $10 / $50 per M tokens), not a bill: ChatGPT is a
+# flat plan. One judge pass is about 130 calls, roughly $7 at list; an Editor replay
+# about $6. A daily cap that resets clears a trip by itself.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: atlas-eval
+spec:
+  proxyRef: litellm-admin
+  keyAlias: atlas-eval
+  teamID: research
+  secretName: litellm-key-atlas-eval
+  secretKey: api-key
+  maxBudget: "30"
+  budgetDuration: 1d
+  maxParallelRequests: 2
+  models:
+    - frontier-pool
+    - chatgpt
+    - MiniMax-M3

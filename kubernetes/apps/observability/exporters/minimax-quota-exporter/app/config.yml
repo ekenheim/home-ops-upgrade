@@ -1,0 +1,51 @@
+---
+# json_exporter config. One module, one target: MiniMax's Token Plan quota
+# endpoint, probed by the ServiceMonitor in helmrelease.yaml with
+#   /probe?module=minimax&target=https://api.minimax.io/v1/token_plan/remains
+#
+# Response shape (2026-10-12), one entry per quota bucket; "general" is the
+# text/image/audio bucket every LLM call draws from, "video" is separate:
+#   {"model_remains":[{"model_name":"general",
+#      "start_time":<ms>,"end_time":<ms>,"remains_time":<ms>,
+#      "current_interval_remaining_percent":87,"current_interval_status":1,
+#      "current_interval_usage_count":0,"current_interval_total_count":0,
+#      "weekly_start_time":<ms>,"weekly_end_time":<ms>,"weekly_remains_time":<ms>,
+#      "current_weekly_remaining_percent":86,"current_weekly_status":1}, ...],
+#    "base_resp":{"status_code":0,"status_msg":"success"}}
+#
+# Percentages are REMAINING, not used. The *_count fields are 0 on the Token
+# Plan (it meters weighted usage, not calls) and are kept only so a change
+# in MiniMax's metering shows up. Times are epoch milliseconds; divide by
+# 1000 in PromQL. Object metrics become <name>_<value key>, e.g.
+# minimax_token_plan_weekly_remaining_percent{model="general"}.
+modules:
+  minimax:
+    http_client_config:
+      authorization:
+        type: Bearer
+        credentials_file: /secrets/MINIMAX_API_KEY
+    headers:
+      Content-Type: application/json
+    metrics:
+      - name: minimax_token_plan
+        type: object
+        help: MiniMax Token Plan quota windows as reported by /v1/token_plan/remains
+        path: '{.model_remains[*]}'
+        labels:
+          model: '{.model_name}'
+        values:
+          interval_remaining_percent: '{.current_interval_remaining_percent}'
+          interval_status: '{.current_interval_status}'
+          interval_start_ms: '{.start_time}'
+          interval_end_ms: '{.end_time}'
+          interval_remains_ms: '{.remains_time}'
+          interval_usage_count: '{.current_interval_usage_count}'
+          interval_total_count: '{.current_interval_total_count}'
+          weekly_remaining_percent: '{.current_weekly_remaining_percent}'
+          weekly_status: '{.current_weekly_status}'
+          weekly_start_ms: '{.weekly_start_time}'
+          weekly_end_ms: '{.weekly_end_time}'
+          weekly_remains_ms: '{.weekly_remains_time}'
+      - name: minimax_token_plan_api_status_code
+        help: base_resp.status_code from the remains endpoint (0 = success)
+        path: '{.base_resp.status_code}'

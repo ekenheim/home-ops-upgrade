@@ -126,6 +126,16 @@ spec:
         # at 2, which the Atlas deployment's budget comments already assume. Applies to
         # every bank's retains, Codex-routed ones included.
         HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT: "2"
+        # Retain's output ceiling (2026-10-12). Upstream default is 64000. LiteLLM's
+        # TPM limiter reserves input + max_tokens BEFORE the call, so against the
+        # 30k-TPM model_tpm_limit on the hindsight key (set through the API, see
+        # ../../litellm/keys/teams.yaml) every MiniMax-routed retain was refused on
+        # arrival from 2026-10-08: "Current limit: 30000, Remaining: 30000" and still
+        # 429. 8192 is ample for a 3000-char chunk (HINDSIGHT_API_RETAIN_CHUNK_SIZE)
+        # and keeps the reservation under the cap; Hindsight requires it to exceed the
+        # chunk size. The key's cap itself should move to model_rpm_limit, see
+        # ../../../observability/exporters/minimax-quota-exporter/README.md.
+        HINDSIGHT_API_RETAIN_MAX_COMPLETION_TOKENS: "8192"
         # --- Consolidation: MiniMax-M3 first, then the 5090 (2026-10-05) ---
         #
         # Consolidation has its own model (the CONSOLIDATION_ prefix): litellm's

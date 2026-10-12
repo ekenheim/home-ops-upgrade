@@ -55,6 +55,11 @@
 # model on the hindsight key instead (model_tpm_limit, set through the API --
 # the operator cannot express it), so a backlog cannot eat the MiniMax plan
 # without starving memini's local recall.
+# NOTE 2026-10-12: a TPM cap is checked against input + max_tokens BEFORE the
+# call, so that 30k refused every MiniMax retain (64k max_tokens) and most
+# consolidation calls from 2026-10-08 with "Remaining: 30000". Use
+# model_rpm_limit instead; the retain cap is now 8192 in ../../hindsight. See
+# ../../../observability/exporters/minimax-quota-exporter/README.md.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMTeam
 metadata:

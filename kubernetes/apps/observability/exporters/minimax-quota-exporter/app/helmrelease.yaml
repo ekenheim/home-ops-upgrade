@@ -1,0 +1,97 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app minimax-quota-exporter
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      minimax-quota-exporter:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            # Generic JSON -> Prometheus bridge from prometheus-community. The
+            # module config (./config.yml) does the MiniMax-specific work; the
+            # target URL lives on the ServiceMonitor below, so a second plan
+            # key or MiniMax's CN host is one more endpoint, not a new app.
+            image:
+              repository: ghcr.io/prometheus-community/json-exporter
+              tag: v0.8.0@sha256:3aad20d41a0b31dfaaf7ab1a091440e92a82a61ef68b76750eac0ad50a983652
+            args:
+              - --config.file=/config/config.yml
+              - --web.listen-address=:7979
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 5m
+                memory: 32Mi
+              limits:
+                memory: 64Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 7979
+    serviceMonitor:
+      app:
+        serviceName: *app
+        endpoints:
+          # Every scrape is one GET against MiniMax. 5m is plenty: the windows
+          # are 5 hours and 7 days, and the alert `for:` clauses are sized to
+          # this interval. Do not go below 1m -- MiniMax rate-limits by account
+          # and this key is the one LiteLLM spends from.
+          - port: http
+            scheme: http
+            path: /probe
+            interval: 5m
+            scrapeTimeout: 30s
+            params:
+              module: [minimax]
+              target: [https://api.minimax.io/v1/token_plan/remains]
+    persistence:
+      config:
+        type: configMap
+        name: minimax-quota-exporter-config
+        globalMounts:
+          - path: /config
+            readOnly: true
+      secrets:
+        type: secret
+        name: minimax-quota-exporter-secret
+        globalMounts:
+          - path: /secrets
+            readOnly: true

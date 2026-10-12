@@ -1,0 +1,88 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: minimax-quota-exporter
+spec:
+  groups:
+    - name: minimax-quota.rules
+      rules:
+        # json_exporter answers the scrape with a 5xx when MiniMax does not
+        # answer (401 on a missing key, network, their outage), so `up` covers
+        # both "exporter gone" and "probe failing". 15m = three scrapes.
+        - alert: MiniMaxQuotaExporterDown
+          expr: |-
+            absent(up{job=~".*minimax-quota-exporter.*"} == 1)
+          for: 15m
+          annotations:
+            summary: >-
+              MiniMax quota probe is not reporting -- the Token Plan is being
+              spent blind (exporter down, key missing, or MiniMax unreachable)
+          labels:
+            severity: warning
+        # The weekly window is the one that takes a whole week to recover. At
+        # 0% every MiniMax caller gets 402 (code 2067) until Monday 00:00 UTC:
+        # Lingarr stops, pools fall through to their next rung, Hindsight
+        # consolidation on MiniMax fails. This is the Oct 9-11 2026 outage.
+        - alert: MiniMaxWeeklyQuotaExhausted
+          expr: |-
+            minimax_token_plan_weekly_remaining_percent{model="general"} <= 0
+          for: 5m
+          annotations:
+            summary: >-
+              MiniMax weekly allowance is spent -- every MiniMax call returns 402
+              until the Monday 00:00 UTC reset
+          labels:
+            severity: critical
+        - alert: MiniMaxWeeklyQuotaLow
+          expr: |-
+            minimax_token_plan_weekly_remaining_percent{model="general"} < 25
+          for: 10m
+          annotations:
+            summary: >-
+              MiniMax weekly allowance at {{ $value }}% -- cut the big consumers
+              (openclaw, hindsight) now or the plan runs dry before Monday
+          labels:
+            severity: critical
+        # Ahead of pace: half the week's allowance gone on Monday or Tuesday.
+        # day_of_week() is UTC, 0 = Sunday; the window resets Monday 00:00 UTC.
+        - alert: MiniMaxWeeklyQuotaAheadOfPace
+          expr: |-
+            minimax_token_plan_weekly_remaining_percent{model="general"} < 50
+            and on() (day_of_week() >= 1 and day_of_week() <= 2)
+          for: 30m
+          annotations:
+            summary: >-
+              MiniMax weekly allowance already at {{ $value }}% early in the week
+              -- find who is burning it (LiteLLM tokens by api_key_alias)
+          labels:
+            severity: warning
+        # A burst: more than ten points of the WEEK gone in one hour. One
+        # openclaw session did 14 points in three hours on 2026-10-12, which
+        # is what this is sized to catch while it is still running.
+        - alert: MiniMaxWeeklyQuotaBurst
+          expr: |-
+            (
+              max_over_time(minimax_token_plan_weekly_remaining_percent{model="general"}[1h])
+              - minimax_token_plan_weekly_remaining_percent{model="general"}
+            ) > 10
+          annotations:
+            summary: >-
+              MiniMax weekly allowance dropped {{ $value }} points in the last hour
+              -- a runaway caller is on the plan
+          labels:
+            severity: warning
+        # The 5-hour window recovers on its own at the next boundary (00, 05,
+        # 10, 15, 20 UTC), so this is a warning: callers get 429 (code 2056)
+        # until then and batch jobs should not be started.
+        - alert: MiniMaxWindowQuotaLow
+          expr: |-
+            minimax_token_plan_interval_remaining_percent{model="general"} < 20
+          for: 5m
+          annotations:
+            summary: >-
+              MiniMax 5-hour window at {{ $value }}% -- expect 429s until the next
+              5-hour boundary
+          labels:
+            severity: warning

@@ -14,7 +14,7 @@ metadata:
 spec:
   groupRef:
     name: mcp-tools
-  image: docker.io/library/python:3.14-slim@sha256:83ff1d245a3d57d04152252d3ef9cb361494d0b3395abd65a5ebe91c401c8e83
+  image: docker.io/library/python:3.15-slim@sha256:ea4f1f290e071bf7d28199cfb3e09f5dbad31b50e9c32fd58f2f2d7be915f3ae
   transport: stdio
   proxyMode: streamable-http
   proxyPort: 8080

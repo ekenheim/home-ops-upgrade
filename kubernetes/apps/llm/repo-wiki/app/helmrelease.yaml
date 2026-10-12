@@ -96,7 +96,7 @@ spec:
           raw:
             image:
               repository: docker.io/library/python
-              tag: 3.14-slim@sha256:83ff1d245a3d57d04152252d3ef9cb361494d0b3395abd65a5ebe91c401c8e83
+              tag: 3.15-slim@sha256:ea4f1f290e071bf7d28199cfb3e09f5dbad31b50e9c32fd58f2f2d7be915f3ae
             command: ["python3", "-m", "http.server", "8001", "--directory", "/app-data/repository"]
             env:
               PYTHONUNBUFFERED: "1"
@@ -149,7 +149,7 @@ spec:
           app:
             image:
               repository: docker.io/library/python
-              tag: "3.14@sha256:e06cc1111ed84189e91866447f562b89faadbfbbb9937cd67e6bf4172cdb45df"
+              tag: "3.15@sha256:83ff73aa50b76c95eba4d765137d3ad023b36355f9ddc161dced40d35dbf8d99"
             command: ["python3", "/config/generate.py"]
             env:
               TZ: "${TIMEZONE}"

@@ -1,6 +1,6 @@
 # Home Operations - AI Assistant Guide
 
-This is a **home Kubernetes cluster monorepo** managed with GitOps (Flux, Renovate, GitHub Actions). A single Talos Linux cluster named `home-kubernetes` hosts infrastructure, media, a data-science / ML stack, and self-hosted GitHub Actions runners.
+This is a **home Kubernetes cluster monorepo** managed with GitOps (Flux, Renovate, GitHub Actions). A single Talos Linux cluster named `home-kubernetes` hosts infrastructure, media, a data-science / ML stack, a self-hosted LLM platform with a dedicated GPU node, sandboxed coding agents, and self-hosted GitHub Actions runners.
 
 ## Repository Structure
 
@@ -11,18 +11,16 @@ home-ops-upgrade/
 │   ├── base/                # Gateway API CRDs
 │   ├── bootstrap/
 │   │   ├── flux/            # Flux install + core kustomization
-│   │   └── talos/           # talconfig.yaml, talsecret.sops.yaml, generated clusterconfig
-│   ├── charts/              # Custom Helm charts
+│   │   └── talos/           # talconfig.yaml, talsecret.sops.yaml
 │   ├── flux/                # Flux config, repositories (helm/git), vars
 │   └── templates/           # Reusable components (e.g. VolSync)
+├── clusterconfig/           # talhelper-generated Talos machine configs
 ├── terraform/               # OpenTofu for Authentik, Cloudflare, MinIO (host-side, not in-cluster)
 ├── ansible/                 # Playbooks for NAS and supporting infra
 ├── build/                   # Custom OCI images (bandit-pipeline, bandit-serve, strapi-bootstrap)
-├── cilium/                  # Standalone Cilium templates (separate from kubernetes/apps/kube-system/cilium)
 ├── .taskfiles/              # Domain-grouped Task commands (Flux, Talos, Rook, VolSync, Bitwarden, …)
 ├── Taskfile.yaml            # Top-level task entry (run `task -l`)
 ├── docs/                    # Project notes (primarily the Bandit ML platform)
-├── scripts/                 # Operational scripts
 └── .github/                 # Workflows + Renovate config
 ```
 
@@ -30,44 +28,52 @@ home-ops-upgrade/
 
 Single cluster: **`home-kubernetes`**
 
-- **Control plane**: `master1` (192.168.50.31), `master2` (192.168.50.33), `master3` (192.168.50.34)
-- **Workers**: `worker3` (192.168.50.37)
+- **Control plane**: `master1` (192.168.50.31), `master2` (192.168.50.33), `master3` (192.168.50.34) — Intel NUC12WSHi5
+- **Workers**: `worker3` (192.168.50.37, Minisforum MS-A2, general workloads), `worker4` (192.168.50.38, Minisforum MS-S1 MAX, AMD Strix Halo iGPU, 128GB)
+- **worker4 is a dedicated LLM node**: tainted `llm-workload=true:NoSchedule`, labelled `node-role.kubernetes.io/rocm-worker`, with its own Talos schematic (`amdgpu` + ROCm kernel args). Only LLM / ROCm workloads and Rook tolerate the taint.
 - **Control-plane VIP**: `192.168.50.10:6443`
-- **Talos Linux** `v1.12.6`, **Kubernetes** `v1.35.4`, **Flux** `v2.8.5`
-- **Semi-hyper-converged**: compute + Rook/Ceph block storage on cluster nodes; a separate NAS provides NFS/SMB bulk storage and off-cluster backup targets.
+- **Talos Linux** `v1.13.x`, **Kubernetes** `v1.35.x`, **Flux** `v2.9.x` — the pinned values live in `kubernetes/bootstrap/talos/talconfig.yaml` and `kubernetes/flux/config/flux.yaml`; read those rather than trusting a version written here.
+- **Semi-hyper-converged**: compute + Rook/Ceph block storage (one NVMe OSD per node) on cluster nodes; a separate NAS provides NFS/SMB bulk storage and off-cluster backup targets.
+- **Hardware state as of 2026-10-12**: `master1` and `master3` are dead and being replaced with ASRock DeskMini B760 nodes; `master2` is the sole etcd member. Check `kubectl get nodes` before assuming three control-plane nodes.
 
 ## Key Technologies
 
 | Category     | Tool                              | Purpose                                       |
 |--------------|-----------------------------------|-----------------------------------------------|
 | OS           | Talos Linux                       | Immutable, declarative Kubernetes OS          |
+| OS upgrades  | tuppr                             | Declarative Talos / Kubernetes upgrades       |
 | GitOps       | Flux                              | Reconciles `kubernetes/` → cluster            |
 | CI           | Renovate + GitHub Actions         | Dependency updates, lint, validation          |
-| CI runners   | actions-runner-controller         | 6 self-hosted scale sets inside the cluster   |
-| Networking   | Cilium (eBPF, kube-proxy replacement) | CNI, BGP, network policy                  |
-| Ingress      | Istio + Gateway API               | Primary L7 / service mesh                     |
-| Ingress      | ingress-nginx                     | Secondary controller (legacy / specific apps) |
-| DNS          | external-dns                      | Syncs ingress/service records to DNS          |
+| CI           | renovate-operator                 | Self-hosted Renovate running in-cluster       |
+| CI runners   | actions-runner-controller         | 7 self-hosted scale sets inside the cluster   |
+| Networking   | Cilium (eBPF, kube-proxy replacement) | CNI, L2 announcements, network policy     |
+| Ingress      | Envoy Gateway + Gateway API       | Primary L7 ingress (`envoy-internal` / `envoy-external` Gateways), OIDC |
+| Ingress      | Istio                             | Service mesh; legacy gateway for Ray / Dask   |
+| DNS          | external-dns                      | Syncs HTTPRoute/service records to DNS        |
 | Secrets      | external-secrets + Bitwarden      | Secret sync from Bitwarden ClusterSecretStore |
 | Secrets@rest | SOPS (age)                        | Encrypts `*.sops.yaml` in Git                 |
 | Storage      | Rook/Ceph                         | In-cluster distributed block storage          |
+| Storage      | OpenEBS                           | Local hostpath PVs (`/var/mnt/local-hostpath`) |
 | Storage      | MinIO                             | S3-compatible object storage (two instances)  |
 | Backups      | VolSync                           | PVC snapshot + replication                    |
 | Registry     | Spegel                            | In-cluster peer-to-peer OCI mirror            |
 | Tunnels      | Cloudflared                       | Cloudflare Tunnel for public ingress          |
-| VPN          | Headscale                         | Self-hosted Tailscale control plane           |
+| VPN          | Tailscale                         | Mesh VPN into the cluster network             |
+| LLM gateway  | LiteLLM + litellm-operator        | Model pools, per-app virtual keys             |
+| Inference    | LLMKube (llama.cpp, ROCm)         | Local models on worker4                       |
 | IaC          | OpenTofu (`terraform/`)           | Authentik, Cloudflare, MinIO config           |
 
 ## GitOps Flow
 
 ```
 Git push → Flux GitRepository sync → cluster-apps Kustomization
-        → per-namespace ks.yaml (Flux Kustomization)
+        → per-namespace kustomization.yaml → per-app ks.yaml (Flux Kustomization)
         → kustomization.yaml / HelmRelease → cluster resources
 ```
 
-- Root Kustomization: `kubernetes/flux/apps.yaml` points at `./kubernetes/apps` with SOPS decryption and `postBuild` substitution from `cluster-settings` (ConfigMap) and `cluster-secrets` (Secret).
+- Root Kustomization: `kubernetes/flux/apps.yaml` points at `./kubernetes/apps` with SOPS decryption and `postBuild` substitution from `cluster-settings` (ConfigMap) and `cluster-secrets` (Secret), patched onto every child Kustomization.
 - **`ks.yaml` convention**: each app directory defines a Flux `Kustomization` in `ks.yaml` alongside a Kustomize `kustomization.yaml` and a `HelmRelease`.
+- Each namespace's `kustomization.yaml` is the on/off switch: commented-out `ks.yaml` entries are disabled apps. Check it before describing an app as running.
 - Helm and Git sources live under `kubernetes/flux/repositories/{helm,git}/`.
 - Variable values for substitution live under `kubernetes/flux/vars/`.
 
@@ -75,17 +81,23 @@ Git push → Flux GitRepository sync → cluster-apps Kustomization
 
 Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 
-- **`datasci`** — ML / data platform: Bandit, Dagster, Ray, MLflow, Jupyter, Dask, Flyte, DeployKF, LangFlow. Heaviest resource footprint.
-- **`database`** — Crunchy Postgres, Dragonfly, MariaDB.
-- **`media`** — Plex, Overseerr, Posterizarr, Tautulli, Kometa, Wizarr, Kavita, Maintainerr, Lingarr, xTeve.
-- **`network`** — Cloudflared, external-dns, Headscale, ingress-nginx, Tailscale.
+- **`llm`** — LLM platform (split out of `datasci` 2026-08-29): LiteLLM gateway + litellm-operator (virtual keys), LLMKube llama.cpp InferenceServices on worker4, CPU embeddings, ComfyUI, whisper.cpp, Lemonade TTS, ToolHive (MCP servers), memini / hindsight (memory), SearXNG, Hermes, Langflow, SillyTavern, OpenCode, repo-wiki, alert-triage, dispatch / courier (agentic coding loop). See `kubernetes/apps/llm/README.md` and `PLATFORM-PLAN.md`.
+- **`agent-lab`** — agent-factory sandboxes: `agent-control`, `agent-work`, `agent-verify`, `trackinizer` namespaces with default-deny Cilium policies, quotas, an Envoy egress gateway that injects the LiteLLM key, and a Postgres ledger. See `kubernetes/apps/agent-lab/README.md`.
+- **`datasci`** — ML / data platform: Ray, Spark, Dagster, MLflow, Seldon Core, Label Studio, Jupyter Lab, Marimo, Qdrant, FalkorDB, Docat, Bandit (bandit-demo, banditweb), grid-reliance-infra. Dask, Prefect and Flyte are disabled.
+- **`database`** — Crunchy Postgres, Dragonfly. MariaDB is disabled.
+- **`media`** — Plex, Overseerr, Tautulli, Wizarr, Kavita, Maintainerr, xTeve.
+- **`downloads`** — Sonarr, Radarr (+ radarr4k), Prowlarr, Bazarr, Kapowarr, Lingarr, Recyclarr, SABnzbd, arr-mcp.
+- **`default`** — Home Assistant, Z-Wave JS UI, Music Assistant, Mosquitto, Wyoming (whisper / piper / kokoro), Immich, Paperless, Syncthing, Actual, Outline, PairDrop, FileBrowser, IT-Tools, Gatus endpoints.
+- **`network`** — Cloudflared, Envoy Gateway, external-dns, Tailscale, echo-server. Headscale is disabled.
 - **`security`** — Authentik.
-- **`storage`** — MinIO (primary + secondary).
-- **`observability`** — monitoring stack.
-- **`kube-system`** — Cilium, CoreDNS, Spegel, metrics-server, Kubelet CSR approver.
-- **`kube-tools`** — descheduler, node-feature-discovery, device plugins (Intel + Nvidia), Reloader, system-upgrade-controller, fstrim.
+- **`storage`** — OpenEBS, MinIO (primary + secondary), snapshot-controller, VolSync.
+- **`observability`** — kube-prometheus-stack, Grafana (dashboards as ConfigMaps in Git), Thanos, Karma, Gatus, Kromgo, UnPoller, exporters, alertmanager-silencer.
+- **`kube-system`** — Cilium, CoreDNS, Spegel, metrics-server, Kubelet CSR approver, k8s-gpu-dra-driver.
+- **`kube-tools`** — descheduler, node-feature-discovery, device plugins (Intel + Nvidia), Reloader, tuppr, renovate-operator, fstrim, nfs-stale-watchdog.
+- **`development`** — Harbor, Redpanda, Strapi (×2), Medusa, Rybbit, Bytewax, Atlas, side projects (alphaos, hempriser, marketing-agency). Metabase, Meilisearch, Airbyte, Umami, GrowthBook are disabled.
 - **`rook-ceph`** — distributed storage operator + cluster.
-- **`istio-system`**, **`cert-manager`**, **`external-secrets`**, **`flux-system`**, **`actions-runner-system`** (6 scale sets: general, bandit, banditweb, ecom, controller, nordic-housing), **`argocd`** (installed but Flux is primary), **`blog`**, **`development`**, **`downloads`**, **`vpn`**, **`default`**.
+- **`istio-system`** (Istio base / istiod / gateway, Gateway API CRDs, seldon-core), **`cert-manager`**, **`external-secrets`**, **`flux-system`**, **`actions-runner-system`** (ARC controller + 7 scale sets: general, atlas, bandit, banditweb, ecom, grid-reliance, nordic-housing), **`blog`**.
+- Disabled namespaces still present in the tree: **`argocd`** (deployKF experiment, off), **`vpn`**.
 
 ## Conventions
 
@@ -95,8 +107,8 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
   - `talos/**/*.sops.yaml` and `ansible/**/*.sops.yaml` — full file encrypted.
 - Apps use `HelmRelease` via Flux; raw manifests are the exception.
 - Per-app README files live next to the app when needed.
-- `Taskfile.yaml` is the operator entry point — `task -l` lists commands, with includes from `.taskfiles/{Flux,Talos,Rook,VolSync,Bitwarden,Postgresql,Kubernetes,Sops,Ansible,ExternalSecrets}/`.
-- CI workflows in `.github/workflows/`: `lint`, `kubeconform`, `flux-local`, `schemas`, `sops-guard`, `volsync-drill`, `publish-terraform`, `strapi-bootstrap`, `release`, `tag`, `labels`, `pr-title`, `lychee`, `nas-restart`, `update-pr-branches`.
+- `Taskfile.yaml` is the operator entry point — `task -l` lists commands, with includes from `.taskfiles/{Ansible,Bitwarden,ExternalSecrets,Flux,Kubernetes,Postgresql,Rook,Sops,Talos,VolSync}/`.
+- CI workflows in `.github/workflows/`: `lint`, `kubeconform`, `flux-local`, `schemas`, `sops-guard`, `ai-pr-review`, `renovate-trigger`, `volsync-drill`, `publish-terraform`, `strapi-bootstrap`, `release`, `tag`, `labels`, `pr-title`, `lychee`, `nas-restart`, `update-pr-branches`.
 - YAML is linted with `yamllint` (`.yamllint.yaml`); Kubernetes manifests validated with `kubeconform` using `lds-schemas.pages.dev` for Flux / Crunchy / External-Secrets CRDs.
 
 ## Common Operations

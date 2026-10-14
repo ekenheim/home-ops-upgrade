@@ -44,25 +44,32 @@ spec:
   affinity:
     podAntiAffinity:
       # Preferred, never required: a hard hostname spread has wedged rollouts
-      # here before (cloudflared, pgbouncer).
+      # here before (cloudflared, pgbouncer). Weighted BELOW the control-plane
+      # preference: two members on worker3 beat one on a master.
       preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
+        - weight: 50
           podAffinityTerm:
             labelSelector:
               matchLabels:
                 embed-pool: "true"
             topologyKey: kubernetes.io/hostname
     nodeAffinity:
-      # master1 throttles at 95C: the same ~3,250-token input took 39 s there
-      # against 6.5 s on worker3. Last resort, not first choice. worker4 is
-      # out of reach behind its llm-workload taint, which is the point.
+      # Off the control plane where a worker has room. master1 throttles at
+      # 95C (a ~3,250-token input took 39 s there against 6.5 s on worker3),
+      # and with the spread at weight 100 embed-2 landed on master2, the sole
+      # etcd member (2026-10-14). LiteLLM routes per REQUEST, and vMCP's
+      # optimizer embeds every tool description (281) in one batched request,
+      # so each re-index lands whole on one member: 1-4 min on worker3,
+      # 6.5-7 min on master2, holding ~5.7 cores next to etcd. Preferred, not
+      # required, so a worker3 outage still reschedules onto the masters.
+      # worker4 is out of reach behind its llm-workload taint, which is the
+      # point.
       preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 50
+        - weight: 100
           preference:
             matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: NotIn
-                values: ["master1"]
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
   # THE WINDOW is contextSize, shared by all slots (--kv-unified), not
   # ubatch: with last-token pooling llama-server feeds a long input through
   # in several physical batches (a ~5,200-token input returned 200 at ubatch

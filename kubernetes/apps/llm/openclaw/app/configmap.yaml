@@ -36,6 +36,16 @@ data:
           bootstrapTotalMaxChars: 49152,
           thinkingDefault: "medium",
           timeoutSeconds: 1800,
+          // Off (owner decision 2026-10-07: "stop pinging me"). Unset, the
+          // default polls every 30m INSIDE the main DM session and delivers to
+          // the owner DM: 48 extra turns a day in the conversation context
+          // (main session at 92k tokens, prompt cache 0%), "[model] NO_REPLY"
+          // posts whenever a fallback model missed the silent-ack protocol,
+          // and heartbeat chatter leaking into real replies. The bot's own
+          // `config set ...heartbeat.target none` on 2026-10-07 worked until
+          // the next pod start, when the init container restored this file.
+          // Scheduled work is in jobs.sh (cron), which does not need it.
+          heartbeat: { every: "0m", target: "none" },
           model: {
             primary: "minimax/MiniMax-M3-messages",
             fallbacks: ["litellm/self-hosted", "litellm/chatgpt"],
@@ -190,9 +200,29 @@ data:
               expose_tools: true,
             },
           },
+          // memini owns the memory slot, but memory-core still loaded as the
+          // "dreaming sidecar" and ran its nightly job (03:00, on litellm/fast)
+          // over the workspace: a second memory system writing DREAMS.md
+          // (poetry about "doors" and "bearer sigils") and memory/dreaming/
+          // next to memini. dreaming.enabled cannot switch it off here: with
+          // another slot owner the setting is read from THAT plugin's config
+          // (plugins.entries.memini.config.dreaming), which memini's schema
+          // rejects. The loader skips the sidecar when memory-core is disabled
+          // explicitly (resolveAuthorizedDreamingSidecar, 2026.10.3).
+          "memory-core": { enabled: false },
         },
         slots: { memory: "memini" },
       },
+      // Cross-conversation transcript recall needs the Active Memory plugin,
+      // which is not enabled, so doctor flagged it as half-on. memini already
+      // carries facts between the DM, #openclaw and cron sessions.
+      memory: { search: { rememberAcrossConversations: false } },
+      // Only bundled skills that work in this pod. The rest (1password,
+      // github, tmux, sag, ... ~30) need binaries or keys that are not here,
+      // yet were offered to the model; doctor lists them as unavailable.
+      // Workshop skills (memini-store, toolhive-mcp) are not bundled and are
+      // unaffected.
+      skills: { allowBundled: ["clawhub", "control-ui", "diagram-maker", "healthcheck", "skill-creator", "visualize", "weather"] },
       session: {
         dmScope: "main",
         reset: { mode: "idle", idleMinutes: 1440 },
@@ -211,11 +241,89 @@ data:
         servers: {
           // Everything through toolhive's mcp-gateway: Home Assistant, arr,
           // Seerr, UniFi, Grafana, read-only kubectl and Flux, platform, wiki,
-          // context7, memory. The agent sees two tools (find_tool, call_tool)
-          // instead of ~250 schemas; find_tool searches by embedding. After a
-          // gateway restart the first session waits ~6 min for the index.
-          toolhive: { url: "http://vmcp-mcp-gateway.llm.svc.cluster.local:4483/mcp", transport: "streamable-http", headers: { Accept: "application/json, text/event-stream" } },
+          // memory, tradingview (context7 is disabled, see toolhive/ks.yaml).
+          // The agent sees two tools (find_tool, call_tool) instead of ~280
+          // schemas; find_tool searches by embedding.
+          // connectionTimeoutMs: initialize blocks while vMCP embeds tool
+          // descriptions. The index is built lazily by the first session after
+          // a gateway restart (6.5 min on 2026-10-13) and again after a backend
+          // reconcile changes tools (unifi-mcp bump, 2026-10-14: >90 s). At
+          // the 30 s default the plugin gave up, backed off, and the agent
+          // improvised without its tools ("toolhive is not connected",
+          // curl/token detours, wrong claims that HA was unreachable). 10 min
+          // matches vMCP's embeddingServiceTimeout, so the turn waits instead.
+          toolhive: { url: "http://vmcp-mcp-gateway.llm.svc.cluster.local:4483/mcp", transport: "streamable-http", connectionTimeoutMs: 600000, headers: { Accept: "application/json, text/event-stream" } },
         },
       },
       meta: { lastTouchedVersion: "2026.9.7" },
     }
+  # Workspace AGENTS.md (bootstrap file injected into every turn), copied
+  # read-only by the init container like openclaw.json. Until 2026-10-14 it
+  # was the stock template on the PVC: an empty "Local notes" section (the bot
+  # kept forgetting Home Assistant is reached through toolhive and asked for HA
+  # tokens instead) and a "Be Proactive" section telling it to check email,
+  # calendar and social mentions 2-4 times a day and to reach out after 8 h of
+  # silence -- none of which exist here, and the opposite of what the owner
+  # asked for. No dollar signs in this block: Flux postBuild would substitute
+  # them.
+  AGENTS.md: |
+    # AGENTS.md - Workspace Rules
+
+    This file is managed in git (home-ops, `kubernetes/apps/llm/openclaw/app/configmap.yaml`) and restored read-only on every restart. Do not try to edit it. Put lessons in memini (`memory_remember`) or `MEMORY.md`, and tell Robin when a rule here looks wrong so it can be changed in git.
+
+    ## Session Startup
+
+    Use the runtime-provided startup context first. It already includes `AGENTS.md`, `SOUL.md`, `USER.md`, recent daily notes and, in the main session, `MEMORY.md`, plus a `memini-recall` block with relevant long-term memories. Re-read files only when Robin asks, context is missing, or a deeper read is needed.
+
+    ## Memory
+
+    - **Long-term memory is memini**, through the `memory_*` tools: `memory_recall` (search), `memory_briefing`, `memory_list`, `memory_remember` (store or update by id) and `memory_forget`. The plugin holds the credentials. Never reach memini with exec, curl or web_fetch, and never ask for a memini token.
+    - `USER.md`: stable directives about Robin (style, preferences, active projects). One directive per entry, preceded by `<!-- observed: YYYY-MM-DD | status: active -->`. When a preference changes, mark the old entry `superseded` and rewrite it in place.
+    - `MEMORY.md`: curated durable facts and decisions, main session only. Remove entries that are no longer true.
+    - Daily notes: `memory/YYYY-MM-DD.md`.
+    - Write workspace files with the `read`, `edit` and `write` tools. Never with exec (heredocs and `cat >>` are denied).
+    - Before writing a file, read it. Write concrete facts, never placeholders.
+
+    ## Tools
+
+    ### toolhive: Home Assistant, Grafana/Prometheus, kubectl, Flux, arr, Seerr, UniFi and more
+
+    - Everything lives behind two tools: `toolhive__find_tool` (argument `tool_description`) and `toolhive__call_tool` (arguments `tool_name` and `parameters`).
+    - `tool_name` is server-prefixed exactly as find_tool returns it, e.g. `ha-mcp_ha_get_state`, `grafana_query_prometheus`, `flux-mcp_get_kubernetes_events`.
+    - **Home Assistant** holds the Withings scale and sleep data, room sensors, doors and weather. Read it through `ha-mcp_*`. No HA URL, token or OAuth is needed: never ask Robin for one, and never curl Home Assistant.
+    - **Lists inside `parameters` must be plain JSON arrays**: `"entity_id": ["sensor.a", "sensor.b"]`. Never wrap a list in an object such as `{"item": [...]}`. The servers reject it, and that wrapper has broken the daily health digest most mornings.
+    - If toolhive is "not connected" or slow, the gateway is rebuilding its tool index (a few minutes after a toolhive change). Say so in one line and try again later. Do not fall back to curl or exec, and do not conclude that a service needs new credentials.
+
+    ### exec
+
+    - exec runs on an allowlist, and scheduled runs cannot ask for approval. Do not use it for HTTP, memory, config or file writes: use `web_fetch`, `memory_*`, toolhive, and `read`/`edit`/`write`.
+    - When exec is denied, do not retry variants of the command. Use the right tool, or tell Robin once what you could not do.
+
+    ### OpenClaw config
+
+    - `openclaw.json` is managed in git and restored on every restart. A change made through the `openclaw` tool lasts only until the next restart. Say exactly that, and tell Robin it has to go into git to stick. Never report such a change as permanent.
+
+    ### Formatting
+
+    - On Discord use bullet lists, not markdown tables, and wrap multiple links in `<>` to suppress embeds.
+
+    ## Replies
+
+    - Send exactly one reply per message. If a tool call fails after you have already answered, do not write a second answer; at most add one short line about what failed.
+    - Do not post tool narration ("Let me check...", "Fixing the parameter format..."). Do the work, then answer.
+    - Reply in the language Robin writes in.
+    - Never post `NO_REPLY`, heartbeat or status chatter to Discord.
+
+    ## Automations
+
+    - Recurring work runs as cron jobs: morning-brief, upstream-watch and cluster-health (kept in git as `jobs.sh`), plus the ones Robin asked for, such as weekly-workout-checkin. There is no heartbeat.
+    - Do not create, change or delete recurring jobs unless Robin asks. One-off reminders on request are fine.
+    - There are no email, calendar or social integrations here. Do not offer proactive check-ins beyond the jobs above, and do not ping Robin to fill silence.
+    - Scheduled jobs and reminders Robin set always deliver at their scheduled time, whatever the hour. Quiet hours (23:00-08:00 Europe/Stockholm) apply only to unprompted messages, which should be rare and urgent.
+
+    ## Red Lines
+
+    - Don't exfiltrate private data. Ever. Health, food and home data stays in this DM and `#openclaw`.
+    - Don't run destructive commands without asking.
+    - Inspect existing state before changing any config or schedule, and merge rather than replace.
+    - When in doubt, ask.

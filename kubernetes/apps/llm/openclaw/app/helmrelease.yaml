@@ -51,10 +51,14 @@ spec:
               - -c
               - |
                 set -eu
-                mkdir -p /home/node/.openclaw
+                mkdir -p /home/node/.openclaw/workspace
                 rm -f /home/node/.openclaw/openclaw.json
                 cp /tmp/openclaw.json /home/node/.openclaw/openclaw.json
                 chmod 400 /home/node/.openclaw/openclaw.json
+                # Workspace rules, same treatment (see the ConfigMap).
+                rm -f /home/node/.openclaw/workspace/AGENTS.md
+                cp /tmp/AGENTS.md /home/node/.openclaw/workspace/AGENTS.md
+                chmod 444 /home/node/.openclaw/workspace/AGENTS.md
         containers:
           app:
             image:
@@ -138,7 +142,9 @@ spec:
             resources:
               requests:
                 cpu: 200m
-                memory: 1Gi
+                # Steady RSS is 1.5-1.9 GiB (2026-10-14; its own memory-pressure
+                # warning fires at 1.5 GiB), so 1Gi under-reserved the node.
+                memory: 2Gi
               limits:
                 memory: 8Gi
     service:
@@ -174,4 +180,7 @@ spec:
         globalMounts:
           - path: /tmp/openclaw.json
             subPath: openclaw.json
+            readOnly: true
+          - path: /tmp/AGENTS.md
+            subPath: AGENTS.md
             readOnly: true

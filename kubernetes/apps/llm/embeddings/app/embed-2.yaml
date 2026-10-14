@@ -43,11 +43,17 @@ spec:
                 embed-pool: "true"
             topologyKey: kubernetes.io/hostname
     nodeAffinity:
-      # Off the control plane where a worker has room (see embed-1.yaml).
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          preference:
-            matchExpressions:
+      # REQUIRED off the control plane, unlike embed-1. The preference alone
+      # (weight 100, 2026-10-14) still lost to resource-balance scoring: with
+      # worker3 at 89% requested and master2 nearly empty, the rollout put
+      # embed-2 straight back on master2, the sole etcd member. Requiring it
+      # here and only preferring it on embed-1 keeps etcd's node free of
+      # re-index load while still leaving one member schedulable on a master
+      # if worker3 is down (embed-2 then waits Pending; LiteLLM routes to
+      # embed-1). Revisit when the DeskMini control-plane nodes are in.
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
               - key: node-role.kubernetes.io/control-plane
                 operator: DoesNotExist
   # THE WINDOW is contextSize, shared by all slots (--kv-unified), not

@@ -410,9 +410,15 @@ spec:
     persistence:
       enabled: false
     topologySpreadConstraints:
+      # ScheduleAnyway, not DoNotSchedule: with master1/master3 down and
+      # worker4 tainted only master2 and worker3 take pods, so 3 replicas at
+      # maxSkew 1 cannot all place. Two ReplicaSets sat Pending for days,
+      # every rollout hit ProgressDeadlineExceeded and the Helm rollback
+      # failed the same way, in a loop (2026-10-14). The spread stays a
+      # strong preference; replicas return to one per node when nodes do.
       - maxSkew: 1
         topologyKey: kubernetes.io/hostname
-        whenUnsatisfiable: DoNotSchedule
+        whenUnsatisfiable: ScheduleAnyway
         labelSelector:
           matchLabels:
             app.kubernetes.io/name: *app

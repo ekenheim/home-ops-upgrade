@@ -33,26 +33,23 @@ spec:
     embed-pool: "true"
   affinity:
     podAntiAffinity:
-      # Preferred, never required: a hard hostname spread has wedged rollouts
-      # here before (cloudflared, pgbouncer).
+      # Preferred, never required, and weighted below the control-plane
+      # preference (see embed-1.yaml).
       preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
+        - weight: 50
           podAffinityTerm:
             labelSelector:
               matchLabels:
                 embed-pool: "true"
             topologyKey: kubernetes.io/hostname
     nodeAffinity:
-      # master1 throttles at 95C: the same ~3,250-token input took 39 s there
-      # against 6.5 s on worker3. Last resort, not first choice. worker4 is
-      # out of reach behind its llm-workload taint, which is the point.
+      # Off the control plane where a worker has room (see embed-1.yaml).
       preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 50
+        - weight: 100
           preference:
             matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: NotIn
-                values: ["master1"]
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
   # THE WINDOW is contextSize, shared by all slots (--kv-unified), not
   # ubatch: with last-token pooling llama-server feeds a long input through
   # in several physical batches (a ~5,200-token input returned 200 at ubatch

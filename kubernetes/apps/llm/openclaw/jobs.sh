@@ -8,6 +8,17 @@
 # Delivery: DM to the admin user (DISCORD_ADMIN_USER_ID is in the pod env).
 # All three run on MiniMax-M3 (owner decision 2026-09-30; it is far better at
 # the exact tool calls below than Ornith, which spent whole budgets guessing).
+# --thinking adaptive: MiniMax-M3 on the Anthropic route supports no other
+# level; low/medium were silently mapped to it with a warning on every run.
+#
+# Two MiniMax-M3 quirks shape the prompts (2026-10-14, from 14 days of
+# transcripts): it wraps any list inside toolhive's free-form `parameters` as
+# {"item": [...]}, which the servers reject, so no call below takes a list;
+# and web_fetch truncates at 20k chars and spills the rest to a /tmp file the
+# sandboxed `read` cannot open, which it then tried to web_fetch as file://.
+# The GitHub commits API is 3-4 KB per commit (joryirving: 72 commits, 340 KB
+# a day, 56 of them smurf-bot), so upstream-watch reads the per-author Atom
+# feeds instead: 20 entries, ~17 KB, no bots.
 set -eu
 cd /app 2>/dev/null || true
 oc() { node dist/index.js "$@"; }
@@ -45,7 +56,7 @@ EOF
 # shellcheck disable=SC2086
 oc cron add --declaration-key morning-brief --name morning-brief \
   --display-name "Morning brief" --cron "30 7 * * *" $COMMON \
-  --model minimax/MiniMax-M3-messages --thinking low \
+  --model minimax/MiniMax-M3-messages --thinking adaptive \
   --message "$BRIEF"
 
 # shellcheck disable=SC2086
@@ -53,13 +64,23 @@ oc cron add --declaration-key upstream-watch --name upstream-watch \
   --display-name "Upstream homelab watch" --cron "30 8 * * *" $COMMON \
   --model minimax/MiniMax-M3-messages --tools web_fetch \
   --message "Check commits from the last 24 hours in joryirving/home-ops and onedr0p/home-ops.
-Use web_fetch on https://api.github.com/repos/<owner>/<repo>/commits?since=<ISO-8601 time 24h ago>, then fetch individual commits you need detail on.
+Make exactly these two web_fetch calls (each repo owner's own commits, newest first; their Renovate bots are left out):
+https://github.com/joryirving/home-ops/commits/main.atom?author=joryirving
+https://github.com/onedr0p/home-ops/commits/main.atom?author=onedr0p
+Keep only entries whose <updated> time is within the last 24 hours.
+For a commit you need detail on, web_fetch its <link> URL (https://github.com/<owner>/<repo>/commit/<sha>).
+web_fetch only accepts http(s) URLs; never pass it a file path.
 Ignore Renovate/dependency bumps and formatting-only changes.
 For each notable change give one line: what changed, and why it could matter for a Talos + Flux + Rook-Ceph + Cilium + envoy-gateway cluster running LiteLLM, llmkube, OpenClaw, Hermes and dispatch. Link the commit.
 If nothing is notable, reply with one line saying so."
 
-# Flux exports no metrics to Prometheus here, so Flux readiness comes from the
-# read-only flux MCP; those two listings are large, hence last.
+# Flux exports no metrics to Prometheus here, so Flux problems come from the
+# read-only flux MCP. Its Warning events, not get_kubernetes_resources: that
+# one only stays small with a `fields` list, and M3 sent the list as
+# {"item": [...]} on most mornings (83 failed calls in 14 days), then retried
+# without it and read the full YAML of every Kustomization. A resource that
+# stays broken re-emits its warning every retry interval, so 24 h of events
+# covers anything still failing.
 HEALTH=$(cat <<'EOF'
 Daily health digest for the home-kubernetes cluster.
 Do NOT use find_tool or tool_search.
@@ -73,10 +94,12 @@ Every tool below lives behind the toolhive gateway, so no tool_name is a tool id
    - pods with more than 5 restarts in 24h: sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total[24h])) > 5
    - PVCs more than 85 percent full: max by (namespace, persistentvolumeclaim) (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) > 0.85
    - OSDs down: ceph_osd_up == 0
-2. Then two calls with tool_name "flux-mcp_get_kubernetes_resources":
-   - parameters {"apiVersion": "kustomize.toolkit.fluxcd.io/v1", "kind": "Kustomization", "fields": ["status.conditions[?(@.type=='Ready')].status", "status.conditions[?(@.type=='Ready')].message"]}
-   - parameters {"apiVersion": "helm.toolkit.fluxcd.io/v2", "kind": "HelmRelease", "fields": ["status.conditions[?(@.type=='Ready')].status", "status.conditions[?(@.type=='Ready')].message"]}
-   Only resources whose Ready status is not "True" matter; ignore suspended ones.
+2. Then two calls with tool_name "flux-mcp_get_kubernetes_events":
+   - parameters {"kind": "Kustomization", "type": "Warning", "since": "24h", "limit": 40}
+   - parameters {"kind": "HelmRelease", "type": "Warning", "since": "24h", "limit": 40}
+   Every parameter is a plain string or number; send them exactly like this.
+   Group the events by object (Kind/namespace/name) and report each object once with its latest message, shortened to the cause.
+   An object whose newest event is more than 2 hours old has probably recovered; mention it only if it failed repeatedly.
 
 An empty query result means no problem for that check.
 Report only problems, each as namespace/name plus a one-line likely cause. If everything is healthy, reply with one line saying so.
@@ -86,7 +109,7 @@ EOF
 # shellcheck disable=SC2086
 oc cron add --declaration-key cluster-health --name cluster-health \
   --display-name "Cluster health digest" --cron "0 9 * * *" $COMMON \
-  --model minimax/MiniMax-M3-messages --thinking medium \
+  --model minimax/MiniMax-M3-messages --thinking adaptive \
   --message "$HEALTH"
 
 oc cron list

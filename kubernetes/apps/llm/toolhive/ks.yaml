@@ -93,29 +93,38 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
----
-# yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: &app context7
-  namespace: flux-system
-spec:
-  path: ./kubernetes/apps/llm/toolhive/context7
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: *app
-  targetNamespace: llm
-  dependsOn:
-    - name: toolhive
-  prune: true
-  sourceRef:
-    kind: GitRepository
-    name: home-kubernetes
-  wait: true
-  interval: 30m
-  retryInterval: 1m
-  timeout: 5m
+# DISABLED (2026-10-14): Context7's HTTP server no longer serves anonymous
+# clients. Every initialize gets 401 "Authentication required" with an OAuth
+# resource_metadata challenge (checked against the backend pod directly, so
+# not the toolhive proxy), on 4.2.0 and 4.4.1 alike. The mcp-gateway logged
+# ~2.5k consecutive failed health checks, and Hermes' direct entry fails the
+# same way. No Context7 key exists in Bitwarden or the cluster.
+# TODO: register at context7.com/dashboard, store the key in Bitwarden, have
+# it sent per request (Authorization: Bearer or X-Context7-Api-Key, see
+# ./context7/mcpserver.yaml), then re-enable this Kustomization.
+# ---
+# # yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: &app context7
+#   namespace: flux-system
+# spec:
+#   path: ./kubernetes/apps/llm/toolhive/context7
+#   commonMetadata:
+#     labels:
+#       app.kubernetes.io/name: *app
+#   targetNamespace: llm
+#   dependsOn:
+#     - name: toolhive
+#   prune: true
+#   sourceRef:
+#     kind: GitRepository
+#     name: home-kubernetes
+#   wait: true
+#   interval: 30m
+#   retryInterval: 1m
+#   timeout: 5m
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1

@@ -1,6 +1,7 @@
 ---
-# OpenClaw. No cloud-plan aliases in the default path (see the openclaw
-# ConfigMap), but MiniMax and the pools are allowed for jobs that pick them.
+# OpenClaw. The default model is MiniMax-M3 on the plan (MiniMax-M3-messages),
+# falling back to self-hosted, then chatgpt (owner decision 2026-09-30, see the
+# openclaw ConfigMap); the pools stay selectable per session or cron job.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMVirtualKey
 metadata:

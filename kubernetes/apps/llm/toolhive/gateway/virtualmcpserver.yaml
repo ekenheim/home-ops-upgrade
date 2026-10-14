@@ -30,7 +30,25 @@ spec:
       embeddingModel: qwen3-embedding-0.6b
       # The CPU embedder needs minutes to index a few hundred tool
       # descriptions; at 180s the first session was dropped mid-index.
+      # The index is built lazily by the FIRST session after a start or a
+      # tool change, as one batched request (281 inputs): 1-4 min on worker3,
+      # 6.5-7 min on a master. New sessions block on initialize until it is
+      # done, so clients need a connect timeout above that (openclaw: 10 min).
       embeddingServiceTimeout: 600s
+    operational:
+      failureHandling:
+        # Defaults are 30s / 10s. tradingview-mcp is a stdio bridge to
+        # TradingView's hosted MCP, and every check is a modern-revision
+        # initialize (400 there, it stops at 2025-11-25), the legacy retry,
+        # then tools/resources/prompts lists, each a 1-7 s round trip
+        # (tools/list 6.7 s on 2026-10-14). All of them succeed, yet the
+        # whole check ran past 10 s: 84 "unhealthy" warnings in 24 h,
+        # flapping healthy/degraded/unhealthy. 30 s fits a slow-but-healthy
+        # remote; 60 s keeps the check under the interval and halves the
+        # calls the checks cost the account's ~100/min limit.
+        healthCheckInterval: 60s
+        healthCheckTimeout: 30s
+        unhealthyThreshold: 3
   podTemplateSpec:
     spec:
       containers:

@@ -6,3 +6,10 @@ resources:
   - ./helmrelease.yaml
   - ../../../../templates/volsync
   - ../../../../templates/gatus/guarded
+configMapGenerator:
+  - name: lingarr-scripts
+    files:
+      - scripts/srt-dedupe.py
+generatorOptions:
+  # Referenced by name from the HelmRelease values, which kustomize does not rewrite.
+  disableNameSuffixHash: true

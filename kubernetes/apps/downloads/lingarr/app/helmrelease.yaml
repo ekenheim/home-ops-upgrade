@@ -61,6 +61,54 @@ spec:
               capabilities:
                 drop:
                   - ALL
+      # Collapses frame-split subtitles before Lingarr sees them: ASS -> SRT
+      # conversion turns each frame of an animated sign into its own cue, and
+      # Lingarr translates every cue (One-Punch Man S02E01 had 24,359 cues,
+      # 19,354 of them one sign; My Hero Academia S02 ~80k each). See
+      # scripts/srt-dedupe.py. Runs 15 min before each Lingarr run; keep this
+      # schedule in step with translation_schedule above (it lives in Lingarr's
+      # DB, not here).
+      subtitle-dedupe:
+        type: cronjob
+        cronjob:
+          schedule: "45 0,6,12,18 * * *"
+          timeZone: ${TIMEZONE}
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 1
+          failedJobsHistory: 1
+        containers:
+          app:
+            image:
+              repository: docker.io/library/python
+              tag: 3.15-slim@sha256:ea4f1f290e071bf7d28199cfb3e09f5dbad31b50e9c32fd58f2f2d7be915f3ae
+            command:
+              - python3
+              - /scripts/srt-dedupe.py
+              - --write
+              - --backup-dir=/Media/appdata/lingarr-subtitle-backup
+              - --lingarr-url=http://lingarr.downloads.svc.cluster.local:9876
+              - /Media/series
+              - /Media/series4k
+              - /Media/cartoons
+              - /Media/movies
+              - /Media/movies4k
+            env:
+              PYTHONDONTWRITEBYTECODE: "1"
+            probes:
+              liveness: &noProbes
+                enabled: false
+              readiness: *noProbes
+              startup: *noProbes
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -95,8 +143,19 @@ spec:
     persistence:
       config:
         existingClaim: *app
-        globalMounts:
-          - path: /app/config
+        # RWO and VolSync-backed: Lingarr only, not the dedupe CronJob.
+        advancedMounts:
+          lingarr:
+            app:
+              - path: /app/config
+      scripts:
+        type: configMap
+        name: lingarr-scripts
+        defaultMode: 0555
+        advancedMounts:
+          subtitle-dedupe:
+            app:
+              - path: /scripts
       media:
         type: nfs
         server: ${NAS_IP:=temp}

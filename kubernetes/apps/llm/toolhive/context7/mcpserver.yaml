@@ -42,6 +42,16 @@ spec:
       value: /tmp
     - name: NPM_CONFIG_CACHE
       value: /tmp/.npm
+    # 4.2.0 added MCP-layer auth to HTTP mode, defaulting to "required": every
+    # anonymous initialize got 401 "Authentication required" plus an OAuth
+    # challenge, so the mcp-gateway marked context7 unauthenticated (~2.5k
+    # failed checks by 2026-10-14) and it was briefly disabled as needing a
+    # key. It does not: the Context7 API itself still answers anonymous
+    # /v2/libs/search and /v2/context (verified from the cluster 2026-10-14).
+    # "observe" lets credential-less requests on /mcp through (lib/mcp-http-auth.js
+    # effectiveMcpAuthMode); /mcp/oauth still challenges.
+    - name: MCP_AUTH_ENFORCEMENT
+      value: observe
   # Context7 works anonymously. Registering at context7.com/dashboard yields an
   # API key for higher rate limits. In HTTP mode the server ignores
   # CONTEXT7_API_KEY / --api-key and reads the key per request from a header

@@ -386,12 +386,9 @@ data:
       platform:
         url: http://mcp-platform-mcp-proxy.llm:8080/mcp
         enabled: true
-      # Off with the context7 MCPServer (2026-10-14): upstream now answers
-      # anonymous clients with 401. See the DISABLED note in
-      # ../../toolhive/ks.yaml.
       context7:
         url: http://mcp-context7-proxy.llm:8080/mcp
-        enabled: false
+        enabled: true
       # The LLM-written wiki of this repo (repo-wiki), as wiki_list / wiki_read
       # / wiki_search. Three small tool schemas; a page is 3-5k tokens and the
       # cheapest way for hermes to learn how the cluster is laid out. Read-only,

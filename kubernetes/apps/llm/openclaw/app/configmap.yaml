@@ -241,7 +241,7 @@ data:
         servers: {
           // Everything through toolhive's mcp-gateway: Home Assistant, arr,
           // Seerr, UniFi, Grafana, read-only kubectl and Flux, platform, wiki,
-          // memory, tradingview (context7 is disabled, see toolhive/ks.yaml).
+          // memory, tradingview, context7 (current library docs).
           // The agent sees two tools (find_tool, call_tool) instead of ~280
           // schemas; find_tool searches by embedding.
           // connectionTimeoutMs: initialize blocks while vMCP embeds tool

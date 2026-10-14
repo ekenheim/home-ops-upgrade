@@ -10,7 +10,7 @@ spec:
   # ToolHive's own build of @upstash/context7-mcp. The npm package is baked
   # into /app/node_modules, so the `npx` entrypoint resolves locally and does
   # NOT fetch from the registry at pod start (unlike arr-mcp in downloads).
-  image: ghcr.io/stacklok/dockyard/npx/context7:4.2.0@sha256:17d8bd8c7949aa35977250e6760b0136edc8dc8d6835b6f2c736a2857c42d9eb
+  image: ghcr.io/stacklok/dockyard/npx/context7:4.4.1@sha256:4375279584b3f14c0fbe5ac50a6c8341c886f663e882bf7ff7ca6157f197ec25
   # HTTP, not stdio. Every 4.x release is built on MCP SDK v2, whose stdio
   # entry pins the protocol era of the FIRST client for the process lifetime.
   # toolhive multiplexes all clients onto that one stdio pipe, so once Hermes

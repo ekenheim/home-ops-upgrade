@@ -1,0 +1,47 @@
+---
+# Static NFS volume on the Unraid NAS share "ceph2", replacing the 600Gi
+# ceph-block PVC minio-data (349 GiB used on 2026-10-15, plus ~185 GiB of
+# never-trimmed blocks). The primary MinIO holds pgBackRest repo1, every
+# VolSync restic repo and stocks-us: all of it backup or bulk data that must
+# outlive the Ceph cluster, which is exactly where it was sitting when osd.0
+# hit the full ratio. Same construction as minio-secondary/app/pv.yaml; the
+# storage class named here does not exist on purpose, the claim binds by name.
+#
+# Data lives under /mnt/user/ceph2/minio (subPath in the HelmRelease) because
+# the share root also holds volsync-broken-20261015/, the archived restic repos
+# from the same day, and MinIO would otherwise show that directory as a bucket.
+# The share is exported with root squash, so files land as nobody:users.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: minio-nas
+spec:
+  capacity:
+    storage: 800Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: minio-nas
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime
+  claimRef:
+    namespace: storage
+    name: minio-data-nas
+  nfs:
+    server: ${NAS_IP}
+    path: /mnt/user/ceph2
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-data-nas
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: minio-nas
+  volumeName: minio-nas
+  resources:
+    requests:
+      storage: 800Gi

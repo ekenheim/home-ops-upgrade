@@ -24,7 +24,14 @@ spec:
     # On restart it picks a different node and cordons that one too, so
     # `parallelism: 1` ended up with two nodes cordoned and zero upgraded.
     # With one replica there is nothing to elect, and no lease to lose.
-    replicaCount: 1
+    # HOLD (2026-10-15): replicaCount 0 until master1 and master3 are back.
+    # With master3 dead (osd.4 down) and osd.2 gone, Ceph cannot lose another
+    # host: draining worker3 for the pending Talos v1.13.11 upgrade evicted
+    # osd.0, left 71 PGs with a single copy (inactive), blocked I/O cluster-wide
+    # and deadlocked the drain (pods could not flush to finish terminating).
+    # The drain uses disableEviction, so the Rook PDB did not protect it.
+    # Set back to 1 once the DeskMini replacements have joined and Ceph is clean.
+    replicaCount: 0
     controller:
       leaderElection:
         enabled: false

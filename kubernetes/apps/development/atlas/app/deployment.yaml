@@ -42,7 +42,7 @@ spec:
       initContainers:
         # Schema to head on the DIRECT primary (see externalsecret.yaml).
         - name: migrate
-          image: &image ghcr.io/ekenheim/atlas:0.6.4
+          image: &image ghcr.io/ekenheim/atlas:0.6.5
           args: ["migrate"]
           env: &env
             - name: ATLAS_ACTOR
@@ -103,7 +103,7 @@ spec:
             # misstatements against MiniMax-M3's 5 (atlas docs/experiments.md); the other roles stay on
             # ATLAS_LLM_ROLE_MODEL. The atlas key must list `chatgpt` (keys/atlas.yaml).
             - name: ATLAS_LLM_ROLE_MODELS
-              value: '{"finding_judge": "chatgpt"}'
+              value: '{"finding_judge": "chatgpt", "hypothesis_editor": "chatgpt"}'
             - name: ATLAS_INVESTIGATION_MAX_PASSAGES
               value: "72"
             - name: ATLAS_INVESTIGATOR_MAX_PASSAGES

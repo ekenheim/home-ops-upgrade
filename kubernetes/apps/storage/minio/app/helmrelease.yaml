@@ -116,6 +116,9 @@ spec:
                 port: 9000
     persistence:
       data:
-        existingClaim: minio-data
+        # NFS on the NAS (share ceph2) since 2026-10-15, see pv.yaml. The old
+        # ceph-block claim minio-data is deleted after the copy.
+        existingClaim: minio-data-nas
         globalMounts:
           - path: /data
+            subPath: minio

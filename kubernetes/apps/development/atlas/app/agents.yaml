@@ -61,7 +61,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.8
+              image: ghcr.io/ekenheim/atlas-agent:0.6.9
               args: ["scout"]
               env:
                 - name: ATLAS_MCP_URL
@@ -116,7 +116,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.8
+              image: ghcr.io/ekenheim/atlas-agent:0.6.9
               args: ["researcher"]
               env:
                 - name: ATLAS_MCP_URL
@@ -171,7 +171,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.8
+              image: ghcr.io/ekenheim/atlas-agent:0.6.9
               args: ["skeptic"]
               env:
                 - name: ATLAS_MCP_URL

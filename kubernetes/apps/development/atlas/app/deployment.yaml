@@ -42,7 +42,7 @@ spec:
       initContainers:
         # Schema to head on the DIRECT primary (see externalsecret.yaml).
         - name: migrate
-          image: &image ghcr.io/ekenheim/atlas:0.6.1
+          image: &image ghcr.io/ekenheim/atlas:0.6.2
           args: ["migrate"]
           env: &env
             - name: ATLAS_ACTOR
@@ -237,6 +237,30 @@ spec:
         - name: apply-template
           image: *image
           args: ["hindsight", "apply-template", "--if-changed"]
+          env: *env
+          envFrom: *envFrom
+          securityContext: *securityContext
+          volumeMounts: *mounts
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+        # Apply the conclusions bank's template (atlas-beliefs ticket 12) before any Belief is
+        # retained into it; skipped when unchanged. Needs no LLM.
+        - name: apply-beliefs-template
+          image: *image
+          args: ["hindsight", "apply-template", "--bank", "beliefs", "--if-changed"]
+          env: *env
+          envFrom: *envFrom
+          securityContext: *securityContext
+          volumeMounts: *mounts
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+        # Move the Beliefs judged before 0.6.2 into the conclusions bank: enqueues one
+        # retain_belief per judged Belief; the same key adds nothing on later restarts.
+        - name: beliefs-re-retain
+          image: *image
+          args: ["memory", "beliefs", "re-retain", "--key", "beliefs-bank-0.6.2"]
           env: *env
           envFrom: *envFrom
           securityContext: *securityContext

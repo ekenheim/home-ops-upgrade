@@ -1,0 +1,196 @@
+---
+# Scheduled research agents (atlas-beliefs ticket 17; the owner chose in-cluster CronJobs on
+# 2026-10-15: Atlas is LAN-only, so Claude cloud routines can't reach its MCP server).
+# Each runs headless Claude Code (agent/run.sh in the atlas repo) on the owner's subscription
+# against the in-cluster MCP URL, with only Atlas's tools; nothing is judged or published by a
+# routine: every output waits for the lead. Suspend a CronJob to stop it.
+#
+# The token: `claude setup-token` (the owner), stored in Bitwarden Secrets Manager as the
+# secret `atlas-agent-claude` whose value is {"CLAUDE_CODE_OAUTH_TOKEN": "<token>"}.
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/external-secrets.io/externalsecret_v1beta1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: atlas-agent-claude
+  namespace: development
+spec:
+  secretStoreRef:
+    name: bitwarden-secrets-manager
+    kind: ClusterSecretStore
+  refreshInterval: 15m
+  target:
+    name: atlas-agent-claude
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      type: Opaque
+      data:
+        CLAUDE_CODE_OAUTH_TOKEN: "{{ .CLAUDE_CODE_OAUTH_TOKEN }}"
+  dataFrom:
+    - extract:
+        key: atlas-agent-claude
+---
+# The Scout, weekly: the theme's newest documents for bottleneck cues; opens question Issues.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: atlas-agent-scout
+  namespace: development
+spec:
+  schedule: "0 5 * * 1"
+  timeZone: UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 4
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 5400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: atlas
+            app.kubernetes.io/component: agent-scout
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: ghcr-pull
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+          containers:
+            - name: agent
+              image: ghcr.io/ekenheim/atlas-agent:0.6.6
+              args: ["scout"]
+              env:
+                - name: ATLAS_MCP_URL
+                  value: http://atlas.development.svc.cluster.local:8000/mcp
+                - name: ATLAS_AGENT_THEME
+                  value: photonics
+              envFrom:
+                - secretRef:
+                    name: atlas-agent-claude
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests: { cpu: 50m, memory: 256Mi }
+                limits: { memory: 1Gi }
+          volumes:
+            - name: tmp
+              emptyDir: {}
+---
+# The Researcher, Tuesday and Thursday: a session on the next open Issue (issues/next).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: atlas-agent-researcher
+  namespace: development
+spec:
+  schedule: "0 5 * * 2,4"
+  timeZone: UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 4
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 5400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: atlas
+            app.kubernetes.io/component: agent-researcher
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: ghcr-pull
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+          containers:
+            - name: agent
+              image: ghcr.io/ekenheim/atlas-agent:0.6.6
+              args: ["researcher"]
+              env:
+                - name: ATLAS_MCP_URL
+                  value: http://atlas.development.svc.cluster.local:8000/mcp
+                - name: ATLAS_AGENT_THEME
+                  value: photonics
+              envFrom:
+                - secretRef:
+                    name: atlas-agent-claude
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests: { cpu: 50m, memory: 256Mi }
+                limits: { memory: 1Gi }
+          volumes:
+            - name: tmp
+              emptyDir: {}
+---
+# The Skeptic, weekly: the oldest proven Belief not challenged since its last judgement.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: atlas-agent-skeptic
+  namespace: development
+spec:
+  schedule: "0 5 * * 5"
+  timeZone: UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 4
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 5400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: atlas
+            app.kubernetes.io/component: agent-skeptic
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: ghcr-pull
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+          containers:
+            - name: agent
+              image: ghcr.io/ekenheim/atlas-agent:0.6.6
+              args: ["skeptic"]
+              env:
+                - name: ATLAS_MCP_URL
+                  value: http://atlas.development.svc.cluster.local:8000/mcp
+                - name: ATLAS_AGENT_THEME
+                  value: photonics
+              envFrom:
+                - secretRef:
+                    name: atlas-agent-claude
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests: { cpu: 50m, memory: 256Mi }
+                limits: { memory: 1Gi }
+          volumes:
+            - name: tmp
+              emptyDir: {}

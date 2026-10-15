@@ -1,0 +1,45 @@
+---
+# Static NFS volume on the Unraid NAS SSD pool (share "ceph1"), replacing the
+# 300Gi CephFS PVC that lived on the very Ceph cluster the backups and
+# artifacts here are meant to outlive. Moved 2026-10-15 after osd.0 hit the
+# full ratio with the two MinIO instances accounting for ~810 GiB of the
+# ~960 GiB stored in Ceph. The storage class named here does not exist on
+# purpose: nothing provisions, the claim binds to this PV by name.
+#
+# The share is exported with root squash, so files land as nobody:users;
+# MinIO (Silo) reads and writes them fine. The size is nominal; NFS enforces
+# nothing. The pool is 4x250 GB SSD (~625 GiB free on 2026-10-15).
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: minio-secondary-nas
+spec:
+  capacity:
+    storage: 600Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: minio-secondary-nas
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - noatime
+  claimRef:
+    namespace: storage
+    name: minio-secondary-data-nas
+  nfs:
+    server: ${NAS_IP}
+    path: /mnt/user/ceph1
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-secondary-data-nas
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: minio-secondary-nas
+  volumeName: minio-secondary-nas
+  resources:
+    requests:
+      storage: 600Gi

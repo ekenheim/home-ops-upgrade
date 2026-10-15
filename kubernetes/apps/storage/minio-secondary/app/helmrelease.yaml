@@ -50,8 +50,6 @@ spec:
               MINIO_SERVER_URL: https://s3-secondary.${SECRET_DOMAIN}
               MINIO_UPDATE: "off"
               MINIO_API_REQUESTS_MAX: "200"
-              MINIO_REPLICATION_ENABLED: "true"
-              MINIO_REPLICATION_TARGETS: "https://s3.${SECRET_DOMAIN}"
             envFrom:
               - secretRef:
                   name: *app
@@ -120,7 +118,9 @@ spec:
                 port: 9000
     persistence:
       data:
-        existingClaim: minio-secondary-data
+        # NFS on the NAS SSD pool since 2026-10-15, see pv.yaml. The old
+        # CephFS claim minio-secondary-data was deleted after the copy.
+        existingClaim: minio-secondary-data-nas
         globalMounts:
           - path: /data
             subPath: data

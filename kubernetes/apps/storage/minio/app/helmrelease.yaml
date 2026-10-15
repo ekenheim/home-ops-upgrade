@@ -121,3 +121,4 @@ spec:
         existingClaim: minio-data-nas
         globalMounts:
           - path: /data
+            subPath: minio

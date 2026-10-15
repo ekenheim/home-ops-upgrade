@@ -85,6 +85,9 @@ spec:
             resources:
               requests:
                 cpu: 10m
+              # 4Gi since 2026-10-15: the v5 migration 225 (mediainfo_multiple_streams)
+              # buffers every EpisodeFiles.MediaInfo row (15k rows, 428 MB of JSON) into
+              # memory and OOM-crashed at 1Gi; 2Gi is plenty afterwards.
               limits:
                 memory: 4Gi
     defaultPodOptions:

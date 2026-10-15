@@ -53,6 +53,11 @@ spec:
               value: http://hindsight-api.llm.svc.cluster.local:8888
             - name: ATLAS_HINDSIGHT_BANK_ID
               value: atlas-ai-infrastructure
+            # The research bank stops growing (atlas-beliefs ticket 13): section retains, triage,
+            # reprocess and the daily consolidation stay queued; ingest keeps the archive current
+            # and judged Beliefs still reach the conclusions bank. "on" restores it.
+            - name: ATLAS_BULK_RETENTION
+              value: "off"
             - name: ATLAS_LITELLM_URL
               value: http://litellm.llm.svc.cluster.local:4000
             - name: ATLAS_LLM_EXTRACT_ALIAS

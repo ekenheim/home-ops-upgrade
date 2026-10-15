@@ -7,6 +7,7 @@ resources:
   - ./pvc.yaml
   - ./deployment.yaml
   - ./ingest.yaml
+  - ./agents.yaml
   - ./service.yaml
   - ./servicemonitor.yaml
   - ./prometheusrule.yaml

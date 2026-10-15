@@ -36,7 +36,7 @@ spec:
               # 401). Silo is the maintained community fork; it keeps the
               # MINIO_* env, the /minio/health paths and the `server` argv.
               repository: docker.io/pgsty/silo
-              tag: RELEASE.2026-09-16T00-00-00Z
+              tag: RELEASE.2026-10-15T00-00-00Z
             securityContext:
               runAsUser: 0
               runAsGroup: 0

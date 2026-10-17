@@ -27,10 +27,12 @@ spec:
   topologySpreadConstraints:
     - maxSkew: 1
       topologyKey: "kubernetes.io/hostname"
-      whenUnsatisfiable: "DoNotSchedule"
-      # Honor: skip nodes whose taints this pod does not tolerate (worker4, NotReady
-      # nodes). Ignore counts them as empty domains, so maxSkew 1 wedges rollouts.
-      nodeTaintsPolicy: "Honor"
+      # ScheduleAnyway, not DoNotSchedule + nodeTaintsPolicy: Honor. The operator
+      # (v1.7.1) drops nodeTaintsPolicy when it builds the StatefulSet, so the
+      # tainted worker4 still counts as an empty domain and, with master1/3
+      # down, dragonfly-1 sat Pending for 8 days. Same fix as cloudflared and
+      # grafana. A replica cache tolerates two pods on one node.
+      whenUnsatisfiable: "ScheduleAnyway"
       labelSelector:
         matchLabels:
           app.kubernetes.io/part-of: dragonfly

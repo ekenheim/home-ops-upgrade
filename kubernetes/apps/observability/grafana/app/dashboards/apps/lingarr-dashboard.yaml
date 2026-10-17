@@ -176,7 +176,7 @@ data:
             },
             "overrides": []
           },
-          "description": "Queued translation requests. quota-topup refills the queue below 10 in the last 48 h before the MiniMax weekly reset.",
+          "description": "Queued translation requests. In the last 48 h before the MiniMax weekly reset quota-topup keeps up to 100 queued, fewer as the quota runs down.",
           "options": {
             "reduceOptions": {
               "calcs": [
@@ -261,7 +261,7 @@ data:
                   },
                   {
                     "color": "orange",
-                    "value": 13
+                    "value": 10
                   },
                   {
                     "color": "yellow",
@@ -279,7 +279,7 @@ data:
             },
             "overrides": []
           },
-          "description": "quota-topup stops queueing at 13% of the week (aiming at ~10% after in-flight work).",
+          "description": "quota-topup sizes the queue so queued work fits above 10% of the week.",
           "options": {
             "reduceOptions": {
               "calcs": [
@@ -319,7 +319,7 @@ data:
                   },
                   {
                     "color": "orange",
-                    "value": 13
+                    "value": 10
                   },
                   {
                     "color": "yellow",
@@ -337,7 +337,7 @@ data:
             },
             "overrides": []
           },
-          "description": "quota-topup stops queueing at 35%: a 429 from the 5-hour cap fails Lingarr requests for good.",
+          "description": "quota-topup sizes the queue so queued work fits above 10% of the window: a 429 from the 5-hour cap fails Lingarr requests for good.",
           "options": {
             "reduceOptions": {
               "calcs": [
@@ -641,11 +641,7 @@ data:
                   },
                   {
                     "color": "red",
-                    "value": 13
-                  },
-                  {
-                    "color": "orange",
-                    "value": 35
+                    "value": 10
                   }
                 ]
               },
@@ -665,7 +661,7 @@ data:
             },
             "overrides": []
           },
-          "description": "Threshold lines: 13% weekly and 35% window, where quota-topup stops queueing."
+          "description": "Threshold line: 10%, the floor quota-topup sizes the queue against, for both the week and the 5-hour window."
         },
         {
           "id": 17,
@@ -819,7 +815,7 @@ data:
             },
             "overrides": []
           },
-          "description": "Seconds since the top-up CronJob last succeeded (runs every 10 min). Its decision is in the job log.",
+          "description": "Seconds since the top-up CronJob last succeeded (runs every 5 min). Its decision is in the job log.",
           "options": {
             "reduceOptions": {
               "calcs": [

@@ -116,13 +116,13 @@ spec:
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
       # Spends the end of the MiniMax week: inside the last 48 h before the
-      # weekly reset it starts extra automation runs whenever Lingarr's queue
-      # runs low, until 13% of the week (target 10% after in-flight work) or
-      # 35% of the 5-hour window is left. See scripts/quota-topup.py.
+      # weekly reset it keeps Lingarr's queue at up to 100 items, sized down to
+      # what the 5-hour window and the week can still pay for above 10% each.
+      # See scripts/quota-topup.py.
       quota-topup:
         type: cronjob
         cronjob:
-          schedule: "*/10 * * * *"
+          schedule: "*/5 * * * *"
           timeZone: ${TIMEZONE}
           concurrencyPolicy: Forbid
           successfulJobsHistory: 1
@@ -139,9 +139,13 @@ spec:
               PYTHONDONTWRITEBYTECODE: "1"
               TZ: ${TIMEZONE}
               BURN_HORIZON_HOURS: "48"
-              WEEKLY_STOP_PERCENT: "13"
-              WINDOW_STOP_PERCENT: "35"
-              QUEUE_LOW_WATER: "10"
+              WEEKLY_FLOOR_PERCENT: "10"
+              WINDOW_FLOOR_PERCENT: "10"
+              WEEKLY_PTS_PER_ITEM: "0.04"
+              WINDOW_PTS_PER_ITEM: "0.25"
+              QUEUE_TARGET: "100"
+              RUN_SIZE: "25" # Lingarr's max_translations_per_run
+              MAX_RUNS_PER_TICK: "4"
               THROTTLE_BRAKE: "3"
               # Keep in step with subtitle-dedupe's schedule above.
               DEDUPE_HOURS: "0,6,12,18"

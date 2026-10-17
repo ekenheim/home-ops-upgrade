@@ -34,7 +34,7 @@ spec:
     nameOverride: gha-runner-scale-set-bandit
     runnerScaleSetName: gha-runner-scale-set-bandit
     githubConfigUrl: https://github.com/ekenheim/bandit
-    minRunners: 1
+    minRunners: 0
     maxRunners: 10
     containerMode:
       type: dind

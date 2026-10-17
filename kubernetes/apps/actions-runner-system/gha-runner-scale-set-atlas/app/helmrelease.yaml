@@ -34,7 +34,10 @@ spec:
     nameOverride: gha-runner-scale-set-atlas
     runnerScaleSetName: gha-runner-scale-set-atlas
     githubConfigUrl: https://github.com/ekenheim/atlas
-    minRunners: 1
+    # 0, not 1: an idle runner holds its full 4 CPU / 8Gi request (sized for a
+    # real run) on worker3 doing nothing. The first job after idle waits ~30-60s
+    # for a runner pod, which a CI run of this length does not notice.
+    minRunners: 0
     # Each Atlas CI run starts Postgres, an S3 server, Playwright and up to 8 pytest
     # workers. Ten unrequested runners at once starved each other past the 60-minute
     # job timeout (13 Renovate branches, 9 cancelled); excess jobs now queue in GitHub,

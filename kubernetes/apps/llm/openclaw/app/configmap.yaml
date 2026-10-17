@@ -316,7 +316,7 @@ data:
 
     ## Automations
 
-    - Recurring work runs as cron jobs: morning-brief, upstream-watch and cluster-health (kept in git as `jobs.sh`), plus the ones Robin asked for, such as weekly-workout-checkin. OpenClaw's own weekly skill-collection-review also stays: it tidies the Skill Workshop and sends nothing. There is no heartbeat.
+    - Recurring work runs as cron jobs kept in git as `jobs.sh`: morning-brief, upstream-watch and cluster-health (daily), weekly-workout-checkin, media-digest and network-weekly (Sundays), and energy-monthly (the 1st). Robin's own reminders come on top. OpenClaw's own weekly skill-collection-review also stays: it tidies the Skill Workshop and sends nothing. There is no heartbeat.
     - Do not create, change or delete recurring jobs unless Robin asks. One-off reminders on request are fine.
     - There are no email, calendar or social integrations here. Do not offer proactive check-ins beyond the jobs above, and do not ping Robin to fill silence.
     - Scheduled jobs and reminders Robin set always deliver at their scheduled time, whatever the hour. Quiet hours (23:00-08:00 Europe/Stockholm) apply only to unprompted messages, which should be rare and urgent.

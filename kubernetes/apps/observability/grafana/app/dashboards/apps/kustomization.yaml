@@ -8,6 +8,7 @@ resources:
   - external-secrets-dashboard.yaml
   - flyte-app-dashboard.yaml
   - immich-app-dashboard.yaml
+  - lingarr-dashboard.yaml
   - mlflow-app-dashboard.yaml
 generatorOptions:
   disableNameSuffixHash: true

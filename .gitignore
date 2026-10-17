@@ -19,3 +19,5 @@ docs/
 # Taskfile
 .tasks
 .cursor
+# Devcontainer CLI lockfile: Renovate does not update it, features float on major tags
+.devcontainer/devcontainer-lock.json

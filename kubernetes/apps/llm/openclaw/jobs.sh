@@ -6,8 +6,13 @@
 #   kubectl -n llm exec -i deploy/openclaw -c app -- sh -s < jobs.sh
 #
 # Delivery: DM to the admin user (DISCORD_ADMIN_USER_ID is in the pod env).
-# All three run on MiniMax-M3 (owner decision 2026-09-30; it is far better at
-# the exact tool calls below than Ornith, which spent whole budgets guessing).
+# The isolated jobs run on MiniMax-M3 (owner decision 2026-09-30; it is far
+# better at the exact tool calls below than Ornith, which spent whole budgets
+# guessing). The weekly check-in runs inside the DM session instead, so it
+# leaves the model to that session.
+# The weekly and monthly jobs run in the evening: MiniMax answers 429
+# overloaded_error most mornings around 07:30-09:00 Stockholm (its afternoon
+# peak), with the plan nowhere near its quota (2026-10-17).
 # --thinking adaptive: MiniMax-M3 on the Anthropic route supports no other
 # level; low/medium were silently mapped to it with a warning on every run.
 #
@@ -114,5 +119,122 @@ oc cron add --declaration-key cluster-health --name cluster-health \
   --display-name "Cluster health digest" --cron "0 9 * * *" $COMMON \
   --model minimax/MiniMax-M3-messages --thinking adaptive \
   --message "$HEALTH"
+
+# Weekly check-in, in the DM session (--session current bound to
+# agent:main:main) so Robin's answers land in the conversation that asked.
+# It was created by the bot on 2026-09-29 and asked for the weigh-in number;
+# the Withings scale already reports to Home Assistant, so it reads the trend.
+# Long-term statistics, not history: raw history keeps about 10 days.
+# entity_ids and statistic_types are comma-separated strings (see the list
+# quirk above).
+CHECKIN=$(cat <<'EOF'
+Weekly check-in with Robin. Keep it tight, not preachy.
+Do NOT use find_tool or tool_search. First make exactly this call, through OpenClaw's tool_call with id "mcp:toolhive:toolhive__call_tool" and args {"tool_name": "ha-mcp_ha_get_history", "parameters": {"source": "statistics", "entity_ids": "sensor.withings_weight,sensor.withings_fat_ratio", "start_time": "35d", "period": "week", "statistic_types": "mean,min,max"}}
+entity_ids and statistic_types are plain comma-separated strings; send them exactly like this.
+
+Weeks start on Monday. Use the last 4 weeks that have a row, oldest first, and the weekly mean weight. The first row can be a partial week; that is fine for a mean.
+If the newest row is not for the current week (no weigh-in since Monday), say so in one line and ask Robin for this week's number instead of deciding.
+Otherwise give the weekly means and the change per week in one or two lines, then decide:
+- weight flat (within 0.2 kg/week) for 2-3 weeks: drop 100 kcal (cut carbs/fat, never protein);
+- losing more than 0.7 kg/week: add 100 kcal back;
+- anything else: keep the targets.
+Then ask only: (1) how many of the 3 planned training sessions he actually did this week, (2) rough protein adherence. Confirm next week's targets once he answers.
+EOF
+)
+
+# shellcheck disable=SC2086
+oc cron add --declaration-key weekly-workout-checkin --name weekly-workout-checkin \
+  --display-name "Weekly workout check-in" --cron "0 20 * * 0" --tz Europe/Stockholm \
+  --session current --session-key agent:main:main \
+  --channel discord --to "$TO" --announce --best-effort-deliver --timeout-seconds 1800 \
+  --message "$CHECKIN"
+
+# Media: the arr MCP (mcp-arr-server 1.5.4) has no history tool, so this cannot
+# list what was imported or spot a release grabbed over and over; it reports
+# what is stuck now. Seerr's compact list has no titles, hence the per-item
+# lookups; never use format "full", which carries requesters' email addresses.
+MEDIA=$(cat <<'EOF'
+Weekly media digest. Report only problems and the request backlog, max 15 lines.
+Do NOT use find_tool or tool_search.
+Every tool below lives behind the toolhive gateway, so no tool_name is a tool id you can call directly. Each call is OpenClaw's tool_call with id "mcp:toolhive:toolhive__call_tool" and args {"tool_name": <name>, "parameters": {...}}.
+
+1. In parallel:
+   A. tool_name "arr_sonarr_get_queue", parameters {}
+   B. tool_name "arr_radarr_get_queue", parameters {}
+   C. tool_name "arr_sonarr_get_health", parameters {}
+   D. tool_name "arr_radarr_get_health", parameters {}
+   E. tool_name "seerr-mcp_manage_media_requests", parameters {"action": "list", "filter": "processing", "summary": true}
+   F. tool_name "seerr-mcp_manage_media_requests", parameters {"action": "list", "filter": "processing", "sort": "added", "take": 5}
+   G. tool_name "seerr-mcp_manage_media_requests", parameters {"action": "list", "filter": "failed"}
+2. For each request in F and G, look up its title with tool_name "seerr-mcp_get_media_details", parameters {"mediaId": <its tmdbId>, "mediaType": <"movie" if its seasons list is empty, otherwise "tv">, "level": "basic"}.
+
+Queue problems: an item with status "completed" that is still in the queue (it did not import), several releases of the same episode or movie, or any warning/failed status. Name the series/movie and what looks wrong. An empty queue or items still downloading are fine.
+Health: list each issue except AllowedHostsCheck, which is known.
+Requests: how many are waiting (E's total), the 5 newest waiting ones as "Title (year), waiting N days", and any failed request with its title.
+Do not name the people who made the requests.
+If the queues and health are clean, say so in one line before the request backlog.
+EOF
+)
+
+# shellcheck disable=SC2086
+oc cron add --declaration-key media-digest --name media-digest \
+  --display-name "Weekly media digest" --cron "0 19 * * 0" $COMMON \
+  --model minimax/MiniMax-M3-messages --thinking adaptive \
+  --message "$MEDIA"
+
+# Energy: Tibber's monthly sensors reset with the month and their long-term
+# statistics overcount across the reset (October showed 525 kWh against a
+# sensor reading of 372.55 on 2026-10-17), so last month's totals come from
+# their raw history around the reset. The rack's Z-Wave plug is a plain
+# cumulative meter, whose monthly statistics are clean (~520 kWh in Aug and Sep).
+ENERGY=$(cat <<'EOF'
+Monthly energy report for last month, max 8 lines.
+Do NOT use find_tool or tool_search. Make exactly these two calls in parallel, through OpenClaw's tool_call with id "mcp:toolhive:toolhive__call_tool" and args {"tool_name": "ha-mcp_ha_get_history", "parameters": {...}}:
+A. parameters {"entity_ids": "sensor.tibber_monthly_cost,sensor.tibber_monthly_net_consumption", "start_time": "72h", "limit": 20}
+B. parameters {"source": "statistics", "entity_ids": "sensor.server_rack_electric_consumption_kwh", "start_time": "70d", "period": "month", "statistic_types": "change"}
+entity_ids and statistic_types are plain comma-separated strings; send them exactly like this.
+
+From A: both sensors reset at the start of the month, so the highest value of each in the window is last month's total (cost in SEK, consumption in kWh). Average price = cost / consumption.
+From B: each row is one month (start is Unix ms). Ignore the row for the current month. "change" is the rack's kWh for that month; use last month and the month before.
+Report: last month's house consumption and cost, the average price, the server rack's kWh and share of the house total, the rack's approximate cost (its kWh times the average price), and the rack's change from the month before.
+EOF
+)
+
+# shellcheck disable=SC2086
+oc cron add --declaration-key energy-monthly --name energy-monthly \
+  --display-name "Monthly energy report" --cron "0 19 1 * *" $COMMON \
+  --model minimax/MiniMax-M3-messages --thinking adaptive \
+  --message "$ENERGY"
+
+# Network: unifi-mcp runs in meta_only mode, so its tools are reached through
+# unifi_execute by name. unifi_list_events is left out: its severity and
+# category filters only take lists, and a week unfiltered is ~450 events.
+NETWORK=$(cat <<'EOF'
+Weekly home network digest. Report only problems and new devices, max 12 lines.
+Do NOT use find_tool or tool_search.
+Every call below is OpenClaw's tool_call with id "mcp:toolhive:toolhive__call_tool" and args {"tool_name": "unifi-mcp_unifi_execute", "parameters": {"tool": <name>, "arguments": {...}}}. Make these six calls in parallel:
+A. tool "unifi_list_devices", arguments {}
+B. tool "unifi_list_alarms", arguments {}
+C. tool "unifi_get_network_health", arguments {}
+D. tool "unifi_get_speedtest_results", arguments {"duration": "weekly"}
+E. tool "unifi_get_anomalies", arguments {"duration": "weekly"}
+F. tool "unifi_list_clients", arguments {}
+
+Report:
+- devices that are not online, or have "upgradable": true (name and model);
+- each alarm;
+- any subsystem in C whose status is not "ok";
+- speedtests: the lowest download/upload of the week; flag it only if a result is below 500 Mbps down (normal is about 900/870);
+- anomalies: only a client with anomalies on 3 or more days (look up its name by mac in F);
+- clients whose first_seen is within the last 7 days: name or hostname, wired or Wi-Fi.
+If nothing is wrong and no device is new, reply with one line saying so.
+EOF
+)
+
+# shellcheck disable=SC2086
+oc cron add --declaration-key network-weekly --name network-weekly \
+  --display-name "Weekly network digest" --cron "30 19 * * 0" $COMMON \
+  --model minimax/MiniMax-M3-messages --thinking adaptive \
+  --message "$NETWORK"
 
 oc cron list

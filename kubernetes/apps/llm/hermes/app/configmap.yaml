@@ -136,18 +136,16 @@ data:
       # Raise this and contextSize together or the reactive-compaction loop
       # comes straight back.
       #
-      # 262144 -- qwen38-flash-next's contextSize 524288 / parallelSlots 2, which
-      # is the model's full native window (Ornith served the same 262144 at
-      # 2097152 / 8 until 2026-10-04). Note the 256,000 hermes falls back to is
-      # slightly *under* the real window rather than far over it, so the "Could
-      # not determine context length" path is not dangerous by accident.
-      # Keep the setting anyway: that only holds at this contextSize, and the
-      # fallback goes back to over-budgeting the moment it drops.
-      context_length: 262144
+      # 131072 -- qwen38-flash-next's contextSize 262144 / parallelSlots 2, half
+      # the model's native 262144 since 2026-10-17. This line is now load-
+      # bearing: without it hermes falls back to 256,000, nearly twice the real
+      # window, and the reactive-compaction loop above comes straight back.
+      # compression.threshold 0.50 now compacts at ~64k.
+      context_length: 131072
       # NOTE this window belongs to the *default* model only. agent_init.py
       # clears the override the moment a run starts with `-m`/`--model`, and
       # lets provider metadata resolve the active model's window instead, so
-      # the ChatGPT models below are NOT clamped to 262144 by this line.
+      # the ChatGPT models below are NOT clamped to 131072 by this line.
     # --- ChatGPT subscription (OpenAI Codex OAuth) ---
     #
     # Deliberately NOT the default. hermes reaches OpenAI over the built-in

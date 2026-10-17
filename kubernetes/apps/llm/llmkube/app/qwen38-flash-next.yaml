@@ -89,15 +89,28 @@
 # it is why the 48Gi limit below is right. Do not shrink the limit.
 #
 # KV + compute is ~10.8 GiB for the whole 524288 window, i.e. halving
-# contextSize buys ~5 GiB of host headroom and quartering ~8 GiB. The old
-# STOP CONDITION (MemAvailable < 35 GiB -> halve contextSize) is withdrawn:
+# contextSize buys ~5 GiB of host headroom and quartering ~8 GiB. Only 12 of
+# the 48 layers are full attention (2 KV heads x 256), so KV is ~13 KB/token
+# at q8_0: the window is cheap, and memory is not why it was halved. The old
+# STOP CONDITION (MemAvailable < 35 GiB -> halve contextSize) stays withdrawn:
 # the 2026-09-24..10-11 reset series (39 resets) happened at 27-47 GiB of
 # headroom in the Ornith era and 9-21 GiB in this one, always under sustained
 # GPU load, and AMD has root-caused that failure class to AGESA (see
-# fclk-hold.yaml). Headroom is not the trigger, so the window stays at the
-# native 262144 per slot that every client hardcodes. If memory ever has to
-# give, drop parallelSlots to 1 before touching contextSize: it saves the same
-# ~5 GiB and keeps the window the clients expect.
+# fclk-hold.yaml). Headroom is not the trigger.
+#
+# WINDOW: 131072 PER SLOT SINCE 2026-10-17 (owner decision)
+#
+# Halved from the native 262144 on usage, measured from litellm's spend log
+# over 2026-10-04..10-17 (~7,000 requests on the worker4 aliases):
+#   pr-review 4436 req, max 60k   alert-triage 1398, max 8k
+#   agent-lab/memini/repo-wiki/atlas/hermes   max 23k
+#   openclaw  643 req, p50 81k, p90 175k, max 208k; 128 over 128k
+# openclaw is the only caller past 61k. It auto-compacts as it nears its
+# contextWindow (and on an overflow 400), so it now compacts at 128k instead
+# of carrying sessions to 208k. Those tail requests were also the slowest:
+# without sparse attention on HIP, decode cost grows with the context in the
+# slot (see RUNTIME SUPPORT), and Q3 quality thins out that far in anyway.
+# Every client limit moved with it -- see contextSize below.
 #
 # ROLLING BACK
 #
@@ -175,10 +188,10 @@ spec:
     - key: llm-workload
       operator: Exists
       effect: NoSchedule
-  # 524288 / 2 = 262144 per slot, the model's full native window, and the
-  # number every client of the local aliases already hardcodes (litellm
-  # max_input_tokens, hermes context_length, opencode/courier/openclaw
-  # limits). Keeping it means none of those move.
+  # 262144 / 2 = 131072 per slot (see WINDOW above). Every client of the
+  # local aliases hardcodes the per-slot number, so they move together:
+  # litellm max_input_tokens on every worker4 rung, hermes context_length,
+  # opencode/courier/openclaw limits, and the worker4-llm dashboard constant.
   #
   # 2 slots, not Ornith's 8. Those were sized for Lingarr batches fanning out
   # beside Hermes, and Lingarr is on MiniMax now. Generation here is
@@ -186,7 +199,7 @@ spec:
   # throughput -- they only buy KV, which is the unmeasured cost above. A third
   # concurrent caller queues; litellm's `local-pool*` aliases fall back to
   # MiniMax, the classic aliases do not.
-  contextSize: 524288
+  contextSize: 262144
   parallelSlots: 2
   rolloutPolicy:
     waitForIdle: true

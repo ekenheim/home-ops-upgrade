@@ -54,6 +54,8 @@ spec:
       retries: 3
   values:
     defaultPodOptions:
+      # Below qwen38-flash-next (llmkube-high): worker4 exists for that server.
+      priorityClassName: llmkube-low
       # PyTorch's shared-memory tensors between ComfyUI's worker processes.
       hostIPC: true
       automountServiceAccountToken: false
@@ -123,7 +125,10 @@ spec:
             resources:
               requests:
                 cpu: 500m
-                memory: 8Gi
+                # Idle 1.8 GiB (14d peak), no checkpoints downloaded yet. Raise to
+                # the largest checkpoint + ~2 GiB once models land: they end up in
+                # GTT, which this request is the only accounting for.
+                memory: 2Gi
               limits:
                 # Upstream sets none. --disable-mmap reads a checkpoint fully
                 # into RAM before it moves to GTT, so this has to clear the

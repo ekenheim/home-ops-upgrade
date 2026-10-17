@@ -86,7 +86,7 @@
 # So the "table stays in the mmap and pages in on demand" story above is NOT
 # what this build does: TENSOR_READ_LAZY lands it in an anonymous CPU buffer.
 # It is resident (no NVMe reads during decode), it is charged to the pod, and
-# it is why the 48Gi limit below is right. Do not shrink the limit.
+# it is why the memory request below must stay well above ~36 GiB.
 #
 # KV + compute is ~10.8 GiB for the whole 524288 window, i.e. halving
 # contextSize buys ~5 GiB of host headroom and quartering ~8 GiB. Only 12 of
@@ -210,13 +210,23 @@ spec:
   cacheTypeV: q8_0
   batchSize: 2048
   uBatchSize: 512
+  # worker4 exists for this server, so it outranks everything else there
+  # (llmkube-high). comfyui, lemonade-tts and whisper run at llmkube-low and
+  # are preempted if they ever stand in its way.
+  priority: high
   resources:
     cpu: "500m"
-    # Ornith ran at 32Gi. The n-gram table is a 27.4 GiB anonymous buffer in
-    # this process (measured 2026-10-11, see BUDGET), plus ~9 GiB of other
-    # CPU-side buffers: RSS sits at ~36 GiB. 48Gi leaves ~12 GiB of room; a
-    # tighter limit OOM-kills the server mid-request.
-    memory: 48Gi
+    # The request must be the WHOLE footprint, GTT included. GTT is not
+    # charged to the pod cgroup, so with the old 48Gi the scheduler believed
+    # worker4 had ~80 GiB free while the kernel had ~13 GiB available, and
+    # nothing stopped a second model from being placed into memory the GPU
+    # already pinned. Measured 2026-10-17 after the 131072 window rolled out:
+    #   GTT 63.1 GiB + anon ~30-34 GiB (27.4 GiB n-gram table) = ~97 GiB
+    # 100Gi covers it. The operator sets limit = request; a cgroup limit only
+    # ever sees the CPU-side ~36 GiB, so the high limit costs nothing and
+    # still clears the n-gram table (a tight one OOM-kills mid-request).
+    # Re-measure (GTT + pod anon) when the model, quant or window changes.
+    memory: 100Gi
   endpoint:
     port: 8080
     type: ClusterIP

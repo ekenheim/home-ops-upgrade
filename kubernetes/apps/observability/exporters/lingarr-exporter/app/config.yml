@@ -1,0 +1,51 @@
+---
+# json_exporter config for Lingarr, which has no /metrics of its own. Two
+# modules, probed by the ServiceMonitor in helmrelease.yaml (Lingarr's API has
+# auth disabled in-cluster):
+#   lingarr_stats   -> /api/statistics             lifetime totals
+#   lingarr_active  -> /api/translationrequest/active   the live queue
+#
+# /api/statistics (2026-10-17): {"totalLinesTranslated":6219829,
+#   "totalFilesTranslated":7917,"totalCharactersTranslated":252455168,
+#   "totalMovies":1170,"totalEpisodes":15072,"totalSubtitles":28684, ...}
+# /api/translationrequest/active: [{"mediaId":11449,"mediaType":"Episode",
+#   "status":"InProgress"}, ...], Pending and InProgress only, a few dozen at
+#   most. Failed requests are not listed anywhere filterable, so failures come
+#   from LiteLLM's counters for the lingarr key instead.
+modules:
+  lingarr_stats:
+    metrics:
+      - name: lingarr_lines_translated_total
+        help: Subtitle lines Lingarr has translated, lifetime
+        path: '{.totalLinesTranslated}'
+        valuetype: counter
+      - name: lingarr_files_translated_total
+        help: Subtitle files Lingarr has translated, lifetime
+        path: '{.totalFilesTranslated}'
+        valuetype: counter
+      - name: lingarr_characters_translated_total
+        help: Characters Lingarr has translated, lifetime
+        path: '{.totalCharactersTranslated}'
+        valuetype: counter
+      - name: lingarr_library_movies
+        help: Movies Lingarr knows about
+        path: '{.totalMovies}'
+      - name: lingarr_library_episodes
+        help: Episodes Lingarr knows about
+        path: '{.totalEpisodes}'
+      - name: lingarr_library_subtitles
+        help: Subtitle files Lingarr knows about
+        path: '{.totalSubtitles}'
+  lingarr_active:
+    metrics:
+      # One series per queued request (static value 1); sum by (status).
+      - name: lingarr_translation_request
+        type: object
+        help: Lingarr translation requests that are pending or in progress
+        path: '{[*]}'
+        labels:
+          media_id: '{.mediaId}'
+          media_type: '{.mediaType}'
+          status: '{.status}'
+        values:
+          active: 1

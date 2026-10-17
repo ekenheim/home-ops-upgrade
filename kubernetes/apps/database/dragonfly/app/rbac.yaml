@@ -28,6 +28,16 @@ rules:
   - apiGroups: ["dragonflydb.io"]
     resources: ["dragonflies/status"]
     verbs: ["get", "patch", "update"]
+  # v1.7.1 (#7632) manages a PodDisruptionBudget and patches pod status;
+  # both rules are in upstream's config/rbac/role.yaml at v1.7.1. Without the
+  # PDB rule the operator's single worker blocks on a cache that can never
+  # sync, and no Dragonfly change is reconciled after the first.
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/status"]
+    verbs: ["get", "patch", "update"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

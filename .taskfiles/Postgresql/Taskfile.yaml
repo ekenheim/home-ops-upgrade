@@ -6,9 +6,9 @@ vars:
 
 tasks:
   crunchy-owner:
-    desc: Restore a pg_dump to a CrunchyData Postgres cluster, writing to the master instance.
+    desc: Make DBUSER the owner of DBNAME on the primary instance of a CrunchyData Postgres cluster.
     dir: "{{.USER_WORKING_DIR}}"
-    vars: &crunchy-vars
+    vars:
       APP: "{{.APP}}"
       PG: &pg-default
         sh: |-
@@ -18,13 +18,13 @@ tasks:
           [[ -n "{{.NS}}" ]] && echo -n "{{.NS}}" || ( [[ -n "{{.APP}}" ]] && echo -n "{{.APP}}" || echo -n "database" )
       CRUNCHY_PRIMARY: &crunchy-primary
         sh: |-
-          kubectl get pods -n {{.NS}} -l cnpg.io/cluster={{.PG}},cnpg.io/instanceRole=primary -o jsonpath='{.items[0].metadata.name}' || ( echo "No primary pod found" && exit 1 )
+          kubectl get pods -n {{.NS}} -l postgres-operator.crunchydata.com/cluster={{.PG}},postgres-operator.crunchydata.com/role=master -o jsonpath='{.items[0].metadata.name}' || { echo "No primary pod found for cluster {{.PG}} in {{.NS}}" >&2; exit 1; }
       DBNAME: &dbname
         sh: |-
-          [[ -n "{{.DBNAME}}" ]] && echo -n "{{.DBNAME}}" || ( [[ -n "{{.APP}}" ]] && echo -n "{{.APP}}" ) || ( echo "Missing `DB` environment variable for specifying database name!" && exit 1 )
+          [[ -n "{{.DBNAME}}" ]] && echo -n "{{.DBNAME}}" || ( [[ -n "{{.APP}}" ]] && echo -n "{{.APP}}" ) || { echo "Missing DBNAME (or APP) variable for specifying database name!" >&2; exit 1; }
       DBUSER: &dbuser
         sh: |-
-          [[ -n "{{.DBUSER}}" ]] && echo -n "{{.DBUSER}}" || [[ -n "{{.APP}}" ]] && echo -n "{{.APP}}" || ( echo "Missing `USER` environment variable for specifying user name!" && exit 1 )
+          [[ -n "{{.DBUSER}}" ]] && echo -n "{{.DBUSER}}" || ( [[ -n "{{.APP}}" ]] && echo -n "{{.APP}}" ) || { echo "Missing DBUSER (or APP) variable for specifying user name!" >&2; exit 1; }
     env:
       DBUSER: '{{.DBUSER}}'
     cmds:
@@ -33,13 +33,13 @@ tasks:
   crunchy-restore:
     desc: Restore a pg_dump to a CrunchyData Postgres cluster, writing to the master instance.
     dir: "{{.USER_WORKING_DIR}}"
-    vars: &crunchy-vars
+    vars:
       APP: "{{.APP}}"
       NS: *ns-default
       CRUNCHY_PRIMARY: *crunchy-primary
       DBNAME: *dbname
-      DBUSER: "{{.DBUSER}}"
-      DUMP: &dump '{{ or .DUMP (fail "Missing `DUMP` environment variable for specifying pg_dump file location!") }}'
+      DBUSER: *dbuser
+      DUMP: &dump '{{ or .DUMP (fail "Missing DUMP variable for specifying pg_dump file location!") }}'
       CP_DIR: &cpdir '{{ .CP_DIR | default "/pgdata" }}' # would've been /tmp or /run if Crunchy replica container didn't crash and restart when files are copied there for some reason, maybe small tmpfs size?
       ARGS: # TODO: (for other users) these are my personal defaults, please check and change accordingly if copying this task before running it!
         sh: |-

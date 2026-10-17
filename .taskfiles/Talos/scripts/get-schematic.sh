@@ -7,7 +7,7 @@ if [ -z "$1" ]; then
 fi
 
 NODE_NAME=$1
-TALCONFIG_FILE="/workspaces/home-ops-upgrade/kubernetes/bootstrap/talos/talconfig.yaml"
+TALCONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)/kubernetes/bootstrap/talos/talconfig.yaml"
 
 # Extract the talosImageURL for the given node and get just the schematic ID
 SCHEMA=$(yq e ".nodes[] | select(.hostname == \"$NODE_NAME\") | .talosImageURL" "$TALCONFIG_FILE" | grep -o '[^/]*$' | cut -d':' -f1)

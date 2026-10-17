@@ -1,24 +1,33 @@
 ---
 version: "3"
 
+vars:
+  # The kubeconfig everything else reads: KUBECONFIG in the devcontainer and
+  # .envrc, and the file talos:fetch-kubeconfig writes.
+  KUBECONFIG_FILE: "{{.ROOT_DIR}}/kubeconfig"
+  TALOSCONFIG_FILE: "{{.KUBERNETES_DIR}}/bootstrap/talos/clusterconfig/talosconfig"
+
 tasks:
 
   push-main:
     desc: Push main kubeconfig/talosconfig to Secrets Manager
     cmds:
-      - bws secret edit d7abec51-f77a-49fd-be89-b13400f196e8  --value "$(cat {{.KUBERNETES_DIR}}/kubeconfig)"
-      - bws secret edit 54ef8c36-ba53-4566-bed7-b13400f28225 --value "$(cat {{.KUBERNETES_DIR}}/bootstrap/talos/clusterconfig/talosconfig)"
+      - bws secret edit d7abec51-f77a-49fd-be89-b13400f196e8 --value "$(cat {{.KUBECONFIG_FILE}})"
+      - bws secret edit 54ef8c36-ba53-4566-bed7-b13400f28225 --value "$(cat {{.TALOSCONFIG_FILE}})"
     preconditions:
-      - { msg: "Bitwarden Secret Manager CLI not found", sh: "test bws" }
+      - { msg: "Bitwarden Secret Manager CLI not found", sh: "command -v bws" }
+      - { msg: "BWS_ACCESS_TOKEN not set", sh: "test -n \"${BWS_ACCESS_TOKEN:-}\"" }
+      - { msg: "Missing kubeconfig", sh: "test -f {{.KUBECONFIG_FILE}}" }
+      - { msg: "Missing talosconfig", sh: "test -f {{.TALOSCONFIG_FILE}}" }
 
   pull:
     desc: Pull Kubeconfig from Secrets Manager
     cmds:
-      - mkdir -p ~/.kube
-      - mkdir -p ~/.talos
+      - mkdir -p ~/.kube $(dirname {{.TALOSCONFIG_FILE}})
       - bws secret get d7abec51-f77a-49fd-be89-b13400f196e8 | jq -r '.value' > ~/.kube/config # Generic kubeconfig
-      - bws secret get d7abec51-f77a-49fd-be89-b13400f196e8 | jq -r '.value' > {{.KUBERNETES_DIR}}/kubeconfig # Main kubeconfig
-      - bws secret get 54ef8c36-ba53-4566-bed7-b13400f28225 | jq -r '.value' > {{.KUBERNETES_DIR}}/bootstrap/talos/clusterconfig/talosconfig # Main talosconfig
+      - bws secret get d7abec51-f77a-49fd-be89-b13400f196e8 | jq -r '.value' > {{.KUBECONFIG_FILE}} # Main kubeconfig
+      - bws secret get 54ef8c36-ba53-4566-bed7-b13400f28225 | jq -r '.value' > {{.TALOSCONFIG_FILE}} # Main talosconfig
     preconditions:
-      - { msg: "Bitwarden Secret Manager CLI not found", sh: "test bws" }
-      - { msg: "JQ not found", sh: "test jq" }
+      - { msg: "Bitwarden Secret Manager CLI not found", sh: "command -v bws" }
+      - { msg: "JQ not found", sh: "command -v jq" }
+      - { msg: "BWS_ACCESS_TOKEN not set", sh: "test -n \"${BWS_ACCESS_TOKEN:-}\"" }

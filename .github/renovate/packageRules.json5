@@ -205,20 +205,17 @@
       "pinDigests": true
     },
     {
-      // These devcontainer features ship a zero-byte OCI config blob. With a
-      // digest pinned, Renovate's docker datasource reads that blob to match
-      // the architecture, fails schema validation (ZodError) and reports
-      // "Could not determine new digest for update" on every run. Reproduced
-      // with renovate 44.132.6 on 2026-10-04. Features are fetched when the
-      // devcontainer is built, so the floating major tag is enough.
-      "description": ["Do not pin digests on devcontainer features with an empty config blob"],
+      // The rolling-tag rule above would pin `feature:2` to
+      // `feature:2@sha256:...`, which the devcontainer CLI rejects ("failed
+      // validation", @devcontainers/cli 0.89.0 on 2026-10-17): the container
+      // could not be built at all. Some features also ship a zero-byte OCI
+      // config blob that Renovate cannot read a pinned digest from (ZodError,
+      // renovate 44.132.6 on 2026-10-04). Features are fetched when the
+      // devcontainer is built, so the floating major tag is enough. The base
+      // image (depType "image") keeps its digest.
+      "description": ["Do not pin digests on devcontainer features"],
       "matchManagers": ["devcontainer"],
-      "matchPackageNames": [
-        "ghcr.io/audacioustux/devcontainers/cilium",
-        "ghcr.io/dhoeric/features/stern",
-        "ghcr.io/jsburckhardt/devcontainer-features/flux",
-        "ghcr.io/rio/features/kustomize"
-      ],
+      "matchDepTypes": ["feature"],
       "pinDigests": false
     },
     // The dispatch hold at <0.5.41 was removed here on 2026-08-29. It existed

@@ -87,12 +87,9 @@ tasks:
     vars:
       ns: '{{.ns | default "default"}}'
       app: '{{ or .app (fail "Argument (app) is required") }}'
-      controller:
-        sh: true && {{.scriptsDir}}/controller.sh {{.app}} {{.ns}}
     preconditions:
-      - { msg: "Controller script not found",    sh: "test -f {{.scriptsDir}}/controller.sh" }
       - { msg: "Wait script not found",          sh: "test -f {{.scriptsDir}}/wait.sh" }
-      - { msg: "RepositorySource not found",     sh: "kubectl --context {{.cluster}} -n {{.ns}} get replicationsources {{.app}}" }
+      - { msg: "RepositorySource not found",     sh: "kubectl -n {{.ns}} get replicationsources {{.app}}" }
 
   # To run restore jobs in parallel for all replicationdestinations:
   #    - kubectl get replicationsources --all-namespaces --no-headers | awk '{print $2, $1}' | xargs --max-procs=4 -l bash -c 'task volsync:restore app=$0 ns=$1'

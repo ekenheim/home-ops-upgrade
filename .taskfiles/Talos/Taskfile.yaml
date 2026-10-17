@@ -6,7 +6,7 @@ vars:
   TALOS_DIR: "{{.KUBERNETES_DIR}}/bootstrap/talos"
   TALHELPER_SECRET_FILE: "{{.TALOS_DIR}}/talsecret.sops.yaml"
   TALHELPER_CONFIG_FILE: "{{.TALOS_DIR}}/talconfig.yaml"
-  KUBECONFIG_FILE: "{{.KUBERNETES_DIR}}/kubeconfig"
+  KUBECONFIG_FILE: "{{.ROOT_DIR}}/kubeconfig"
   # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
   TALOS_VERSION: v1.13.11
   TALOS_SCHEMATIC_ID: 5b3717ebb1bc80ddea39bb8ae3cfd3294bfcfb13e05dcd6f1aa54b8e8f9dbcc1
@@ -95,7 +95,7 @@ tasks:
   upgrade-talos:
     desc: Upgrade talos on a node
     cmd: |
-      SCHEMA=$({{.ROOT_DIR}}/.taskfiles/Talos/scripts/get-schematic.sh {{.node}})
+      SCHEMA=$(bash {{.ROOT_DIR}}/.taskfiles/Talos/scripts/get-schematic.sh {{.node}})
       if [ $? -eq 0 ]; then
         talosctl --nodes {{.node}} upgrade --image factory.talos.dev/metal-installer/$SCHEMA:{{.TALOS_VERSION}} --preserve=true --reboot-mode=default
       else
@@ -108,7 +108,7 @@ tasks:
       - { msg: "Node not found", sh: "talosctl --nodes {{.node}} get machineconfig" }
 
   upgrade-k8s:
-    desc: Upgrade Kubernetes on the cluster (node must be a control plane, e.g. master1; one run upgrades all nodes)
+    desc: Upgrade Kubernetes on the cluster (node must be a control plane, e.g. master2; one run upgrades all nodes)
     cmd: talosctl --nodes {{.node}} upgrade-k8s --to {{.KUBERNETES_VERSION}} --endpoint https://192.168.50.10:6443
     requires:
       vars: ["node"]

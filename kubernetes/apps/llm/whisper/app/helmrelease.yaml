@@ -42,6 +42,8 @@ spec:
       retries: 3
   values:
     defaultPodOptions:
+      # Below qwen38-flash-next (llmkube-high): worker4 exists for that server.
+      priorityClassName: llmkube-low
       automountServiceAccountToken: false
       # worker4 is the only node with the Strix Halo iGPU.
       nodeSelector:
@@ -128,7 +130,8 @@ spec:
             resources:
               requests:
                 cpu: 500m
-                memory: 4Gi
+                # ~130 MiB host + the 834 MB large-v3-turbo model in GTT.
+                memory: 1536Mi
               limits:
                 memory: 8Gi
     service:

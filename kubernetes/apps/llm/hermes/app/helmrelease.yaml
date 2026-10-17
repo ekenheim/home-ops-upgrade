@@ -207,6 +207,7 @@ spec:
             resources:
               requests:
                 cpu: 500m
+                memory: 1Gi
               # Absorbs the dashboard, which had its own 1Gi limit before it
               # moved in here.
               limits:
@@ -247,6 +248,7 @@ spec:
             resources:
               requests:
                 cpu: 10m
+                memory: 128Mi
               limits:
                 memory: 1Gi
     service:

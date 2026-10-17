@@ -30,6 +30,9 @@ COMMON="--tz Europe/Stockholm --session isolated --channel discord --to $TO --an
 # and argument keys (2026-09-29), so these prompts name every call exactly.
 # Home Assistant is one template evaluation; the forecast needs a service call
 # because weather entities no longer carry it as an attribute.
+# Tibber's monthly net consumption is sensor.tibber_monthly_net_consumption;
+# the old sensor.lidkopingsvagen_10_* id no longer exists, and the brief
+# reported "unknown None" for energy until 2026-10-17.
 BRIEF=$(cat <<'EOF'
 Morning brief for the owner, max 15 lines, skip anything unremarkable.
 Do NOT use find_tool or tool_search. Make exactly these three calls in parallel, then write the brief.
@@ -40,7 +43,7 @@ Weather now: {{ states('weather.forecast_home') }}, {{ state_attr('weather.forec
 Indoor: {% for e in ['kitchen','bedroom','tv_room','bathroom','computer'] %}{{ e }} {{ states('sensor.' ~ e ~ '_sensor_temperature') }}, {% endfor %}hallway {{ states('sensor.hallway_temperature') }}
 Doors/windows open: {{ ['binary_sensor.door_open','binary_sensor.door_window_door_is_open','binary_sensor.door_window_door_is_open_2','binary_sensor.door_tilted','binary_sensor.door_window_door_is_tilted'] | select('is_state','on') | list or 'none' }}
 Unavailable entities: {{ states | selectattr('state','eq','unavailable') | list | count }}
-Energy this month: {{ states('sensor.lidkopingsvagen_10_monthly_net_consumption') }} {{ state_attr('sensor.lidkopingsvagen_10_monthly_net_consumption','unit_of_measurement') }}
+Energy this month: {{ states('sensor.tibber_monthly_net_consumption') }} {{ state_attr('sensor.tibber_monthly_net_consumption','unit_of_measurement') }}
 
 B. tool_name "ha-mcp_ha_call_service", parameters {"domain": "weather", "service": "get_forecasts", "entity_id": "weather.forecast_home", "data": {"type": "daily"}, "return_response": true}
 Use only the first forecast entry (today): condition, high/low, precipitation.

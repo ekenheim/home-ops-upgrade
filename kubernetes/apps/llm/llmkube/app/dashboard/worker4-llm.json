@@ -131,20 +131,20 @@
       {
         "name": "ctx_per_slot",
         "label": "Context per slot",
-        "description": "contextSize / parallelSlots from the InferenceService (524288 / 2). Keep in step with qwen38-flash-next.yaml.",
+        "description": "contextSize / parallelSlots from the InferenceService (262144 / 2). Keep in step with qwen38-flash-next.yaml.",
         "type": "constant",
-        "query": "262144",
+        "query": "131072",
         "hide": 2,
         "current": {
           "selected": false,
-          "text": "262144",
-          "value": "262144"
+          "text": "131072",
+          "value": "131072"
         },
         "options": [
           {
             "selected": true,
-            "text": "262144",
-            "value": "262144"
+            "text": "131072",
+            "value": "131072"
           }
         ]
       },

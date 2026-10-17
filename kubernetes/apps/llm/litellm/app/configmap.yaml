@@ -48,9 +48,11 @@ data:
       # /v1/models, which returns bare ids. Set model.context_length in the
       # hermes ConfigMap too, and move all of them with contextSize.
       #
-      # 262144 = contextSize 524288 / parallelSlots 2, the model's full native
-      # window -- the same number Ornith served, so no client limit moved in
-      # the swap. Every local alias and pool rung must carry the same value.
+      # 131072 = contextSize 262144 / parallelSlots 2, half the model's native
+      # 262144 (lowered 2026-10-17, see qwen38-flash-next.yaml). Every local
+      # alias and pool rung must carry the same value. In the mixed pools a
+      # longer prompt skips the worker4 rung via enable_pre_call_checks and
+      # lands on a hosted rung; the local pools use context_window_fallbacks.
       #
       # `&worker4` below is the one place the server is named. Every other
       # worker4 entry (review, fast, home-assistant, local-pool*, the pool
@@ -65,7 +67,7 @@ data:
           mode: chat
           supports_function_calling: true
           supports_vision: true
-          max_input_tokens: 262144
+          max_input_tokens: 131072
         litellm_params: &worker4
           model: openai/qwen38-flash-next
           api_base: http://qwen38-flash-next.llm:8080/v1
@@ -79,7 +81,7 @@ data:
           mode: chat
           supports_function_calling: true
           supports_vision: true
-          max_input_tokens: 262144
+          max_input_tokens: 131072
         litellm_params:
           <<: *worker4
           chat_template_kwargs:
@@ -106,7 +108,7 @@ data:
           mode: chat
           supports_function_calling: true
           supports_vision: true
-          max_input_tokens: 262144
+          max_input_tokens: 131072
         litellm_params:
           <<: *worker4
           chat_template_kwargs:
@@ -127,7 +129,7 @@ data:
           mode: chat
           supports_function_calling: true
           supports_vision: true
-          max_input_tokens: 262144
+          max_input_tokens: 131072
         litellm_params:
           <<: *worker4
           timeout: 20
@@ -566,7 +568,7 @@ data:
       - model_name: reasoning-pool
         model_info:
           mode: chat
-          max_input_tokens: 262144
+          max_input_tokens: 131072
           supports_function_calling: true
           supports_vision: true
         litellm_params:
@@ -604,7 +606,7 @@ data:
       - model_name: implementation-pool
         model_info:
           mode: chat
-          max_input_tokens: 204800
+          max_input_tokens: 131072
           supports_function_calling: true
         litellm_params:
           <<: *worker4
@@ -697,7 +699,7 @@ data:
           mode: chat
           supports_function_calling: true
           supports_vision: true
-          max_input_tokens: 262144
+          max_input_tokens: 131072
         litellm_params:
           <<: *worker4
           chat_template_kwargs:
@@ -736,7 +738,7 @@ data:
       - model_name: factory-agent
         model_info:
           mode: chat
-          max_input_tokens: 204800
+          max_input_tokens: 131072
           supports_function_calling: true
         litellm_params:
           <<: *worker4
@@ -778,7 +780,7 @@ data:
       - model_name: factory-review
         model_info:
           mode: chat
-          max_input_tokens: 262144
+          max_input_tokens: 131072
           supports_function_calling: true
           supports_vision: true
         litellm_params:
@@ -795,7 +797,7 @@ data:
       - model_name: local-pool
         model_info:
           mode: chat
-          max_input_tokens: 262144
+          max_input_tokens: 131072
           supports_function_calling: true
           supports_vision: true
         litellm_params:
@@ -805,7 +807,7 @@ data:
       - model_name: local-pool-chat
         model_info:
           mode: chat
-          max_input_tokens: 262144
+          max_input_tokens: 131072
           supports_function_calling: true
           supports_vision: true
         litellm_params:
@@ -977,6 +979,15 @@ data:
         # hindsight-consolidation needs no entry: its two rungs (MiniMax-M3, then
         # the 5090) fail over by `order:`. Nor do factory-fast, factory-agent and
         # factory-review: the 5090 first, then their hosted rungs, by `order:`.
+      # A prompt over worker4's 131072 window is rejected by the pre-call check
+      # before it reaches the pod. Send the local pools' long prompts to the
+      # same cloud floor instead of failing them; `auto` routes SIMPLE to
+      # local-pool-chat, so long interactive sessions land here too. The
+      # classic local aliases (self-hosted, fast, ...) stay local-only: their
+      # clients compact at 131072 instead.
+      context_window_fallbacks:
+        - local-pool: ["MiniMax-M3-chat"]
+        - local-pool-chat: ["MiniMax-M3-chat"]
 
     litellm_settings:
       drop_params: true

@@ -115,7 +115,10 @@ signal: it counts the 402s and 429s callers received.
 8. **Schedule batch work into quiet windows.** Start batch jobs just after a
    5-hour boundary and size them to finish inside it. Lingarr runs 25 episodes
    at 01, 07, 13 and 19 local (its own settings, see
-   `apps/downloads/lingarr`).
+   `apps/downloads/lingarr`). In the last 48 h before the weekly reset its
+   `quota-topup` CronJob keeps Lingarr's queue fed with what is left of the
+   week, down to ~10% (it stops queueing at 13% of the week or 35% of the
+   5-hour window, and on recent 429s).
 9. **Decide the overflow policy once.** Either a $25 credit pack as a floor so a
    spent week degrades to pay-as-you-go, or accept that the plan runs dry and
    step 5 is the behaviour. It was left to chance the week of 2026-10-05.

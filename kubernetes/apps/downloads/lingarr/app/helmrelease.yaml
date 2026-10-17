@@ -48,7 +48,13 @@ spec:
               TZ: ${TIMEZONE}
               ASPNETCORE_URLS: "http://+:9876"
               DB_CONNECTION: sqlite
-              MAX_CONCURRENT_JOBS: "3"
+              # One Hangfire worker pool for every queue (translation, webhook,
+              # sync...). 3 -> 6 on 2026-10-17 so quota-topup can actually spend
+              # the end of the MiniMax week: 3 workers peak at ~1% of the week
+              # per hour, 6 reach the 5-hour window's pace (~2%/h). A scheduled
+              # 25-item run just finishes sooner; same tokens. A restart resumes
+              # in-progress translations from their last saved line.
+              MAX_CONCURRENT_JOBS: "6"
             resources:
               requests:
                 cpu: 10m
@@ -109,6 +115,50 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
+      # Spends the end of the MiniMax week: inside the last 48 h before the
+      # weekly reset it starts extra automation runs whenever Lingarr's queue
+      # runs low, until 13% of the week (target 10% after in-flight work) or
+      # 35% of the 5-hour window is left. See scripts/quota-topup.py.
+      quota-topup:
+        type: cronjob
+        cronjob:
+          schedule: "*/10 * * * *"
+          timeZone: ${TIMEZONE}
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 1
+          failedJobsHistory: 1
+        containers:
+          app:
+            image:
+              repository: docker.io/library/python
+              tag: 3.15-slim@sha256:ea4f1f290e071bf7d28199cfb3e09f5dbad31b50e9c32fd58f2f2d7be915f3ae
+            command:
+              - python3
+              - /scripts/quota-topup.py
+            env:
+              PYTHONDONTWRITEBYTECODE: "1"
+              TZ: ${TIMEZONE}
+              BURN_HORIZON_HOURS: "48"
+              WEEKLY_STOP_PERCENT: "13"
+              WINDOW_STOP_PERCENT: "35"
+              QUEUE_LOW_WATER: "10"
+              THROTTLE_BRAKE: "3"
+              # Keep in step with subtitle-dedupe's schedule above.
+              DEDUPE_HOURS: "0,6,12,18"
+            probes:
+              liveness: *noProbes
+              readiness: *noProbes
+              startup: *noProbes
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -154,6 +204,9 @@ spec:
         defaultMode: 0555
         advancedMounts:
           subtitle-dedupe:
+            app:
+              - path: /scripts
+          quota-topup:
             app:
               - path: /scripts
       media:

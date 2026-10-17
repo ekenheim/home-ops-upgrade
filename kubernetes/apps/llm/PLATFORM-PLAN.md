@@ -33,7 +33,7 @@ most scheduled jobs stay on Ornith (worker4), as they do on Jory's Strix box.
 |---|---|---|
 | `frontier-pool` | ChatGPT gpt-6-astra | Hard problems. No local floor: fails instead of silently getting dumber |
 | `reasoning-pool` | ChatGPT gpt-5.6-terra → MiniMax-M3 → Qwen3.8-Flash-Next | Planning. MiniMax is the flat-plan floor, worker4 the free one |
-| `implementation-pool` | MiniMax-M2.7 → ChatGPT gpt-5.6-luna → Ornith | Carrying out a plan. MiniMax leads because it is the flat-rate capacity (Token Plan, 5-hour + weekly windows; see `apps/observability/exporters/minimax-quota-exporter/README.md`) |
+| `implementation-pool` | MiniMax-M3.1-Flash-Preview → ChatGPT gpt-5.6-luna → Ornith | Carrying out a plan. MiniMax leads because it is the flat-rate capacity (Token Plan, 5-hour + weekly windows; see `apps/observability/exporters/minimax-quota-exporter/README.md`) |
 | `local-pool` / `local-pool-chat` | Ornith (thinking / no thinking) → MiniMax-M3-chat | Cheap, private-first work with a cloud fallback for when worker4 is down |
 | `auto` | classifier on `fast` → `local-pool-chat` / `MiniMax-M3-chat` / `reasoning-pool` | Interactive clients only. Never reaches `frontier-pool` |
 

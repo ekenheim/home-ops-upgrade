@@ -143,7 +143,7 @@ spec:
                 - name: FACTORY_SMALL_MODEL
                   value: factory-fast
                 # The OpenCode worker (streams, calls tools): the PC with
-                # thinking on, then implementation-pool's rungs (MiniMax-M2.7,
+                # thinking on, then implementation-pool's rungs (MiniMax-M3.1-Flash-Preview,
                 # ChatGPT gpt-5.6-luna, worker4).
                 - name: FACTORY_WORKER_MODEL
                   value: factory-agent

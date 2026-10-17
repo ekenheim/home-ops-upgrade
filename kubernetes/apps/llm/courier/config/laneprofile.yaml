@@ -2,7 +2,7 @@
 # The `local` lane: which model fills each role in a CoderRun.
 #
 # Jory's lane codes on a 27B on a 3090; we have no such card, so the coder
-# runs on implementation-pool (MiniMax M2.7 first -- the flat-rate Token Plan, see
+# runs on implementation-pool (MiniMax M3.1 Flash Preview first -- the flat-rate Token Plan, see
 # apps/observability/exporters/minimax-quota-exporter/README.md -- then ChatGPT
 # luna, then Ornith). The coordinator
 # plans on reasoning-pool. The reviewer stays on local Ornith: independent of

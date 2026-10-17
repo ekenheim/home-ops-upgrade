@@ -20,7 +20,7 @@ spec:
     - local-pool-chat
     - MiniMax-M3-chat
     - MiniMax-M3-messages
-    - MiniMax-M2.7
+    - MiniMax-M3.1-Flash-Preview
     - reasoning-pool
     - implementation-pool
     - frontier-pool

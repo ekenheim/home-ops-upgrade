@@ -87,7 +87,7 @@ spec:
     - implementation-pool
     - frontier-pool
     - MiniMax-M3-chat
-    - MiniMax-M2.7
+    - MiniMax-M3.1-Flash-Preview
     - qwen3-embedding-0.6b
     # agent-factory's pools (the 5090 first), for the agent-lab key.
     - factory-fast
@@ -120,7 +120,7 @@ spec:
     - frontier-pool
     - MiniMax-M3-chat
     - MiniMax-M3-messages
-    - MiniMax-M2.7
+    - MiniMax-M3.1-Flash-Preview
 ---
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMTeam
@@ -158,7 +158,7 @@ spec:
     - pc/*
     - MiniMax-M3
     - MiniMax-M3-chat
-    - MiniMax-M2.7
+    - MiniMax-M3.1-Flash-Preview
     - qwen3-embedding-0.6b
     - rerank
     - self-hosted

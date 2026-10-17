@@ -55,12 +55,12 @@ data:
           "prompt": "You are a LOCAL-ONLY coordinator. Plan, delegate edits and recon to agentic-local, integrate and verify. Never delegate to explorer, implementer or reviewer: they run on cloud plans. Read AGENTS.md first. Never push to the default branch or merge."
         },
         "explorer": {
-          "description": "Recon: codebase scouting, search, 'where/how is X', read-only. MiniMax M2.7 (flat-rate plan).",
+          "description": "Recon: codebase scouting, search, 'where/how is X', read-only. MiniMax M3.1 Flash Preview (flat-rate plan).",
           "mode": "subagent",
-          "model": "litellm/MiniMax-M2.7"
+          "model": "litellm/MiniMax-M3.1-Flash-Preview"
         },
         "implementer": {
-          "description": "Carrying out a settled plan: multi-file edits. implementation-pool (MiniMax M2.7 -> ChatGPT luna -> Qwen3.8 Flash-Next).",
+          "description": "Carrying out a settled plan: multi-file edits. implementation-pool (MiniMax M3.1 Flash -> ChatGPT luna -> Qwen3.8 Flash-Next).",
           "mode": "subagent",
           "model": "litellm/implementation-pool"
         },
@@ -96,7 +96,7 @@ data:
             "implementation-pool": { "name": "Implementation pool", "limit": { "context": 204800, "output": 32768 } },
             "frontier-pool": { "name": "Frontier pool (ChatGPT gpt-6-astra)", "limit": { "context": 262144, "output": 32768 } },
             "MiniMax-M3-chat": { "name": "MiniMax M3 (plan)", "limit": { "context": 1000000, "output": 16384 } },
-            "MiniMax-M2.7": { "name": "MiniMax M2.7 (plan)", "limit": { "context": 204800, "output": 32768 } }
+            "MiniMax-M3.1-Flash-Preview": { "name": "MiniMax M3.1 Flash Preview (plan)", "limit": { "context": 204800, "output": 32768 } }
           }
         }
       },

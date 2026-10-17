@@ -71,6 +71,9 @@ spec:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
           whenUnsatisfiable: DoNotSchedule
+          # Honor: skip nodes whose taints this pod does not tolerate (worker4, NotReady
+          # nodes). Ignore counts them as empty domains, so maxSkew 1 wedges rollouts.
+          nodeTaintsPolicy: Honor
           labelSelector:
             matchLabels:
               app.kubernetes.io/name: *app

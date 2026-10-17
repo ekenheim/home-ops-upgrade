@@ -10,6 +10,7 @@ configMapGenerator:
   - name: lingarr-scripts
     files:
       - scripts/srt-dedupe.py
+      - scripts/quota-topup.py
 generatorOptions:
   # Referenced by name from the HelmRelease values, which kustomize does not rewrite.
   disableNameSuffixHash: true

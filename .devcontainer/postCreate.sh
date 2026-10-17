@@ -13,7 +13,7 @@ TALHELPER_VERSION=v3.1.17
 # renovate: datasource=github-releases depName=helmfile/helmfile
 HELMFILE_VERSION=v1.8.2
 # renovate: datasource=github-releases depName=yannh/kubeconform
-KUBECONFORM_VERSION=v0.6.7
+KUBECONFORM_VERSION=v0.8.0
 # renovate: datasource=github-releases depName=databus23/helm-diff
 HELM_DIFF_VERSION=v3.15.15
 # bws releases are tagged bws-vX.Y.Z next to the SDK's own tags, which the

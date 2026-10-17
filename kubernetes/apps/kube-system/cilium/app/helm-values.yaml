@@ -77,3 +77,9 @@ securityContext:
       - NET_ADMIN
       - SYS_ADMIN
       - SYS_RESOURCE
+# Socket LB only rewrites connections a pod opens itself. The Tailscale
+# connector forwards tailnet traffic, so without per-packet LB in pods those
+# packets leave still addressed to the LoadBalancer IP and blackhole when the
+# connector shares a node with the IP's L2 announcement.
+socketLB:
+  hostNamespaceOnly: true

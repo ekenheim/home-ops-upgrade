@@ -317,6 +317,22 @@ patches:
           max-pods: "250"
           system-reserved: "memory=2Gi"
           kube-reserved: "memory=1Gi"
+          # Evict before the kernel OOM killer has to act. Most apps request
+          # less than they can burst to (low requests, generous limits), so
+          # under node pressure the kubelet must get there first: it evicts
+          # pods running over their requests, lowest priority first, while the
+          # OOM killer just shoots whatever scores highest -- on master2 that
+          # can be etcd's or the apiserver's neighbour mid-write. The stock hard
+          # threshold (100Mi) left no room for that. Soft at 2Gi gives a
+          # graceful 90s eviction, hard at 1Gi is immediate. eviction-hard
+          # replaces the kubelet's defaults wholesale, so the disk signals
+          # below are the stock values restated. Lowers allocatable by ~0.9Gi
+          # per node. Blind to worker4's GTT (not cgroup-charged): requests
+          # are what protect that node, see apps/llm/llmkube.
+          eviction-hard: "memory.available<1Gi,nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<15%,imagefs.inodesFree<5%"
+          eviction-soft: "memory.available<2Gi"
+          eviction-soft-grace-period: "memory.available=90s"
+          eviction-max-pod-grace-period: "60"
         nodeIP:
           validSubnets:
             - "192.168.50.0/24"

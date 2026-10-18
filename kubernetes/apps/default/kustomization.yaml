@@ -20,6 +20,7 @@ resources:
   - ./wyoming-kokoro/ks.yaml
   - ./wyoming-piper/ks.yaml
   - ./wyoming-whisper/ks.yaml
+  - ./wyoming-speech-to-phrase/ks.yaml
   - ./pairdrop/ks.yaml
   - ./filebrowser/ks.yaml
   #- ./zigbee2mqtt/ks.yaml

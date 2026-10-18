@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wyoming-speech-to-phrase
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      # Holds the downloaded Kaldi model (/data/models, a few hundred MB for
+      # English) and the grammar trained from Home Assistant's entity names
+      # (/data/train). Deliberately no volsync: the model is re-downloadable
+      # from HuggingFace and the grammar is rebuilt from Home Assistant on
+      # every start (--retrain-on-start), so a backup restores nothing that
+      # a restart does not.
+      storage: 5Gi
+  storageClassName: ceph-block

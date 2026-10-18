@@ -240,10 +240,10 @@ spec:
     # agent-factory's run ledger (apps/agent-lab). Read only by the
     # orchestrator in agent-control, through agentlab-db-secret.
     #
-    # agent-lab is off since 2026-10-18 (owner), but this user and the next
-    # stay, with their databases (agentlab 8 MB, empty; trackinizer 11 MB),
-    # so a re-enable picks up where it stopped. (PGO does not drop a role or
-    # database whose user leaves this list; it would only orphan them.)
+    # agent-lab is off since 2026-10-18 (owner), but this user stays, with
+    # its database (agentlab 8 MB, empty), so a re-enable picks up where it
+    # stopped. (PGO does not drop a role or database whose user leaves this
+    # list; it would only orphan them.) Trackinizer, below, is in use again.
     - name: "agentlab"
       databases: ["agentlab"]
       password:

@@ -2,30 +2,31 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# Off since 2026-10-18 (owner): the whole agent-lab is shelved, not deleted;
-# other agent concepts come later. Everything below is commented out, the
-# namespaces included, so cluster-apps prunes the four namespaces and the four
-# Flux Kustomizations (each prunes its own objects, the ReferenceGrant in
-# `llm` too). Nothing stateful is lost: there are no PVCs, both buckets were
-# empty, and the `agentlab` / `trackinizer` databases live in the Crunchy
-# cluster, which keeps them (database/crunchy-postgres/cluster/cluster.yaml).
+# Off since 2026-10-18 (owner): agent-lab is shelved, not deleted; other agent
+# concepts come later. The exception is Trackinizer, back on 2026-10-18
+# because the owner keeps using it: its namespace, its Kustomization and the
+# network-policy Kustomization (trimmed to Trackinizer's own policy) are
+# applied. Everything else stays commented out: the three sandbox namespaces,
+# egress-gateway, ledger and factory. Nothing stateful was lost: there are no
+# PVCs, both buckets were empty, and the `agentlab` / `trackinizer` databases
+# live in the Crunchy cluster (database/crunchy-postgres/cluster/cluster.yaml).
 #
-# `resources: []` rather than a bare `resources:`: with every entry commented
-# out, kustomize reads the latter as an empty kustomization and refuses it.
-#
-# Re-enable in this order, one PR per step or all at once (the dependsOn
-# chain below sorts it out within one reconcile): namespaces.yaml and
-# network-policy, ledger, the LiteLLM key and store (llm/litellm/keys and
-# llm/litellm/clustersecretstore), egress-gateway, trackinizer with its
-# Authentik blueprint (security/authentik/app), tetragon-policies
-# (kube-system/tetragon/ks.yaml), and last, if wanted, factory. README.md,
-# "Status", lists every file to touch.
-resources: []
+# Re-enable the rest in this order, one PR per step or all at once (the
+# dependsOn chain below sorts it out within one reconcile): namespaces.yaml and
+# the sandbox entries in network-policy/app/kustomization.yaml, ledger, the
+# LiteLLM key and store (llm/litellm/keys and llm/litellm/clustersecretstore),
+# egress-gateway, tetragon-policies (kube-system/tetragon/ks.yaml), and last,
+# if wanted, factory with the orchestrator's Trackinizer key
+# (trackinizer/app/kustomization.yaml). README.md, "Status", lists every file
+# to touch.
+resources:
   # Pre Flux-Kustomizations
   #
   # Three namespaces, one per trust level, plus `trackinizer` for the
-  # analysis ledger. See README.md for the model.
+  # analysis ledger. See README.md for the model. Trackinizer's namespace has
+  # its own file so it can run while the three sandboxes are off.
   #- ./namespaces.yaml
+  - ./namespace-trackinizer.yaml
   # Flux-Kustomizations
   #
   # None of these sets targetNamespace: every component spans more than one
@@ -36,10 +37,15 @@ resources: []
   # The LiteLLM virtual key is not here. litellm-operator writes the Secret
   # next to the CR, so the CR sits with the other keys in
   # apps/llm/litellm/keys/agent-lab.yaml (Kustomization `litellm-keys`).
-  #- ./network-policy/ks.yaml
+  #
+  # network-policy is on for Trackinizer's default-deny policy only (its
+  # app/kustomization.yaml keeps the sandbox policies commented out), so
+  # agent-lab-trackinizer can still wait on it and the pod never runs
+  # unpoliced.
+  - ./network-policy/ks.yaml
   #- ./egress-gateway/ks.yaml
   #- ./ledger/ks.yaml
   # The agent factory was shelved first (#7740), the rest followed the same
   # day.
   #- ./factory/ks.yaml
-  #- ./trackinizer/ks.yaml
+  - ./trackinizer/ks.yaml

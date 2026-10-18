@@ -7,40 +7,52 @@ records everything in a Postgres ledger.
 
 ## Status
 
-**Off since 2026-10-18 (owner).** The factory went first (#7740), then the rest the same day. The
-owner will try other agent concepts later, so everything is commented out, not deleted. The rest of
-this README describes the platform as it ran.
+**Off since 2026-10-18 (owner), except Trackinizer.** The factory went first (#7740), then the rest
+the same day (#7747). The owner will try other agent concepts later, so everything is commented out,
+not deleted. The rest of this README describes the platform as it ran.
 
-What is off, and what to uncomment to bring it back, in this order:
+**Trackinizer is ON** (re-enabled 2026-10-18, a few hours after #7747): the owner keeps using it on
+its own, through the web UI. What runs for it:
 
-1. `kustomization.yaml` here: `namespaces.yaml`, then `network-policy/ks.yaml` and `ledger/ks.yaml`.
+- `namespace-trackinizer.yaml` (split out of `namespaces.yaml`, which keeps the three sandbox
+  namespaces, off);
+- `network-policy/ks.yaml`, with only `trackinizer.yaml` in `network-policy/app/kustomization.yaml`.
+  The Kustomization stays separate from Trackinizer's so `agent-lab-trackinizer` can keep its
+  `dependsOn` and the pod never starts before its default-deny policy exists;
+- `trackinizer/ks.yaml`, without `externalsecret-token.yaml` (the orchestrator's key lives in
+  `agent-control`, which is off);
+- `trackinizer-oidc.yaml` in `../security/authentik/app/kustomization.yaml` and
+  `authentik-trackinizer-oidc` under `blueprints.secrets` in `../security/authentik/app/helmrelease.yaml`.
+
+What is still off, and what to uncomment to bring it back, in this order:
+
+1. `kustomization.yaml` here: `namespaces.yaml`; the three sandbox policies and `limits.yaml` in
+   `network-policy/app/kustomization.yaml`; then `ledger/ks.yaml`.
 2. `../llm/litellm/keys/kustomization.yaml` and `../llm/litellm/clustersecretstore/kustomization.yaml`:
    `agent-lab.yaml` in both. The operator mints a new key; the old one was revoked at the prune.
 3. `egress-gateway/ks.yaml` here.
-4. `trackinizer/ks.yaml` here, plus `trackinizer-oidc.yaml` in
-   `../security/authentik/app/kustomization.yaml` and `authentik-trackinizer-oidc` under
-   `blueprints.secrets` in `../security/authentik/app/helmrelease.yaml` (both, or the worker cannot
-   mount the Secret).
-5. The `tetragon-policies` Kustomization in `../kube-system/tetragon/ks.yaml`.
-6. `factory/ks.yaml`, if the factory itself comes back.
+4. The `tetragon-policies` Kustomization in `../kube-system/tetragon/ks.yaml`.
+5. `factory/ks.yaml`, if the factory itself comes back, with `externalsecret-token.yaml` in
+   `trackinizer/app/kustomization.yaml`.
 
 What stayed, untouched: the `agentlab` and `trackinizer` users and databases in the Crunchy cluster
-(`trackinizer` held 251 change-log rows, 150 sessions and 57 inquiries; `agentlab` was empty), the
-`coding` team's `factory-*` models and their pools in LiteLLM, Tetragon (with the dormant
-`AgentSandboxNetworkToolExec` alert and the agent-lab `exportAllowList`), the descheduler excludes,
-and the Bitwarden items `agent_factory_github` and `agent_factory_trackinizer`. The Trackinizer
-application, provider and binding also stay in Authentik: a blueprint that disappears is forgotten,
-not reversed.
+(`trackinizer` held 251 change-log rows, 150 sessions and 57 inquiries, still there on re-enable;
+`agentlab` was empty), the `coding` team's `factory-*` models and their pools in LiteLLM, Tetragon
+(with the dormant `AgentSandboxNetworkToolExec` alert and the agent-lab `exportAllowList`, which
+exports Trackinizer's exec events again), the descheduler excludes, and the Bitwarden items
+`agent_factory_github` and `agent_factory_trackinizer`. The Trackinizer application, provider and
+binding also stayed in Authentik through the pause (a blueprint that disappears is forgotten, not
+reversed); the restored blueprint adopted them.
 
 What did not survive and regenerates on re-enable: the in-cluster generated Secrets (Trackinizer's
-session and browser keys, the OIDC client secret; `register-web-key` re-registers the browser key on
-start) and the two buckets, which were empty when they went.
+session and browser keys, the OIDC client secret; `register-web-key` registers the new browser key on
+start and revokes the old one) and the two buckets, which were empty when they went.
 
 ## Components
 
 | Path | Flux Kustomization | What |
 |------|--------------------|------|
-| `namespaces.yaml` | `cluster-apps` | `agent-control` (PodSecurity baseline), `agent-work`, `agent-verify` and `trackinizer` (restricted) |
+| `namespaces.yaml`, `namespace-trackinizer.yaml` | `cluster-apps` | `agent-control` (PodSecurity baseline), `agent-work`, `agent-verify` (restricted); `trackinizer` (restricted) in its own file |
 | `network-policy/` | `agent-lab-network-policy` | Default-deny CiliumNetworkPolicies for all four namespaces, LimitRange and ResourceQuota for the two sandboxes |
 | `egress-gateway/` | `agent-lab-egress-gateway` | Gateway `agent-egress` (own ClusterIP EnvoyProxy) routing `/v1` to LiteLLM and injecting the agent-lab key; ReferenceGrant in `llm` |
 | `ledger/` | `agent-lab-ledger` | `agentlab-db-secret` (Crunchy user `agentlab`), ObjectBucketClaims `agent-artifacts` / `agent-holdout` (phase 2) |

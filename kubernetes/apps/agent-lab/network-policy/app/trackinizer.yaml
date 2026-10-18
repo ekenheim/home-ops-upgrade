@@ -21,7 +21,8 @@ spec:
     # The agent-factory orchestrator's CronJob pods, by the same labels
     # agent-control-orchestrator selects them with. With kube-proxy
     # replacement the policy sees the backend port, which is also the
-    # Service port.
+    # Service port. Matches nothing while the factory and agent-control are
+    # off (since 2026-10-18); kept for their re-enable.
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: agent-control

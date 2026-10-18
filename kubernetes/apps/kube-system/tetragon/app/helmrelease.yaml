@@ -73,9 +73,9 @@ spec:
       # Only the agent-lab namespaces reach the export container (and through
       # it, vlagent and VictoriaLogs). Lines are ORed, fields within a line
       # ANDed. Everything else is still traced, and counted in the metrics
-      # below, but never exported. With agent-lab off (2026-10-18) none of
-      # these namespaces exists, so nothing is exported; kept as is so a
-      # re-enable needs no change here.
+      # below, but never exported. With agent-lab off (2026-10-18) only
+      # `trackinizer` exists, so only its exec events are exported; the other
+      # three stay listed so a re-enable needs no change here.
       exportAllowList: |-
         {"event_set":["PROCESS_EXEC", "PROCESS_EXIT", "PROCESS_KPROBE"], "namespace":["agent-control", "agent-work", "agent-verify", "trackinizer"]}
       exportDenyList: |-

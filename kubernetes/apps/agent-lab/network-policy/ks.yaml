@@ -6,8 +6,10 @@ metadata:
   name: &app agent-lab-network-policy
   namespace: flux-system
 spec:
-  # No targetNamespace: the policies, LimitRanges and quotas cover all three
-  # agent namespaces and name theirs explicitly.
+  # No targetNamespace: the policies, LimitRanges and quotas cover all four
+  # agent-lab namespaces and name theirs explicitly. Since 2026-10-18 only
+  # Trackinizer's policy is applied (app/kustomization.yaml); the sandbox
+  # ones are off with their namespaces.
   path: ./kubernetes/apps/agent-lab/network-policy/app
   commonMetadata:
     labels:

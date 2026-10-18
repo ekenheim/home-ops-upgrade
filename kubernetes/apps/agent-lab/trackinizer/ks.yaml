@@ -11,12 +11,15 @@ spec:
   # agent-control. No targetNamespace for the same reason as the other
   # agent-lab components: the token's ExternalSecret lives in agent-control.
   #
-  # Stays not-Ready until the one-time bootstrap is done (README, "Analysis
-  # ledger (Trackinizer)"): the pod crash-loops until a superuser has created
-  # the `vector` extension, and the token's ExternalSecret fails until the
-  # Bitwarden item `agent_factory_trackinizer` exists. Nothing waits on this
-  # one: agent-lab-factory does not depend on it, and the orchestrator treats
-  # every ledger failure as logged-and-ignored.
+  # The only agent-lab component on since 2026-10-18: the owner keeps using
+  # Trackinizer on its own, through the web UI. The token's ExternalSecret is
+  # commented out in app/kustomization.yaml while agent-control is off.
+  #
+  # The one-time bootstrap (README, "Analysis ledger (Trackinizer)") was done
+  # on 2026-10-11, and the `trackinizer` database kept its schema, admin and
+  # rows through the 2026-10-18 pause. Nothing waits on this one:
+  # agent-lab-factory does not depend on it, and the orchestrator treats every
+  # ledger failure as logged-and-ignored.
   path: ./kubernetes/apps/agent-lab/trackinizer/app
   commonMetadata:
     labels:
@@ -30,7 +33,9 @@ spec:
     # postgres-pguser-trackinizer from the `trackinizer` user in cluster.yaml.
     - name: crunchy-postgres-stores
     - name: crunchy-postgres-operator-cluster
-    # bitwarden-secrets-manager, for agent-factory-trackinizer.
+    # bitwarden-secrets-manager, for agent-factory-trackinizer. Unused while
+    # that ExternalSecret is off with the factory; kept so its re-enable needs
+    # no change here.
     - name: external-secrets-stores
     # The trackinizer namespace's default-deny policy must exist before the
     # pod does, so it never runs unpoliced.

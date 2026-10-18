@@ -3,8 +3,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./agent-control.yaml
-  - ./agent-work.yaml
-  - ./agent-verify.yaml
+  # Off since 2026-10-18 (owner), with the three sandbox namespaces
+  # (../../namespaces.yaml); uncomment together with it, or these fail on a
+  # missing namespace. Trackinizer's policy stays: it is back in use.
+  #- ./agent-control.yaml
+  #- ./agent-work.yaml
+  #- ./agent-verify.yaml
   - ./trackinizer.yaml
-  - ./limits.yaml
+  # LimitRanges and ResourceQuotas for agent-work / agent-verify only.
+  #- ./limits.yaml

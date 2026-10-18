@@ -22,6 +22,27 @@ spec:
     disableWait: true
     remediation:
       retries: 3
+  # KubeRay never touches running pods when the RayCluster spec changes
+  # unless spec.upgradeStrategy.type is Recreate (default None), and the
+  # ray-cluster chart (1.7.1) has no value for it. Without it the image bump
+  # in #7743 left the head on 2.54.0 while the autoscaler started a 2.59.0
+  # worker, which sat in wait-gcs-ready (2026-10-18). With Recreate, any spec
+  # change (an image bump from Renovate included) deletes the head and every
+  # worker and starts them again from the new spec: a minute or two without
+  # Ray, and jobs in flight are lost. Needs the CRD from kuberay-operator
+  # 1.6+, which operator-helmrelease.yaml now keeps current.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              group: ray.io
+              kind: RayCluster
+              name: ray-kuberay
+            patch: |
+              - op: add
+                path: /spec/upgradeStrategy
+                value:
+                  type: Recreate
   values:
     image:
       # One stock image for head AND workers: the worker group sets no image

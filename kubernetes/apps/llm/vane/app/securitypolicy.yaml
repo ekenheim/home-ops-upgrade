@@ -1,0 +1,35 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# Browser sign-in for vane.${SECRET_DOMAIN}, done by envoy-internal because
+# Vane has no login of its own (see the header of helmrelease.yaml). Every
+# request through the route, /api included, must carry an Authentik session
+# (application `vane`, authentik Admins only, defined in
+# security/authentik/app/vane-oidc.yaml). Same shape as trackinizer's.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: vane-oidc
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: vane
+  oidc:
+    provider:
+      issuer: https://sso.${SECRET_DOMAIN}/application/o/vane/
+    clientID: vane
+    clientSecret:
+      # Cross-namespace; allowed by the ReferenceGrant in security.
+      name: authentik-vane-oidc
+      namespace: security
+    redirectURL: https://vane.${SECRET_DOMAIN}/oauth2/callback
+    logoutPath: /oauth2/logout
+    scopes:
+      - openid
+      - email
+      - profile
+      - offline_access
+    # Answers stream for a while and the app polls in the background; the
+    # refresh token keeps the session alive without a full redirect, which
+    # those fetches could not follow.
+    refreshToken: true

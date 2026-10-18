@@ -14,7 +14,8 @@ lives here.
 | `toolhive` | MCP operator + `ha-mcp`, `context7`, `memory-mcp`, `platform-mcp`, `wiki-mcp`. |
 | `memini` | Memory service (REST + MCP). Hermes' provider plugin talks to this one. |
 | `hindsight` | **New.** Memory service to consolidate on: banks per consumer, MCP per bank, LLM on the ChatGPT subscription. Nothing wired yet. |
-| `searxng` | Search backend for litellm. |
+| `searxng` | Search backend for litellm and vane. |
+| `vane` | Answer engine (Perplexica renamed): cited answers over searxng + `fast`. Authentik OIDC in front; settings seeded into `config.json` by an init container. |
 | `miso-gallery` | Web gallery over ComfyUI's output (NAS, `Media/comfyui/output`). Local password auth; can delete from the NAS. |
 | `repo-wiki` | mkdocs site of LLM-written repo wikis; a nightly CronJob on `self-hosted` writes them. Agents read it through `wiki-mcp`. |
 | `hermes`, `langflow` | Frontends. `open-webui` was retired 2026-09-18 (unused). |

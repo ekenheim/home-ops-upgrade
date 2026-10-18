@@ -132,8 +132,11 @@
       // The example Jobs (datasci/ray/examples) are Ray Client drivers and
       // must run the cluster's exact Ray version and Python minor, so they
       // move in the same PR. The tag's -py312-cpu suffix keeps updates on
-      // that variant. Not reached by Renovate: the ray_version / head_image
-      // facts in llm/toolhive/platform-mcp/server/platform_mcp.py.
+      // that variant. Merging a bump restarts the whole RayCluster (the
+      // HelmRelease sets upgradeStrategy Recreate so head and workers move
+      // together), so in-flight Ray jobs are lost. Not reached by Renovate:
+      // the ray_version / head_image facts in
+      // llm/toolhive/platform-mcp/server/platform_mcp.py.
       "description": ["Ray Group"],
       "groupName": "Ray",
       "matchDatasources": ["docker"],

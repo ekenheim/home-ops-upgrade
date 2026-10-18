@@ -18,17 +18,25 @@ spec:
         kind: HelmRepository
         name: kuberay
         namespace: flux-system
+  # The chart ships its CRDs in crds/, which Helm only creates on first
+  # install; Flux's default (upgrade.crds: Skip) never updates them. On
+  # 2026-10-18 the RayCluster CRD was still the one from the 2025-08-22
+  # install: no spec.upgradeStrategy or spec.authOptions, so the API server
+  # silently pruned those fields. CreateReplace keeps the CRDs on the chart's
+  # version. (The `crds.enabled` value that used to sit below is not a key in
+  # this chart and did nothing; dropping it also changes the values digest so
+  # the first reconcile after this runs an upgrade and replaces the CRDs.)
   install:
     createNamespace: true
+    crds: CreateReplace
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
+    crds: CreateReplace
     remediation:
       retries: 3
   values:
-    crds:
-      enabled: true
     metrics:
       enabled: true
       serviceMonitor:

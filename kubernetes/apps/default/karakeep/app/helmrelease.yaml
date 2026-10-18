@@ -186,8 +186,14 @@ spec:
               - identifier: app
                 port: *port
     persistence:
+      # Both claims are named explicitly. The chart names the only PVC it
+      # creates after the release, `karakeep`, which is also the VolSync
+      # template's default claim name; on first install the chart's 5Gi
+      # Meilisearch PVC took that name, both pods mounted it, and the
+      # template's claim could never be applied (spec is immutable). The
+      # data claim is `karakeep-data` (CLAIM in ../ks.yaml).
       data:
-        existingClaim: *app
+        existingClaim: karakeep-data
         advancedMounts:
           karakeep:
             app:
@@ -197,6 +203,7 @@ spec:
       # included.
       meilisearch:
         type: persistentVolumeClaim
+        forceRename: karakeep-meilisearch
         storageClass: ceph-block
         accessMode: ReadWriteOnce
         size: 5Gi

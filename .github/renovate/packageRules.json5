@@ -2,6 +2,21 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "packageRules": [
     {
+      // Postgres sidecars that keep their data directory on the app's PVC.
+      // A new major cannot open the old major's data directory, so a merged
+      // major bump crash-loops the pod until someone runs pg_upgrade or a
+      // dump/restore (Dispatcharr, #7713). Majors here are a manual job.
+      "description": ["No major updates for Postgres sidecars with on-disk data"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["docker.io/library/postgres", "docker.io/postgis/postgis"],
+      "matchFileNames": [
+        "kubernetes/apps/media/dispatcharr/**",
+        "kubernetes/apps/default/dawarich/**"
+      ],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
       "description": ["Semver versioning for nordic-housing images"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["/ghcr.io\\/ekenheim\\/nordic-housing/"],

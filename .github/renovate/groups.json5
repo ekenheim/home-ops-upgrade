@@ -89,6 +89,23 @@
       }
     },
     {
+      // Backend and frontend are one release and move together. Never
+      // auto-merged (this file is extended after autoMergeApps.json5, so it
+      // wins over its minor/patch automerge): the frontend runs our own
+      // nginx.conf instead of the image's, and a new proxied path upstream
+      // must be copied into it by hand or that page 404s. Before merging,
+      // diff upstream docker/nginx.conf between the two tags against
+      // kubernetes/apps/default/homelable/app/config/nginx.conf.
+      "description": ["Homelable Group: no automerge, check upstream docker/nginx.conf against homelable/app/config/nginx.conf first"],
+      "groupName": "Homelable",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/pouzor/homelable-*"],
+      "automerge": false,
+      "group": {
+        "commitMessageTopic": "{{{groupName}}} group"
+      }
+    },
+    {
       "description": ["Intel Device Plugins Group"],
       "groupName": "Intel-Device-Plugins",
       "matchDatasources": ["docker"],

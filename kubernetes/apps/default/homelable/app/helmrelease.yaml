@@ -93,11 +93,15 @@ spec:
               ZIGBEE_MQTT_PORT: "1883"
               ZIGBEE_BASE_TOPIC: zigbee2mqtt
               # Must match Z-Wave JS UI's Settings -> MQTT (Prefix / Name),
-              # with its MQTT gateway enabled.
+              # with its MQTT gateway enabled. Read from its store/settings.json
+              # on 2026-10-18: mqtt.prefix `zwave`, mqtt.name
+              # `cluster-mqtt-server` (the old `zwavejs2mqtt` here matched
+              # nothing, so the import timed out). The gateway itself is still
+              # disabled there; enabling it is a Z-Wave JS UI setting.
               ZWAVE_MQTT_HOST: mosquitto.default.svc.cluster.local
               ZWAVE_MQTT_PORT: "1883"
               ZWAVE_PREFIX: zwave
-              ZWAVE_GATEWAY_NAME: zwavejs2mqtt
+              ZWAVE_GATEWAY_NAME: cluster-mqtt-server
               # UniFi import: switches, APs and the gateway, plus which switch
               # port each client hangs off, so the map's links come from the
               # controller instead of guesswork. The controller is a UniFi OS

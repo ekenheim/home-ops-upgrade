@@ -305,9 +305,13 @@ spec:
     route:
       app:
         # Browser UI, M3U/EPG output and the Xtream Codes API for IPTV players
-        # on the LAN or tailnet. Plex does not come through here: it adds the
-        # tuner at http://dispatcharr.media.svc.cluster.local:9191 (see the
-        # PR). No SecurityPolicy, because players fetch /output/*, /proxy/*,
+        # on the LAN or tailnet. Plex does not come through here. In Plex's
+        # Live TV & DVR setup, enter both addresses by hand, because SSDP
+        # discovery cannot reach Plex's pod network:
+        #   tuner (HDHomeRun): http://dispatcharr.media.svc.cluster.local:9191/hdhr
+        #   guide (XMLTV):     http://dispatcharr.media.svc.cluster.local:9191/output/epg
+        # The bare :9191 is the web UI, not the tuner.
+        # No SecurityPolicy, because players fetch /output/*, /proxy/*,
         # get.php, xmltv.php and the bare /<user>/<pass>/<id> stream form
         # through this hostname and cannot follow an OIDC redirect; Dispatcharr
         # has its own login.

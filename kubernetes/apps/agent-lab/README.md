@@ -23,7 +23,10 @@ Also outside this directory:
 - ClusterSecretStore `litellm-key-secrets-agent-lab` in `llm/litellm/clustersecretstore/agent-lab.yaml`,
   which can read only `litellm-key-agent-lab` and serves only `agent-control` (Atlas keeps its own
   store, so neither consumer can read the other's key);
-- `agent-work` / `agent-verify` excluded from every evicting descheduler plugin.
+- `agent-work` / `agent-verify` excluded from every evicting descheduler plugin;
+- Tetragon (`kube-system/tetragon`): observe-only TracingPolicies in `agent-work` / `agent-verify`
+  (writes to system and credential files, every TCP connect), exec events from all four namespaces
+  on the export container's stdout, and the `AgentSandboxNetworkToolExec` alert.
 
 ## Trust model
 

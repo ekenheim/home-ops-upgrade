@@ -1,0 +1,11 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+# The two untrusted sandboxes only. agent-control (orchestrator, egress Envoy)
+# and trackinizer run trusted code; their exec events are still exported (see
+# exportAllowList in ../app/helmrelease.yaml), but a connect per LLM request
+# from the egress proxy would be noise.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./agent-work
+  - ./agent-verify

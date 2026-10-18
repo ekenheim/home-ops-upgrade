@@ -1,0 +1,67 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/tracingpolicynamespaced_v1alpha1.json
+# Observe-only kprobes for the agent-lab sandboxes; one copy per namespace
+# (../agent-work, ../agent-verify), because a TracingPolicyNamespaced applies
+# only to pods in its own namespace. No actions: events are recorded and
+# exported, never blocked.
+#
+# File writes: the workspace path is chosen by the orchestrator (private
+# agent-factory repo), so instead of "outside the workspace" this watches the
+# paths a sandbox should never write: system directories, the mounted
+# ServiceAccount dir, and the files that persist credentials or run code later
+# (.git/config is the core.fsmonitor / filter-driver path in README gap 11).
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicyNamespaced
+metadata:
+  name: agent-sandbox
+spec:
+  kprobes:
+    - call: security_file_permission
+      syscall: false
+      return: true
+      args:
+        - index: 0
+          type: file
+        - index: 1
+          type: int # MAY_WRITE is 0x2
+      returnArg:
+        index: 0
+        type: int
+      selectors:
+        - matchArgs:
+            - index: 0
+              operator: Prefix
+              values:
+                - /etc/
+                - /usr/
+                - /bin/
+                - /sbin/
+                - /lib/
+                - /lib64/
+                - /root/
+                - /proc/sys/
+                - /var/run/secrets/
+            - index: 1
+              operator: Mask
+              values:
+                - "2"
+        - matchArgs:
+            - index: 0
+              operator: Postfix
+              values:
+                - /.git/config
+                - /.npmrc
+                - /.pypirc
+                - /.netrc
+                - /.gitconfig
+            - index: 1
+              operator: Mask
+              values:
+                - "2"
+    # Every outbound TCP attempt, allowed or not: Cilium drops what the
+    # sandbox policy forbids, but the SYN still shows who tried.
+    - call: tcp_connect
+      syscall: false
+      args:
+        - index: 0
+          type: sock

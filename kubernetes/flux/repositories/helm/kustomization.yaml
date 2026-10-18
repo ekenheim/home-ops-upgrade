@@ -29,6 +29,7 @@ resources:
   - ./itzg.yaml
   - ./jetstack.yaml
   - ./k8s-gateway.yaml
+  - ./kepler.yaml
   - ./kubernetes-sigs-nfd.yaml
   - ./kubeflow-spark-operator.yaml
   - ./metrics-server.yaml

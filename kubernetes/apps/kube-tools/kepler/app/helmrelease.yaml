@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# Kepler: per-node, per-namespace and per-pod CPU power, attributed from RAPL.
+# This is the 0.10+ rewrite; guides for the older eBPF/model-server Kepler
+# (kepler-helm-chart, estimator, model-server) do not apply.
+#
+# Readings are RAPL-measured on every node, not modelled. node-exporter
+# already reads the same powercap counters (node_rapl_*_joules_total):
+#   master2 (Intel Alder Lake)  package, core, uncore, psys
+#   worker3 (AMD Zen 5)         package, core
+#   worker4 (AMD Strix Halo)    package, core
+# Query one zone, `package`, everywhere: zones overlap and must not be summed.
+#
+# Kepler attributes CPU power only. worker4's iGPU (where llama.cpp actually
+# runs) is not attributed to pods: NVML is the only GPU backend. Its draw is
+# node_hwmon_power_average_watt from amdgpu; the Kepler dashboard shows both.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kepler
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: kepler
+      version: 0.12.0
+      sourceRef:
+        kind: HelmRepository
+        name: kepler
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    image:
+      repository: quay.io/sustainable_computing_io/kepler
+      tag: v0.12.0@sha256:7681d8b453e4e10ac67c183e0b68238c3d19d3a8af80743354ef57b8511553b0
+    daemonset:
+      # One per node, worker4 and the sole etcd member included: a node agent
+      # that skips a node reports a cluster total that is quietly short.
+      tolerations:
+        - operator: Exists
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+    config:
+      log:
+        level: info
+      exporter:
+        prometheus:
+          debugCollectors: []
+          # No `process` or `vm`: per-PID series churn on every exec, and
+          # there are no VMs. `container` is kept for the per-pod drill-down.
+          metricsLevel:
+            - node
+            - pod
+            - container
+    serviceMonitor:
+      enabled: true
+      # The cluster-wide scrape interval (kube-prometheus-stack); the chart's
+      # 5s default would make every scrape a power computation.
+      interval: 1m

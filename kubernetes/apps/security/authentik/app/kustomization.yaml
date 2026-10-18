@@ -5,7 +5,12 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
-  - ./trackinizer-oidc.yaml
+  # Off since 2026-10-18 (owner), with apps/agent-lab. The file stays: the
+  # other blueprints cite it as the pattern. Uncomment together with the
+  # blueprints.secrets entry in helmrelease.yaml, or the worker cannot mount
+  # it. Dropping the blueprint does not delete what it made: the Trackinizer
+  # application, provider and binding stay in Authentik until removed by hand.
+  #- ./trackinizer-oidc.yaml
   - ./paperless-gpt-oidc.yaml
   - ./vane-oidc.yaml
   - ./dawarich-oidc.yaml

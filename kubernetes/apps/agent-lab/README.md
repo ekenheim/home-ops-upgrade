@@ -5,6 +5,37 @@ PromtEngineer/software-factory from Upstash Box to Kubernetes Jobs. The orchestr
 issues and runs one sandboxed coding agent per issue, verifies the result in a second sandbox and
 records everything in a Postgres ledger.
 
+## Status
+
+**Off since 2026-10-18 (owner).** The factory went first (#7740), then the rest the same day. The
+owner will try other agent concepts later, so everything is commented out, not deleted. The rest of
+this README describes the platform as it ran.
+
+What is off, and what to uncomment to bring it back, in this order:
+
+1. `kustomization.yaml` here: `namespaces.yaml`, then `network-policy/ks.yaml` and `ledger/ks.yaml`.
+2. `../llm/litellm/keys/kustomization.yaml` and `../llm/litellm/clustersecretstore/kustomization.yaml`:
+   `agent-lab.yaml` in both. The operator mints a new key; the old one was revoked at the prune.
+3. `egress-gateway/ks.yaml` here.
+4. `trackinizer/ks.yaml` here, plus `trackinizer-oidc.yaml` in
+   `../security/authentik/app/kustomization.yaml` and `authentik-trackinizer-oidc` under
+   `blueprints.secrets` in `../security/authentik/app/helmrelease.yaml` (both, or the worker cannot
+   mount the Secret).
+5. The `tetragon-policies` Kustomization in `../kube-system/tetragon/ks.yaml`.
+6. `factory/ks.yaml`, if the factory itself comes back.
+
+What stayed, untouched: the `agentlab` and `trackinizer` users and databases in the Crunchy cluster
+(`trackinizer` held 251 change-log rows, 150 sessions and 57 inquiries; `agentlab` was empty), the
+`coding` team's `factory-*` models and their pools in LiteLLM, Tetragon (with the dormant
+`AgentSandboxNetworkToolExec` alert and the agent-lab `exportAllowList`), the descheduler excludes,
+and the Bitwarden items `agent_factory_github` and `agent_factory_trackinizer`. The Trackinizer
+application, provider and binding also stay in Authentik: a blueprint that disappears is forgotten,
+not reversed.
+
+What did not survive and regenerates on re-enable: the in-cluster generated Secrets (Trackinizer's
+session and browser keys, the OIDC client secret; `register-web-key` re-registers the browser key on
+start) and the two buckets, which were empty when they went.
+
 ## Components
 
 | Path | Flux Kustomization | What |
@@ -233,7 +264,8 @@ add the matching Cilium egress allow.
 
 ## Roll back
 
-Delete `kubernetes/apps/agent-lab/` and merge. `cluster-apps` prunes the five Kustomizations, and they
+To pause it, see [Status](#status): that is how it is off now. To remove it for good, delete
+`kubernetes/apps/agent-lab/` and merge. `cluster-apps` prunes the five Kustomizations, and they
 prune everything they created, including the namespaces and the ReferenceGrant in `llm`. To revoke
 the LLM key, also remove `../llm/litellm/keys/agent-lab.yaml` from its kustomization; the operator
 deletes the key in LiteLLM. Remove `../llm/litellm/clustersecretstore/agent-lab.yaml` along with it.

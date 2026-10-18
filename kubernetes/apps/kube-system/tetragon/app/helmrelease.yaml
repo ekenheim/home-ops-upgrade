@@ -3,7 +3,10 @@
 # Tetragon: eBPF process, file and network events, observe-only. Exec events
 # are on for every process by default; the kprobe policies in ../policies add
 # file writes, TCP connects, credential reads, credential changes, mounts and
-# exec from /tmp for the agent-lab sandboxes. Nothing here
+# exec from /tmp for the agent-lab sandboxes. Since 2026-10-18 agent-lab is
+# off and so are those policies (tetragon-policies in ../ks.yaml); what is
+# left is exec events and metrics for every pod, and the agent's own health
+# alerts. Nothing here
 # enforces (no Sigkill/Override actions); Cilium's network policies remain the
 # only control. Hubble relay/UI stay off (see ../../cilium/app/helmrelease.yaml),
 # this does not need them.
@@ -70,7 +73,9 @@ spec:
       # Only the agent-lab namespaces reach the export container (and through
       # it, vlagent and VictoriaLogs). Lines are ORed, fields within a line
       # ANDed. Everything else is still traced, and counted in the metrics
-      # below, but never exported.
+      # below, but never exported. With agent-lab off (2026-10-18) none of
+      # these namespaces exists, so nothing is exported; kept as is so a
+      # re-enable needs no change here.
       exportAllowList: |-
         {"event_set":["PROCESS_EXEC", "PROCESS_EXIT", "PROCESS_KPROBE"], "namespace":["agent-control", "agent-work", "agent-verify", "trackinizer"]}
       exportDenyList: |-

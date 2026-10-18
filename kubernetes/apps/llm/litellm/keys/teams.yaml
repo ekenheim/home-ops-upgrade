@@ -72,8 +72,8 @@ spec:
     - userID: default_user_id
       role: user
   # Public code only, so the cloud plans are allowed.
-  # Keys: pr-review, courier, agent-lab, opencode, zed (Git); dispatch,
-  # repo-wiki (Bitwarden).
+  # Keys: pr-review, courier, opencode, zed (Git); dispatch, repo-wiki
+  # (Bitwarden). agent-lab's key is off with agent-lab since 2026-10-18.
   models:
     - pc/*
     - auto
@@ -89,7 +89,8 @@ spec:
     - MiniMax-M3-chat
     - MiniMax-M3.1-Flash-Preview
     - qwen3-embedding-0.6b
-    # agent-factory's pools (the 5090 first), for the agent-lab key.
+    # agent-factory's pools (the 5090 first), for the agent-lab key. Kept
+    # while that key is off (2026-10-18), so a re-enable needs no team edit.
     - factory-fast
     - factory-agent
     - factory-review

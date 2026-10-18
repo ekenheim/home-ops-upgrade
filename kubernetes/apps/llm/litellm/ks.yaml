@@ -72,7 +72,8 @@ metadata:
 spec:
   # The `litellm-key-secrets` ClusterSecretStore, which lets development read
   # litellm-key-atlas out of `llm`, `litellm-key-secrets-agent-lab`, which
-  # lets agent-control read litellm-key-agent-lab, and
+  # lets agent-control read litellm-key-agent-lab (off with agent-lab since
+  # 2026-10-18), and
   # `litellm-key-secrets-courier`, which lets courier-executor merge
   # litellm-key-courier with its Bitwarden fields, and
   # `litellm-key-secrets-karakeep`, which lets default read

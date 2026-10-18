@@ -100,6 +100,7 @@ metadata:
   name: $name
   labels:
     app.kubernetes.io/name: volsync-verify
+    app.kubernetes.io/component: restore
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: ceph-block
@@ -113,6 +114,7 @@ metadata:
   name: $name
   labels:
     app.kubernetes.io/name: volsync-verify
+    app.kubernetes.io/component: restore
 spec:
   trigger:
     manual: "$RUN_ID"
@@ -189,6 +191,11 @@ EOF
 }
 
 log "run $RUN_ID, targets: $targets"
+# A run killed mid-cleanup (activeDeadlineSeconds) can leave another app's
+# restore behind; clear anything a previous run created.
+kubectl -n "$NS" delete pod,replicationdestination,pvc \
+  -l 'app.kubernetes.io/name=volsync-verify,app.kubernetes.io/component in (restore,check)' \
+  --ignore-not-found --wait=true --timeout=5m || true
 failed=""
 for target in $targets; do
   if ! verify_one "${target%%:*}" "${target##*:}"; then

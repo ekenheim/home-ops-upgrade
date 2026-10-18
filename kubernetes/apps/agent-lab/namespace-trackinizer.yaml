@@ -1,0 +1,18 @@
+---
+# Trackinizer, the analysis track's experiment ledger (trackinizer/). Its own
+# namespace, as agent-factory's README asks: in agent-control the
+# component-keyed policies and the orchestrator's credentials would sit next
+# to it, and in a sandbox it would be reachable from untrusted code. It holds
+# only its own Postgres login; only the orchestrator and envoy-internal (the
+# browser UI) talk to it.
+#
+# Split out of namespaces.yaml on 2026-10-18: Trackinizer stays in use while
+# the three sandbox namespaces there are off.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: trackinizer
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/audit: restricted

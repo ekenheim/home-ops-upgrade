@@ -39,9 +39,9 @@ spec:
     # Mounted on the worker at /blueprints/mounted/secret-<name>.
     blueprints:
       secrets:
-        # Off with agent-lab since 2026-10-18 (see kustomization.yaml): the
-        # Secret is pruned, so mounting it would hold the worker pod.
-        #- authentik-trackinizer-oidc  # trackinizer-oidc.yaml
+        # Remove only together with trackinizer-oidc.yaml in
+        # kustomization.yaml: a missing Secret holds the worker pod.
+        - authentik-trackinizer-oidc  # trackinizer-oidc.yaml
         - authentik-paperless-gpt-oidc  # paperless-gpt-oidc.yaml
         - authentik-vane-oidc  # vane-oidc.yaml
         - authentik-dawarich-oidc  # dawarich-oidc.yaml

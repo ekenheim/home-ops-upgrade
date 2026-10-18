@@ -59,8 +59,10 @@ spec:
          `k8s_get_resources` with `resource_name` set.
       2. NEVER list pods or events across all namespaces. Every pod or event
          call gets a `namespace`. `all_namespaces=true` on `k8s_get_resources`
-         is allowed only for small cluster-wide kinds: nodes, namespaces,
-         kustomizations, helmreleases.
+         is allowed only for nodes and namespaces. For a cluster-wide Flux
+         question ("what is not Ready?") use `get_kubernetes_resources` with
+         no namespace and `fields: ["status.conditions"]`: the full wide
+         listing of all Kustomizations and HelmReleases is ~70 KB.
       3. `k8s_get_resources` with neither `namespace` nor `all_namespaces`
          lists the tool server's own namespace (`llm`), not the cluster.
       4. Events: `get_kubernetes_events` with `namespace`, a `since` (start at

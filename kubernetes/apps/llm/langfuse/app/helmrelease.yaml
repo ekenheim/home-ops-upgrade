@@ -1,0 +1,205 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# Langfuse: traces of LiteLLM calls (prompt, response, tokens, latency) for the
+# teams that opt in through litellm_settings.default_team_settings in
+# ../../litellm/app/configmap.yaml. Every store is external; the chart only
+# runs web and worker:
+#   Postgres    the shared Crunchy cluster, user `langfuse` (direct primary)
+#   Redis       Dragonfly db 5 (BullMQ queues)
+#   ClickHouse  langfuse-clickhouse (./clickhouse.yaml)
+#   S3          RGW bucket `langfuse` (./objectbucketclaim.yaml)
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: langfuse
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: langfuse
+      version: 2.1.5
+      sourceRef:
+        kind: HelmRepository
+        name: langfuse
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: langfuse-clickhouse
+  values:
+    langfuse:
+      logging:
+        level: info
+        format: json
+      salt:
+        secretKeyRef:
+          name: langfuse-secret
+          key: SALT
+      encryptionKey:
+        secretKeyRef:
+          name: langfuse-secret
+          key: ENCRYPTION_KEY
+      nextauth:
+        url: https://langfuse.${SECRET_DOMAIN}
+        secret:
+          secretKeyRef:
+            name: langfuse-secret
+            key: NEXTAUTH_SECRET
+      features:
+        telemetryEnabled: false
+        # Sign-up stays ON: with it off Langfuse also refuses the first SSO
+        # login. Authentik's policy binding (authentik Admins only) is the gate,
+        # and username/password is off below.
+        signUpDisabled: false
+        experimentalFeaturesEnabled: false
+      auth:
+        disableUsernamePassword: true
+        providers:
+          # -> AUTH_CUSTOM_* env. Callback: /api/auth/callback/custom.
+          custom:
+            name: Authentik
+            clientId: langfuse
+            clientSecret:
+              secretKeyRef:
+                name: langfuse-oidc
+                key: client-secret
+            issuer: https://sso.${SECRET_DOMAIN}/application/o/langfuse/
+            scope: openid email profile
+      deployment:
+        annotations:
+          reloader.stakater.com/auto: "true"
+      image:
+        pullPolicy: IfNotPresent
+      # docker.langfuse.com is a redirect to Docker Hub; GHCR carries the same
+      # images (identical digests).
+      web:
+        image:
+          repository: ghcr.io/langfuse/langfuse
+          tag: 4.56.0@sha256:b1948c7c0931f277975b985e30e73536b1bca5822705ddd9a89ba7c1ed79b3ee
+        pod:
+          additionalEnv:
+            # First boot creates the org and the `litellm` project with a
+            # known key pair (langfuse-secret), and every later SSO user joins
+            # both as OWNER. Only authentik Admins can sign in at all.
+            - name: LANGFUSE_INIT_ORG_ID
+              value: homelab
+            - name: LANGFUSE_INIT_ORG_NAME
+              value: Homelab
+            - name: LANGFUSE_INIT_PROJECT_ID
+              value: litellm
+            - name: LANGFUSE_INIT_PROJECT_NAME
+              value: LiteLLM
+            - name: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-secret
+                  key: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+            - name: LANGFUSE_INIT_PROJECT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: langfuse-secret
+                  key: LANGFUSE_INIT_PROJECT_SECRET_KEY
+            - name: LANGFUSE_DEFAULT_ORG_ID
+              value: homelab
+            - name: LANGFUSE_DEFAULT_ORG_ROLE
+              value: OWNER
+            - name: LANGFUSE_DEFAULT_PROJECT_ID
+              value: litellm
+            - name: LANGFUSE_DEFAULT_PROJECT_ROLE
+              value: OWNER
+        resources:
+          requests:
+            cpu: 50m
+            memory: 512Mi
+          limits:
+            memory: 2Gi
+        pdb:
+          create: false
+      worker:
+        image:
+          repository: ghcr.io/langfuse/langfuse-worker
+          tag: 4.56.0@sha256:3f7571ff3a725ebdcdf4c35e06bdf8c3f8325770691c673793ad61b328265e13
+        resources:
+          requests:
+            cpu: 50m
+            memory: 384Mi
+          limits:
+            memory: 2Gi
+        pdb:
+          create: false
+
+    # Direct primary, not pgbouncer: Prisma's migrations take session-scoped
+    # advisory locks, which transaction pooling drops (same as litellm). The
+    # primary is TLS-only, hence sslmode; the password is AlphaNumeric, so it
+    # needs no URL-escaping.
+    postgresql:
+      deploy: false
+      host: postgres-primary.database.svc.cluster.local
+      port: 5432
+      args: sslmode=require
+      auth:
+        username: langfuse
+        database: langfuse
+        existingSecret: langfuse-db-secret
+        secretKeys:
+          userPasswordKey: password
+
+    # Dragonfly has no password, like every other consumer. db 5: 0 default,
+    # 1 authentik, 2 outline/dagster/immich/thanos, 3 litellm, 4 dawarich.
+    # The queues need allow-undeclared-keys, which the Dragonfly CR already
+    # sets for BullMQ's Lua scripts.
+    redis:
+      deploy: false
+      host: dragonfly.database.svc.cluster.local
+      port: 6379
+      auth:
+        username: ""
+        database: 5
+
+    clickhouse:
+      deploy: false
+      host: langfuse-clickhouse.llm.svc.cluster.local
+      httpPort: 8123
+      nativePort: 9000
+      database: default
+      auth:
+        username: default
+        existingSecret: langfuse-secret
+        existingSecretKey: CLICKHOUSE_PASSWORD
+      migration:
+        ssl: false
+        autoMigrate: true
+      cluster:
+        enabled: false
+
+    s3:
+      deploy: false
+      bucket: langfuse
+      region: us-east-1
+      endpoint: http://rook-ceph-rgw-ceph-objectstore.rook-ceph.svc.cluster.local:8080
+      forcePathStyle: true
+      accessKeyId:
+        secretKeyRef:
+          name: langfuse-bucket
+          key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        secretKeyRef:
+          name: langfuse-bucket
+          key: AWS_SECRET_ACCESS_KEY
+      eventUpload:
+        prefix: events/
+      # Exports and media are served to the browser through presigned URLs on
+      # the endpoint above, which only resolves inside the cluster. Exports
+      # are off; media stays on so images in a trace are not inlined into
+      # ClickHouse, but the UI cannot display them.
+      batchExport:
+        enabled: false
+      mediaUpload:
+        enabled: true
+        prefix: media/

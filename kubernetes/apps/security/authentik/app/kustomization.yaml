@@ -10,4 +10,5 @@ resources:
   - ./vane-oidc.yaml
   - ./dawarich-oidc.yaml
   - ./karakeep-oidc.yaml
+  - ./langfuse-oidc.yaml
   - ../../../../templates/gatus/infra

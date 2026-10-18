@@ -82,3 +82,9 @@ resources:
   - ./courier/ks.yaml
   # Interactive coding assistant on the LiteLLM pools + MCP gateway.
   - ./opencode/ks.yaml
+  # Flux-Kustomizations | Observability
+  #
+  # Traces of LiteLLM calls for the teams opted in through
+  # default_team_settings in litellm/app/configmap.yaml. Its own ClickHouse;
+  # Postgres, Dragonfly (db 5) and an RGW bucket are shared.
+  - ./langfuse/ks.yaml

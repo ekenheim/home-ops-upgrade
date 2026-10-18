@@ -76,6 +76,23 @@ spec:
               # container layer, so it would not survive a restart. Points at
               # the PVC instead; see pvc.yaml.
               CHATGPT_TOKEN_DIR: /chatgpt-auth
+              # Langfuse's `litellm` project, for the team-scoped langfuse_otel
+              # callback (default_team_settings in configmap.yaml). The key pair
+              # is generated once in langfuse-secret (apps/llm/langfuse).
+              # optional: a missing Secret must never stop the gateway.
+              LANGFUSE_HOST: http://langfuse-web.llm.svc.cluster.local:3000
+              LANGFUSE_PUBLIC_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: langfuse-secret
+                    key: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+                    optional: true
+              LANGFUSE_SECRET_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: langfuse-secret
+                    key: LANGFUSE_INIT_PROJECT_SECRET_KEY
+                    optional: true
             envFrom:
               - secretRef:
                   name: litellm

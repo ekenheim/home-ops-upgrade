@@ -253,6 +253,13 @@ spec:
       databases: ["trackinizer"]
       password:
         type: AlphaNumeric
+    # Langfuse (apps/llm/langfuse): users, projects, API keys and prompts.
+    # Traces live in its own ClickHouse, not here. Prisma migrations on boot,
+    # so it connects to the primary directly, like litellm.
+    - name: "langfuse"
+      databases: ["langfuse"]
+      password:
+        type: AlphaNumeric
   backups:
     pgbackrest:
       configuration: &backupConfig

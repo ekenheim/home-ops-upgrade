@@ -6,6 +6,12 @@ metadata:
   name: &app grafana
 spec:
   interval: 30m
+  # Not the 5m default: three replicas roll one at a time (maxSurge 1), and
+  # each pulls the image, installs plugins synchronously and builds its
+  # search index; the first also runs the Grafana 13 storage migration. A
+  # timeout here triggers the Helm rollback below, which cannot bring 12.x
+  # back on a migrated database (see the chart comment).
+  timeout: 15m
   chart:
     spec:
       chart: grafana

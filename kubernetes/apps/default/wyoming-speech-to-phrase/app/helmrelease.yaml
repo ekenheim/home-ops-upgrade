@@ -1,0 +1,154 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app wyoming-speech-to-phrase
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      wyoming-speech-to-phrase:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        pod:
+          affinity:
+            # Same placement as wyoming-whisper: CPU-only, so never the ROCm
+            # node (its CPU and iGPU share one memory controller, and LLM decode
+            # pays for any bandwidth-hungry neighbour), and preferably off the
+            # control plane.
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: node-role.kubernetes.io/rocm-worker
+                        operator: DoesNotExist
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node-role.kubernetes.io/control-plane
+                        operator: DoesNotExist
+        containers:
+          app:
+            image:
+              # 1.4.3 (Kaldi) is the last standalone image. Development moved
+              # to OHF-Voice/apps as a 2.x rewrite, but that ships only as a
+              # Home Assistant OS add-on built on the HA host (bashio, the
+              # Supervisor API, ingress) -- there is no published image to pull.
+              # No GHCR mirror of this one exists either.
+              repository: rhasspy/wyoming-speech-to-phrase
+              tag: 1.4.3@sha256:e532f0dbc6b21285c4c784212003865b9167041927328a767cb0beb1a0beaa20
+            # The image's /run.sh already passes --uri tcp://0.0.0.0:10300,
+            # --models-dir /models, --train-dir /train and --tools-dir, then
+            # appends these.
+            args:
+              - --hass-websocket-uri
+              - ws://home-assistant-app.default.svc.cluster.local:8123/api/websocket
+              # Expanded by the kubelet from the env below; upstream has no
+              # env-var or file option for the token.
+              - --hass-token
+              - $(HASS_TOKEN)
+              # Build the grammar from HA's exposed entities/areas/floors on
+              # every start, then again daily so renamed or newly exposed
+              # entities are picked up without a restart. A retrain where
+              # nothing changed is skipped.
+              - --retrain-on-start
+              - --retrain-seconds
+              - "86400"
+            env:
+              TZ: ${TIMEZONE}
+              HOME: /tmp
+              HASS_TOKEN:
+                valueFrom:
+                  secretKeyRef:
+                    name: wyoming-speech-to-phrase
+                    key: HASS_TOKEN
+            probes:
+              # Wyoming is raw TCP, not HTTP.
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 10300
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 3
+                  failureThreshold: 3
+              readiness: *probe
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 10300
+                  # The first start downloads the model from HuggingFace.
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              # Writes go only to /models, /train (the PVC) and tempfile's /tmp
+              # (model download, g2p, the Kaldi lattice per utterance), so a
+              # read-only root plus the `tmp` emptyDir below covers it.
+              readOnlyRootFilesystem: true
+            resources:
+              # Decoding against a closed grammar is cheap (Home Assistant's
+              # own add-on targets a Raspberry Pi 4), so the request is small.
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              # No cpu limit, as with wyoming-whisper: this is the voice
+              # latency path. Memory is generous because training the grammar
+              # (OpenFST/Kaldi) peaks well above the idle footprint and grows
+              # with the number of exposed entities.
+              limits:
+                memory: 4Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      # Point Home Assistant's Wyoming Protocol integration at:
+      #   host: wyoming-speech-to-phrase.default.svc.cluster.local   port: 10300
+      # No ingress: Wyoming is a raw TCP protocol, not HTTP.
+      app:
+        controller: *app
+        ports:
+          wyoming:
+            port: 10300
+            protocol: TCP
+    persistence:
+      data:
+        existingClaim: *app
+        globalMounts:
+          - path: /models
+            subPath: models
+          - path: /train
+            subPath: train
+      # Not optional -- see readOnlyRootFilesystem above.
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

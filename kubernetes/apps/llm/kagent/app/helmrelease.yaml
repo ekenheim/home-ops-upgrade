@@ -1,0 +1,203 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+#
+# kagent (kagent.dev, CNCF sandbox): agents, model configs and MCP tool
+# servers as CRDs; a Go controller turns each Agent into a Deployment. This
+# is a TEST of whether alert-triage-style agents are simpler written this way
+# (docs/homelab-backlog.md, item 12).
+#
+# READ-ONLY, three layers deep:
+#   1. The tool server (kagent-tools) runs with --read-only, which leaves the
+#      write tools unregistered: k8s_apply_manifest, _delete_resource,
+#      _patch_resource, _patch_status, _scale, _rollout, _execute_command,
+#      _create_resource(_from_url), _label/_annotate/_remove_*,
+#      _check_service_connectivity, and utils' `shell`. Only the k8s,
+#      prometheus and utils providers load at all: no helm, istio, cilium,
+#      argo or kubescape tools.
+#   2. Its ServiceAccount gets the chart's read-only ClusterRole (get, list,
+#      watch; no Secrets) plus the extra read rules below, instead of the
+#      chart default, which is `*/*/*` cluster-admin.
+#   3. Every bundled agent is off. The two agents in ./agents.yaml list their
+#      tools by name, read tools only, so a chart bump that dropped the flag
+#      would still not hand them a write tool.
+#
+# The controller is confined to `llm` (rbac.namespaces): its Roles there let
+# it read and write Secrets, Deployments and Services in this namespace, which
+# is how it runs agents. Its API (8083) has no auth (auth.mode unsecure),
+# nor does the UI, nor the tool server; ciliumnetworkpolicy.yaml limits who
+# can reach each, and the UI is behind the Authentik SecurityPolicy.
+#
+# Model: the chart's default ModelConfig, OpenAI provider pointed at LiteLLM,
+# alias local-pool-chat, key litellm-key-kagent (team `platform`, traced to
+# Langfuse). See ../../litellm/keys/kagent.yaml for the alias choice.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kagent
+spec:
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: kagent
+  dependsOn:
+    - name: kagent-crds
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    # Role + RoleBinding in `llm` instead of the cluster-wide ClusterRoles the
+    # chart makes by default (which read every Secret in the cluster and write
+    # Deployments/Services anywhere). Also sets WATCH_NAMESPACES=llm.
+    rbac:
+      namespaces: ["llm"]
+
+    controller:
+      resources:
+        requests:
+          cpu: 20m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+
+    ui:
+      # Share links from the agents become full URLs.
+      externalUrl: https://kagent.${SECRET_DOMAIN}
+      resources:
+        requests:
+          cpu: 10m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+
+    # Chart default, kept for the test: a bundled postgres:18 Deployment with
+    # the hard-coded password `kagent` (ciliumnetworkpolicy.yaml admits only
+    # the controller). Holds chat sessions and nothing that cannot be lost, so
+    # no VolSync. Move to the Crunchy cluster if this graduates.
+    database:
+      postgres:
+        bundled:
+          storage: 1Gi
+          storageClassName: ceph-block
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+
+    providers:
+      default: openAI
+      openAI:
+        provider: OpenAI
+        model: local-pool-chat
+        apiKeySecretRef: litellm-key-kagent
+        apiKeySecretKey: api-key
+        config:
+          baseUrl: http://litellm.llm.svc.cluster.local:4000/v1
+
+    # The kmcp controller deploys MCPServer CRs as pods, with RBAC to create
+    # Deployments cluster-wide. Nothing here uses it.
+    kmcp:
+      enabled: false
+
+    kagent-tools:
+      rbac:
+        readOnly: true
+        # Default, stated: no Secrets.
+        allowSecrets: false
+        # Appended to the chart's read-only role (pods, pods/log, services,
+        # endpoints, configmaps, serviceaccounts, PVCs, namespaces, events,
+        # apps/*, batch, ingresses, networkpolicies, HPAs). get/list/watch
+        # only. Core resources are named one by one: never `nodes/*`, since
+        # nodes/proxy GET reaches the kubelet API (exec included).
+        additionalRules:
+          - apiGroups: [""]
+            resources: ["nodes", "persistentvolumes", "resourcequotas", "limitranges"]
+            verbs: ["get", "list", "watch"]
+          - apiGroups: ["metrics.k8s.io"]
+            resources: ["pods", "nodes"]
+            verbs: ["get", "list", "watch"]
+          - apiGroups: ["policy"]
+            resources: ["poddisruptionbudgets"]
+            verbs: ["get", "list", "watch"]
+          - apiGroups: ["discovery.k8s.io"]
+            resources: ["endpointslices"]
+            verbs: ["get", "list", "watch"]
+          - apiGroups: ["apiextensions.k8s.io"]
+            resources: ["customresourcedefinitions"]
+            verbs: ["get", "list", "watch"]
+          - apiGroups: ["external-secrets.io"]
+            resources: ["externalsecrets", "clusterexternalsecrets", "secretstores", "clustersecretstores"]
+            verbs: ["get", "list", "watch"]
+          - apiGroups: ["cert-manager.io"]
+            resources: ["certificates", "certificaterequests", "issuers", "clusterissuers"]
+            verbs: ["get", "list", "watch"]
+          # CRD groups with no Secret-like kinds: GitOps, network, storage,
+          # monitoring, backups, Postgres and kagent's own.
+          - apiGroups:
+              - storage.k8s.io
+              - kustomize.toolkit.fluxcd.io
+              - helm.toolkit.fluxcd.io
+              - source.toolkit.fluxcd.io
+              - notification.toolkit.fluxcd.io
+              - cilium.io
+              - gateway.networking.k8s.io
+              - gateway.envoyproxy.io
+              - monitoring.coreos.com
+              - ceph.rook.io
+              - objectbucket.io
+              - volsync.backube
+              - postgres-operator.crunchydata.com
+              - kagent.dev
+            resources: ["*"]
+            verbs: ["get", "list", "watch"]
+      tools:
+        enabledTools: ["k8s", "prometheus", "utils"]
+        args: ["--read-only"]
+        # Not read by tools v0.3.0: every prometheus_* tool takes the URL as a
+        # call argument (default localhost:9090), so the agent's prompt names
+        # it. Set anyway for the version that does.
+        prometheus:
+          url: http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            memory: 512Mi
+
+    # Bundled agents: all off. ./agents.yaml defines a read-only Kubernetes
+    # agent and a Prometheus one. The bundled k8s-agent lists the write tools
+    # by name; promql-agent has no tools at all; observability-agent needs
+    # grafana-mcp (`latest` image, update_dashboard / create_incident).
+    k8s-agent:
+      enabled: false
+    kgateway-agent:
+      enabled: false
+    istio-agent:
+      enabled: false
+    promql-agent:
+      enabled: false
+    observability-agent:
+      enabled: false
+    argo-rollouts-agent:
+      enabled: false
+    helm-agent:
+      enabled: false
+    cilium-policy-agent:
+      enabled: false
+    cilium-manager-agent:
+      enabled: false
+    cilium-debug-agent:
+      enabled: false
+    grafana-mcp:
+      enabled: false
+
+    # Tracing skipped: the chart's OTLP exporter has no auth headers and
+    # Langfuse's OTel ingest needs basic auth. LiteLLM already traces every
+    # call of the `platform` team, this key included.

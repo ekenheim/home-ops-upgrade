@@ -219,7 +219,7 @@ spec:
   members:
     - userID: default_user_id
       role: admin
-  # Cluster plumbing. Keys: alert-triage, toolhive (Git).
+  # Cluster plumbing. Keys: alert-triage, toolhive, kagent (Git).
   models:
     - local-pool
     - local-pool-chat

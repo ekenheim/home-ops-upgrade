@@ -1,0 +1,135 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# kagent has four unauthenticated surfaces inside the cluster, so each pod
+# admits only the callers kagent itself needs (ingress default-deny; kubelet
+# probes from the node are allowed by Cilium regardless; egress stays open):
+#
+#   UI          :8080  <- envoy-internal (the OIDC-guarded route) only
+#   controller  :8083  <- UI pod (nginx /api proxy, Next.js server) and agent
+#                         pods (A2A, session store). auth.mode unsecure: any
+#                         caller is admin and can create agents.
+#   tool server :8084  <- agent pods and the controller (tool discovery). It
+#                         runs kubectl as its ServiceAccount for whoever asks.
+#   postgres    :5432  <- controller only. Password is the chart's `kagent`.
+#   agent pods  :8080  <- controller only.
+#
+# Agent pods carry `app: kagent` + `kagent: <agent name>`, set by the
+# controller (translator/agent/manifest_builder.go); the chart's own pods
+# carry app.kubernetes.io/name and /component. With kube-proxy replacement the
+# policy sees the backend port, which is also each Service's port.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kagent-ui
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: kagent
+      app.kubernetes.io/component: ui
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.envoyproxy.io/owning-gateway-name: envoy-internal
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kagent-controller
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: kagent
+      app.kubernetes.io/component: controller
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: kagent
+            app.kubernetes.io/component: ui
+        - matchLabels:
+            app: kagent
+      toPorts:
+        - ports:
+            - port: "8083"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kagent-tools
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: kagent-tools
+      app.kubernetes.io/instance: kagent
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: kagent
+        - matchLabels:
+            app.kubernetes.io/name: kagent
+            app.kubernetes.io/component: controller
+      toPorts:
+        - ports:
+            - port: "8084"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kagent-postgresql
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: kagent
+      app.kubernetes.io/component: database
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: kagent
+            app.kubernetes.io/component: controller
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kagent-agents
+spec:
+  endpointSelector:
+    matchLabels:
+      app: kagent
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: kagent
+            app.kubernetes.io/component: controller
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP

@@ -12,4 +12,5 @@ resources:
   - ./karakeep-oidc.yaml
   - ./langfuse-oidc.yaml
   - ./homelable-oidc.yaml
+  - ./kagent-oidc.yaml
   - ../../../../templates/gatus/infra

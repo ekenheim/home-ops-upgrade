@@ -1,0 +1,31 @@
+---
+# kagent (apps/llm/kagent), a test of Kubernetes agents as CRDs. Read by the
+# chart's default ModelConfig straight from this namespace (apiKeySecret
+# litellm-key-kagent / api-key), so no ClusterSecretStore.
+#
+# local-pool-chat is the agents' model: worker4's Flash-Next with thinking off,
+# function calling on, which keeps a multi-step tool loop interactive. It falls
+# back to MiniMax-M3-chat when worker4 is down; that is allowed here because
+# the prompts carry cluster state only, not email, finance, home or location
+# data (PRIVACY in ../app/configmap.yaml). local-pool (thinking on) and fast
+# are on the key so a ModelConfig can be pointed at them without re-minting.
+# Team `platform` is traced into Langfuse. The budget and rpm only catch a
+# runaway loop; the local rungs cost nothing.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: kagent
+spec:
+  proxyRef: litellm-admin
+  keyAlias: kagent
+  teamID: platform
+  secretName: litellm-key-kagent
+  secretKey: api-key
+  maxBudget: "2"
+  budgetDuration: 1d
+  maxParallelRequests: 4
+  rpmLimit: 60
+  models:
+    - local-pool-chat
+    - local-pool
+    - fast

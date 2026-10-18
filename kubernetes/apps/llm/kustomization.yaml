@@ -17,6 +17,9 @@ resources:
   - ./litellm/ks.yaml
   # LLM explanation of Alertmanager alerts, posted to Discord (misospace).
   - ./alert-triage/ks.yaml
+  # TEST: kagent, read-only Kubernetes / Prometheus agents defined as CRDs,
+  # on LiteLLM `local-pool-chat`. UI behind Authentik OIDC.
+  - ./kagent/ks.yaml
   # Flux-Kustomizations | Inference
   - ./llmkube/ks.yaml
   # Text embeddings (Qwen3-Embedding-0.6B, llmkube InferenceServices on CPU)

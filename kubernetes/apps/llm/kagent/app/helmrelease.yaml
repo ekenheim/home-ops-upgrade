@@ -19,7 +19,8 @@
 #      chart default, which is `*/*/*` cluster-admin.
 #   3. Every bundled agent is off. The two agents in ./agents.yaml list their
 #      tools by name, read tools only, so a chart bump that dropped the flag
-#      would still not hand them a write tool.
+#      would still not hand them a write tool. They also use three ToolHive
+#      servers (./remotemcpservers.yaml), each read-only on its own.
 #
 # The controller is confined to `llm` (rbac.namespaces): its Roles there let
 # it read and write Secrets, Deployments and Services in this namespace, which
@@ -28,8 +29,10 @@
 # can reach each, and the UI is behind the Authentik SecurityPolicy.
 #
 # Model: the chart's default ModelConfig, OpenAI provider pointed at LiteLLM,
-# alias local-pool-chat, key litellm-key-kagent (team `platform`, traced to
-# Langfuse). See ../../litellm/keys/kagent.yaml for the alias choice.
+# alias kagent-chat (MiniMax-M3, thinking off, then worker4 when MiniMax is
+# capped or down), key litellm-key-kagent (team `platform`, traced to
+# Langfuse). Cluster state goes to MiniMax: owner-approved 2026-10-18, for
+# speed. See ../../litellm/keys/kagent.yaml for the alias choice and budget.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -103,7 +106,7 @@ spec:
       default: openAI
       openAI:
         provider: OpenAI
-        model: local-pool-chat
+        model: kagent-chat
         apiKeySecretRef: litellm-key-kagent
         apiKeySecretKey: api-key
         config:
@@ -146,6 +149,25 @@ spec:
           - apiGroups: ["cert-manager.io"]
             resources: ["certificates", "certificaterequests", "issuers", "clusterissuers"]
             verbs: ["get", "list", "watch"]
+          # Trivy Operator reports, so an agent can name the CVEs of one
+          # workload; the prompt sends it to the trivy_* metrics first, since
+          # one report runs to hundreds of KB. Named kinds, not "*":
+          # exposedsecretreports are left out because their `match` field is
+          # not reliably masked (2026-10-18: some of the 92 findings, the .pyc
+          # hits in dispatcharr's image, carry the matched text with no `*`),
+          # and (cluster)sbomreports for size, nothing an answer needs.
+          - apiGroups: ["aquasecurity.github.io"]
+            resources:
+              - vulnerabilityreports
+              - clustervulnerabilityreports
+              - configauditreports
+              - clusterconfigauditreports
+              - rbacassessmentreports
+              - clusterrbacassessmentreports
+              - infraassessmentreports
+              - clusterinfraassessmentreports
+              - clustercompliancereports
+            verbs: ["get", "list", "watch"]
           # CRD groups with no Secret-like kinds: GitOps, network, storage,
           # monitoring, backups, Postgres and kagent's own.
           - apiGroups:
@@ -173,6 +195,15 @@ spec:
         # it. Set anyway for the version that does.
         prometheus:
           url: http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090
+        # Tracing off for real. The chart's otel.tracing.enabled (false) only
+        # writes OTEL_TRACING_ENABLED, which tools v0.3.0 never reads
+        # (internal/telemetry/config.go reads OTEL_SDK_DISABLED), so the SDK
+        # started anyway and logged "traces export: ... produced zero
+        # addresses" against the chart's host.docker.internal:4317 every 1-2
+        # minutes. Appended by the chart's `tools.env`.
+        env:
+          - name: OTEL_SDK_DISABLED
+            value: "true"
         resources:
           requests:
             cpu: 10m

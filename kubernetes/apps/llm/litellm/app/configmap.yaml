@@ -821,6 +821,70 @@ data:
           chat_template_kwargs:
             enable_thinking: false
 
+      # --- kagent-chat: kagent's agents (apps/llm/kagent), MiniMax first ---
+      # An ordered pool like hindsight-consolidation: MiniMax-M3 on the flat
+      # plan at order 1, worker4 with thinking off (local-pool-chat's rung) at
+      # order 2, and no `fallbacks:` entry. Not local-pool-chat with the order
+      # flipped, and no MiniMax-M3-chat -> local-pool-chat fallback either:
+      # local-pool* already fall back to MiniMax-M3-chat, so that would loop.
+      #
+      # MiniMax first for speed (owner, 2026-10-18): a kagent turn carries
+      # 50-100k tokens of tool output, and worker4's prefill of that takes
+      # minutes (~530 t/s) while two slots are shared with pr-review. kagent
+      # sends cluster state only, and the owner accepted that going to MiniMax
+      # (the PRIVACY note above); the `platform` team lists this alias.
+      #
+      # THINKING OFF on the MiniMax rung, by `extra_body` as on `translate`
+      # (a top-level `thinking` is dropped by drop_params on the openai/
+      # route; without either, M3 thinks, 14.7k thinking tokens a call on
+      # hindsight's). A tool loop would gain from thinking, but kagent's Go
+      # runtime (adk/pkg/models/openai_adk.go at 0.10.3) never reads
+      # reasoning_content back, so the reasoning would be redone blind every
+      # step, add output tokens (the plan's dearest: about 3x uncached input
+      # per token in the 2026-10-12..14 quota fit) and seconds to each of the
+      # 5-20 calls a question takes. Speed is why this pool exists.
+      #
+      # 262144, not M3's 1M, on purpose: the window is the context guard
+      # P15 asked for (docs/homelab-review-2026-10-18.md, item 12). Anything
+      # bigger is a runaway tool dump (k8s_get_events -A was ~1.8M tokens),
+      # and the go runtime cannot compact a session. A prompt over 131072
+      # skips the worker4 rung (enable_pre_call_checks); over 262144 the call
+      # fails with a context-window error (start a new session) instead of
+      # re-sending the dump to the plan on every remaining turn.
+      #
+      # timeout 120: MiniMax answers a 60k-token turn in seconds with thinking
+      # off; a hung call (its morning `overloaded_error`) moves to worker4
+      # after 2 x 120 s instead of request_timeout x 2. Costs are list price,
+      # so the kagent key's maxBudget counts the MiniMax rung only.
+      - model_name: kagent-chat
+        model_info:
+          mode: chat
+          max_input_tokens: 262144
+          max_output_tokens: 131072
+          supports_function_calling: true
+          input_cost_per_token: 3.0e-07
+          output_cost_per_token: 1.2e-06
+        litellm_params:
+          model: openai/MiniMax-M3
+          api_base: https://api.minimax.io/v1
+          api_key: os.environ/MINIMAX_API_KEY
+          extra_body:
+            thinking:
+              type: disabled
+          timeout: 120
+          order: 1
+      - model_name: kagent-chat
+        model_info:
+          mode: chat
+          max_input_tokens: 131072
+          supports_function_calling: true
+          supports_vision: true
+        litellm_params:
+          <<: *worker4
+          chat_template_kwargs:
+            enable_thinking: false
+          order: 2
+
       # --- auto: classifier routing for interactive clients only ---
       # LLM classifier on `fast` (local, free, in every request's path). It
       # never routes to frontier-pool, so it cannot eat the capped plans that
@@ -985,6 +1049,7 @@ data:
         # hindsight-consolidation needs no entry: its two rungs (MiniMax-M3, then
         # the 5090) fail over by `order:`. Nor do factory-fast, factory-agent and
         # factory-review: the 5090 first, then their hosted rungs, by `order:`.
+        # Nor kagent-chat: MiniMax, then worker4, by `order:`.
       # A prompt over worker4's 131072 window is rejected by the pre-call check
       # before it reaches the pod. Send the local pools' long prompts to the
       # same cloud floor instead of failing them; `auto` routes SIMPLE to

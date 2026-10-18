@@ -220,8 +220,11 @@ spec:
     - userID: default_user_id
       role: admin
   # Cluster plumbing. Keys: alert-triage, toolhive, kagent (Git).
+  # Cluster state may go to MiniMax: local-pool* fall back to it, and
+  # kagent-chat (the kagent key) leads with it, owner-approved 2026-10-18.
   models:
     - local-pool
     - local-pool-chat
+    - kagent-chat
     - fast
     - qwen3-embedding-0.6b

@@ -2,8 +2,25 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/kagent.dev/agent_v1alpha2.json
 # Read-only stand-in for the bundled k8s-agent (off in helmrelease.yaml),
 # which lists apply/patch/delete/exec tools by name. Each tool here is a read
-# on the tool server, which also runs --read-only behind a get/list/watch
-# ClusterRole, so a tool name added here by mistake would find nothing to call.
+# on a server that is itself read-only (kagent-tools --read-only behind a
+# get/list/watch ClusterRole; the ToolHive servers in remotemcpservers.yaml),
+# so a tool name added here by mistake would find nothing to call.
+#
+# CONTEXT IS THE CONSTRAINT (docs/homelab-review-2026-10-18.md, item 12):
+# one question grew 2.6k -> 99k tokens in one invocation; `get pods -A -o
+# wide` is ~33k tokens and k8s_get_events with no namespace ~1.8M. So:
+#   - k8s_get_events is gone; flux-mcp's get_kubernetes_events (namespace,
+#     object, since, grep, 100-event default) replaces it.
+#   - kubectl-mcp's get_pods / get_events / get_logs are NOT listed: they
+#     default to all namespaces or to the whole log.
+#   - The prompt pins namespaces, tail sizes and when -A is allowed.
+#   - The chart's builtin/kubernetes-context and tool-usage-best-practices
+#     includes are dropped: they say "start with broad resource checks" and
+#     "check ... recent events" cluster-wide, and the rest is about writes
+#     this agent cannot make.
+# spec.declarative.context.compaction exists in the 0.10.3 CRD but only the
+# Python runtime reads it (go/api/adk/types.go: "flows through config.json to
+# the Python runtime"; nothing in go/adk consumes it), so it is not set here.
 apiVersion: kagent.dev/v1alpha2
 kind: Agent
 metadata:
@@ -13,14 +30,9 @@ spec:
   type: Declarative
   declarative:
     runtime: go
-    # The chart's default ModelConfig: LiteLLM `local-pool-chat`, key
-    # litellm-key-kagent.
+    # The chart's default ModelConfig: LiteLLM `kagent-chat` (MiniMax-M3
+    # first, worker4 second), key litellm-key-kagent.
     modelConfig: default-model-config
-    promptTemplate:
-      dataSources:
-        - kind: ConfigMap
-          name: kagent-builtin-prompts
-          alias: builtin
     systemMessage: |
       # Kubernetes read-only assistant
 
@@ -33,29 +45,66 @@ spec:
       change (which manifest, which field, what value) for a human to make.
       Never claim to have changed something.
 
-      {{include "builtin/kubernetes-context"}}
+      ## Keep every tool result small
+
+      Tool output goes straight into your context, and the cluster is big
+      enough to overflow it with one careless call. These rules are hard:
+
+      1. Find the namespace FIRST, then work inside it. Apps live in a
+         namespace named for their group (llm, media, downloads, default,
+         observability, network, storage, database, datasci, kube-system,
+         kube-tools, ...). To locate an app: `get_kubernetes_resources` for
+         kind Kustomization or HelmRelease with its `name` (the Flux object
+         usually shares the app's name and records its target namespace), or
+         `k8s_get_resources` with `resource_name` set.
+      2. NEVER list pods or events across all namespaces. Every pod or event
+         call gets a `namespace`. `all_namespaces=true` on `k8s_get_resources`
+         is allowed only for small cluster-wide kinds: nodes, namespaces,
+         kustomizations, helmreleases.
+      3. `k8s_get_resources` with neither `namespace` nor `all_namespaces`
+         lists the tool server's own namespace (`llm`), not the cluster.
+      4. Events: `get_kubernetes_events` with `namespace`, a `since` (start at
+         `1h`), and `type: Warning` or the object's `kind`/`name` when you
+         have them. `get_pod_events` for one pod.
+      5. Logs: `k8s_get_pod_logs` with `tail_lines` 50 or less (set
+         `previous: true` for a crashed container). Read more only if those
+         lines point somewhere specific.
+      6. Prefer the summarising tools to raw objects: `diagnose_pod_crash`,
+         `check_pod_health` and `get_pod_conditions` for one pod;
+         `detect_pending_pods` and `get_evicted_pods` (these two are small
+         and may run cluster-wide) for scheduling; `get_flux_instance` and
+         `trace_kubernetes_resource` for GitOps. Use
+         `k8s_get_resource_yaml` only for a single named object.
+      7. The kubectl-mcp tools (`diagnose_pod_crash`, `check_pod_health`,
+         `get_pod_conditions`, `get_pod_events`) default to namespace
+         `default`: always pass the real one.
 
       ## Tools
 
-      - `k8s_get_resources`: list resources of a type (prefer `-o wide`; use
-        all namespaces when you do not know where something runs).
-      - `k8s_describe_resource`: details and recent events of one resource.
-      - `k8s_get_resource_yaml`: the live YAML of one resource.
-      - `k8s_get_events`: recent events, the first place to look for failures.
-      - `k8s_get_pod_logs`: container logs.
-      - `k8s_get_available_api_resources`: which kinds exist (Flux
-        Kustomizations and HelmReleases, Cilium policies, Gateway API routes,
-        Rook/Ceph, VolSync, ...).
-      - `k8s_get_cluster_configuration`: the in-cluster client configuration.
-      - `k8s_wait`: wait for a condition, read-only.
+      - `get_flux_instance`: Flux controllers and their health.
+      - `get_kubernetes_resources`: any kind by apiVersion; pass `name` or a
+        `selector`, a `limit`, and `fields` (JSONPath, e.g.
+        `status.conditions`) to return only what you need. Flux status lives
+        on Kustomization (kustomize.toolkit.fluxcd.io/v1) and HelmRelease
+        (helm.toolkit.fluxcd.io/v2), in `flux-system` and in app namespaces;
+        the Ready condition message usually names the failing resource.
+      - `trace_kubernetes_resource`: which Flux objects and Git source manage
+        a resource.
+      - `get_kubernetes_events`: bounded, filterable events (rule 4).
+      - `k8s_get_resources`: list a type in one namespace (`-o wide` default).
+      - `k8s_describe_resource`: one object's details and its recent events.
+      - `k8s_get_resource_yaml`: one object's live YAML.
+      - `k8s_get_pod_logs`: container logs (rule 5).
+      - `diagnose_pod_crash`, `check_pod_health`, `get_pod_conditions`,
+        `get_pod_events`: one pod, summarised.
+      - `detect_pending_pods`, `get_evicted_pods`: scheduling problems.
+      - `k8s_get_available_api_resources`: which kinds exist (Cilium,
+        Gateway API, Rook/Ceph, VolSync, ...).
+      - `k8s_get_cluster_configuration`, `k8s_wait`: rarely needed.
       - `datetime_get_current_time`: the current time, to judge event ages.
 
-      Flux status lives on `kustomizations.kustomize.toolkit.fluxcd.io` and
-      `helmreleases.helm.toolkit.fluxcd.io` (both in namespace `flux-system`
-      and per app namespace); their Ready condition message usually names the
-      failing resource.
-
-      {{include "builtin/tool-usage-best-practices"}}
+      Plan before calling: decide which two or three calls answer the
+      question, and do not repeat a call that failed with the same arguments.
 
       ## Answers
 
@@ -71,12 +120,36 @@ spec:
             - k8s_get_resources
             - k8s_describe_resource
             - k8s_get_resource_yaml
-            - k8s_get_events
             - k8s_get_pod_logs
             - k8s_get_available_api_resources
             - k8s_get_cluster_configuration
             - k8s_wait
             - datetime_get_current_time
+      # From kubectl-mcp's MCPToolConfig filter (toolhive/kubectl-mcp).
+      - type: McpServer
+        mcpServer:
+          name: toolhive-kubectl
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          toolNames:
+            - diagnose_pod_crash
+            - check_pod_health
+            - get_pod_conditions
+            - get_pod_events
+            - detect_pending_pods
+            - get_evicted_pods
+      # flux-mcp is unfiltered (10 tools); diff_kubernetes_manifest,
+      # get_kubernetes_logs and the doc tools are left out.
+      - type: McpServer
+        mcpServer:
+          name: toolhive-flux
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          toolNames:
+            - get_flux_instance
+            - get_kubernetes_resources
+            - trace_kubernetes_resource
+            - get_kubernetes_events
     a2aConfig:
       skills:
         - id: cluster-diagnostics
@@ -95,27 +168,32 @@ spec:
           memory: 512Mi
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/kagent.dev/agent_v1alpha2.json
-# Prometheus questions, answered by running PromQL. Replaces the bundled
-# promql-agent (writes PromQL, cannot run it) and observability-agent (needs
-# grafana-mcp, whose tool list includes update_dashboard and create_incident).
+# Prometheus questions, answered by running PromQL, plus Grafana's alert
+# rules, dashboards and VictoriaLogs through grafana-mcp (read-only: it runs
+# --disable-write on a Viewer token). Replaces the bundled promql-agent
+# (writes PromQL, cannot run it) and observability-agent (the chart's own
+# grafana-mcp, `latest` image, with update_dashboard and create_incident).
 # prometheus_promql_tool is left out: it calls OpenAI's gpt-4o-mini itself,
-# outside LiteLLM.
+# outside LiteLLM. From grafana-mcp: no grafana_api_request (any API path),
+# no get_panel_image (base64 PNG into the context), no OnCall/Incident/
+# Tempo/Pyroscope tools (none of those run here), and no query_prometheus
+# (the prometheus_* tools already cover PromQL).
 apiVersion: kagent.dev/v1alpha2
 kind: Agent
 metadata:
   name: observability-readonly-agent
 spec:
-  description: Answers questions about the home-kubernetes cluster by querying Prometheus (PromQL), read-only.
+  description: Answers questions about the home-kubernetes cluster from Prometheus (PromQL), Grafana alert rules and dashboards, and VictoriaLogs, read-only.
   type: Declarative
   declarative:
     runtime: go
     modelConfig: default-model-config
     systemMessage: |
-      # Prometheus assistant
+      # Observability assistant
 
-      You answer questions about the `home-kubernetes` homelab cluster by
-      writing PromQL and running it against its Prometheus. You are
-      READ-ONLY: you query metrics and list Kubernetes resources, nothing else.
+      You answer questions about the `home-kubernetes` homelab cluster from
+      its metrics, alert rules, dashboards and logs. You are READ-ONLY: you
+      query and list, nothing else.
 
       ALWAYS pass this exact `prometheus_url` to every prometheus_* tool; the
       tools default to localhost, which has no Prometheus:
@@ -124,6 +202,9 @@ spec:
 
       The stack is kube-prometheus-stack (node-exporter, kube-state-metrics,
       cAdvisor, kubelet) plus ServiceMonitors for most apps.
+
+      Grafana datasource UIDs (for the grafana-mcp tools): `prometheus`,
+      `alertmanager`, `victoria-logs`.
 
       ## Method
 
@@ -134,10 +215,33 @@ spec:
          step that keeps the result small (a few hundred points at most).
       3. Aggregate (`sum by`, `topk`) before returning many series.
       4. `prometheus_targets_tool` answers "is X being scraped".
-      5. `k8s_get_resources` maps pods/nodes/namespaces when a label is unclear.
+      5. Alerts: `alerting_rules_read` with operation `list`,
+         `datasource_uid: prometheus` and `states: [firing]` (or pending) for
+         the PrometheusRule alerts; `get` with a rule UID for one rule.
+      6. Dashboards: `search_dashboards`, then `get_dashboard_summary` or
+         `get_dashboard_panel_queries` (not whole dashboards) to borrow the
+         PromQL a panel already uses. `generate_deeplink` for a link.
+      7. Logs (VictoriaLogs, datasource `victoria-logs`): `query_loki_logs`
+         takes LogsQL here, not LogQL. Stream fields are
+         `kubernetes.pod_namespace`, `kubernetes.pod_name` and
+         `kubernetes.container_name`; always select a namespace, e.g.
+         `{kubernetes.pod_namespace="llm"} error`. Keep `limit` at 50 or less,
+         the window to the last hour unless asked, and use `format: compact`.
+         `query_loki_stats` sizes a selector before you read it.
+      8. Vulnerabilities and config audits: prefer the Trivy Operator metrics
+         (`trivy_image_vulnerabilities`, `trivy_image_exposedsecrets`,
+         `trivy_resource_configaudits`, `trivy_role_rbacassessments`,
+         `trivy_clusterrole_clusterrbacassessments`,
+         `trivy_resource_infraassessments`, `trivy_cluster_compliance`;
+         aggregate by namespace and severity) over the raw report objects,
+         which run to hundreds of KB each. Read one report with
+         `k8s_get_resources` (resource_name and namespace set) only to name
+         the CVEs of one workload.
+      9. `k8s_get_resources` maps pods/nodes/namespaces when a label is
+         unclear; always with a namespace, never all namespaces for pods.
 
-      Show the PromQL you ran with each number, state the time window, and
-      say so when a query returned nothing rather than guessing.
+      Show the PromQL or LogsQL you ran with each number, state the time
+      window, and say so when a query returned nothing rather than guessing.
     tools:
       - type: McpServer
         mcpServer:
@@ -151,6 +255,20 @@ spec:
             - prometheus_targets_tool
             - k8s_get_resources
             - datetime_get_current_time
+      - type: McpServer
+        mcpServer:
+          name: toolhive-grafana
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          toolNames:
+            - alerting_rules_read
+            - search_dashboards
+            - get_dashboard_summary
+            - get_dashboard_panel_queries
+            - generate_deeplink
+            - query_loki_logs
+            - query_loki_stats
+            - list_loki_label_names
     a2aConfig:
       skills:
         - id: promql
@@ -160,6 +278,13 @@ spec:
           examples:
             - "Which five pods used the most memory over the last hour?"
             - "Is anything in namespace llm restarting more than usual today?"
+        - id: alerts-and-logs
+          name: Alert rules, dashboards and logs
+          description: Reads firing alert rules, existing dashboard queries and VictoriaLogs for one namespace.
+          tags: ["grafana", "alerts", "logs", "read-only"]
+          examples:
+            - "Which alerts are firing right now, and what do they measure?"
+            - "Show the last errors from pods in namespace media."
     deployment:
       resources:
         requests:

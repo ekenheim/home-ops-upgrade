@@ -1,0 +1,63 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/kagent.dev/remotemcpserver_v1alpha2.json
+# ToolHive's MCP servers (apps/llm/toolhive), reached through each server's
+# toolhive proxy, the same URLs the vMCP gateway's entries use. The proxy is
+# where an MCPToolConfig filter applies (kubectl-mcp's 34 of 275 tools), so
+# never point these at the bare mcp-<name>:8000 Service. Every backend is
+# read-only on its own: kubectl-mcp and flux-mcp run --read-only on
+# ServiceAccounts that cannot read Secrets (toolhive/kubectl-mcp/rbac.yaml),
+# grafana-mcp runs --disable-write on a Viewer token. The agents in
+# ./agents.yaml still list their tools by name, so each gets a few compact
+# ones rather than every schema.
+#
+# Why these and not more kagent-tools: their tools take filters the
+# kagent-tools ones lack. flux-mcp's get_kubernetes_events has a namespace,
+# an object, `since`, `grep` and a 100-event default limit, where
+# k8s_get_events is `kubectl get events -o json` and, given no namespace,
+# all namespaces: ~7 MB, ~1.8M tokens (docs/homelab-review-2026-10-18.md,
+# item 12). kubectl-mcp's diagnose_pod_crash / detect_pending_pods return a
+# summary instead of the raw objects.
+#
+# Cilium: nothing to open. No policy selects the toolhive pods in `llm` or
+# grafana-mcp in `observability`, and kagent-agents (ciliumnetworkpolicy.yaml)
+# leaves agent egress open.
+#
+# Timeouts: the CRD default is 30 s per call; diagnose_pod_crash reads pod,
+# events and logs in one call and a Loki/VictoriaLogs query can scan a while,
+# so 60 s. sseReadTimeout as on the chart's own kagent-tool-server.
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: toolhive-kubectl
+spec:
+  description: kubectl-mcp-server via ToolHive (read-only, 34 filtered tools); pod diagnostics.
+  url: http://mcp-kubectl-mcp-proxy.llm.svc.cluster.local:8080/mcp
+  protocol: STREAMABLE_HTTP
+  timeout: 60s
+  sseReadTimeout: 5m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/kagent.dev/remotemcpserver_v1alpha2.json
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: toolhive-flux
+spec:
+  description: flux-operator-mcp via ToolHive (read-only, secrets masked); Flux status, bounded events and logs.
+  url: http://mcp-flux-mcp-proxy.llm.svc.cluster.local:8080/mcp
+  protocol: STREAMABLE_HTTP
+  timeout: 60s
+  sseReadTimeout: 5m
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/kagent.dev/remotemcpserver_v1alpha2.json
+# In `observability`: this RemoteMCPServer lives in `llm` with the agents
+# (allowedNamespaces defaults to Same) and only its URL crosses namespaces.
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: toolhive-grafana
+spec:
+  description: grafana/mcp-grafana via ToolHive (--disable-write, Viewer token); dashboards, alert rules, Prometheus and VictoriaLogs queries.
+  url: http://mcp-grafana-mcp-proxy.observability.svc.cluster.local:8080/mcp
+  protocol: STREAMABLE_HTTP
+  timeout: 60s
+  sseReadTimeout: 5m

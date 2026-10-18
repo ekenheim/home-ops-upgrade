@@ -138,14 +138,25 @@ spec:
               RAILS_WS_DB: "4"
               # Sign-in through Authentik (security/authentik/app/dawarich-oidc.yaml).
               # Any Authentik user may sign in and gets an empty account of their
-              # own. Email/password login stays on for the seeded admin until an
-              # OIDC user has been made admin; see the PR for the steps.
+              # own. The first admin is made by hand with `rails runner`.
               OIDC_CLIENT_ID: dawarich
               OIDC_ISSUER: https://sso.${SECRET_DOMAIN}/application/o/dawarich/
               OIDC_REDIRECT_URI: https://dawarich.${SECRET_DOMAIN}/users/auth/openid_connect/callback
               OIDC_PROVIDER_NAME: Authentik
               OIDC_AUTO_REGISTER: "true"
               ALLOW_EMAIL_PASSWORD_REGISTRATION: "false"
+              # OIDC only, from the first start. db:seed creates an admin
+              # demo@dawarich.app with the published password `safepassword`
+              # whenever the users table is empty, so password login must never
+              # be on. 1.16.0 enforces this flag in both the web sign-in
+              # (Users::SessionsController) and the API one (/api/v1/auth/login),
+              # but only while OIDC is enabled, i.e. OIDC_CLIENT_ID and
+              # OIDC_CLIENT_SECRET are both set. That fails closed here: the
+              # secret comes from the non-optional dawarich-oidc Secret, so
+              # without it the pod does not start at all. The demo user is
+              # deleted once the first admin exists (PR steps); do not flip
+              # this flag before that.
+              ALLOW_EMAIL_PASSWORD_LOGIN: "false"
             envFrom: &envFrom
               - secretRef:
                   name: dawarich-secret

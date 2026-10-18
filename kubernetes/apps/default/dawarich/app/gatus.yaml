@@ -1,0 +1,28 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "${APP}-gatus-ep"
+  labels:
+    gatus.io/enabled: "true"
+data:
+  config.yaml: |
+    endpoints:
+      # Not the shared templates/gatus/guarded: that only resolves the
+      # hostname over DNS, so it stays green with the app down. This hits the
+      # health endpoint through the Service. X-Forwarded-Proto because
+      # APPLICATION_PROTOCOL=https turns on force_ssl, which would answer a
+      # plain request with a 301; the path is exempt from the host check.
+      - name: "${APP}"
+        group: guarded
+        url: "http://${APP}.default.svc.cluster.local:3000/api/v1/health"
+        interval: 1m
+        headers:
+          X-Forwarded-Proto: https
+        ui:
+          hide-hostname: true
+          hide-url: true
+        conditions:
+          - "[STATUS] == 200"
+        alerts:
+          - type: discord

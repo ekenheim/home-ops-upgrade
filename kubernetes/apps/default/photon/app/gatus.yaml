@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "${APP}-gatus-ep"
+  labels:
+    gatus.io/enabled: "true"
+data:
+  config.yaml: |
+    endpoints:
+      # In-cluster only: Photon has no route and no DNS record, so the shared
+      # templates (DNS lookups of <app>.$${SECRET_DOMAIN}) cannot see it.
+      # /status answers 200 once the index is loaded. During the first import
+      # (up to an hour) this is red; that is expected.
+      - name: "${APP}"
+        group: guarded
+        url: "http://${APP}.default.svc.cluster.local:2322/status"
+        interval: 1m
+        ui:
+          hide-hostname: true
+          hide-url: true
+        conditions:
+          - "[STATUS] == 200"
+        alerts:
+          - type: discord

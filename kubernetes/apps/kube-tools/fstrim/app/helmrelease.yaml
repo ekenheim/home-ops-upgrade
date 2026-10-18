@@ -35,10 +35,11 @@ spec:
         type: cronjob
         cronjob:
           schedule: "@weekly"
-          # Originally "total number of nodes". On 2026-10-18 only master2 and
-          # worker3 accept these pods (worker4 is tainted llm-workload and this
-          # job does not tolerate it, so worker4 is never trimmed), so maxSkew 1
-          # puts two pods on each; a second fstrim on a node is a no-op.
+          # One pod per node, plus one spare for when the DeskMini control
+          # planes join. Since 2026-10-18 this job tolerates worker4's
+          # llm-workload taint (below), so all three live nodes are trimmed;
+          # with maxSkew 1 a node may get a second pod, and a second fstrim
+          # on a node is a no-op.
           parallelism: 4
           successfulJobsHistory: 0
           failedJobsHistory: 0
@@ -76,11 +77,18 @@ spec:
         pod:
           hostNetwork: true
           hostPID: true
+          # worker4's NVMe (model cache, Ceph OSD) needs trimming like any
+          # other node's. A weekly run of a few seconds isn't the kind of
+          # non-LLM load the taint keeps off it.
+          tolerations:
+            - key: llm-workload
+              operator: Exists
+              effect: NoSchedule
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
               whenUnsatisfiable: DoNotSchedule
-              # Honor: skip nodes whose taints this pod does not tolerate (worker4, NotReady
+              # Honor: skip nodes whose taints this pod does not tolerate (NotReady
               # nodes). Ignore counts them as empty domains, so maxSkew 1 wedges rollouts.
               nodeTaintsPolicy: Honor
               labelSelector:

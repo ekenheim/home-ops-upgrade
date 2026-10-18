@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./externalsecret.yaml
+  - ./helmrelease.yaml
+  - ../../../../templates/volsync
+  - ../../../../templates/gatus/internal
+configMapGenerator:
+  - name: homelable-nginx
+    files:
+      - nginx.conf=./config/nginx.conf
+generatorOptions:
+  # Reloader (reloader.stakater.com/auto on the controller) restarts the pod
+  # when this ConfigMap changes, so a stable name is enough.
+  disableNameSuffixHash: true

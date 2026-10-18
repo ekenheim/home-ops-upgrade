@@ -28,3 +28,4 @@ resources:
   - ./immich/ks.yaml
   - ./dawarich/ks.yaml
   - ./karakeep/ks.yaml
+  - ./homelable/ks.yaml

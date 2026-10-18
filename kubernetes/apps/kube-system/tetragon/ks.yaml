@@ -15,31 +15,40 @@ spec:
   sourceRef:
     kind: GitRepository
     name: home-kubernetes
-  wait: true # tetragon-policies needs the TracingPolicy CRDs this installs
+  # tetragon-policies (below, off while agent-lab is) needs the TracingPolicy
+  # CRDs this installs.
+  wait: true
   interval: 30m
   retryInterval: 1m
   timeout: 10m
----
-# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: &app tetragon-policies
-  namespace: flux-system
-spec:
-  # No targetNamespace: the policies are namespaced into the agent-lab
-  # sandboxes, and targetNamespace would override every one of them.
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: *app
-  dependsOn:
-    - name: tetragon
-  path: ./kubernetes/apps/kube-system/tetragon/policies
-  prune: true
-  sourceRef:
-    kind: GitRepository
-    name: home-kubernetes
-  wait: false
-  interval: 30m
-  retryInterval: 1m
-  timeout: 5m
+
+# Off since 2026-10-18 (owner), with the whole of apps/agent-lab: every policy
+# in ./policies is a TracingPolicyNamespaced in agent-work or agent-verify,
+# and those namespaces are pruned. Commented out rather than left with an
+# empty ./policies, so cluster-apps removes this Kustomization and its
+# finalizer prunes the policies. Tetragon itself stays: exec events and the
+# health alerts cover every node. Uncomment after agent-lab's namespaces are
+# back.
+## yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+#apiVersion: kustomize.toolkit.fluxcd.io/v1
+#kind: Kustomization
+#metadata:
+#  name: &app tetragon-policies
+#  namespace: flux-system
+#spec:
+#  # No targetNamespace: the policies are namespaced into the agent-lab
+#  # sandboxes, and targetNamespace would override every one of them.
+#  commonMetadata:
+#    labels:
+#      app.kubernetes.io/name: *app
+#  dependsOn:
+#    - name: tetragon
+#  path: ./kubernetes/apps/kube-system/tetragon/policies
+#  prune: true
+#  sourceRef:
+#    kind: GitRepository
+#    name: home-kubernetes
+#  wait: false
+#  interval: 30m
+#  retryInterval: 1m
+#  timeout: 5m

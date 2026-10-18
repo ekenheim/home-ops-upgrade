@@ -1,5 +1,7 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
+# Not applied since 2026-10-18: the tetragon-policies Kustomization that
+# points here is commented out in ../ks.yaml while agent-lab is off.
 # The two untrusted sandboxes only. agent-control (orchestrator, egress Envoy)
 # and trackinizer run trusted code; their exec events are still exported (see
 # exportAllowList in ../app/helmrelease.yaml), but a connect per LLM request

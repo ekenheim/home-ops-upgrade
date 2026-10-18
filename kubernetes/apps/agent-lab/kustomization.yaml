@@ -2,12 +2,30 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources:
+# Off since 2026-10-18 (owner): the whole agent-lab is shelved, not deleted;
+# other agent concepts come later. Everything below is commented out, the
+# namespaces included, so cluster-apps prunes the four namespaces and the four
+# Flux Kustomizations (each prunes its own objects, the ReferenceGrant in
+# `llm` too). Nothing stateful is lost: there are no PVCs, both buckets were
+# empty, and the `agentlab` / `trackinizer` databases live in the Crunchy
+# cluster, which keeps them (database/crunchy-postgres/cluster/cluster.yaml).
+#
+# `resources: []` rather than a bare `resources:`: with every entry commented
+# out, kustomize reads the latter as an empty kustomization and refuses it.
+#
+# Re-enable in this order, one PR per step or all at once (the dependsOn
+# chain below sorts it out within one reconcile): namespaces.yaml and
+# network-policy, ledger, the LiteLLM key and store (llm/litellm/keys and
+# llm/litellm/clustersecretstore), egress-gateway, trackinizer with its
+# Authentik blueprint (security/authentik/app), tetragon-policies
+# (kube-system/tetragon/ks.yaml), and last, if wanted, factory. README.md,
+# "Status", lists every file to touch.
+resources: []
   # Pre Flux-Kustomizations
   #
   # Three namespaces, one per trust level, plus `trackinizer` for the
   # analysis ledger. See README.md for the model.
-  - ./namespaces.yaml
+  #- ./namespaces.yaml
   # Flux-Kustomizations
   #
   # None of these sets targetNamespace: every component spans more than one
@@ -18,10 +36,10 @@ resources:
   # The LiteLLM virtual key is not here. litellm-operator writes the Secret
   # next to the CR, so the CR sits with the other keys in
   # apps/llm/litellm/keys/agent-lab.yaml (Kustomization `litellm-keys`).
-  - ./network-policy/ks.yaml
-  - ./egress-gateway/ks.yaml
-  - ./ledger/ks.yaml
-  # Off since 2026-10-18 (owner): the agent factory is shelved. The sandboxes,
-  # egress gateway, ledger and trackinizer stay.
+  #- ./network-policy/ks.yaml
+  #- ./egress-gateway/ks.yaml
+  #- ./ledger/ks.yaml
+  # The agent factory was shelved first (#7740), the rest followed the same
+  # day.
   #- ./factory/ks.yaml
-  - ./trackinizer/ks.yaml
+  #- ./trackinizer/ks.yaml

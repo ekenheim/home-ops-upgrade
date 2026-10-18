@@ -10,6 +10,11 @@ spec:
     # Jobs run the install command and the tests by design (agent-lab README,
     # "Orchestrator contract"), so that would fire on every run. Network and
     # remote-shell tools have no place in either sandbox, whatever the job.
+    #
+    # Dormant while agent-lab is off (2026-10-18): with no agent-work or
+    # agent-verify namespace there is no series to match, so it cannot fire.
+    # Kept rather than commented out because it costs nothing and is armed
+    # again the moment the sandboxes come back, before anyone remembers it.
     - name: tetragon.agent-lab
       rules:
         - alert: AgentSandboxNetworkToolExec

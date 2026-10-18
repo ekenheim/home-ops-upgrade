@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+# Not "any shell or package manager in agent-verify": the verifier's exec Jobs
+# run the install command and the tests by design (agent-lab README,
+# "Orchestrator contract"), so that would fire on every run. Network and
+# remote-shell tools have no place in either sandbox, whatever the job.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tetragon
+spec:
+  groups:
+    - name: tetragon.agent-lab
+      rules:
+        - alert: AgentSandboxNetworkToolExec
+          expr: >-
+            sum by (namespace, workload, binary) (
+              increase(tetragon_events_total{type="PROCESS_EXEC", namespace=~"agent-work|agent-verify", binary=~".*/(nc|ncat|netcat|socat|ssh|scp|sftp|telnet|nmap)"}[10m])
+            ) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              {{ $labels.binary }} ran in {{ $labels.namespace }}/{{ $labels.workload }}
+            description: >-
+              A network or remote-shell tool ran inside an agent-lab sandbox.
+              The process tree and its connects are in VictoriaLogs under the
+              tetragon export container; filter on process.pod.namespace.

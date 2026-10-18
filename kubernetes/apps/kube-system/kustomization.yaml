@@ -12,3 +12,4 @@ resources:
   - ./kubelet-csr-approver/ks.yaml
   - ./metrics-server/ks.yaml
   - ./spegel/ks.yaml
+  - ./tetragon/ks.yaml

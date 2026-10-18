@@ -11,6 +11,7 @@ resources:
   - kepler-dashboard.yaml
   - lingarr-dashboard.yaml
   - mlflow-app-dashboard.yaml
+  - trivy-operator-dashboard.yaml
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

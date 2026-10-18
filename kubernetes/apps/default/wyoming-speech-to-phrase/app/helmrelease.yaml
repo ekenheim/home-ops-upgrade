@@ -64,13 +64,18 @@ spec:
               # env-var or file option for the token.
               - --hass-token
               - $(HASS_TOKEN)
-              # Build the grammar from HA's exposed entities/areas/floors on
-              # every start, then again daily so renamed or newly exposed
-              # entities are picked up without a restart. A retrain where
-              # nothing changed is skipped.
+              # --retrain-on-start always retrains (1.4.3 passes
+              # force_retrain=True), so every start builds the grammar from
+              # HA's exposed entities/areas/floors. --retrain-seconds is a
+              # sleep-then-retrain loop, not a schedule: every 15 min it asks
+              # HA for the exposed things and retrains only if their hash, the
+              # sentences or the model version changed (train.py compares the
+              # saved training_info). An unchanged check is one websocket query,
+              # so a rename or a newly exposed entity is live within 15 min
+              # without a restart.
               - --retrain-on-start
               - --retrain-seconds
-              - "86400"
+              - "900"
             env:
               TZ: ${TIMEZONE}
               HOME: /tmp
@@ -117,8 +122,12 @@ spec:
                 memory: 512Mi
               # No cpu limit, as with wyoming-whisper: this is the voice
               # latency path. Memory is generous because training the grammar
-              # (OpenFST/Kaldi) peaks well above the idle footprint and grows
-              # with the number of exposed entities.
+              # (OpenFST/Kaldi) peaks above the idle footprint and grows with
+              # the number of exposed entities. The request stays at 512Mi for
+              # now: the working-set max over the first 7h, start-up training
+              # included, was 111Mi (2026-10-18), but a 30 s scrape can miss a
+              # training spike that lasts seconds. Lower it once a real
+              # retrain (an entity change) has been seen in the graphs.
               limits:
                 memory: 4Gi
     defaultPodOptions:

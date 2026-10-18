@@ -1,0 +1,114 @@
+---
+# paperless-gpt's browser sign-in. paperless-gpt has no authentication at all
+# (upstream README: UI and /api/* are open to anyone who can reach the port),
+# so envoy-internal signs the browser in against the application below via the
+# SecurityPolicy in default/paperless-gpt/app/securitypolicy.yaml. Same shape
+# as ./trackinizer-oidc.yaml: the client secret is generated in-cluster and one
+# Secret carries it both into the blueprint and to Envoy, so nothing is created
+# in Bitwarden for it.
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: authentik-paperless-gpt-oidc
+spec:
+  length: 64
+  digits: 10
+  symbols: 0
+  noUpper: false
+  allowRepeat: true
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/external-secrets.io/externalsecret_v1beta1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: &name authentik-paperless-gpt-oidc
+spec:
+  # OnChange, not a bare refreshInterval "0": "0" alone never re-renders, so an
+  # edit to the blueprint below would not reach Authentik. A spec change
+  # regenerates the client secret too; Authentik and Envoy read this one
+  # Secret, so they stay in step.
+  refreshPolicy: OnChange
+  refreshInterval: "0"
+  target:
+    name: *name
+    template:
+      engineVersion: v2
+      data:
+        client-secret: '{{ .password }}'
+        paperless-gpt.yaml: |
+          version: 1
+          metadata:
+            name: paperless-gpt
+          entries:
+            - model: authentik_providers_oauth2.oauth2provider
+              id: provider
+              identifiers:
+                name: paperless-gpt
+              attrs:
+                authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+                invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+                client_type: confidential
+                client_id: paperless-gpt
+                client_secret: '{{ .password }}'
+                redirect_uris:
+                  - matching_mode: strict
+                    url: https://paperless-gpt.${SECRET_DOMAIN}/oauth2/callback
+                    redirect_uri_type: authorization
+                # Required: an empty list rejects every authorize request with
+                # "Invalid grant_type for provider". Envoy uses the code flow
+                # and refreshes with the refresh token.
+                grant_types:
+                  - authorization_code
+                  - refresh_token
+                property_mappings:
+                  - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+                  - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+                  - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+                  - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
+                signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+                access_token_validity: hours=1
+                refresh_token_validity: days=30
+            - model: authentik_core.application
+              id: app
+              identifiers:
+                slug: paperless-gpt
+              attrs:
+                name: paperless-gpt
+                provider: !KeyOf provider
+                group: Home
+                meta_launch_url: https://paperless-gpt.${SECRET_DOMAIN}/
+                policy_engine_mode: any
+            # Only authentik Admins may sign in. paperless-gpt has no users of
+            # its own and acts on Paperless with one admin API token, so whoever
+            # gets past Authentik can edit every document.
+            - model: authentik_policies.policybinding
+              identifiers:
+                order: 0
+                target: !KeyOf app
+                group: !Find [authentik_core.group, [name, authentik Admins]]
+              attrs:
+                enabled: true
+                timeout: 30
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: authentik-paperless-gpt-oidc
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/referencegrant_v1beta1.json
+# Lets SecurityPolicies in `default` read the client secret above, and no
+# other Secret in `security`.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: paperless-gpt-oidc-client-secret
+spec:
+  from:
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: default
+  to:
+    - group: ""
+      kind: Secret
+      name: authentik-paperless-gpt-oidc

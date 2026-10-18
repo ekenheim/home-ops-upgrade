@@ -16,3 +16,4 @@ resources:
   - ./atlas-eval.yaml
   - ./agent-lab.yaml
   - ./courier.yaml
+  - ./paperless-gpt.yaml

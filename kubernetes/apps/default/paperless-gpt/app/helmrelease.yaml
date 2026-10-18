@@ -1,0 +1,145 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# paperless-gpt: LLM OCR and title / tag / correspondent / document-type
+# suggestions for Paperless (apps/default/paperless). It only touches
+# documents that carry one of its tags, so nothing happens until a document is
+# tagged by hand:
+#   paperless-gpt           -> suggestions to review in this UI
+#   paperless-gpt-auto      -> suggestions applied directly
+#   paperless-gpt-ocr-auto  -> re-OCR with the vision model
+# Paperless keeps its own Tesseract OCR; this is for the scans that come out
+# of badly.
+#
+# Every LLM call goes to LiteLLM's `fast` alias (worker4, local, vision):
+# documents are finance and home data and may not leave the house (PRIVACY in
+# apps/llm/litellm/app/configmap.yaml). The key is limited to `fast` too.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app paperless-gpt
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: volsync
+      namespace: storage
+  values:
+    defaultPodOptions:
+      # The entrypoint skips its PUID/PGID user setup and su-exec when it does
+      # not start as root, and runs the binary directly (entrypoint.sh).
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      paperless-gpt:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/icereed/paperless-gpt
+              tag: v0.31.0@sha256:d668941a829552cc0eddbc7c22506b3480dfbf61bd0d6eae881ad9fcfe2de70c
+            env:
+              PAPERLESS_BASE_URL: http://paperless.default.svc.cluster.local:8000
+              PAPERLESS_PUBLIC_URL: https://paperless.${SECRET_DOMAIN}
+              # LiteLLM, OpenAI-compatible. OPENAI_API_KEY comes from the
+              # paperless-gpt-litellm Secret.
+              OPENAI_BASE_URL: http://litellm.llm.svc.cluster.local:4000/v1
+              LLM_PROVIDER: openai
+              LLM_MODEL: fast
+              # Matches PAPERLESS_OCR_LANGUAGE (nld) in apps/default/paperless.
+              LLM_LANGUAGE: Dutch
+              OCR_PROVIDER: llm
+              VISION_LLM_PROVIDER: openai
+              VISION_LLM_MODEL: fast
+              # One job at a time, and well under the key's rpmLimit (30), so a
+              # batch never crowds Home Assistant and the agents off worker4.
+              SUGGESTION_WORKERS: "1"
+              SUGGESTION_JOB_TIMEOUT_SECONDS: "900"
+              LLM_REQUESTS_PER_MINUTE: "20"
+              VISION_LLM_REQUESTS_PER_MINUTE: "20"
+              # Suggest from existing tags only, and never replace the original
+              # PDF in Paperless.
+              CREATE_NEW_TAGS: "false"
+              PDF_UPLOAD: "false"
+              PDF_REPLACE: "false"
+              LOG_LEVEL: info
+            envFrom:
+              - secretRef:
+                  name: paperless-gpt-secret
+              - secretRef:
+                  name: paperless-gpt-litellm
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              # Page rendering for vision OCR holds whole page images in
+              # memory (up to IMAGE_MAX_TOTAL_PIXELS, 40 MP by default).
+              limits:
+                memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 8080
+    route:
+      app:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8080
+    persistence:
+      # prompts/ (edited in the UI), config/ (UI settings) and db/ (undo
+      # history, OCR run log) on one VolSync-backed claim.
+      data:
+        existingClaim: *app
+        globalMounts:
+          - path: /app/prompts
+            subPath: prompts
+          - path: /app/config
+            subPath: config
+          - path: /app/db
+            subPath: db
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

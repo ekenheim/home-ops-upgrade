@@ -6,4 +6,5 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./trackinizer-oidc.yaml
+  - ./paperless-gpt-oidc.yaml
   - ../../../../templates/gatus/infra

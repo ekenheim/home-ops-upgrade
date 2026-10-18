@@ -1,0 +1,25 @@
+---
+# paperless-gpt (apps/default/paperless-gpt): vision OCR and title / tag /
+# correspondent suggestions for Paperless. Documents are finance and home
+# data, so `fast` (worker4, local) only -- never a cloud or MiniMax alias
+# (PRIVACY in ../app/configmap.yaml). `fast` costs nothing, so there is no
+# budget; the parallel and rpm caps keep a bulk OCR run from crowding out
+# Home Assistant and the agents on worker4. paperless-gpt itself is set to one
+# suggestion worker and matching per-minute limits.
+#
+# Read from `default` through litellm-key-secrets-paperless-gpt
+# (../clustersecretstore/paperless-gpt.yaml).
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: paperless-gpt
+spec:
+  proxyRef: litellm-admin
+  keyAlias: paperless-gpt
+  teamID: home
+  secretName: litellm-key-paperless-gpt
+  secretKey: api-key
+  models:
+    - fast
+  maxParallelRequests: 2
+  rpmLimit: 30

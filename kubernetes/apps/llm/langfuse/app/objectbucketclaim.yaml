@@ -12,3 +12,34 @@ metadata:
 spec:
   bucketName: langfuse
   storageClassName: ceph-bucket
+  additionalConfig:
+    # Raw events (`events/`, LANGFUSE_S3_EVENT_UPLOAD_PREFIX in
+    # helmrelease.yaml) expire after 30 days. Once the worker has moved an
+    # event into ClickHouse, Langfuse reads its file again only to re-ingest
+    # or delete it, and nothing expires them on its own: retention is an
+    # Enterprise feature (see the retention job in ./clickhouse.yaml). The
+    # first 5h of traffic on 2026-10-18 wrote 554 objects, 81 MiB. `media/`
+    # holds images referenced from traces that ClickHouse keeps for 90 days,
+    # so the prefix leaves it alone. Versioning is off on this bucket, so an
+    # expiry really deletes and leaves no delete markers behind.
+    # blob_storage_file_log in ClickHouse gets the same 30 days, as Langfuse's
+    # blob-storage docs ask.
+    #
+    # Rook (v1.21) accepts this field only because rook-ceph's
+    # obcAllowAdditionalConfigFields lists bucketLifecycle. A change here
+    # re-runs Rook's Provision, which puts the lifecycle on the existing
+    # bucket. Rook diffs it against the live config, so rules must stay
+    # sorted by ID. RGW runs expiry in its lifecycle window (00:00-06:00).
+    bucketLifecycle: |
+      {
+        "Rules": [
+          {
+            "ID": "ExpireEventsAfter30Days",
+            "Status": "Enabled",
+            "Prefix": "events/",
+            "Expiration": {
+              "Days": 30
+            }
+          }
+        ]
+      }

@@ -53,6 +53,15 @@ spec:
       # model cache on local-hostpath rather than ceph-filesystem.
     monitoring:
       enabled: true
+    # OBC additionalConfig fields Rook will act on (ROOK_OBC_ALLOW_ADDITIONAL_CONFIG_FIELDS).
+    # The chart default is the two quota fields; bucketLifecycle is added for
+    # llm/langfuse-bucket's 30-day expiry of raw events. A lifecycle rule can
+    # only expire objects in the claim's own bucket, so this is the low-risk
+    # one; bucketPolicy and bucketOwner, which reach other users' buckets,
+    # stay off. No other OBC in the cluster sets additionalConfig (2026-10-18).
+    # The operator re-reads this on its config reconcile; until then an OBC
+    # using the field fails Provision before touching its Secret and retries.
+    obcAllowAdditionalConfigFields: "maxObjects,maxSize,bucketLifecycle"
     resources:
       requests:
         memory: 128Mi # unchangable

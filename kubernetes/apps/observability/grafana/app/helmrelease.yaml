@@ -179,26 +179,32 @@ spec:
               implementation: prometheus
     dashboards:
       data:
+        # The crunchy-* dashboards are pinned to postgres-operator-examples
+        # 397165d28, the last commit that has them: eb3de7c4f (2025-12-18)
+        # removed kustomize/monitoring, so `main` returns 404. Chart 10.x
+        # ignored that and provisioned empty files; chart 14's download
+        # script runs curl -f under pipefail and fails the init container
+        # (download-dashboards exit 22, 2026-10-18).
         crunchy-pgbackrest: #https://github.com/CrunchyData/postgres-operator-examples/issues/264
-          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/main/kustomize/monitoring/grafana/dashboards/pgbackrest.json
+          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/397165d28014b9c4676a122223c44683d5bfb015/kustomize/monitoring/grafana/dashboards/pgbackrest.json
           datasource: Prometheus
         crunchy-pod-details:
-          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/main/kustomize/monitoring/grafana/dashboards/pod_details.json
+          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/397165d28014b9c4676a122223c44683d5bfb015/kustomize/monitoring/grafana/dashboards/pod_details.json
           datasource: Prometheus
         crunchy-postgresql-details:
-          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/main/kustomize/monitoring/grafana/dashboards/postgresql_details.json
+          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/397165d28014b9c4676a122223c44683d5bfb015/kustomize/monitoring/grafana/dashboards/postgresql_details.json
           datasource: Prometheus
         crunchy-postgresql-overview:
-          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/main/kustomize/monitoring/grafana/dashboards/postgresql_overview.json
+          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/397165d28014b9c4676a122223c44683d5bfb015/kustomize/monitoring/grafana/dashboards/postgresql_overview.json
           datasource: Prometheus
         crunchy-postgresql-service_health:
-          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/main/kustomize/monitoring/grafana/dashboards/postgresql_service_health.json
+          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/397165d28014b9c4676a122223c44683d5bfb015/kustomize/monitoring/grafana/dashboards/postgresql_service_health.json
           datasource: Prometheus
         crunchy-prometheus-alerts:
-          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/main/kustomize/monitoring/grafana/dashboards/prometheus_alerts.json
+          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/397165d28014b9c4676a122223c44683d5bfb015/kustomize/monitoring/grafana/dashboards/prometheus_alerts.json
           datasource: Prometheus
         crunchy-query-statistics:
-          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/main/kustomize/monitoring/grafana/dashboards/query_statistics.json
+          url: https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/397165d28014b9c4676a122223c44683d5bfb015/kustomize/monitoring/grafana/dashboards/query_statistics.json
           datasource: Prometheus
         dragonfly:
           url: https://raw.githubusercontent.com/dragonflydb/dragonfly/refs/heads/main/tools/local/monitoring/grafana/provisioning/dashboards/dragonfly.json

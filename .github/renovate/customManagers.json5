@@ -42,16 +42,17 @@
       "datasourceTemplate": "docker"
     },
     {
-      // Grafana plugins pinned as "<plugin-id> <version>" in the grafana
-      // chart's `plugins:` list. The annotated manager above cannot read it
-      // (no ":" or "=" before the version). The plugin id and the GitHub repo
-      // differ, so this matches the one plugin by id; tags are v-prefixed:
-      //   - victoriametrics-logs-datasource 0.33.1
+      // Grafana plugins pinned as "<plugin-id>@<version>" in the grafana
+      // chart's `plugins:` list (Grafana's preinstall_sync format). The
+      // annotated manager above cannot read it (no ":" or "=" before the
+      // version). The plugin id and the GitHub repo differ, so this matches
+      // the one plugin by id; tags are v-prefixed:
+      //   - victoriametrics-logs-datasource@0.33.1
       "customType": "regex",
       "description": ["Grafana VictoriaLogs datasource plugin version"],
       "fileMatch": ["(^|/)kubernetes/apps/observability/grafana/app/helmrelease\\.yaml$"],
       "matchStrings": [
-        "-\\s+victoriametrics-logs-datasource\\s+(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+        "-\\s+victoriametrics-logs-datasource@(?<currentValue>\\d+\\.\\d+\\.\\d+)"
       ],
       "depNameTemplate": "VictoriaMetrics/victorialogs-datasource",
       "datasourceTemplate": "github-releases",

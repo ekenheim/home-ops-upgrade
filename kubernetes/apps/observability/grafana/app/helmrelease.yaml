@@ -9,10 +9,17 @@ spec:
   chart:
     spec:
       chart: grafana
-      version: 10.5.15
+      # grafana-community chart. 14.x renders Grafana 13 on the distroless
+      # image with a read-only root filesystem, installs `plugins:` through
+      # GF_PLUGINS_PREINSTALL_SYNC and validates values against a schema.
+      # Grafana 13 moves dashboards and folders into unified storage on first
+      # start and renames the old tables to *_legacy, so going back to 12.x
+      # means restoring the pre-upgrade pg_dump of the grafana database, not
+      # just reverting this file.
+      version: 14.0.1
       sourceRef:
         kind: HelmRepository
-        name: grafana
+        name: grafana-community
         namespace: flux-system
   install:
     remediation:
@@ -29,9 +36,15 @@ spec:
     env:
       GF_DATE_FORMATS_USE_BROWSER_LOCALE: true
       GF_EXPLORE_ENABLED: true
-      GF_FEATURE_TOGGLES_ENABLE: publicDashboards
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: natel-discrete-panel,pr0ps-trackmap-panel,panodata-map-panel
-      GF_SECURITY_COOKIE_SAMESITE: *app
+      # No GF_FEATURE_TOGGLES_ENABLE=publicDashboards: that toggle is not in
+      # the 12.3 or 13.2 feature registry (public/shared dashboards are on via
+      # [public_dashboards] enabled, default true), so it was a no-op.
+      # No GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS either: every plugin
+      # installed below is signed (pr0ps-trackmap-panel 3.x is), and the
+      # unsigned ones it named were Angular or never installed.
+      # `lax`, not the release name: "grafana" is not a SameSite mode and
+      # Grafana silently fell back to lax, so this only states what ran.
+      GF_SECURITY_COOKIE_SAMESITE: lax
       GF_SERVER_ROOT_URL: https://grafana.${SECRET_DOMAIN}
     # `envFromSecrets`, NOT `envFrom`: this chart has no `envFrom` value and
     # drops it silently. From 2024-12-27 (88fa3a395) to 2026-09-30 that left
@@ -71,12 +84,16 @@ spec:
         role_attribute_path: contains(groups[*], 'Grafana Admins') && 'Admin' || contains(groups[*], 'Grafana Editors') && 'Editor' || 'Viewer'
     deploymentStrategy:
       type: RollingUpdate
+    # Grafana 12.3.1 working set over 7 days (2026-10-18): p95 192Mi, max
+    # 198Mi, against a 219M (209Mi) limit. Grafana 13 adds the unified-storage
+    # migration on first start and a bleve search index per pod, so the limit
+    # gets headroom. The chart sets GOMEMLIMIT to 90% of it.
     resources:
       requests:
         cpu: 23m
-        memory: 127M
+        memory: 192Mi
       limits:
-        memory: 219M
+        memory: 512Mi
     admin:
       existingSecret: grafana-secret
       passwordKey: adminPass
@@ -361,22 +378,27 @@ spec:
         enabled: true
         searchNamespace: ALL
         labelValue: ""
+    # The chart passes this list as GF_PLUGINS_PREINSTALL_SYNC, and a plugin
+    # that fails to install stops Grafana from starting. Dropped 2026-10-18
+    # with the move to Grafana 13: grafana-piechart-panel,
+    # grafana-worldmap-panel and natel-discrete-panel, all Angular and
+    # deprecated on grafana.com. Grafana 12 already refused to load them, and
+    # none of the 97 dashboards used them (only grafana-clock-panel is used).
     plugins:
       - grafana-clock-panel
-      - grafana-piechart-panel
-      - grafana-worldmap-panel
-      - natel-discrete-panel
       - pr0ps-trackmap-panel
       - vonage-status-panel
-      # "id version" is pinned: Grafana 12 migrates GF_INSTALL_PLUGINS into
-      # preinstall_sync, which reads the second word as the version.
-      # Renovate bumps it from the GitHub releases of
-      # VictoriaMetrics/victorialogs-datasource (customManagers.json5).
-      # Grafana installs from the grafana.com catalog, which can trail a
-      # GitHub release by hours; if a bump fails to install, check
+      # Pinned as "id@version": preinstall_sync splits entries on commas AND
+      # spaces, so the old "id version" form would become two plugin ids
+      # ("0.33.1" being one) and fail startup. Renovate bumps it from the
+      # GitHub releases of VictoriaMetrics/victorialogs-datasource
+      # (customManagers.json5). Grafana installs from the grafana.com
+      # catalog, which can trail a GitHub release by hours; if a bump fails
+      # to install, check
       # https://grafana.com/api/plugins/victoriametrics-logs-datasource/versions.
-      # 0.33.1 is in the catalog (2026-10-16) and adds Drilldown.
-      - victoriametrics-logs-datasource 0.33.1
+      # 0.33.1 is in the catalog (2026-10-16), adds Drilldown and needs
+      # Grafana >=10.4.
+      - victoriametrics-logs-datasource@0.33.1
     serviceMonitor:
       enabled: true
       metricRelabelings:

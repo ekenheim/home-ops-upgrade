@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/source.toolkit.fluxcd.io/helmrepository_v1.json
+# Grafana's own chart repo (grafana.github.io/helm-charts) stopped publishing
+# the grafana chart in January 2026 at 10.5.15 (app 12.3.1); the chart moved
+# to the grafana-community org, which publishes it here and over HTTP at
+# https://grafana-community.github.io/helm-charts.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: grafana-community
+  namespace: flux-system
+spec:
+  type: oci
+  interval: 5m
+  url: oci://ghcr.io/grafana-community/helm-charts

@@ -3,14 +3,28 @@
 # chart's default ModelConfig straight from this namespace (apiKeySecret
 # litellm-key-kagent / api-key), so no ClusterSecretStore.
 #
-# local-pool-chat is the agents' model: worker4's Flash-Next with thinking off,
-# function calling on, which keeps a multi-step tool loop interactive. It falls
-# back to MiniMax-M3-chat when worker4 is down; that is allowed here because
-# the prompts carry cluster state only, not email, finance, home or location
-# data (PRIVACY in ../app/configmap.yaml). local-pool (thinking on) and fast
-# are on the key so a ModelConfig can be pointed at them without re-minting.
-# Team `platform` is traced into Langfuse. The budget and rpm only catch a
-# runaway loop; the local rungs cost nothing.
+# kagent-chat is the agents' model (2026-10-18): MiniMax-M3 with thinking
+# off first, worker4 with thinking off when MiniMax is capped or down (an
+# `order:` pool, see ../app/configmap.yaml). It was local-pool-chat, worker4
+# first, until a kagent turn turned out to be 50-100k tokens of tool output:
+# minutes of prefill on worker4 per step. The prompts carry cluster state
+# only (resources, events, logs, metrics; the tools cannot read Secrets), and
+# the owner accepted that going to MiniMax as the primary. local-pool-chat,
+# local-pool (thinking on) and fast stay on the key so a ModelConfig can be
+# pointed back at worker4 without re-minting. Team `platform` is traced into
+# Langfuse.
+#
+# Budget: a runaway guard, not a spending limit (the plan is flat; this is
+# list price, MiniMax rung only, worker4 costs nothing). A step is about 60k
+# input + 1k output: 60000 x 3.0e-07 + 1000 x 1.2e-06 = ~$0.019. A question
+# is a 5-20 step tool loop, ~$0.10-0.40. $2 (the worker4-first budget) would
+# block after ~100 steps, a handful of questions; $5 is ~260 steps, 15-50
+# questions a day. Uncached, 260 x 60k = ~16M input tokens: under a tenth of
+# the ~200M uncached-equivalent tokens a week the plan allows (calibration in
+# apps/observability/exporters/minimax-quota-exporter/README.md), and about
+# half of one 5-hour window by the 2026-10-12..14 fit (uncached input ~3.7%
+# of a window per 1M tokens), so a loop stops there rather than eating the
+# week. rpmLimit and maxParallelRequests cap the rate.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMVirtualKey
 metadata:
@@ -21,11 +35,12 @@ spec:
   teamID: platform
   secretName: litellm-key-kagent
   secretKey: api-key
-  maxBudget: "2"
+  maxBudget: "5"
   budgetDuration: 1d
   maxParallelRequests: 4
   rpmLimit: 60
   models:
+    - kagent-chat
     - local-pool-chat
     - local-pool
     - fast

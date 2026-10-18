@@ -2,9 +2,9 @@
 # Restores VolSync backups into this namespace and reads them back.
 #
 # Every day it restores one app from apps.txt (by epoch day) from its MinIO
-# repo. On the 1st of the month it also restores one app (by month) from
-# its R2 repo: R2 bills per request, so the offsite copy is checked monthly
-# and each app's R2 repo comes round once per (number of apps) months.
+# repo. On the 1st of the month it also restores one app from R2_APPS (by
+# month) from its R2 repo: R2 bills per request, and a small sample is
+# enough to prove the offsite repos and credentials work.
 # For each target it restores the latest
 # restic snapshot into a fresh PVC (copyMethod Direct), starts a check pod
 # (check-pod.yaml, check.py) on it, and passes only if that pod printed
@@ -21,6 +21,7 @@ set -euo pipefail
 
 NS=backup-verify
 CONFIG=/config
+R2_APPS=${R2_APPS:-wizarr actual}
 RESTORE_TIMEOUT=${RESTORE_TIMEOUT:-2400}
 CHECK_TIMEOUT=${CHECK_TIMEOUT:-960}
 RUN_ID=$(date -u +%Y%m%d%H%M%S)
@@ -34,11 +35,14 @@ if [ -n "${VERIFY_TARGETS:-}" ]; then
 else
   day=$(( $(date -u +%s) / 86400 ))
   targets="$(pick "$day"):minio"
-  if [ "$(date -u +%d)" = "01" ]; then
+  if [ "$(date -u +%d)" = "01" ] && [ -n "$R2_APPS" ]; then
     # %m is zero-padded and $(( 08 )) is an octal error: strip the zero.
     month=$(date -u +%m)
     month=$(( $(date -u +%Y) * 12 + ${month#0} ))
-    targets="$targets $(pick "$month"):r2"
+    # shellcheck disable=SC2086 # split the list into words
+    set -- $R2_APPS
+    shift $(( month % $# ))
+    targets="$targets $1:r2"
   fi
 fi
 

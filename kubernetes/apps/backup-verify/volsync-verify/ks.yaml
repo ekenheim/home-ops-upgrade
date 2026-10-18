@@ -21,14 +21,15 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
-# One restic secret pair per app in app/apps.txt. Adding an app to the
-# rotation means a line there, a block here and an entry in checks.json.
+# The MinIO restic secret for every app in app/apps.txt, and the R2 one for
+# the apps in R2_APPS (app/cronjob.yaml). Adding an app to the rotation
+# means a line in apps.txt, a minio block here and an entry in checks.json.
 ---
 # yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: volsync-verify-secrets-home-assistant
+  name: volsync-verify-minio-home-assistant
   namespace: flux-system
 spec:
   targetNamespace: backup-verify
@@ -37,7 +38,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/templates/volsync-verify
+  path: ./kubernetes/templates/volsync-verify/minio
   prune: true
   sourceRef:
     kind: GitRepository
@@ -54,7 +55,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: volsync-verify-secrets-zwave-js-ui
+  name: volsync-verify-minio-zwave-js-ui
   namespace: flux-system
 spec:
   targetNamespace: backup-verify
@@ -63,7 +64,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/templates/volsync-verify
+  path: ./kubernetes/templates/volsync-verify/minio
   prune: true
   sourceRef:
     kind: GitRepository
@@ -80,7 +81,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: volsync-verify-secrets-actual
+  name: volsync-verify-minio-actual
   namespace: flux-system
 spec:
   targetNamespace: backup-verify
@@ -89,7 +90,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/templates/volsync-verify
+  path: ./kubernetes/templates/volsync-verify/minio
   prune: true
   sourceRef:
     kind: GitRepository
@@ -106,7 +107,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: volsync-verify-secrets-overseerr
+  name: volsync-verify-minio-overseerr
   namespace: flux-system
 spec:
   targetNamespace: backup-verify
@@ -115,7 +116,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/templates/volsync-verify
+  path: ./kubernetes/templates/volsync-verify/minio
   prune: true
   sourceRef:
     kind: GitRepository
@@ -132,7 +133,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: volsync-verify-secrets-tautulli
+  name: volsync-verify-minio-tautulli
   namespace: flux-system
 spec:
   targetNamespace: backup-verify
@@ -141,7 +142,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/templates/volsync-verify
+  path: ./kubernetes/templates/volsync-verify/minio
   prune: true
   sourceRef:
     kind: GitRepository
@@ -158,7 +159,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: volsync-verify-secrets-wizarr
+  name: volsync-verify-minio-wizarr
   namespace: flux-system
 spec:
   targetNamespace: backup-verify
@@ -167,7 +168,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/templates/volsync-verify
+  path: ./kubernetes/templates/volsync-verify/minio
   prune: true
   sourceRef:
     kind: GitRepository
@@ -184,7 +185,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: volsync-verify-secrets-bazarr
+  name: volsync-verify-minio-bazarr
   namespace: flux-system
 spec:
   targetNamespace: backup-verify
@@ -193,7 +194,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/templates/volsync-verify
+  path: ./kubernetes/templates/volsync-verify/minio
   prune: true
   sourceRef:
     kind: GitRepository
@@ -210,7 +211,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: volsync-verify-secrets-kavita
+  name: volsync-verify-minio-kavita
   namespace: flux-system
 spec:
   targetNamespace: backup-verify
@@ -219,7 +220,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/templates/volsync-verify
+  path: ./kubernetes/templates/volsync-verify/minio
   prune: true
   sourceRef:
     kind: GitRepository
@@ -236,7 +237,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: volsync-verify-secrets-sabnzbd
+  name: volsync-verify-minio-sabnzbd
   namespace: flux-system
 spec:
   targetNamespace: backup-verify
@@ -245,7 +246,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/templates/volsync-verify
+  path: ./kubernetes/templates/volsync-verify/minio
   prune: true
   sourceRef:
     kind: GitRepository
@@ -262,7 +263,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: volsync-verify-secrets-maintainerr
+  name: volsync-verify-minio-maintainerr
   namespace: flux-system
 spec:
   targetNamespace: backup-verify
@@ -271,7 +272,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/templates/volsync-verify
+  path: ./kubernetes/templates/volsync-verify/minio
   prune: true
   sourceRef:
     kind: GitRepository
@@ -288,7 +289,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: volsync-verify-secrets-openclaw
+  name: volsync-verify-minio-openclaw
   namespace: flux-system
 spec:
   targetNamespace: backup-verify
@@ -297,7 +298,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/templates/volsync-verify
+  path: ./kubernetes/templates/volsync-verify/minio
   prune: true
   sourceRef:
     kind: GitRepository
@@ -314,7 +315,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: volsync-verify-secrets-memini
+  name: volsync-verify-minio-memini
   namespace: flux-system
 spec:
   targetNamespace: backup-verify
@@ -323,7 +324,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/templates/volsync-verify
+  path: ./kubernetes/templates/volsync-verify/minio
   prune: true
   sourceRef:
     kind: GitRepository
@@ -335,3 +336,55 @@ spec:
   postBuild:
     substitute:
       APP: memini
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-r2-wizarr
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/templates/volsync-verify/r2
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: wizarr
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-r2-actual
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/templates/volsync-verify/r2
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: actual

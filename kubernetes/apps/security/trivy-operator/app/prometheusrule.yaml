@@ -23,7 +23,12 @@ spec:
             ) > 0
           for: 6h
           labels:
-            severity: warning
+            # info, not warning: this stays firing for as long as a
+            # namespace carries fixable Criticals, often waiting on an
+            # upstream release. Alertmanager only sends warning/critical to
+            # alert-triage (MiniMax quota); info still reaches Discord
+            # through the catch-all route.
+            severity: info
           annotations:
             summary: >-
               {{ $value }} fixable Critical vulnerabilities in {{ $labels.namespace }}

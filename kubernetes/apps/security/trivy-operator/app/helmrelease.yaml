@@ -10,7 +10,15 @@
 # Two constraints shape the values below:
 #   - master2 is the sole etcd member and every report is an etcd object.
 #     No SBOM reports, init containers skipped, fixed-only findings from
-#     MEDIUM up, single-use run pods skipped, and a 48h rescan cycle.
+#     MEDIUM up, single-use run pods and VolSync movers skipped, and a 48h
+#     rescan cycle.
+#
+# Not alternateReportStorage (chart 0.37.0), although it would take the
+# reports out of etcd: with it the operator writes reports as JSON files on a
+# PVC instead of CRDs, and its metrics collector lists the CRDs
+# (pkg/metrics/collector.go in 0.35.0), so the trivy_* metrics, the dashboard
+# and both alerts would go empty, and `kubectl get vulnerabilityreports`
+# with them. The etcd cost is cut instead by what is skipped below.
 #   - Scan jobs pull image layers from the registry themselves (image mode;
 #     not through containerd or Spegel), and the ROCm llama.cpp images in
 #     the llm namespace are many GB. Two at a time, long timeouts, and never
@@ -116,14 +124,28 @@ spec:
       # Istio, Crunchy, Rook) or a wait loop; skipping them saves a report per
       # init container.
       skipInitContainers: true
-      # Label keys (key presence, not key=value). Single-use pods and Jobs
-      # with a non-workload owner are scanned one by one, and their report
-      # goes when they do:
+      # Label keys (key presence, not key=value: helper.go SkipProcessing in
+      # 0.35.0). Single-use pods and Jobs with a non-workload owner are
+      # scanned one by one, and their report goes when they do:
       #   actions-ephemeral-runner  ARC runner pods (owner EphemeralRunner)
       #   dagster/run-id            Dagster run Jobs; the same images run as
       #                             Deployments in development, which are scanned
       #   prefect.io/flow-run-id    stale Jobs from the disabled Prefect install
-      skipResourceByLabels: actions-ephemeral-runner,dagster/run-id,prefect.io/flow-run-id
+      #   volsync.backube/cleanup   VolSync mover Jobs (volsync-src-*/-dst-*).
+      #                             Each hourly sync is a new Job, about 27
+      #                             scans/h of the same restic/rclone images,
+      #                             report churn in etcd and scan-job log lines
+      #                             in VictoriaLogs. VolSync marks its temporary
+      #                             objects with this key (MarkForCleanup in
+      #                             0.16.0). Not app.kubernetes.io/created-by,
+      #                             which movers also carry: Rook and KubeRay set
+      #                             that key too, and it would skip them.
+      skipResourceByLabels: actions-ephemeral-runner,dagster/run-id,prefect.io/flow-run-id,volsync.backube/cleanup
+      # Glob on the image as written in the pod spec. Istio's gateway
+      # Deployment says `image: auto` and the injector fills in the real
+      # proxy at admission, so the ReplicaSet's `auto` failed to pull every
+      # 10 minutes. The injected proxy image is scanned in the sidecar pods.
+      excludeImages: auto
       # No scanJobTolerations / scanJobNodeSelector: image-mode scan jobs get
       # neither from the scanned workload, so the llm-workload taint keeps
       # them off worker4, and master2's PreferNoSchedule taints steer them to
@@ -146,9 +168,46 @@ spec:
       javaDbRepository: aquasec/trivy-java-db
       # Fixed-only, MEDIUM and up: what can be acted on, and it keeps a large
       # Ubuntu/ROCm image's VulnerabilityReport well under etcd's 1.5 MiB
-      # object limit. LOW/UNKNOWN panels on the dashboard stay empty.
+      # object limit. The filter works (in ClientServer mode too); see
+      # configFile for why reports still showed UNKNOWN.
       ignoreUnfixed: true
       severity: MEDIUM,HIGH,CRITICAL
+      # Workaround for aquasecurity/trivy-operator#3022 (fix in PR #3026, not
+      # released as of 0.35.0). When neither the package's own vendor nor NVD
+      # rates a CVE, Trivy falls back to other vendors' ratings and leaves
+      # SeveritySource empty; the operator reads VendorSeverity[SeveritySource]
+      # and so writes UNKNOWN. On 2026-10-18 that was 2,565 findings across
+      # 61 reports, all of them MEDIUM or above to Trivy (591 of 778 on the
+      # fstrim image: the same CVEs as a standalone scan, 0 UNKNOWN there).
+      # A Critical rated only by another vendor would be hidden the same way
+      # and never reach the Critical alerts.
+      # An explicit source list makes Trivy record the source it used. The
+      # order is trivy-db's own fallback order (AllSourceIDs): measured
+      # against Trivy's default on the fstrim (Alpine) and Karakeep (Debian)
+      # images, 97.7% and 97.6% of findings keep the same severity and none
+      # are UNKNOWN; the rest are packages whose own distro rates them
+      # differently from NVD (Karakeep: 7 Criticals become 6). Drop this once
+      # the operator release with #3026 is in.
+      configFile:
+        vulnerability:
+          severity-source:
+            - nvd
+            - redhat
+            - redhat-oval
+            - debian
+            - ubuntu
+            - alpine
+            - amazon
+            - oracle-oval
+            - suse-cvrf
+            - photon
+            - alma
+            - rocky
+            - azure
+            - cbl-mariner
+            - ghsa
+            - wolfi
+            - chainguard
       timeout: 15m0s
       # Scan jobs and node-collector. The CPU limit is deliberate: a scan job
       # that lands on master2 must not starve etcd.

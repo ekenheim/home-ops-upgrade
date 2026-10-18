@@ -2,7 +2,11 @@
 # Trivy Operator dashboard (apps/security/trivy-operator), upstream grafana.com
 # 17813 revision 2. Only the datasource input is changed: DS_PROMETHEUS became
 # the hidden `datasource` variable the other dashboards here use.
-# The scan drops LOW/UNKNOWN findings (trivy.severity), so those panels read 0.
+# The scan drops LOW/UNKNOWN findings (trivy.severity), so those panels read
+# 0 once every report has been rescanned with the severity-source workaround
+# in the HelmRelease (48h, scannerReportTTL). Before it, Unknown held MEDIUM+
+# findings the operator had lost the severity of (trivy-operator#3022); an
+# Unknown count above 0 again means that bug is back.
 apiVersion: v1
 kind: ConfigMap
 metadata:

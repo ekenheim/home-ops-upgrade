@@ -13,7 +13,9 @@ spec:
   dependsOn:
     - name: external-secrets
   path: ./kubernetes/apps/development/meilisearch/app
-  prune: false
+  # prune: true (was false until 2026-10-18): with false, disabling it left
+  # the HelmRelease running unmanaged.
+  prune: true
   sourceRef:
     kind: GitRepository
     name: home-kubernetes

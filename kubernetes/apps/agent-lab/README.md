@@ -25,8 +25,9 @@ Also outside this directory:
   store, so neither consumer can read the other's key);
 - `agent-work` / `agent-verify` excluded from every evicting descheduler plugin;
 - Tetragon (`kube-system/tetragon`): observe-only TracingPolicies in `agent-work` / `agent-verify`
-  (writes to system and credential files, every TCP connect), exec events from all four namespaces
-  on the export container's stdout, and the `AgentSandboxNetworkToolExec` alert.
+  (writes to system and credential files, every TCP connect, reads of ServiceAccount tokens and
+  SSH / git credentials, credential changes, mount attempts, exec from `/tmp`), exec events from all
+  four namespaces on the export container's stdout, and the `AgentSandboxNetworkToolExec` alert.
 
 ## Trust model
 

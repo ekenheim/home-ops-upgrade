@@ -1,0 +1,47 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/monitoring.coreos.com/servicemonitor_v1.json
+# Replaces the chart's ServiceMonitor (serviceMonitor.enabled: false in
+# helmrelease.yaml), which has no metricRelabelings. Not named `tetragon`:
+# Helm deletes its own object of that name on the upgrade, and would take a
+# same-named one from Flux with it.
+#
+# The endpoint matches the chart's: honorLabels keeps Tetragon's own
+# `namespace` (the traced pod's, which AgentSandboxNetworkToolExec filters
+# on) instead of kube-system, and `node` is what the health alerts group by.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tetragon-agent
+spec:
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: tetragon
+      app.kubernetes.io/name: tetragon
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 60s
+      honorLabels: true
+      # No `replacement`: the default is $1, and a literal ${1} would be
+      # eaten by Flux's postBuild substitution.
+      relabelings:
+        - action: replace
+          sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: node
+        - action: replace
+          sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: tetragon_pod
+      metricRelabelings:
+        # 7,458 of 17.6k tetragon_events_total series (2026-10-18) had no
+        # namespace, i.e. host processes and kernel threads. 7,181 of them
+        # were kworkers (`[kworker/0:2-events]`, one series per thread name,
+        # all PROCESS_EXIT), so this drops the kworker series too. Host
+        # execs were never exported (exportAllowList is agent-lab only), so
+        # nothing else reads them. Only this metric: the agent's own metrics
+        # carry namespace=kube-system from the target.
+        - action: drop
+          sourceLabels: [__name__, namespace]
+          regex: tetragon_events_total;

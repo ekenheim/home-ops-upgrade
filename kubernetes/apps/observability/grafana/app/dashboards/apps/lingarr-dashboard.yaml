@@ -830,6 +830,7 @@ data:
           "id": 22,
           "type": "stat",
           "title": "Library",
+          "description": "Items Lingarr knows about and the files it has translated over its lifetime. The gap is not a backlog: most of it already had Swedish from Bazarr or has no English subtitle file to translate from (2026-10-18: 13,807 of 15,086 episodes and 1,167 of 1,170 movies have Swedish, 1,193 episodes have no subtitles). Lingarr's API has no 'left to translate' figure.",
           "datasource": "${datasource}",
           "gridPos": {
             "h": 7,
@@ -851,7 +852,7 @@ data:
             {
               "refId": "C",
               "expr": "max(lingarr_files_translated_total)",
-              "legendFormat": "translated"
+              "legendFormat": "translated (lifetime)"
             }
           ],
           "fieldConfig": {

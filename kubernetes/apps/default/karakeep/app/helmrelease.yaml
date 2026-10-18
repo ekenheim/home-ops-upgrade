@@ -1,0 +1,206 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app karakeep
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+  - name: rook-ceph-cluster
+    namespace: rook-ceph
+  - name: volsync
+    namespace: storage
+  values:
+    # Three controllers, the shape of upstream's kubernetes/ manifests: the
+    # web image (Next.js web app and the background workers in one s6
+    # container), a Chrome the crawler drives over CDP, and Meilisearch for
+    # full-text and vector search. With three services the chart names them
+    # karakeep-app, karakeep-chrome and karakeep-meilisearch.
+    controllers:
+      karakeep:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/karakeep-app/karakeep
+              tag: 0.34.0@sha256:151cdd6b5f2e21635645983e126f411675bfa35becb02c028c1a727f45f899c6
+            env:
+              TZ: ${TIMEZONE}
+              # SQLite and crawled assets. Don't change: the image expects it.
+              DATA_DIR: /data
+              DB_WAL_MODE: "true"
+              NEXTAUTH_URL: https://karakeep.${SECRET_DOMAIN}
+              MEILI_ADDR: http://karakeep-meilisearch:7700
+              BROWSER_WEB_URL: http://karakeep-chrome:9222
+              CRAWLER_BROWSER_TIMEZONE: ${TIMEZONE}
+              DISABLE_NEW_RELEASE_CHECK: "true"
+              LOG_LEVEL: info
+              # Tesseract models are downloaded on first use; keep them on the
+              # PVC instead of re-fetching them into /tmp after every restart.
+              OCR_CACHE_DIR: /data/ocr-cache
+              OCR_LANGS: eng,swe,nld
+              # Sign-in is Authentik only. Signups stay open on purpose: the
+              # first OIDC login creates the account (and the first account
+              # is Karakeep's admin). Who may get that far is Authentik's
+              # call, not Karakeep's.
+              DISABLE_PASSWORD_AUTH: "true"
+              OAUTH_AUTO_REDIRECT: "true"
+              OAUTH_PROVIDER_NAME: Authentik
+              OAUTH_CLIENT_ID: karakeep
+              OAUTH_WELLKNOWN_URL: https://sso.${SECRET_DOMAIN}/application/o/karakeep/.well-known/openid-configuration
+              # AI tagging, summaries and embeddings through LiteLLM, local
+              # only: bookmarks are personal data (PRIVACY in
+              # llm/litellm/app/configmap.yaml), so the karakeep key is in the
+              # `home` team and lists `fast` and the CPU embedder, nothing
+              # cloud. `fast` is worker4's model with thinking off and vision,
+              # so it does image tagging too.
+              OPENAI_BASE_URL: http://litellm.llm:4000/v1
+              INFERENCE_TEXT_MODEL: fast
+              INFERENCE_IMAGE_MODEL: fast
+              INFERENCE_CONTEXT_LENGTH: "4096"
+              INFERENCE_OUTPUT_SCHEMA: structured
+              # worker4 queues behind longer jobs; 30 s (the default) times
+              # out a tag request that is merely waiting for a slot.
+              INFERENCE_JOB_TIMEOUT_SEC: "180"
+              OPENAI_TIMEOUT_SEC: "170"
+              # Semantic and hybrid search, vectors stored in Meilisearch.
+              # 1024 is qwen3-embedding-0.6b's native size; changing the model
+              # means a reindex from the admin page.
+              EMBEDDING_ENABLE_AUTO_INDEXING: "true"
+              EMBEDDING_TEXT_MODEL: qwen3-embedding-0.6b
+              EMBEDDING_DIMENSIONS: "1024"
+              EMBEDDING_JOB_TIMEOUT_SEC: "120"
+            envFrom:
+            - secretRef:
+                name: karakeep-secret
+            - secretRef:
+                name: karakeep-oidc
+            - secretRef:
+                name: karakeep-litellm
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: &port 3000
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness: *probe
+            resources:
+              requests:
+                cpu: 50m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+      chrome:
+        containers:
+          app:
+            image:
+              # `release` resolves to this tag; the version tracks Chrome
+              # stable, not Karakeep.
+              repository: ghcr.io/karakeep-app/karakeep-chrome
+              tag: 154.0.8037.57-r1@sha256:c51a8c8e6c3c1040a50fa0ecfd0b2fc298401b4229262636552458151f6f18fa
+            args:
+              - --disable-gpu
+              - --disable-dev-shm-usage
+              - --hide-scrollbars
+              - --disable-blink-features=AutomationControlled
+              - --window-size=1440,900
+            resources:
+              requests:
+                cpu: 50m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+      meilisearch:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              # The version upstream's docker-compose and kubernetes/ pin.
+              # Meilisearch needs a dump/import to cross some major versions,
+              # so bump it with Karakeep, not on its own.
+              repository: docker.io/getmeili/meilisearch
+              tag: v1.41.0@sha256:860fa4baed04ae1c235de870edab0c8006227546dea1bbb6411fbfc5e27cf1db
+            env:
+              MEILI_NO_ANALYTICS: "true"
+              MEILI_MASTER_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: karakeep-secret
+                    key: MEILI_MASTER_KEY
+            resources:
+              requests:
+                cpu: 25m
+                memory: 256Mi
+              limits:
+                memory: 2Gi
+    service:
+      app:
+        controller: karakeep
+        ports:
+          http:
+            port: *port
+      chrome:
+        controller: chrome
+        ports:
+          http:
+            port: 9222
+      meilisearch:
+        controller: meilisearch
+        ports:
+          http:
+            port: 7700
+    route:
+      app:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      data:
+        existingClaim: *app
+        advancedMounts:
+          karakeep:
+            app:
+              - path: /data
+      # Not on VolSync: everything here is rebuilt from the SQLite database
+      # on the `data` claim (admin page, "Reindex all bookmarks"), embeddings
+      # included.
+      meilisearch:
+        type: persistentVolumeClaim
+        storageClass: ceph-block
+        accessMode: ReadWriteOnce
+        size: 5Gi
+        advancedMounts:
+          meilisearch:
+            app:
+              - path: /meili_data

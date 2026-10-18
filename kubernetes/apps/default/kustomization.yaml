@@ -27,3 +27,4 @@ resources:
   - ./zwave-js-ui/ks.yaml
   - ./immich/ks.yaml
   - ./dawarich/ks.yaml
+  - ./karakeep/ks.yaml

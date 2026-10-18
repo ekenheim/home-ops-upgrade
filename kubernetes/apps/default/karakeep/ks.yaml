@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app karakeep
+  namespace: flux-system
+spec:
+  targetNamespace: default
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: external-secrets-stores
+    # authentik-karakeep-oidc (the OIDC client secret) and the
+    # authentik-oidc-secrets-karakeep store that serves it to `default`.
+    - name: authentik
+    # litellm-key-karakeep and the litellm-key-secrets-karakeep store.
+    - name: litellm-keys
+    - name: litellm-stores
+  path: ./kubernetes/apps/default/karakeep/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false # no flux ks dependents
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: *app
+      VOLSYNC_CAPACITY: 10Gi

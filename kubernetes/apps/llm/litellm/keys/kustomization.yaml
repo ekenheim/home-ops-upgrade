@@ -18,3 +18,4 @@ resources:
   - ./courier.yaml
   - ./paperless-gpt.yaml
   - ./vane.yaml
+  - ./karakeep.yaml

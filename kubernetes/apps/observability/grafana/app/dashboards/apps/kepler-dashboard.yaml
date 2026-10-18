@@ -16,13 +16,13 @@ data:
     {
       "title": "Kepler",
       "uid": "keplerPower",
-      "description": "CPU power per node, namespace and pod from Kepler (RAPL package zone), with worker4's iGPU alongside.",
+      "description": "Package power per node, namespace and pod from Kepler (RAPL package zone; worker4's is CPU+iGPU), worker4 J/token, and the UPS total.",
       "tags": [
         "kepler",
         "power"
       ],
       "schemaVersion": 39,
-      "version": 1,
+      "version": 2,
       "editable": true,
       "refresh": "1m",
       "time": {
@@ -44,8 +44,8 @@ data:
         {
           "id": 1,
           "type": "stat",
-          "title": "Cluster CPU power",
-          "description": "RAPL package zone, summed over every node Kepler runs on.",
+          "title": "Cluster package power",
+          "description": "RAPL package zone, summed over every node Kepler runs on. worker4's package is its whole APU socket, so this includes its iGPU (llama.cpp) as well.",
           "datasource": "${datasource}",
           "gridPos": {
             "h": 4,
@@ -97,8 +97,8 @@ data:
         {
           "id": 2,
           "type": "stat",
-          "title": "worker4 iGPU power",
-          "description": "amdgpu hwmon from node-exporter. Kepler does not attribute AMD GPU power to pods.",
+          "title": "worker4 socket power (amdgpu PPT)",
+          "description": "amdgpu hwmon power1_average from node-exporter. On an APU this is the SMU's socket PPT, the same quantity as worker4's RAPL package (CPU+iGPU), not the iGPU alone: a cross-check, not an addition to the panels above.",
           "datasource": "${datasource}",
           "gridPos": {
             "h": 4,
@@ -150,7 +150,7 @@ data:
         {
           "id": 3,
           "type": "stat",
-          "title": "CPU energy, last 24h",
+          "title": "Package energy, last 24h",
           "description": "",
           "datasource": "${datasource}",
           "gridPos": {
@@ -204,7 +204,7 @@ data:
           "id": 4,
           "type": "stat",
           "title": "Attributed to pods",
-          "description": "Share of package power Kepler assigns to pods; the rest is idle and host processes.",
+          "description": "Share of package power Kepler assigns to pods; the rest is idle and host processes. Reads low on worker4, whose package includes iGPU work Kepler can't attribute.",
           "datasource": "${datasource}",
           "gridPos": {
             "h": 4,
@@ -254,16 +254,188 @@ data:
           ]
         },
         {
+          "id": 11,
+          "type": "stat",
+          "title": "worker4 J/token",
+          "description": "worker4 package energy (CPU+iGPU, the whole APU) per generated token, across the llama.cpp servers on worker4. Prompt processing is in the joules but not in the tokens, so long prompts raise it. Empty while nothing is generating.",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "suffix: J/token",
+              "decimals": 2,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "area",
+            "textMode": "auto",
+            "justifyMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "${datasource}",
+              "expr": "sum(rate(kepler_node_cpu_joules_total{node_name=\"worker4\",zone=\"package\"}[5m])) / (sum(rate(llamacpp:tokens_predicted_total[5m]) * on (namespace, pod) group_left () max by (namespace, pod) (kube_pod_info{node=\"worker4\"})) > 0.1)",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "type": "stat",
+          "title": "Idle floor (24h)",
+          "description": "Lowest 5-minute average package power per node over the last 24h, from node-exporter's RAPL counters (no Kepler scrape gaps). worker4's includes the iGPU.",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 4,
+            "w": 12,
+            "x": 6,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "watt",
+              "decimals": 0,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "worker4"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "worker4 CPU+iGPU (APU socket)"
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "value_and_name",
+            "justifyMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "${datasource}",
+              "expr": "min_over_time((sum by (kubernetes_node) (rate(node_rapl_package_joules_total[5m])))[24h:5m])",
+              "legendFormat": "{{kubernetes_node}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "type": "stat",
+          "title": "UPS output (whole rack)",
+          "description": "output.realpower from the Riello UPS via nut-exporter: everything on the UPS (nodes, NAS, network), measured at the UPS, so it includes PSU losses, disks and NICs that RAPL never sees.",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 18,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "watt",
+              "decimals": 0,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "area",
+            "textMode": "auto",
+            "justifyMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": "${datasource}",
+              "expr": "sum(network_ups_tools_output_realpower)",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ]
+        },
+        {
           "id": 5,
           "type": "timeseries",
-          "title": "CPU package power by node",
-          "description": "",
+          "title": "Package power by node",
+          "description": "worker4's package is the APU socket: CPU and iGPU together.",
           "datasource": "${datasource}",
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 4
+            "y": 8
           },
           "fieldConfig": {
             "defaults": {
@@ -279,7 +451,20 @@ data:
                 "showPoints": "never"
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "worker4"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "worker4 CPU+iGPU (APU socket)"
+                  }
+                ]
+              }
+            ]
           },
           "options": {
             "legend": {
@@ -315,7 +500,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 4
+            "y": 8
           },
           "fieldConfig": {
             "defaults": {
@@ -331,7 +516,20 @@ data:
                 "showPoints": "never"
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "worker4"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "worker4 CPU+iGPU (APU socket)"
+                  }
+                ]
+              }
+            ]
           },
           "options": {
             "legend": {
@@ -367,7 +565,7 @@ data:
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 12
+            "y": 16
           },
           "fieldConfig": {
             "defaults": {
@@ -413,13 +611,13 @@ data:
           "id": 8,
           "type": "timeseries",
           "title": "Idle vs active by node",
-          "description": "",
+          "description": "Kepler's split of package power by CPU utilisation. It is modelled, not measured: idle can exceed the node's actual total. For the real floor see the Idle floor stat.",
           "datasource": "${datasource}",
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 22
+            "y": 26
           },
           "fieldConfig": {
             "defaults": {
@@ -470,14 +668,14 @@ data:
         {
           "id": 9,
           "type": "timeseries",
-          "title": "worker4 iGPU (amdgpu hwmon)",
-          "description": "llama.cpp on worker4 runs here. Not part of the RAPL CPU numbers above.",
+          "title": "worker4 socket power, amdgpu vs RAPL",
+          "description": "amdgpu's power1_average (the SMU's socket PPT) against worker4's RAPL package. Both are the whole APU, CPU+iGPU: they should overlap. Not additive.",
           "datasource": "${datasource}",
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 22
+            "y": 26
           },
           "fieldConfig": {
             "defaults": {
@@ -514,8 +712,14 @@ data:
             {
               "datasource": "${datasource}",
               "expr": "node_hwmon_power_average_watt{kubernetes_node=\"worker4\"}",
-              "legendFormat": "{{chip}} {{sensor}}",
+              "legendFormat": "amdgpu PPT ({{chip}} {{sensor}})",
               "refId": "A"
+            },
+            {
+              "datasource": "${datasource}",
+              "expr": "sum(rate(node_rapl_package_joules_total{kubernetes_node=\"worker4\"}[5m]))",
+              "legendFormat": "RAPL package",
+              "refId": "B"
             }
           ]
         },
@@ -528,7 +732,7 @@ data:
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 30
+            "y": 34
           },
           "fieldConfig": {
             "defaults": {
@@ -568,6 +772,116 @@ data:
               "instant": true,
               "range": false,
               "format": "table"
+            }
+          ]
+        },
+        {
+          "id": 14,
+          "type": "timeseries",
+          "title": "worker4 J/token over time",
+          "description": "worker4 package energy (CPU+iGPU, the whole APU) per generated token, across the llama.cpp servers on worker4. Prompt processing is in the joules but not in the tokens, so long prompts raise it. Empty while nothing is generating.",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 44
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "suffix: J/token",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                },
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": "${datasource}",
+              "expr": "sum(rate(kepler_node_cpu_joules_total{node_name=\"worker4\",zone=\"package\"}[5m])) / (sum(rate(llamacpp:tokens_predicted_total[5m]) * on (namespace, pod) group_left () max by (namespace, pod) (kube_pod_info{node=\"worker4\"})) > 0.1)",
+              "legendFormat": "J/token",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 15,
+          "type": "timeseries",
+          "title": "UPS output vs RAPL package total",
+          "description": "What the UPS delivers against what RAPL measures on the cluster nodes. The gap is the NAS, network gear, PSU losses, disks, NICs and board power.",
+          "datasource": "${datasource}",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 44
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "watt",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                },
+                "showPoints": "never"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": "${datasource}",
+              "expr": "sum(network_ups_tools_output_realpower)",
+              "legendFormat": "UPS output",
+              "refId": "A"
+            },
+            {
+              "datasource": "${datasource}",
+              "expr": "sum(rate(node_rapl_package_joules_total[5m]))",
+              "legendFormat": "RAPL package, all nodes",
+              "refId": "B"
             }
           ]
         }

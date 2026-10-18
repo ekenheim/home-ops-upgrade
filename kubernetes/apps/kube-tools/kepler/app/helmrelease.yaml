@@ -18,8 +18,11 @@
 # Query one zone, `package`, everywhere: zones overlap and must not be summed.
 #
 # Kepler attributes CPU power only. worker4's iGPU (where llama.cpp actually
-# runs) is not attributed to pods: NVML is the only GPU backend. Its draw is
-# node_hwmon_power_average_watt from amdgpu; the Kepler dashboard shows both.
+# runs) is not attributed to pods: NVML is the only GPU backend. But on Strix
+# Halo the RAPL package zone is the whole APU socket, iGPU included: package
+# tracks amdgpu's power1_average, which on an APU is the SMU's socket PPT
+# (24h mean difference 1.3 W, 2026-10-18). worker4's node total is CPU+iGPU;
+# don't add the two.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -100,9 +103,15 @@ spec:
               # PLATYPUS fix, and every process's /proc entry.
               privileged: true
             resources:
+              # One value for a DaemonSet, so the busiest node sets it. p95 of
+              # rate(container_cpu_usage_seconds_total[5m]) over the first 6.6h
+              # (2026-10-18, 5s monitor interval): worker3 710m, master2 560m,
+              # worker4 70m; working set peaked at 170Mi on worker3. Expected to
+              # drop several-fold with the 30s interval below: re-measure after
+              # a week and lower this to the new p95.
               requests:
-                cpu: 50m
-                memory: 128Mi
+                cpu: 700m
+                memory: 192Mi
               limits:
                 memory: 512Mi
     serviceAccount:
@@ -133,8 +142,19 @@ spec:
           # Unset keys keep Kepler's defaults (rapl first, hwmon as backup).
           config.yaml: |
             log:
-              level: info
+              level: warn
               format: text
+            # Upstream's 5s/500ms made Kepler walk /proc on every node every 5s
+            # and again on nearly every scrape: on master2 one computation took
+            # 6-10s (the 10s scrape timeout cut it off), so 17.5% of its scrapes
+            # failed (up = 0.81 over 6h, 2026-10-18). The cost: a process that
+            # starts and exits within one 30s interval is not attributed to its
+            # pod (its energy stays in the node total). Staleness stays below the
+            # interval, as upstream requires, and covers both Prometheus
+            # replicas scraping within 10s of each other with one computation.
+            monitor:
+              interval: 30s
+              staleness: 10s
             host:
               sysfs: /host/sys
               procfs: /host/proc
@@ -170,9 +190,11 @@ spec:
             scheme: http
             path: /metrics
             # The cluster-wide scrape interval; upstream's 5s would make every
-            # scrape a power computation.
+            # scrape a power computation. A scrape older than monitor.staleness
+            # still computes inline, which took up to 10s on master2 and 9.3s on
+            # worker3 (2026-10-18), so the timeout gets the headroom.
             interval: 1m
-            scrapeTimeout: 10s
+            scrapeTimeout: 30s
     persistence:
       config:
         type: configMap

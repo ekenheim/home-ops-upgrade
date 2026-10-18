@@ -1,0 +1,36 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app vane
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/llm/vane/app
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  targetNamespace: llm
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  dependsOn:
+    - name: volsync
+    - name: rook-ceph-cluster
+    # LITELLM_API_KEY is the operator-minted Secret litellm-key-vane.
+    - name: litellm-keys
+    - name: searxng
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: *app
+      GATUS_SUBDOMAIN: vane
+      # config.json, db.sqlite (chat history) and uploads. Small.
+      VOLSYNC_CAPACITY: 2Gi
+      # The pod runs as node (1000) from the upstream node:24 base.
+      VOLSYNC_UID: "1000"
+      VOLSYNC_GID: "1000"

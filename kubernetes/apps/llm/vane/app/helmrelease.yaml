@@ -1,0 +1,164 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+#
+# Vane (Perplexica until March 2026): an answer engine that searches the web
+# through our SearXNG and has `fast` on LiteLLM write a cited answer.
+#
+# The slim image, without the SearXNG upstream bundles in the default one.
+# Settings live in data/config.json on the PVC; the seed init container
+# (resources/seed.mjs) writes the LiteLLM provider, its models and the SearXNG
+# URL there on every start, so there is no setup screen to click through.
+#
+# NO LOGIN OF ITS OWN, and GET /api/config returns the LiteLLM key in clear.
+# Two things stand in for auth: the Authentik OIDC SecurityPolicy on the
+# HTTPRoute (securitypolicy.yaml), and a CiliumNetworkPolicy that lets only
+# envoy-internal reach the pod (ciliumnetworkpolicy.yaml), so nothing in the
+# cluster can go around the sign-in to the Service.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app vane
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      interval: 30m
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      # Upstream runs as root; node (1000) from the node:24 base works as long
+      # as everything it writes is on the volumes below.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      vane:
+        # RWO PVC: RollingUpdate hangs on Multi-Attach.
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          seed:
+            image: &image
+              repository: docker.io/itzcrazykns1337/vane
+              tag: slim-v1.12.2@sha256:d2878cf9c91962aa3fc053b59bc9b89adcbdcaeb7ee36b54906e853464b2c190
+            command: ["node", "/seed/seed.mjs"]
+            # Only the seed needs these: the server reads config.json. Reloader
+            # still restarts the pod when the operator rotates the key.
+            env:
+              SEARXNG_API_URL: http://searxng.llm.svc.cluster.local:8080
+              LITELLM_BASE_URL: http://litellm.llm.svc.cluster.local:4000/v1
+              LITELLM_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-key-vane
+                    key: api-key
+            securityContext: &securityContext
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+        containers:
+          app:
+            image: *image
+            env:
+              TZ: "${TIMEZONE}"
+              # Next's standalone server binds to $HOSTNAME, which Kubernetes
+              # sets to the pod name.
+              HOSTNAME: 0.0.0.0
+              PORT: &port 3000
+              NEXT_TELEMETRY_DISABLED: "1"
+            securityContext: *securityContext
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+            resources:
+              requests:
+                cpu: 20m
+                memory: 384Mi
+              limits:
+                # Document uploads are parsed in-process (pdf-parse,
+                # officeparser).
+                memory: 2Gi
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: "LLM"
+          gethomepage.dev/name: "Vane"
+          gethomepage.dev/icon: "perplexica.png"
+          gethomepage.dev/description: "Cited answers over SearXNG + litellm"
+        hostnames: ["vane.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      data:
+        existingClaim: *app
+        advancedMounts:
+          vane:
+            seed:
+              - path: /home/vane/data
+            app:
+              - path: /home/vane/data
+      seed:
+        type: configMap
+        name: vane-seed
+        advancedMounts:
+          vane:
+            seed:
+              - path: /seed
+                readOnly: true
+      # Next's image/fetch cache; the image's own .next is root-owned.
+      cache:
+        type: emptyDir
+        advancedMounts:
+          vane:
+            app:
+              - path: /home/vane/.next/cache
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

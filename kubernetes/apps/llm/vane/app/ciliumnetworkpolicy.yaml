@@ -1,0 +1,31 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# Vane answers GET /api/config with its whole config, LiteLLM key included, to
+# anyone who asks. The OIDC SecurityPolicy only guards the HTTPRoute, so
+# without this any pod in the cluster could call the Service directly and read
+# the key. Ingress: envoy-internal only (kubelet probes from the node are
+# allowed by Cilium regardless). Egress stays open: Vane fetches the pages it
+# cites itself, besides SearXNG and LiteLLM.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: vane-ingress
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: vane
+      app.kubernetes.io/controller: vane
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    # With kube-proxy replacement the policy sees the backend port, which is
+    # also the Service port.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.envoyproxy.io/owning-gateway-name: envoy-internal
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP

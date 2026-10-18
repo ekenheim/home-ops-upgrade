@@ -46,6 +46,8 @@ resources:
   - ./memini/ks.yaml
   - ./hindsight/ks.yaml
   - ./searxng/ks.yaml
+  # Cited answers over searxng + litellm `fast`, behind Authentik OIDC.
+  - ./vane/ks.yaml
   # Gallery over ComfyUI's output on the NAS, and LLM-written wikis of my
   # repos (a CronJob on `self-hosted`). Both after joryirving/home-ops.
   - ./miso-gallery/ks.yaml

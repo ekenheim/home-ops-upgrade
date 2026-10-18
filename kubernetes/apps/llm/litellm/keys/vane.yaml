@@ -1,0 +1,24 @@
+---
+# Vane, the answer engine (apps/llm/vane). Written into its config.json by the
+# seed init container; the pod never sees it as an env var. Local aliases
+# only: what people type into a search box can be personal, so nothing here
+# falls back to a cloud rung. Every answer is one `fast` call over the search
+# results plus embedding calls to rank them; the budget and rpm only catch a
+# loop.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: vane
+spec:
+  proxyRef: litellm-admin
+  keyAlias: vane
+  teamID: research
+  secretName: litellm-key-vane
+  secretKey: api-key
+  maxBudget: "5"
+  budgetDuration: 1d
+  maxParallelRequests: 4
+  rpmLimit: 60
+  models:
+    - fast
+    - qwen3-embedding-0.6b

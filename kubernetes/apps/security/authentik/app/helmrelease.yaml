@@ -41,6 +41,7 @@ spec:
       secrets:
         - authentik-trackinizer-oidc  # trackinizer-oidc.yaml
         - authentik-paperless-gpt-oidc  # paperless-gpt-oidc.yaml
+        - authentik-vane-oidc  # vane-oidc.yaml
     server:
       autoscaling:
         enabled: true

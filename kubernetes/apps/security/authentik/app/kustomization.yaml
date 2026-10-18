@@ -7,4 +7,5 @@ resources:
   - ./helmrelease.yaml
   - ./trackinizer-oidc.yaml
   - ./paperless-gpt-oidc.yaml
+  - ./vane-oidc.yaml
   - ../../../../templates/gatus/infra

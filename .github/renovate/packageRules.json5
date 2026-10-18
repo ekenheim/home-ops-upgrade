@@ -160,18 +160,6 @@
       "allowedVersions": "<1.36.0"
     },
     {
-      // Pin rayproject/ray to exactly 2.54.0 to match the Ray version
-      // baked into ghcr.io/ekenheim/grid-resilience-ray-worker:v1.0.18.
-      // Ray enforces an EXACT head/worker version match — even a patch
-      // bump (2.54.0 -> 2.54.1) breaks the cluster (workers stuck in
-      // wait-gcs-ready). Bump this in the same PR that rebuilds the
-      // worker image against the new Ray version.
-      "description": ["Pin rayproject/ray to 2.54.0 (exact match with worker image)"],
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["rayproject/ray"],
-      "allowedVersions": "<2.54.1"
-    },
-    {
       // Chart 1.7.1 defaults to quay.io/kuberay/operator:v1.7.1, an image
       // upstream never pushed (404 on 2026-09-19; only v1.7.0 exists). The
       // upgrade ImagePullBackOffs, times out and rolls back on every attempt.

@@ -8,6 +8,13 @@ This runbook documents how to launch and validate Ray subsystem examples in this
 - GPU profile (optional): `kubernetes/apps/datasci/ray/examples/gpu`
 
 The GPU profile is intentionally isolated so non-GPU clusters are not impacted.
+The RayCluster has no GPU worker group, so the GPU Jobs' `num_gpus=1` tasks
+wait unscheduled until one is added.
+
+Every Job is a Ray Client driver, so its image must be the cluster's exact
+image ref (`image` in `app/helmrelease.yaml`): Ray refuses a driver whose Ray
+version or Python minor differs from the cluster's. Renovate's "Ray" group
+(`.github/renovate/groups.json5`) moves them together.
 
 ## Launch
 

@@ -61,7 +61,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.14
+              image: ghcr.io/ekenheim/atlas-agent:0.6.15
               args: ["scout"]
               env:
                 - name: ATLAS_MCP_URL
@@ -85,7 +85,11 @@ spec:
             - name: tmp
               emptyDir: {}
 ---
-# The Researcher, Tuesday and Thursday: a session on the next open Issue (issues/next).
+# The Researcher, Tuesday and Thursday. Since 2026-10-18 (atlas ticket 33, the owner's ask to cover new
+# companies): the memory-packaging theme's first thesis, DRAM and HBM supply, with a fixed question and
+# seeds Micron and SK hynix instead of the next open Issue, so it never takes a SanDisk Issue before the
+# early-call scorecard's SanDisk runs (atlas ticket 29, Amendment 1). Each session starts from the
+# earlier ones' prior work. The Scout and the Skeptic stay on photonics for the same reason.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -116,13 +120,17 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.14
+              image: ghcr.io/ekenheim/atlas-agent:0.6.15
               args: ["researcher"]
               env:
                 - name: ATLAS_MCP_URL
                   value: http://atlas.development.svc.cluster.local:8000/mcp
                 - name: ATLAS_AGENT_THEME
-                  value: photonics
+                  value: memory-packaging
+                - name: ATLAS_AGENT_QUESTION
+                  value: "Is DRAM and HBM supply constrained, who holds the constraint, and what would relieve it?"
+                - name: ATLAS_AGENT_SEEDS
+                  value: "micron,sk-hynix"
               envFrom:
                 - secretRef:
                     name: atlas-agent-claude
@@ -171,7 +179,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.14
+              image: ghcr.io/ekenheim/atlas-agent:0.6.15
               args: ["skeptic"]
               env:
                 - name: ATLAS_MCP_URL
@@ -232,7 +240,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.14
+              image: ghcr.io/ekenheim/atlas-agent:0.6.15
               command: ["/opt/atlas-agent/agent/scorecard-run.sh"]
               env:
                 - name: ATLAS_MCP_URL

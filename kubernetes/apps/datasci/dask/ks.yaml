@@ -11,7 +11,10 @@ spec:
       app.kubernetes.io/name: *app
   interval: 1h
   path: ./kubernetes/apps/datasci/dask/app
-  prune: false
+  # prune: true (was false until 2026-10-18): with false, disabling Dask in
+  # datasci/kustomization.yaml left the operator and a 3-worker cluster
+  # running unmanaged for months. They were deleted by hand that day.
+  prune: true
   sourceRef:
     kind: GitRepository
     name: home-kubernetes
@@ -42,7 +45,10 @@ spec:
     substitute:
       APP: *app
       GATUS_SUBDOMAIN: dask-cluster
-  prune: false
+  # prune: true (was false until 2026-10-18): with false, disabling Dask in
+  # datasci/kustomization.yaml left the operator and a 3-worker cluster
+  # running unmanaged for months. They were deleted by hand that day.
+  prune: true
   sourceRef:
     kind: GitRepository
     name: home-kubernetes

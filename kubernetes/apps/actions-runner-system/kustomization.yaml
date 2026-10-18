@@ -12,7 +12,9 @@ resources:
   - ./gha-runner-scale-set/ks.yaml
   - ./gha-runner-scale-set-nordic-housing/ks.yaml
   - ./gha-runner-scale-set-bandit/ks.yaml
-  - ./gha-runner-scale-set-ecom/ks.yaml
+  # Off since 2026-10-18 (owner): the ecom and grid-resilience projects are
+  # shelved (Medusa and grid-reliance-infra disabled in #7740).
+  #- ./gha-runner-scale-set-ecom/ks.yaml
   - ./gha-runner-scale-set-banditweb/ks.yaml
-  - ./gha-runner-scale-set-grid-reliance/ks.yaml
+  #- ./gha-runner-scale-set-grid-reliance/ks.yaml
   - ./gha-runner-scale-set-atlas/ks.yaml

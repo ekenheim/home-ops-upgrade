@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/source.toolkit.fluxcd.io/helmrepository_v1beta2.json
+# kagent and kagent-crds (apps/llm/kagent). A HelmRepository, not an
+# OCIRepository + chartRef: helm-controller appends the OCI digest to the
+# chart version for chartRef sources (0.10.3+2f355400c760), and the kagent
+# chart puts .Chart.Version unsanitised into the app.kubernetes.io/version
+# label and into its image tags, so the install failed label validation.
+# Charts from a HelmRepository keep their plain version.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: kagent
+  namespace: flux-system
+spec:
+  type: oci
+  interval: 5m
+  url: oci://ghcr.io/kagent-dev/kagent/helm

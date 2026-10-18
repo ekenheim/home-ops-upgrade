@@ -10,9 +10,20 @@ metadata:
   name: kagent-crds
 spec:
   interval: 30m
-  chartRef:
-    kind: OCIRepository
-    name: kagent-crds
+  # Same HelmRepository as ../app (flux/repositories/helm/kagent.yaml), so
+  # both charts come from one source; keep them on the same version. This
+  # chart's CRDs carry no version label, so the digest suffix an
+  # OCIRepository source adds never broke it, but its templates are no more
+  # careful with .Chart.Version than the main chart's.
+  chart:
+    spec:
+      chart: kagent-crds
+      version: 0.10.3
+      interval: 30m
+      sourceRef:
+        kind: HelmRepository
+        name: kagent
+        namespace: flux-system
   install:
     remediation:
       retries: 3

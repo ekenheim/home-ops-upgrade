@@ -139,6 +139,9 @@ spec:
               # Sign-in through Authentik (security/authentik/app/dawarich-oidc.yaml).
               # Any Authentik user may sign in and gets an empty account of their
               # own. The first admin is made by hand with `rails runner`.
+              # Discovery is lazy (omniauth_openid_connect 0.8.0 calls discover!
+              # per sign-in, not at boot), so the app starts even while Authentik
+              # has not applied the blueprint yet; sign-in just fails until it has.
               OIDC_CLIENT_ID: dawarich
               OIDC_ISSUER: https://sso.${SECRET_DOMAIN}/application/o/dawarich/
               OIDC_REDIRECT_URI: https://dawarich.${SECRET_DOMAIN}/users/auth/openid_connect/callback

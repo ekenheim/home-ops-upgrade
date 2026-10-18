@@ -1,0 +1,337 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app volsync-verify
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: volsync
+  path: ./kubernetes/apps/backup-verify/volsync-verify/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+# One restic secret pair per app in app/apps.txt. Adding an app to the
+# rotation means a line there, a block here and an entry in checks.json.
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-secrets-home-assistant
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: home-assistant
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-secrets-zwave-js-ui
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: zwave-js-ui
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-secrets-actual
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: actual
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-secrets-overseerr
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: overseerr
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-secrets-tautulli
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: tautulli
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-secrets-wizarr
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: wizarr
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-secrets-bazarr
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: bazarr
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-secrets-kavita
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: kavita
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-secrets-sabnzbd
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: sabnzbd
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-secrets-maintainerr
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: maintainerr
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-secrets-openclaw
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: openclaw
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: volsync-verify-secrets-memini
+  namespace: flux-system
+spec:
+  targetNamespace: backup-verify
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-verify
+  dependsOn:
+    - name: external-secrets-stores
+  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: memini

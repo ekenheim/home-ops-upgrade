@@ -1,0 +1,41 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: volsync-verify
+spec:
+  groups:
+    - name: volsync-verify.rules
+      rules:
+        # A failed run names the Job; its log says which app and backend.
+        # Each run tests different apps, so a later pass does not clear this.
+        - alert: VolSyncVerifyFailed
+          annotations:
+            summary: "Backup restore check {{ $labels.job_name }} failed."
+            description: >-
+              A volsync-verify run could not restore or read back a backup.
+              See `kubectl -n backup-verify logs job/{{ $labels.job_name }}`;
+              delete the Job once handled to clear the alert.
+          expr: max by (namespace, job_name) (kube_job_status_failed{namespace="backup-verify"}) > 0
+          labels:
+            severity: warning
+        # Staleness, from the last pass or (before the first one) from when
+        # the CronJob was created, so a verifier that never runs still fires.
+        - alert: VolSyncVerifyStale
+          annotations:
+            summary: "No backup restore check has passed for over 3 days."
+          expr: >-
+            time() - max by (namespace, cronjob) (
+              kube_cronjob_status_last_successful_time{namespace="backup-verify",cronjob="volsync-verify"}
+              or kube_cronjob_created{namespace="backup-verify",cronjob="volsync-verify"}
+            ) > 3 * 86400
+          for: 1h
+          labels:
+            severity: warning
+        - alert: VolSyncVerifyAbsent
+          annotations:
+            summary: "The volsync-verify CronJob has disappeared."
+          expr: absent(kube_cronjob_created{namespace="backup-verify",cronjob="volsync-verify"})
+          for: 1h
+          labels:
+            severity: warning

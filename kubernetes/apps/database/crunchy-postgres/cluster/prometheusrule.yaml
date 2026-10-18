@@ -1,0 +1,38 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: crunchy-pgbackrest
+  annotations:
+    # Keeps Flux's substitution away from label_replace's "$1".
+    kustomize.toolkit.fluxcd.io/substitute: disabled
+spec:
+  groups:
+    - name: crunchy-pgbackrest.rules
+      rules:
+        # PGO's scheduled backups are CronJobs (postgres-repo1-full, -diff,
+        # -incr, postgres-repo2-full, -diff). Their failures had no alert.
+        - alert: PgBackRestBackupFailed
+          annotations:
+            summary: "pgBackRest backup Job {{ $labels.job_name }} failed."
+            description: >-
+              See `kubectl -n database logs job/{{ $labels.job_name }}`;
+              delete the Job once handled to clear the alert.
+          expr: max by (namespace, job_name) (kube_job_status_failed{namespace="database",job_name=~"postgres-repo[12]-.*"}) > 0
+          labels:
+            severity: warning
+        # repo1 and repo2 each run a full on Sunday and a diff Monday to
+        # Saturday, so one of the two passes every day.
+        - alert: PgBackRestBackupStale
+          annotations:
+            summary: "No pgBackRest full or diff backup to {{ $labels.repo }} for over 36 hours."
+          expr: >-
+            time() - max by (repo) (
+              label_replace(
+                kube_cronjob_status_last_successful_time{namespace="database",cronjob=~"postgres-repo[12]-(full|diff)"},
+                "repo", "$1", "cronjob", "postgres-(repo[12])-.*"
+              )
+            ) > 36 * 3600
+          for: 1h
+          labels:
+            severity: warning

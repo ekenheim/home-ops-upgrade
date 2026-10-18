@@ -80,6 +80,21 @@ spec:
               # (default_team_settings in configmap.yaml). The project's key
               # pair comes from langfuse-litellm under envFrom below.
               LANGFUSE_HOST: http://langfuse-web.llm.svc.cluster.local:3000
+              # Drops the `raw_gen_ai_request` child span that LiteLLM's OTEL
+              # integration adds under every `litellm_request`. That span
+              # repeats the request and response as llm.openai.messages /
+              # choices / tools attributes. On 2026-10-18 it was 29.8 of the
+              # 33.7 MiB of span attributes in Langfuse's events_full, about
+              # half of all stored trace payload, for 782 calls. The generation
+              # itself keeps its input and output: for langfuse_otel,
+              # set_attributes writes langfuse.observation.input / output and
+              # returns before the capture-mode check. The only things gated
+              # by this mode are that raw span (_maybe_log_raw_request,
+              # integrations/opentelemetry.py in v1.106.0) and OTEL log events,
+              # which are off. Re-check this after a LiteLLM bump: if a new
+              # trace in Langfuse has an empty Input, this setting is the
+              # cause. langfuse_otel is the only OTEL callback on this proxy.
+              OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: NO_CONTENT
             envFrom:
               - secretRef:
                   name: litellm

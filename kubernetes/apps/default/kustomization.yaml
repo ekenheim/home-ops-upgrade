@@ -26,3 +26,4 @@ resources:
   #- ./zigbee2mqtt/ks.yaml
   - ./zwave-js-ui/ks.yaml
   - ./immich/ks.yaml
+  - ./dawarich/ks.yaml

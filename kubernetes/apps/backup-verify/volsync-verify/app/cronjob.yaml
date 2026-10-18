@@ -4,9 +4,9 @@ kind: CronJob
 metadata:
   name: volsync-verify
 spec:
-  # Restores two apps a day (one from MinIO, one from R2) and reads the data
-  # back; verify.sh has the details. 04:30 keeps clear of the hourly VolSync
-  # backups at :00 and the R2 run at 00:00. The alerts in prometheusrule.yaml
+  # Restores one app a day from MinIO, plus one from R2 on the 1st of the
+  # month, and reads the data back; verify.sh has the details. 04:30 keeps
+  # clear of the hourly VolSync backups at :00 and the R2 run at 00:00. The alerts in prometheusrule.yaml
   # fire when a run fails or no run has passed for three days.
   #
   # Manual run of specific apps:

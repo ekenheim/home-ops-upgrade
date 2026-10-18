@@ -1,8 +1,8 @@
 # Apps the verifier rotates through: name, VOLSYNC_CAPACITY, VOLSYNC_UID,
-# VOLSYNC_GID (copied from each app's ks.yaml). Each run restores one app
-# from MinIO and another from R2, so every app is restored from each
-# backend once per cycle of (number of apps) days. Every app here needs a
-# secrets block in ../ks.yaml and an entry in checks.json.
+# VOLSYNC_GID (copied from each app's ks.yaml). One app a day is restored
+# from MinIO (each app every (number of apps) days) and one a month from R2
+# (verify.sh). Every app here needs a secrets block in ../ks.yaml and an
+# entry in checks.json.
 home-assistant 15Gi 568 568
 zwave-js-ui 5Gi 568 568
 actual 1Gi 568 568

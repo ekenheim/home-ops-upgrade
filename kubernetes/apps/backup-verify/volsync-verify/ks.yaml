@@ -37,7 +37,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  path: ./kubernetes/templates/volsync-verify
   prune: true
   sourceRef:
     kind: GitRepository
@@ -63,7 +63,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  path: ./kubernetes/templates/volsync-verify
   prune: true
   sourceRef:
     kind: GitRepository
@@ -89,7 +89,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  path: ./kubernetes/templates/volsync-verify
   prune: true
   sourceRef:
     kind: GitRepository
@@ -115,7 +115,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  path: ./kubernetes/templates/volsync-verify
   prune: true
   sourceRef:
     kind: GitRepository
@@ -141,7 +141,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  path: ./kubernetes/templates/volsync-verify
   prune: true
   sourceRef:
     kind: GitRepository
@@ -167,7 +167,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  path: ./kubernetes/templates/volsync-verify
   prune: true
   sourceRef:
     kind: GitRepository
@@ -193,7 +193,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  path: ./kubernetes/templates/volsync-verify
   prune: true
   sourceRef:
     kind: GitRepository
@@ -219,7 +219,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  path: ./kubernetes/templates/volsync-verify
   prune: true
   sourceRef:
     kind: GitRepository
@@ -245,7 +245,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  path: ./kubernetes/templates/volsync-verify
   prune: true
   sourceRef:
     kind: GitRepository
@@ -271,7 +271,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  path: ./kubernetes/templates/volsync-verify
   prune: true
   sourceRef:
     kind: GitRepository
@@ -297,7 +297,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  path: ./kubernetes/templates/volsync-verify
   prune: true
   sourceRef:
     kind: GitRepository
@@ -323,7 +323,7 @@ spec:
       app.kubernetes.io/name: volsync-verify
   dependsOn:
     - name: external-secrets-stores
-  path: ./kubernetes/apps/backup-verify/volsync-verify/secrets
+  path: ./kubernetes/templates/volsync-verify
   prune: true
   sourceRef:
     kind: GitRepository

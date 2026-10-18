@@ -1,8 +1,11 @@
 #!/bin/sh
 # Restores VolSync backups into this namespace and reads them back.
 #
-# Each run picks two apps from apps.txt by epoch day: one restored from its
-# MinIO repo, the other from its R2 repo. For each it restores the latest
+# Every day it restores one app from apps.txt (by epoch day) from its MinIO
+# repo. On the 1st of the month it also restores one app (by month) from
+# its R2 repo: R2 bills per request, so the offsite copy is checked monthly
+# and each app's R2 repo comes round once per (number of apps) months.
+# For each target it restores the latest
 # restic snapshot into a fresh PVC (copyMethod Direct), starts a check pod
 # (check-pod.yaml, check.py) on it, and passes only if that pod printed
 # "VERIFY OK app=<app> backend=<backend>". Everything is deleted afterwards,
@@ -30,7 +33,13 @@ if [ -n "${VERIFY_TARGETS:-}" ]; then
   targets=$VERIFY_TARGETS
 else
   day=$(( $(date -u +%s) / 86400 ))
-  targets="$(pick "$day"):minio $(pick $(( day + count / 2 ))):r2"
+  targets="$(pick "$day"):minio"
+  if [ "$(date -u +%d)" = "01" ]; then
+    # %m is zero-padded and $(( 08 )) is an octal error: strip the zero.
+    month=$(date -u +%m)
+    month=$(( $(date -u +%Y) * 12 + ${month#0} ))
+    targets="$targets $(pick "$month"):r2"
+  fi
 fi
 
 log() { echo "[volsync-verify] $*"; }

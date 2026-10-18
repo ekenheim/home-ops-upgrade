@@ -30,4 +30,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      # Not `karakeep`: the HelmRelease's first install left a chart-owned
+      # PVC by that name (see persistence in app/helmrelease.yaml).
+      CLAIM: karakeep-data
       VOLSYNC_CAPACITY: 10Gi

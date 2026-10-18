@@ -1,0 +1,217 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app homelable
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: volsync
+      namespace: storage
+  values:
+    # Experimental (new upstream project, added 2026-10). Homelable is a
+    # FastAPI backend (API, nmap scanner, status checker, SQLite) and a React
+    # SPA behind nginx. Upstream's compose runs them as two services; here
+    # they share one pod, so nginx proxies the API to 127.0.0.1:8000 and only
+    # nginx is exposed. Upstream's third image, homelable-mcp, is not
+    # deployed.
+    controllers:
+      homelable:
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 568
+            runAsGroup: 568
+            fsGroup: 568
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile: { type: RuntimeDefault }
+            # The scanner's ping sweep and the default `ping` status check
+            # shell out to iputils `ping`. The image's ping has neither
+            # setuid nor file capabilities, so as a non-root user it can only
+            # use an unprivileged ICMP (datagram) socket, which the kernel
+            # allows for the groups in this range. A namespaced, kubelet-safe
+            # sysctl, scoped to this pod's network namespace; it replaces
+            # upstream's root + NET_RAW.
+            sysctls:
+              - name: net.ipv4.ping_group_range
+                value: "0 2147483647"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/pouzor/homelable-backend
+              tag: 3.6.0@sha256:1e501424e8c53989fcea1dc9311d46614ae159b2bfee4608a5c0cd5baee3e9dc
+            env:
+              TZ: ${TIMEZONE}
+              # Python and nmap look in $HOME; the root filesystem is read-only.
+              HOME: /tmp
+              # SQLite DB, uploads/ (floor plans) and scan_config.json (the
+              # scan settings edited in the UI) all live next to this path.
+              SQLITE_PATH: /app/data/homelab.db
+              # Exact browser origin: OIDC mode rejects `*`, and the CSRF
+              # check compares the request Origin against this list.
+              CORS_ORIGINS: '["https://homelable.${SECRET_DOMAIN}"]'
+              # Sign-in is Authentik only. In OIDC mode the local
+              # admin/password login answers 404, so there is no app password
+              # to manage. Who may sign in is Authentik's call.
+              AUTH_MODE: oidc
+              OIDC_DISCOVERY_URL: https://sso.${SECRET_DOMAIN}/application/o/homelable/.well-known/openid-configuration
+              OIDC_CLIENT_ID: homelable
+              OIDC_REDIRECT_URI: https://homelable.${SECRET_DOMAIN}/api/v1/auth/oidc/callback
+              OIDC_SCOPES: openid profile email
+              OIDC_COOKIE_SECURE: "true"
+              # Initial scan range; the Scan Network dialog can change it
+              # (persisted in scan_config.json on the PVC).
+              SCANNER_RANGES: '["192.168.50.0/24"]'
+              # Mesh imports talk to the brokers over MQTT request/response,
+              # nothing goes through Home Assistant. Credentials come from
+              # homelable-mqtt. Zigbee2MQTT is currently disabled in
+              # default/kustomization.yaml, so the Zigbee import has nothing
+              # to answer it until that comes back.
+              ZIGBEE_MQTT_HOST: mosquitto.default.svc.cluster.local
+              ZIGBEE_MQTT_PORT: "1883"
+              ZIGBEE_BASE_TOPIC: zigbee2mqtt
+              # Must match Z-Wave JS UI's Settings -> MQTT (Prefix / Name),
+              # with its MQTT gateway enabled.
+              ZWAVE_MQTT_HOST: mosquitto.default.svc.cluster.local
+              ZWAVE_MQTT_PORT: "1883"
+              ZWAVE_PREFIX: zwave
+              ZWAVE_GATEWAY_NAME: zwavejs2mqtt
+            envFrom:
+              - secretRef:
+                  name: homelable-secret
+              - secretRef:
+                  name: homelable-oidc
+              - secretRef:
+                  name: homelable-mqtt
+            probes:
+              liveness: &backendprobe
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v1/health
+                    port: 8000
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness: *backendprobe
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v1/health
+                    port: 8000
+                  periodSeconds: 5
+                  failureThreshold: 60
+            securityContext:
+              # Non-root, no capabilities, no hostNetwork. nmap sees euid != 0
+              # and uses connect scans (-sT) instead of SYN scans; ping uses
+              # the datagram socket allowed by the sysctl above. The cost of
+              # staying on the pod network: /proc/net/arp only ever holds the
+              # node gateway, so scans record no MAC addresses (devices are
+              # matched by IP alone) and mDNS discovery sees nothing.
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              # nmap -sV bursts during a scan; idle it is a small FastAPI app.
+              requests:
+                cpu: 25m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+          frontend:
+            image:
+              repository: ghcr.io/pouzor/homelable-frontend
+              tag: 3.6.0@sha256:5950f4905da2ea92b2a3870066399e718987a4a23d16c368935b9ddb7901635a
+            # Bypass the image entrypoint and its templated config; the whole
+            # nginx setup comes from config/nginx.conf (see the note there).
+            command: ["nginx", "-g", "daemon off;"]
+            probes:
+              liveness: &frontendprobe
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 8080
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *frontendprobe
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 5m
+                memory: 16Mi
+              limits:
+                memory: 128Mi
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      data:
+        existingClaim: homelable-data
+        advancedMounts:
+          homelable:
+            app:
+              - path: /app/data
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          homelable:
+            app:
+              - path: /tmp
+                subPath: app
+            frontend:
+              - path: /tmp
+                subPath: frontend
+      nginx-config:
+        type: configMap
+        name: homelable-nginx
+        advancedMounts:
+          homelable:
+            frontend:
+              - path: /etc/nginx/nginx.conf
+                subPath: nginx.conf
+                readOnly: true

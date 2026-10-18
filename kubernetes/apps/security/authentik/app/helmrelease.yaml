@@ -45,6 +45,7 @@ spec:
         - authentik-dawarich-oidc  # dawarich-oidc.yaml
         - authentik-karakeep-oidc  # karakeep-oidc.yaml
         - authentik-langfuse-oidc  # langfuse-oidc.yaml
+        - authentik-homelable-oidc  # homelable-oidc.yaml
     server:
       autoscaling:
         enabled: true

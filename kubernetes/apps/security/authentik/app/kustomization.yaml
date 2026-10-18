@@ -11,4 +11,5 @@ resources:
   - ./dawarich-oidc.yaml
   - ./karakeep-oidc.yaml
   - ./langfuse-oidc.yaml
+  - ./homelable-oidc.yaml
   - ../../../../templates/gatus/infra

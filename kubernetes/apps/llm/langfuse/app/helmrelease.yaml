@@ -69,7 +69,14 @@ spec:
               secretKeyRef:
                 name: langfuse-oidc
                 key: client-secret
-            issuer: https://sso.${SECRET_DOMAIN}/application/o/langfuse/
+            # No trailing slash. Langfuse builds the discovery URL as
+            # `${issuer}/.well-known/openid-configuration`
+            # (packages/shared/src/server/auth/customSsoProvider.ts), so a
+            # trailing slash asks Authentik for `.../langfuse//.well-known/...`,
+            # which is a 404: every sign-in failed with "unexpected error"
+            # until 2026-10-18. The `iss` check still passes, because it
+            # compares against the issuer that discovery returns (with slash).
+            issuer: https://sso.${SECRET_DOMAIN}/application/o/langfuse
             scope: openid email profile
       deployment:
         annotations:

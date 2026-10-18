@@ -199,12 +199,14 @@ spec:
     - userID: default_user_id
       role: admin
   # Home data: local aliases only. `home-assistant` itself falls back to the
-  # ChatGPT subscription, never MiniMax. Keys: homeassistant-chat,
-  # facebook-marketplace (Bitwarden); paperless-gpt (Git).
+  # ChatGPT subscription, never MiniMax. Keys: karakeep, paperless-gpt (Git);
+  # homeassistant-chat, facebook-marketplace (Bitwarden).
   models:
     - home-assistant
     - fast
     - self-hosted
+    # Local CPU embedder, for karakeep's semantic search.
+    - qwen3-embedding-0.6b
 ---
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMTeam

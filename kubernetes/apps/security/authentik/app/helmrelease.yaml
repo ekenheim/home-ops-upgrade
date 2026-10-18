@@ -43,6 +43,7 @@ spec:
         - authentik-paperless-gpt-oidc  # paperless-gpt-oidc.yaml
         - authentik-vane-oidc  # vane-oidc.yaml
         - authentik-dawarich-oidc  # dawarich-oidc.yaml
+        - authentik-karakeep-oidc  # karakeep-oidc.yaml
     server:
       autoscaling:
         enabled: true

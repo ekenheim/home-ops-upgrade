@@ -1,0 +1,20 @@
+---
+# Karakeep (default/karakeep): bookmark tagging, image tagging, summaries and
+# semantic-search embeddings. Bookmarks are personal data, so the key is in
+# the `home` team (no cloud alias at all) and lists only local models: `fast`
+# for text and images, the CPU embedder for vectors. The Secret reaches
+# `default` through the litellm-key-secrets-karakeep store
+# (../clustersecretstore/karakeep.yaml).
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: karakeep
+spec:
+  proxyRef: litellm-admin
+  keyAlias: karakeep
+  teamID: home
+  secretName: litellm-key-karakeep
+  secretKey: api-key
+  models:
+    - fast
+    - qwen3-embedding-0.6b

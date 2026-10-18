@@ -74,7 +74,9 @@ spec:
   # litellm-key-atlas out of `llm`, `litellm-key-secrets-agent-lab`, which
   # lets agent-control read litellm-key-agent-lab, and
   # `litellm-key-secrets-courier`, which lets courier-executor merge
-  # litellm-key-courier with its Bitwarden fields (see clustersecretstore/). Like
+  # litellm-key-courier with its Bitwarden fields, and
+  # `litellm-key-secrets-karakeep`, which lets default read
+  # litellm-key-karakeep (see clustersecretstore/). Like
   # crunchy-postgres-stores, it needs only external-secrets. A consumer
   # dependsOn both this and `litellm-keys`, which mints the Secret it reads.
   path: ./kubernetes/apps/llm/litellm/clustersecretstore

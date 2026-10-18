@@ -9,4 +9,5 @@ resources:
   - ./paperless-gpt-oidc.yaml
   - ./vane-oidc.yaml
   - ./dawarich-oidc.yaml
+  - ./karakeep-oidc.yaml
   - ../../../../templates/gatus/infra

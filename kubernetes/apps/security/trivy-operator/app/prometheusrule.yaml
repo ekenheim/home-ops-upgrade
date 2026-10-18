@@ -1,7 +1,9 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
-# Per namespace, not per image: one image with a Critical CVE usually runs in
-# several workloads, and a per-image alert would fire once for each. With
+# The standing alert is per namespace, not per image: one image with a
+# Critical CVE usually runs in several workloads, and a per-image alert would
+# fire once for each. The "new" alert is per namespace and image repository,
+# because it only fires on a change and has to say which image changed. With
 # ignoreUnfixed on, every Critical counted here has a fixed version upstream.
 #
 # max_over_time bridges the rescans: when a report reaches scannerReportTTL
@@ -16,6 +18,14 @@ spec:
   groups:
     - name: trivy-operator.vulnerabilities
       rules:
+        # Per namespace and image repository, the highest Critical count of
+        # the last 6h (bridging rescans, as above). Not per tag, so a
+        # Renovate bump that keeps the same CVEs is not "new".
+        - record: trivy:image_critical_vulnerabilities:max6h
+          expr: >-
+            max by (namespace, image_repository) (
+              max_over_time(trivy_image_vulnerabilities{severity="Critical"}[6h])
+            )
         - alert: TrivyCriticalVulnerabilities
           expr: >-
             sum by (namespace) (
@@ -26,8 +36,10 @@ spec:
             # info, not warning: this stays firing for as long as a
             # namespace carries fixable Criticals, often waiting on an
             # upstream release. Alertmanager only sends warning/critical to
-            # alert-triage (MiniMax quota); info still reaches Discord
-            # through the catch-all route.
+            # alert-triage (MiniMax quota); info reaches Discord through its
+            # own route (kube-prometheus-stack alertmanager-secret): one
+            # message per namespace, repeated weekly rather than twice a day.
+            # TrivyNewCriticalVulnerabilities is the one that asks for action.
             severity: info
           annotations:
             summary: >-
@@ -38,6 +50,43 @@ spec:
               {{ $labels.namespace }}. Per image in the Trivy Operator
               dashboard, or `kubectl get vulnerabilityreports -n
               {{ $labels.namespace }} -o wide`.
+        # Fires when an image's Critical count is higher than a day ago, or
+        # it had none a day ago: a new image deployed with Criticals, or a
+        # new CVE in one already running. It resolves on its own a day
+        # later, once the offset catches up, so it reaches alert-triage
+        # without staying on. The last clause holds it back until the
+        # recording rule has two days of history: without it every existing
+        # Critical would look new on the first day, and reports from the
+        # first scan wave (two slots, hours for the whole cluster) on the
+        # second.
+        - alert: TrivyNewCriticalVulnerabilities
+          # `and` binds tighter than `or` in PromQL, hence the outer brackets.
+          expr: >-
+            (
+              (
+                trivy:image_critical_vulnerabilities:max6h > 0
+                  unless
+                trivy:image_critical_vulnerabilities:max6h offset 1d
+              )
+              or
+              (
+                trivy:image_critical_vulnerabilities:max6h
+                  >
+                trivy:image_critical_vulnerabilities:max6h offset 1d
+              )
+            )
+            and on ()
+            (count(trivy:image_critical_vulnerabilities:max6h offset 2d) > 0)
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              New Critical vulnerabilities in {{ $labels.image_repository }} ({{ $labels.namespace }})
+            description: >-
+              {{ $labels.image_repository }} in {{ $labels.namespace }} has
+              {{ $value }} fixable Critical vulnerabilities, more than a day
+              ago. `kubectl get vulnerabilityreports -n {{ $labels.namespace }}
+              -o wide` lists the report; update or replace the image.
     - name: trivy-operator.health
       rules:
         - alert: TrivyOperatorDown

@@ -1,0 +1,378 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app dispatcharr
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: volsync
+      namespace: storage
+  # Dispatcharr: IPTV manager (M3U / Xtream sources, EPG matching, stream
+  # proxy, DVR) that Plex sees as an HDHomeRun tuner. Runs next to xTeve until
+  # the Plex tuner has moved over.
+  #
+  # Upstream's "modular" layout (docker/docker-compose.yml): one image, two
+  # entrypoints. `app` runs nginx on :9191 in front of uWSGI (UI, API, M3U/EPG
+  # output, HDHomeRun emulation, stream proxy) and Daphne (websockets), and
+  # runs the Django migrations on every start. `celery` runs beat, the default
+  # worker and the DVR worker. Without DISPATCHARR_ENV=modular the image starts
+  # its own Postgres and Redis inside the app container instead.
+  #
+  # Postgres is a sidecar, not the shared Crunchy cluster: the modular
+  # entrypoint refuses an external server older than the Postgres bundled in
+  # the image (docker/init/02-postgres.sh, check_external_postgres_version,
+  # then `|| exit 1` in entrypoint.sh). 0.32.0 bundles 17; Crunchy runs 16.
+  # The minimum is read from /usr/lib/postgresql, so no env var lowers it.
+  # Same shape as default/dawarich: 127.0.0.1 only, trust auth, no Service
+  # port, data directory on the app's PVC so one snapshot covers both.
+  #
+  # Redis is a sidecar, not Dragonfly: the live proxy keeps every active
+  # stream's TS chunks in Redis for 60s (apps/proxy/config.py,
+  # redis_chunk_ttl), tens of MB per channel at IPTV bitrates, and the shared
+  # Dragonfly has 512Mi for Authentik, LiteLLM, Immich and the rest. It also
+  # deletes every non-Celery key in its db on each start and issues
+  # CONFIG SET on connect. To move it to Dragonfly db 6 after all, set
+  # REDIS_HOST/REDIS_DB below and drop the redis sidecar.
+  values:
+    controllers:
+      dispatcharr:
+        # RWO volume shared by all four containers.
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        labels:
+          nfsMount: "true"
+        initContainers:
+          # Native sidecars: start first, the app containers start once their
+          # startup probes pass, and they stop last.
+          postgres:
+            image:
+              # The major Dispatcharr bundles; it refuses anything older. A
+              # major bump (17 -> 18) needs a dump/restore or pg_upgrade of the
+              # data directory, not just a Renovate merge.
+              repository: docker.io/library/postgres
+              tag: 17.11-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+            restartPolicy: Always
+            env:
+              POSTGRES_USER: dispatcharr
+              POSTGRES_DB: dispatcharr
+              # Nothing outside the pod can reach it (127.0.0.1 only, no
+              # Service port). A password would live both in a Secret and in
+              # the data directory, and a VolSync restore next to a
+              # regenerated Secret would lock the app out (as in dawarich).
+              POSTGRES_HOST_AUTH_METHOD: trust
+              # A subdirectory: initdb refuses a mount point holding lost+found.
+              PGDATA: /var/lib/postgresql/data/pgdata
+            args: ["postgres", "-c", "listen_addresses=127.0.0.1"]
+            probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["pg_isready", "-h", "127.0.0.1", "-U", "dispatcharr", "-d", "dispatcharr"]
+                  periodSeconds: 5
+                  failureThreshold: 60
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["pg_isready", "-h", "127.0.0.1", "-U", "dispatcharr", "-d", "dispatcharr"]
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+            securityContext: &nonroot
+              runAsUser: 568
+              runAsGroup: 568
+              runAsNonRoot: true
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 25m
+                memory: 128Mi
+              limits:
+                memory: 1Gi
+          redis:
+            image:
+              repository: docker.io/library/redis
+              tag: 8.10.2-alpine@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0
+            restartPolicy: Always
+            # A cache and a Celery broker: no persistence, 127.0.0.1 only.
+            # volatile-lru evicts only keys with a TTL (stream chunks, locks),
+            # never Celery's queues.
+            args:
+              - --bind
+              - 127.0.0.1
+              - --save
+              - ""
+              - --appendonly
+              - "no"
+              - --maxmemory
+              - 512mb
+              - --maxmemory-policy
+              - volatile-lru
+            probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["redis-cli", "-h", "127.0.0.1", "ping"]
+                  periodSeconds: 2
+                  failureThreshold: 30
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["redis-cli", "-h", "127.0.0.1", "ping"]
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+            securityContext: *nonroot
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 640Mi
+        containers:
+          app:
+            image: &image
+              repository: ghcr.io/dispatcharr/dispatcharr
+              tag: 0.32.0@sha256:b7d695c5cc98b9abd64c74a94539c1ebffc23d965021613c820c67e25dea41a3
+            env:
+              TZ: ${TIMEZONE}
+              DISPATCHARR_ENV: modular
+              DISPATCHARR_LOG_LEVEL: info
+              # Also the name of the Linux user the entrypoints create and drop
+              # to, so it doubles as the Postgres role.
+              POSTGRES_HOST: 127.0.0.1
+              POSTGRES_PORT: "5432"
+              POSTGRES_DB: dispatcharr
+              POSTGRES_USER: dispatcharr
+              REDIS_HOST: 127.0.0.1
+              REDIS_PORT: "6379"
+              REDIS_DB: "0"
+              # The entrypoints start as root, create this user, chown /data
+              # (non-recursively) and drop to it with `su` for nginx workers,
+              # uWSGI and the migrations. 568 is the media apps' user, which
+              # also owns the recordings on the NAS.
+              PUID: "568"
+              PGID: "568"
+              # Django's SECRET_KEY is not set here: entrypoint.sh generates
+              # /data/jwt on first start and exports it, overwriting any env
+              # value. It lives on the PVC and VolSync carries it.
+            probes:
+              # Migrations run before uWSGI starts; nginx answers 502 until then.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: &root
+                    path: /
+                    port: &port 9191
+                  periodSeconds: 10
+                  failureThreshold: 60
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *root
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              # Reads the database; the endpoint Plex's tuner polls. Allowed
+              # from private addresses only (Settings > Network Access,
+              # M3U/EPG); the kubelet probes from the node IP.
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /hdhr/discover.json
+                    port: *port
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+            securityContext:
+              # The entrypoint needs root: useradd/groupadd, writes to
+              # /etc/profile.d, /etc/environment and the nginx config, chown
+              # of /data and /app, then `su` to PUID for nginx workers, uWSGI
+              # and Daphne, and on SIGTERM it kills those (KILL). It only ever
+              # drops privilege, so no escalation. The capabilities are the
+              # smallest set it started and stopped cleanly with (tested
+              # locally against this image with cap-drop ALL; without
+              # DAC_OVERRIDE/FOWNER `useradd` fails).
+              runAsUser: 0
+              runAsGroup: 0
+              runAsNonRoot: false
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+                add: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETUID", "SETGID", "KILL"]
+            resources:
+              # nginx, 4 uWSGI gevent workers, Daphne, and one FFmpeg per
+              # transcoded stream (remux/proxy by default). No CPU limit, so a
+              # transcode spike is not throttled.
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 3Gi
+          celery:
+            image: *image
+            command: ["/app/docker/entrypoint.celery.sh"]
+            env:
+              # Same connection settings as `app` (no YAML merge keys here).
+              TZ: ${TIMEZONE}
+              DISPATCHARR_ENV: modular
+              DISPATCHARR_LOG_LEVEL: info
+              POSTGRES_HOST: 127.0.0.1
+              POSTGRES_PORT: "5432"
+              POSTGRES_DB: dispatcharr
+              POSTGRES_USER: dispatcharr
+              REDIS_HOST: 127.0.0.1
+              REDIS_PORT: "6379"
+              REDIS_DB: "0"
+              DJANGO_SETTINGS_MODULE: dispatcharr.settings
+              PYTHONUNBUFFERED: "1"
+              # The DVR worker fetches the stream from the web side. Upstream
+              # defaults the host to `web`, the compose service name, which does
+              # not resolve here; in a pod that is localhost.
+              DISPATCHARR_WEB_HOST: 127.0.0.1
+              DISPATCHARR_PORT: "9191"
+              # Prefork autoscale ceiling (default 6). M3U/EPG refreshes are
+              # the peak.
+              CELERY_MAX_WORKERS: "4"
+            securityContext:
+              # Root as upstream runs it: it reads /data/jwt, which the app's
+              # entrypoint writes root-only. DAC_OVERRIDE because the M3U/EPG/
+              # logo directories it writes into belong to 568 (mode 755).
+              runAsUser: 0
+              runAsGroup: 0
+              runAsNonRoot: false
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+                add: ["CHOWN", "DAC_OVERRIDE", "FOWNER"]
+            resources:
+              requests:
+                cpu: 50m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+        pod:
+          securityContext:
+            fsGroup: 568
+            fsGroupChangePolicy: OnRootMismatch
+            # 10000 matches Plex and the *arrs for the NAS share.
+            supplementalGroups: [10000]
+            seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 9191
+    route:
+      app:
+        # Browser UI, M3U/EPG output and the Xtream Codes API for IPTV players
+        # on the LAN or tailnet. Plex does not come through here: it adds the
+        # tuner at http://dispatcharr.media.svc.cluster.local:9191 (see the
+        # PR). No SecurityPolicy, because players fetch /output/*, /proxy/*,
+        # get.php, xmltv.php and the bare /<user>/<pass>/<id> stream form
+        # through this hostname and cannot follow an OIDC redirect; Dispatcharr
+        # has its own login.
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 9191
+    persistence:
+      data:
+        existingClaim: dispatcharr
+        advancedMounts:
+          dispatcharr:
+            postgres:
+              - path: /var/lib/postgresql/data
+                subPath: postgres
+            app:
+              - path: /data
+                subPath: data
+            celery:
+              - path: /data
+                subPath: data
+      # Unix socket directory, and the entrypoint's mktemp; the root
+      # filesystem is read-only.
+      postgres-run:
+        type: emptyDir
+        advancedMounts:
+          dispatcharr:
+            postgres:
+              - path: /var/run/postgresql
+                subPath: run
+              - path: /tmp
+                subPath: tmp
+      # Postgres sizes parallel-query shared memory from /dev/shm, which is 64Mi
+      # by default in a pod.
+      shm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 256Mi
+        advancedMounts:
+          dispatcharr:
+            postgres:
+              - path: /dev/shm
+      # Redis runs in /data with persistence off; it still wants a writable cwd.
+      redis-data:
+        type: emptyDir
+        advancedMounts:
+          dispatcharr:
+            redis:
+              - path: /data
+      # DVR recordings. Dispatcharr's library root is fixed at /data/recordings
+      # (apps/channels/tasks.py); the DVR worker writes there and the web side
+      # serves playback from it. On the NAS's Media share like the rest of the
+      # library; the kubelet creates the directory on first mount.
+      recordings:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        advancedMounts:
+          dispatcharr:
+            app:
+              - path: /data/recordings
+                subPath: Media/Recordings
+            celery:
+              - path: /data/recordings
+                subPath: Media/Recordings

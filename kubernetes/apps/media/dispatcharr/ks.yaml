@@ -1,0 +1,42 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app dispatcharr
+  namespace: flux-system
+spec:
+  targetNamespace: media
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  # No Crunchy or Dragonfly dependency: Postgres and Redis are sidecars in the
+  # pod (see helmrelease.yaml for why).
+  dependsOn:
+    - name: external-secrets-stores
+    - name: rook-ceph-cluster
+    - name: volsync
+  path: ./kubernetes/apps/media/dispatcharr/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false # no flux ks dependents
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substitute:
+      APP: *app
+      # The HDHomeRun discovery document: unauthenticated, reads the database,
+      # and is the path Plex's tuner depends on.
+      GATUS_URL_PATH: /hdhr/discover.json
+      # One PVC: Dispatcharr's /data (secret key, logos, M3U/EPG uploads,
+      # its own backups) and the Postgres data directory, so one snapshot is
+      # consistent across both.
+      VOLSYNC_CAPACITY: 10Gi
+      # Mixed owners on the volume: the entrypoint runs as root and writes
+      # /data/jwt (the Django secret key) root-only, the app runs as 568.
+      # Only root can read everything.
+      VOLSYNC_UID: "0"
+      VOLSYNC_GID: "0"

@@ -69,7 +69,9 @@ spec:
               OPENAI_BASE_URL: http://litellm.llm.svc.cluster.local:4000/v1
               LLM_PROVIDER: openai
               LLM_MODEL: fast
-              # Matches PAPERLESS_OCR_LANGUAGE (nld) in apps/default/paperless.
+              # The language titles and suggestions are written in. Paperless
+              # OCRs nld+swe (PAPERLESS_OCR_LANGUAGE in apps/default/paperless);
+              # the documents are mostly Dutch, so the suggestions are too.
               LLM_LANGUAGE: Dutch
               OCR_PROVIDER: llm
               VISION_LLM_PROVIDER: openai
@@ -80,6 +82,25 @@ spec:
               SUGGESTION_JOB_TIMEOUT_SECONDS: "900"
               LLM_REQUESTS_PER_MINUTE: "20"
               VISION_LLM_REQUESTS_PER_MINUTE: "20"
+              # Caps the whole suggestion prompt (template + document text);
+              # longer content is cut to fit (tokens.go). Unset means no cap,
+              # and the one document in Paperless today (104 pages) would be
+              # 50-80k tokens of prefill on worker4 per suggestion. `fast` has
+              # 131k of context, so this is a cost cap, not a fit: the first
+              # pages carry the title, sender and type anyway.
+              TOKEN_LIMIT: "6000"
+              # Vision OCR reads only the first N pages, and the result
+              # replaces the document's whole text in Paperless, so a longer
+              # document loses the text of every later page. Unset
+              # is not "all pages": the default is 5, which truncates
+              # silently. worker4 takes about a minute per page and the OCR
+              # worker is single-threaded, so 15 bounds one tagged document to
+              # ~15 min of one slot while still covering receipts, invoices,
+              # letters and most contracts. For a longer document, raise the
+              # limit for that one run in the OCR Playground (0 = all pages)
+              # rather than here. "Save as defaults" in the UI (config/settings.json on the
+              # PVC) overrides this value; the Settings page shows which wins.
+              OCR_LIMIT_PAGES: "15"
               # Suggest from existing tags only, and never replace the original
               # PDF in Paperless.
               CREATE_NEW_TAGS: "false"

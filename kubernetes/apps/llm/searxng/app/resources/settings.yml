@@ -44,6 +44,38 @@ enabled_plugins:
   - Tracker URL remover
   - Unit converter plugin
 
+# Default web engines, measured from this egress IP on 2026-10-18 (pinned
+# image 2026.10.7). Vane, OpenClaw and anything else that sends no `engines=`
+# get this set; a client that names engines (Atlas, ATLAS_SEARXNG_ENGINES in
+# development/atlas) can still pick a disabled one.
+engines:
+  # Off by default, not removed: over 72 h brave answered 429 (Too many
+  # requests, suspended 180 s) 14 times and duckduckgo a CAPTCHA 8 times, and
+  # a test query got the same from both. Atlas still asks for duckduckgo by
+  # name.
+  - name: brave
+    disabled: true
+  - name: duckduckgo
+    disabled: true
+  # Upstream ships both `inactive` (never loaded, so even a client naming
+  # them got nothing): each sits behind a proof-of-work CAPTCHA that the
+  # engine solves itself. Startpage's is Anubis at difficulty 4, ~65k SHA-256
+  # per solve and the pass cached 240 s; Mojeek's ALTCHA token is cached the
+  # same way. Cheap next to the pod's idle CPU, and a test query got 10
+  # results from each where brave and duckduckgo got none. `inactive: false`
+  # loads them; `disabled: false` puts them in the default set.
+  - name: startpage
+    inactive: false
+    disabled: false
+  - name: mojeek
+    inactive: false
+    disabled: false
+  # wolframalpha stays off. The key-less engine (wolframalpha_noapi) fetches a
+  # token from /input/api/v1/code, which answers 504 after 15 s since
+  # Wolfram moved its site to server rendering (searxng/searxng#6812, open);
+  # enabled, it would only add a timeout to every query. The API engine
+  # (wolframalpha_api) works but needs a Wolfram AppID.
+
 hostnames:
   high_priority:
     - (.*)\/blog\/(.*)

@@ -263,3 +263,67 @@ spec:
           volumes:
             - name: tmp
               emptyDir: {}
+---
+# The Chokepoint Watch, Saturdays (atlas Chokepoint Watch W2, the owner's ask of 2026-10-18): one
+# week of a watch for supply-chain chokepoints in a theme. It settles due predictions, sweeps for
+# what changed, updates the board, adds at most 3 candidates, deep-dives at most 2 and writes the
+# week's memo (GET /api/v1/watch-runs). The first run is the architect run: it decomposes the
+# industry from its demand driver and sweeps 90 days. It fires on a day no other judge-using agent
+# fires, so it never shares the judge's 5-hour window. The theme starts with no companies.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: atlas-agent-watch-robotics
+  namespace: development
+spec:
+  schedule: "0 5 * * 6"
+  timeZone: UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 6
+  failedJobsHistoryLimit: 6
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 7200
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: atlas
+            app.kubernetes.io/component: agent-watch
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: ghcr-pull
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+          containers:
+            - name: agent
+              image: ghcr.io/ekenheim/atlas-agent:0.6.17
+              args: ["watch"]
+              env:
+                - name: ATLAS_MCP_URL
+                  value: http://atlas.development.svc.cluster.local:8000/mcp
+                - name: ATLAS_AGENT_THEME
+                  value: robotics
+                - name: ATLAS_AGENT_MODEL
+                  value: claude-opus-5-5
+                - name: ATLAS_WATCH_DEMAND_DRIVER
+                  value: "Factory automation and humanoid-robot programmes at automakers, electronics makers and logistics operators, and the robot makers scaling production to serve them"
+              envFrom:
+                - secretRef:
+                    name: atlas-agent-claude
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests: { cpu: 50m, memory: 256Mi }
+                limits: { memory: 1Gi }
+          volumes:
+            - name: tmp
+              emptyDir: {}

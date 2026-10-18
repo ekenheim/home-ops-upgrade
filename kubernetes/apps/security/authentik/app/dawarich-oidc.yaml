@@ -1,0 +1,148 @@
+---
+# Dawarich's sign-in (default/dawarich). Dawarich speaks OIDC itself, so unlike
+# trackinizer-oidc.yaml there is no SecurityPolicy: Envoy passes everything
+# through, the browser signs in at Authentik, and the mobile apps keep using
+# their per-user API keys.
+#
+# The client secret is generated in-cluster (refreshPolicy OnChange), so there
+# is nothing to create in Bitwarden. One Secret carries it twice: rendered into
+# the blueprint the worker mounts (blueprints.secrets in helmrelease.yaml), and
+# as `client-secret`, which Dawarich reads through the store at the bottom.
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: authentik-dawarich-oidc
+spec:
+  length: 64
+  digits: 10
+  symbols: 0
+  noUpper: false
+  allowRepeat: true
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/external-secrets.io/externalsecret_v1beta1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: &name authentik-dawarich-oidc
+spec:
+  # OnChange, as in trackinizer-oidc.yaml: a blueprint edit has to reach
+  # Authentik. It re-rolls the client secret too; Dawarich's copy follows
+  # within its refreshInterval (1h) and Reloader restarts it.
+  refreshPolicy: OnChange
+  refreshInterval: "0"
+  target:
+    name: *name
+    template:
+      engineVersion: v2
+      data:
+        client-secret: '{{ .password }}'
+        dawarich.yaml: |
+          version: 1
+          metadata:
+            name: dawarich
+          entries:
+            - model: authentik_providers_oauth2.oauth2provider
+              id: provider
+              identifiers:
+                name: dawarich
+              attrs:
+                authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+                invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+                client_type: confidential
+                client_id: dawarich
+                client_secret: '{{ .password }}'
+                redirect_uris:
+                  - matching_mode: strict
+                    url: https://dawarich.${SECRET_DOMAIN}/users/auth/openid_connect/callback
+                    redirect_uri_type: authorization
+                # Required: an empty list rejects every authorize request with
+                # "Invalid grant_type for provider".
+                grant_types:
+                  - authorization_code
+                property_mappings:
+                  - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+                  - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+                  - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+                signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+                access_token_validity: hours=4
+            # No policy binding: every Authentik user may sign in, and each gets
+            # an empty Dawarich account of their own (OIDC_AUTO_REGISTER).
+            # Nobody sees another user's points unless shared inside Dawarich.
+            - model: authentik_core.application
+              id: app
+              identifiers:
+                slug: dawarich
+              attrs:
+                name: Dawarich
+                provider: !KeyOf provider
+                group: Home
+                meta_launch_url: https://dawarich.${SECRET_DOMAIN}/
+                policy_engine_mode: any
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: authentik-dawarich-oidc
+---
+# A store that may read only the Secret above, usable only from `default`.
+# Same shape as llm/litellm/clustersecretstore/courier.yaml.
+#
+# Consumer: default/dawarich-oidc
+#   data: {remoteRef: {key: authentik-dawarich-oidc, property: client-secret}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-secrets-security-dawarich-oidc
+  namespace: security
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: external-secrets-security-dawarich-oidc
+  namespace: security
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["authentik-dawarich-oidc"]
+    verbs: ["get"]
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["selfsubjectrulesreviews"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: &name external-secrets-security-dawarich-oidc
+  namespace: security
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: *name
+subjects:
+  - kind: ServiceAccount
+    name: *name
+    namespace: security
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/external-secrets.io/clustersecretstore_v1beta1.json
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: authentik-oidc-dawarich
+spec:
+  conditions:
+    - namespaces:
+        - default
+  provider:
+    kubernetes:
+      remoteNamespace: security
+      server:
+        caProvider:
+          type: "ConfigMap"
+          name: "kube-root-ca.crt"
+          namespace: security
+          key: "ca.crt"
+      auth:
+        serviceAccount:
+          name: external-secrets-security-dawarich-oidc
+          namespace: security

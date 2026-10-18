@@ -1,0 +1,273 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app dawarich
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: volsync
+      namespace: storage
+  # Dawarich: self-hosted location history (Google Timeline replacement).
+  #
+  # One pod, three containers: PostGIS as a native sidecar, then the Rails app
+  # and Sidekiq. PostGIS is in here, not on the shared Crunchy cluster, because
+  # that cluster runs the non-GIS crunchy-postgres image, and switching every
+  # app's database image for one app is not worth it. Keeping it in the pod
+  # means one PVC and one VolSync snapshot that is consistent across the
+  # database and the imported files.
+  #
+  # PostGIS listens on 127.0.0.1 only, with trust auth. Nothing outside this
+  # pod can reach it (no Service port, no pod-IP listener), and the only
+  # clients are the two containers next to it. There is deliberately no
+  # password: one would live both in a Secret and inside the data directory,
+  # and a VolSync restore next to a regenerated Secret would lock the app out.
+  #
+  # Redis is the shared Dragonfly, db 4. Dawarich picks the db with
+  # RAILS_CACHE_DB / RAILS_JOB_QUEUE_DB / RAILS_WS_DB (defaults 0, 1, 2, all
+  # taken here) rather than from REDIS_URL, so all three point at 4. Sharing is
+  # safe: nothing in Dawarich calls Rails.cache.clear / FLUSHDB, and the Sidekiq,
+  # cache and Action Cable keys are prefixed. db 0 default, 1 authentik,
+  # 2 outline/dagster/immich/thanos, 3 litellm, 4 dawarich.
+  #
+  # Location history is home data under the PRIVACY rule in
+  # llm/litellm/app/configmap.yaml: no LLM features, and reverse geocoding is
+  # left off (no PHOTON_/NOMINATIM_/GEOAPIFY_/LOCATIONIQ_ variable), because
+  # every provider Dawarich supports is a public service that would receive the
+  # coordinates. A self-hosted Photon is the way to turn it on later.
+  values:
+    controllers:
+      dawarich:
+        # RWO volume shared by all three containers.
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          # Native sidecar: starts first, the app containers start once its
+          # startup probe passes, and it stops last.
+          postgres:
+            image:
+              # Same major as Dawarich's own docker-compose.yml.
+              repository: docker.io/postgis/postgis
+              tag: 17-3.5-alpine@sha256:894f570c0cf0664ed5576a8fd5d5bfb8fb1b19d592885b686c3a88c8bd90c41f
+            restartPolicy: Always
+            env:
+              POSTGRES_USER: dawarich
+              POSTGRES_DB: dawarich
+              POSTGRES_HOST_AUTH_METHOD: trust
+              # A subdirectory: initdb refuses a mount point holding lost+found.
+              PGDATA: /var/lib/postgresql/data/pgdata
+            args: ["postgres", "-c", "listen_addresses=127.0.0.1"]
+            probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["pg_isready", "-h", "127.0.0.1", "-U", "dawarich", "-d", "dawarich"]
+                  periodSeconds: 5
+                  failureThreshold: 60
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["pg_isready", "-h", "127.0.0.1", "-U", "dawarich", "-d", "dawarich"]
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+            resources:
+              requests:
+                cpu: 25m
+                memory: 256Mi
+              limits:
+                memory: 2Gi
+        containers:
+          app:
+            image: &image
+              repository: docker.io/freikin/dawarich
+              tag: 1.16.0@sha256:b533e6eac4464d55479d030229cf9487f338972cdb88924e8060ca759d0e28b8
+            # Runs migrations and seeds, then Puma on :3000.
+            command: ["web-entrypoint.sh"]
+            args: ["bin/rails", "server", "-p", "3000", "-b", "::"]
+            env: &env
+              RAILS_ENV: production
+              RAILS_LOG_TO_STDOUT: "true"
+              SELF_HOSTED: "true"
+              TIME_ZONE: Europe/Stockholm
+              # The entrypoints start as root, chown public/storage/tmp to this
+              # user and drop to it with gosu (upstream's supported way to run
+              # unprivileged; a runAsUser start cannot chown the volume).
+              PUID: "1000"
+              PGID: "1000"
+              # The public hostname, plus the in-cluster names Home Assistant
+              # uses to push points (see the PR / README notes). The health
+              # path is exempt from the host check, so probes need no Host.
+              APPLICATION_HOSTS: dawarich.${SECRET_DOMAIN},dawarich.default.svc.cluster.local,dawarich.default,localhost,127.0.0.1
+              APPLICATION_PROTOCOL: https
+              STORE_GEODATA: "true"
+              WEB_CONCURRENCY: "1"
+              BACKGROUND_PROCESSING_CONCURRENCY: "3"
+              PROMETHEUS_EXPORTER_ENABLED: "false"
+              DATABASE_HOST: 127.0.0.1
+              DATABASE_PORT: "5432"
+              DATABASE_USERNAME: dawarich
+              DATABASE_NAME: dawarich
+              REDIS_URL: redis://dragonfly.database.svc.cluster.local:6379
+              RAILS_CACHE_DB: "4"
+              RAILS_JOB_QUEUE_DB: "4"
+              RAILS_WS_DB: "4"
+              # Sign-in through Authentik (security/authentik/app/dawarich-oidc.yaml).
+              # Any Authentik user may sign in and gets an empty account of their
+              # own. The first admin is made by hand with `rails runner`.
+              # Discovery is lazy (omniauth_openid_connect 0.8.0 calls discover!
+              # per sign-in, not at boot), so the app starts even while Authentik
+              # has not applied the blueprint yet; sign-in just fails until it has.
+              OIDC_CLIENT_ID: dawarich
+              OIDC_ISSUER: https://sso.${SECRET_DOMAIN}/application/o/dawarich/
+              OIDC_REDIRECT_URI: https://dawarich.${SECRET_DOMAIN}/users/auth/openid_connect/callback
+              OIDC_PROVIDER_NAME: Authentik
+              OIDC_AUTO_REGISTER: "true"
+              ALLOW_EMAIL_PASSWORD_REGISTRATION: "false"
+              # OIDC only, from the first start. db:seed creates an admin
+              # demo@dawarich.app with the published password `safepassword`
+              # whenever the users table is empty, so password login must never
+              # be on. 1.16.0 enforces this flag in both the web sign-in
+              # (Users::SessionsController) and the API one (/api/v1/auth/login),
+              # but only while OIDC is enabled, i.e. OIDC_CLIENT_ID and
+              # OIDC_CLIENT_SECRET are both set. That fails closed here: the
+              # secret comes from the non-optional dawarich-oidc Secret, so
+              # without it the pod does not start at all. The demo user is
+              # deleted once the first admin exists (PR steps); do not flip
+              # this flag before that.
+              ALLOW_EMAIL_PASSWORD_LOGIN: "false"
+            envFrom: &envFrom
+              - secretRef:
+                  name: dawarich-secret
+              - secretRef:
+                  name: dawarich-oidc
+            probes:
+              # The first start imports the country polygons in db:seed, which
+              # takes minutes. X-Forwarded-Proto: APPLICATION_PROTOCOL=https turns
+              # on force_ssl, which would otherwise answer the probe with a 301.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: &health
+                    path: /api/v1/health
+                    port: 3000
+                    httpHeaders:
+                      - name: X-Forwarded-Proto
+                        value: https
+                  periodSeconds: 10
+                  failureThreshold: 90
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *health
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *health
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+            resources:
+              requests:
+                cpu: 50m
+                memory: 512Mi
+              limits:
+                memory: 3Gi
+          sidekiq:
+            image: *image
+            # Upstream's compose starts Sidekiq only once the app is healthy, so
+            # that it never runs jobs against a schema the app is still
+            # migrating. Puma listening on :3000 means migrations are done.
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                until ruby -rsocket -e 'TCPSocket.new("127.0.0.1", 3000).close' 2>/dev/null; do
+                  echo "Waiting for the app to finish migrating..."
+                  sleep 5
+                done
+                exec sidekiq-entrypoint.sh sidekiq
+            env: *env
+            envFrom: *envFrom
+            resources:
+              requests:
+                cpu: 50m
+                memory: 512Mi
+              # Large Takeout imports are the peak.
+              limits:
+                memory: 4Gi
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 3000
+    route:
+      app:
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        # Internal, like Immich: phones reach it over Tailscale. The mobile
+        # apps (OwnTracks, Overland, the Dawarich app) authenticate with the
+        # user's API key, not the browser sign-in, so no SecurityPolicy here.
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 3000
+    persistence:
+      data:
+        existingClaim: *app
+        advancedMounts:
+          dawarich:
+            postgres:
+              - path: /var/lib/postgresql/data
+                subPath: postgres
+            app: &appMounts
+              - path: /var/app/public
+                subPath: public
+              - path: /var/app/storage
+                subPath: storage
+              - path: /var/app/tmp/imports/watched
+                subPath: watched
+            sidekiq: *appMounts
+      # Postgres sizes parallel-query shared memory from /dev/shm, which is 64Mi
+      # by default in a pod.
+      shm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 256Mi
+        advancedMounts:
+          dawarich:
+            postgres:
+              - path: /dev/shm

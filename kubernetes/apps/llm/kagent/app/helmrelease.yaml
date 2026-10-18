@@ -36,9 +36,18 @@ metadata:
   name: kagent
 spec:
   interval: 30m
-  chartRef:
-    kind: OCIRepository
-    name: kagent
+  # From the `kagent` HelmRepository (flux/repositories/helm/kagent.yaml),
+  # not an OCIRepository: see there for the digest-suffixed version that
+  # broke the install. Keep kagent and kagent-crds on the same version.
+  chart:
+    spec:
+      chart: kagent
+      version: 0.10.3
+      interval: 30m
+      sourceRef:
+        kind: HelmRepository
+        name: kagent
+        namespace: flux-system
   dependsOn:
     - name: kagent-crds
   install:

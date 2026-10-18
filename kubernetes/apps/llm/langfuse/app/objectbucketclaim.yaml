@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/objectbucket.io/objectbucketclaim_v1alpha1.json
+# Langfuse writes every ingested event to S3 before the worker moves it into
+# ClickHouse. An RGW bucket rather than MinIO: MinIO buckets and users are
+# created by terraform/minio, which nothing applies on merge, while an OBC
+# is reconciled by Rook like thanos-bucket. Rook writes the credentials to a
+# Secret and ConfigMap named langfuse-bucket in this namespace.
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: langfuse-bucket
+spec:
+  bucketName: langfuse
+  storageClassName: ceph-bucket

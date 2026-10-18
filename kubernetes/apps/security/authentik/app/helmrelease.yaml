@@ -44,6 +44,7 @@ spec:
         - authentik-vane-oidc  # vane-oidc.yaml
         - authentik-dawarich-oidc  # dawarich-oidc.yaml
         - authentik-karakeep-oidc  # karakeep-oidc.yaml
+        - authentik-langfuse-oidc  # langfuse-oidc.yaml
     server:
       autoscaling:
         enabled: true

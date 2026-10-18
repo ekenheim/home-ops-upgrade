@@ -64,4 +64,5 @@ resources:
   - ./seldonio.yaml
   - ./gitlab-charts.yaml
   - ./dify.yaml
+  - ./langfuse.yaml
   #- ./argocd.yaml

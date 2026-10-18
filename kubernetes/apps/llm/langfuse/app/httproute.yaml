@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# Browser access only. Sign-in is Langfuse's own Authentik OIDC, so there is no
+# SecurityPolicy here; LiteLLM sends traces to the Service directly.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: langfuse
+  annotations:
+    gethomepage.dev/description: "Traces of LiteLLM calls"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: "LLM"
+    gethomepage.dev/icon: "langfuse.png"
+    gethomepage.dev/name: "Langfuse"
+spec:
+  hostnames:
+    - "langfuse.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: langfuse-web
+          port: 3000

@@ -1,0 +1,125 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# Single-node ClickHouse for Langfuse, shaped like rybbit-clickhouse. Not the
+# chart's own: langfuse 2.x deploys ClickHouse as a ClickHouseCluster CR with
+# three Keeper replicas, which needs the ClickHouse operator and is far beyond
+# one trace store. Langfuse runs against it with CLICKHOUSE_CLUSTER_ENABLED=false.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: langfuse-clickhouse
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+  values:
+    controllers:
+      langfuse-clickhouse:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: clickhouse/clickhouse-server
+              tag: 26.9-alpine@sha256:ebfa2210dce4d75af8f73ef02588d1a8fc67a44dcdd573a6c8055597177c1ca1
+            env:
+              CLICKHOUSE_DB: default
+              CLICKHOUSE_USER: default
+              CLICKHOUSE_DO_NOT_CHOWN: "1"
+              CLICKHOUSE_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: langfuse-secret
+                    key: CLICKHOUSE_PASSWORD
+            # Langfuse's guidance is 2Gi+ for production; this one holds a
+            # homelab's traces, and the caches below are cut to fit. ClickHouse
+            # sizes itself from the cgroup limit, not the node.
+            resources:
+              requests:
+                cpu: 100m
+                memory: 1Gi
+              limits:
+                memory: 3Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        controller: langfuse-clickhouse
+        ports:
+          http:
+            port: 8123
+          # Native protocol, used by Langfuse's migrations.
+          tcp:
+            port: 9000
+    persistence:
+      data:
+        existingClaim: langfuse-clickhouse
+        globalMounts:
+          - path: /var/lib/clickhouse
+      config:
+        type: configMap
+        identifier: config
+        globalMounts:
+          - path: /etc/clickhouse-server/config.d/langfuse.xml
+            subPath: config.xml
+    configMaps:
+      config:
+        data:
+          # The system log tables are most of an idle ClickHouse's writes and
+          # memory; query_log stays, kept for an hour, for debugging slow
+          # Langfuse pages. Same trimming as rybbit-clickhouse.
+          config.xml: |
+            <clickhouse>
+                <logger>
+                    <level>warning</level>
+                    <console>true</console>
+                </logger>
+                <listen_host>0.0.0.0</listen_host>
+                <mark_cache_size>268435456</mark_cache_size>
+                <index_mark_cache_size>67108864</index_mark_cache_size>
+                <uncompressed_cache_size>67108864</uncompressed_cache_size>
+                <query_log>
+                    <database>system</database>
+                    <table>query_log</table>
+                    <partition_by>toYYYYMM(event_date)</partition_by>
+                    <flush_interval_milliseconds>60000</flush_interval_milliseconds>
+                    <ttl>event_date + INTERVAL 1 HOUR DELETE</ttl>
+                </query_log>
+                <query_thread_log remove="remove"/>
+                <metric_log remove="remove"/>
+                <asynchronous_metric_log remove="remove"/>
+                <trace_log remove="remove"/>
+                <text_log remove="remove"/>
+                <part_log remove="remove"/>
+                <session_log remove="remove"/>
+                <processors_profile_log remove="remove"/>
+                <query_views_log remove="remove"/>
+                <query_metric_log remove="remove"/>
+                <asynchronous_insert_log remove="remove"/>
+                <error_log remove="remove"/>
+                <interserver_http_port remove="remove"/>
+                <mysql_port remove="remove"/>
+                <postgresql_port remove="remove"/>
+            </clickhouse>

@@ -24,6 +24,7 @@ lives here.
 | `sillytavern` | Character chat frontend. Internal ingress is its only access control. |
 | `ai-marketplace-monitor` | Facebook Marketplace watcher, listings rated by `fast`. UI at `marketplace.<domain>`, login = the Facebook credentials. No notifier wired yet. |
 | `dispatch`, `courier` | The agentic coding loop. |
+| `langfuse` | Traces of LiteLLM calls (prompt, response, tokens, latency). Only the `coding`, `research`, `media` and `platform` teams are traced; see `default_team_settings` in `litellm/app/configmap.yaml`. Sign-in via Authentik (admins only). |
 
 ## litellm-operator mints keys, but does not run the proxy
 

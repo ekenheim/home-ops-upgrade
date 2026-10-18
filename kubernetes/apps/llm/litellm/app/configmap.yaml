@@ -1014,6 +1014,46 @@ data:
       # is ClusterIP-only (the Ingress routes to / on the same port but Prometheus
       # scrapes the Service directly), and it exposes counters, not prompts.
       require_auth_for_metrics_endpoint: false
+      # Langfuse traces (apps/llm/langfuse), OPT-IN PER TEAM, deliberately not
+      # a third entry in success_callback/failure_callback above.
+      #
+      # A trace stores the whole prompt and response. A global callback would
+      # send everything to Langfuse, including hermes' and OpenClaw's mail and
+      # calendar, memini/hindsight memories and Home Assistant state. Opting
+      # those keys out does not work on this proxy: the per-key
+      # `litellm_disabled_callbacks` is honoured only on a premium license, and
+      # global `turn_off_message_logging` would also blank the prompts in
+      # LiteLLM_SpendLogs that store_prompts_in_spend_logs is there for. So
+      # tracing goes the other way: a team is traced only if it is listed
+      # here, and the teams listed carry nothing private (see
+      # ../keys/teams.yaml): coding (public code), research (public filings,
+      # notebooks), media (subtitles), platform (cluster alerts, MCP).
+      # assistants, memory and home are NOT traced, and neither is any call
+      # made with the master key (no team).
+      #
+      # `langfuse_otel` (OTLP to /api/public/otel), not the older `langfuse`
+      # SDK callback: it is the one that speaks Langfuse 4's ingestion
+      # version. It reads LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY /
+      # LANGFUSE_HOST; helmrelease.yaml loads the key pair from the
+      # langfuse-litellm Secret, optionally, so the gateway still starts if
+      # Langfuse is absent. A LiteLLM that started before that Secret existed
+      # has no keys and needs one restart to start exporting.
+      #
+      # A team-level `logging` entry in a LiteLLMTeam's metadata would take
+      # precedence over this list for that team.
+      default_team_settings:
+        - team_id: coding
+          success_callback: ["langfuse_otel"]
+          failure_callback: ["langfuse_otel"]
+        - team_id: research
+          success_callback: ["langfuse_otel"]
+          failure_callback: ["langfuse_otel"]
+        - team_id: media
+          success_callback: ["langfuse_otel"]
+          failure_callback: ["langfuse_otel"]
+        - team_id: platform
+          success_callback: ["langfuse_otel"]
+          failure_callback: ["langfuse_otel"]
       # WHOLE-CALL BUDGET, and it multiplies by num_retries.
       #
       # The real ceiling litellm imposes is request_timeout * (1 + num_retries),

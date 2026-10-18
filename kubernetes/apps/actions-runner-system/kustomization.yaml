@@ -11,10 +11,12 @@ resources:
   - ./runner-network-policy/ks.yaml
   - ./gha-runner-scale-set/ks.yaml
   - ./gha-runner-scale-set-nordic-housing/ks.yaml
-  - ./gha-runner-scale-set-bandit/ks.yaml
+  # Off since 2026-10-18 (owner): bandit is shelved; these runners served
+  # github.com/ekenheim/bandit and /banditweb (image builds and Harbor pushes).
+  #- ./gha-runner-scale-set-bandit/ks.yaml
   # Off since 2026-10-18 (owner): the ecom and grid-resilience projects are
   # shelved (Medusa and grid-reliance-infra disabled in #7740).
   #- ./gha-runner-scale-set-ecom/ks.yaml
-  - ./gha-runner-scale-set-banditweb/ks.yaml
+  #- ./gha-runner-scale-set-banditweb/ks.yaml
   #- ./gha-runner-scale-set-grid-reliance/ks.yaml
   - ./gha-runner-scale-set-atlas/ks.yaml

@@ -197,6 +197,8 @@ spec:
       databases: ["alphaos"]
       password:
         type: AlphaNumeric
+    # bandit app off since 2026-10-18 (owner); user and db kept so it can return.
+    # Password rotated 2026-10-18: a plaintext copy was committed in 14458af5e.
     - name: "bandit"
       databases: ["bandit"]
       password:

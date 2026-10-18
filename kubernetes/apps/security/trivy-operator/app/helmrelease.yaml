@@ -135,7 +135,7 @@ spec:
         repository: aquasecurity/trivy
         # The digest suffix is safe here: the operator's version checks fall
         # back to current flags when the tag does not parse as semver.
-        tag: 0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
+        tag: 0.76.0@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222
       command: image
       # ghcr.io rate-limits trivy-db pulls and scans then fail quietly; these
       # are Google's mirror of the same OCI artifacts (also the chart default,

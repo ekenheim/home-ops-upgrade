@@ -61,7 +61,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.13
+              image: ghcr.io/ekenheim/atlas-agent:0.6.14
               args: ["scout"]
               env:
                 - name: ATLAS_MCP_URL
@@ -116,7 +116,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.13
+              image: ghcr.io/ekenheim/atlas-agent:0.6.14
               args: ["researcher"]
               env:
                 - name: ATLAS_MCP_URL
@@ -171,13 +171,74 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.13
+              image: ghcr.io/ekenheim/atlas-agent:0.6.14
               args: ["skeptic"]
               env:
                 - name: ATLAS_MCP_URL
                   value: http://atlas.development.svc.cluster.local:8000/mcp
                 - name: ATLAS_AGENT_THEME
                   value: photonics
+              envFrom:
+                - secretRef:
+                    name: atlas-agent-claude
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests: { cpu: 50m, memory: 256Mi }
+                limits: { memory: 1Gi }
+          volumes:
+            - name: tmp
+              emptyDir: {}
+---
+# The early-call scorecard's runner (atlas tickets 29 and 29b): each firing runs the next unrun entry
+# of the run list frozen in the image (agent/scorecard/runs.json) as an isolated Researcher session
+# as of a past date, on the exact model ID; it does nothing while a scorecard session is open and
+# prints {"scorecard":"done"} once all nine are run. Created SUSPENDED: a later PR un-suspends it
+# once the pre-run steps are committed (coverage table, code readings, closed-book probes) and
+# suspends the other agents for the runs' duration. One firing per ChatGPT 5-hour window.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: atlas-agent-scorecard
+  namespace: development
+spec:
+  suspend: true
+  schedule: "0 */6 * * *"
+  timeZone: UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 10
+  failedJobsHistoryLimit: 10
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 5400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: atlas
+            app.kubernetes.io/component: agent-scorecard
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: ghcr-pull
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+          containers:
+            - name: agent
+              image: ghcr.io/ekenheim/atlas-agent:0.6.14
+              command: ["/opt/atlas-agent/agent/scorecard-run.sh"]
+              env:
+                - name: ATLAS_MCP_URL
+                  value: http://atlas.development.svc.cluster.local:8000/mcp
+                - name: ATLAS_AGENT_MODEL
+                  value: claude-opus-5-5
               envFrom:
                 - secretRef:
                     name: atlas-agent-claude

@@ -50,10 +50,10 @@ spec:
   # 2 outline/dagster/immich/thanos, 3 litellm, 4 dawarich.
   #
   # Location history is home data under the PRIVACY rule in
-  # llm/litellm/app/configmap.yaml: no LLM features, and reverse geocoding is
-  # left off (no PHOTON_/NOMINATIM_/GEOAPIFY_/LOCATIONIQ_ variable), because
-  # every provider Dawarich supports is a public service that would receive the
-  # coordinates. A self-hosted Photon is the way to turn it on later.
+  # llm/litellm/app/configmap.yaml: no LLM features. Reverse geocoding stays
+  # in-house: it uses the self-hosted Photon in default/photon (PHOTON_API_HOST
+  # below), never a public provider (komoot, Geoapify, Nominatim, LocationIQ),
+  # which would receive the coordinates. Keep it that way.
   values:
     controllers:
       dawarich:
@@ -66,7 +66,12 @@ spec:
           # startup probe passes, and it stops last.
           postgres:
             image:
-              # Same major as Dawarich's own docker-compose.yml.
+              # Same major as Dawarich's own docker-compose.yml. NEVER bump the
+              # Postgres major (the 17 in 17-3.5) as a tag change: 18 cannot
+              # open a data directory 17 created, and the pod crash-loops until
+              # someone runs pg_upgrade or a dump/restore (Dispatcharr, #7713).
+              # Renovate majors are disabled for this sidecar (#7720,
+              # .github/renovate/packageRules.json5); a major is a manual job.
               repository: docker.io/postgis/postgis
               tag: 17-3.5-alpine@sha256:894f570c0cf0664ed5576a8fd5d5bfb8fb1b19d592885b686c3a88c8bd90c41f
             restartPolicy: Always
@@ -119,15 +124,32 @@ spec:
               # unprivileged; a runAsUser start cannot chown the volume).
               PUID: "1000"
               PGID: "1000"
-              # The public hostname, plus the in-cluster names Home Assistant
-              # uses to push points (see the PR / README notes). The health
-              # path is exempt from the host check, so probes need no Host.
+              # Home Assistant pushes points through the public hostname on
+              # :443 (envoy-internal), not the in-cluster names: its Dawarich
+              # integration forces SSL. The in-cluster names are kept for any
+              # in-cluster caller. The health path is exempt from the host
+              # check, so probes and the Gatus check need no Host.
               APPLICATION_HOSTS: dawarich.${SECRET_DOMAIN},dawarich.default.svc.cluster.local,dawarich.default,localhost,127.0.0.1
               APPLICATION_PROTOCOL: https
               STORE_GEODATA: "true"
               WEB_CONCURRENCY: "1"
               BACKGROUND_PROCESSING_CONCURRENCY: "3"
-              PROMETHEUS_EXPORTER_ENABLED: "false"
+              # Reverse geocoding through the in-cluster Photon (Sweden only,
+              # see photon/app/helmrelease.yaml). Set by variable, so it is
+              # pinned: the admin page cannot switch it to a public provider.
+              # New points are geocoded on create; older points without
+              # reverse_geocoded_at are picked up by the nightly job (01:15).
+              PHOTON_API_HOST: photon.default.svc.cluster.local:2322
+              PHOTON_API_USE_HTTPS: "false"
+              # PROMETHEUS_EXPORTER_ENABLED is deliberately not in this shared
+              # map: unset means off, and only Sidekiq adds it (below; a merge
+              # key cannot override a key it brings in, kubeconform rejects
+              # that). The web's /metrics lives on :3000 behind force_ssl and
+              # the host check, so Prometheus cannot scrape it by pod IP (a 301
+              # to https; the operator's ServiceMonitor has no header support),
+              # and turning it on would also publish /metrics on the public
+              # hostname. Sidekiq's exporter is a plain WEBrick on :9394 with
+              # the queue and job metrics, which is what is worth watching.
               DATABASE_HOST: 127.0.0.1
               DATABASE_PORT: "5432"
               DATABASE_USERNAME: dawarich
@@ -138,7 +160,8 @@ spec:
               RAILS_WS_DB: "4"
               # Sign-in through Authentik (security/authentik/app/dawarich-oidc.yaml).
               # Any Authentik user may sign in and gets an empty account of their
-              # own. The first admin is made by hand with `rails runner`.
+              # own. The first admin was made by hand with `rails runner`
+              # (2026-10-18: the OIDC user, id 2).
               # Discovery is lazy (omniauth_openid_connect 0.8.0 calls discover!
               # per sign-in, not at boot), so the app starts even while Authentik
               # has not applied the blueprint yet; sign-in just fails until it has.
@@ -156,11 +179,12 @@ spec:
               # but only while OIDC is enabled, i.e. OIDC_CLIENT_ID and
               # OIDC_CLIENT_SECRET are both set. That fails closed here: the
               # secret comes from the non-optional dawarich-oidc Secret, so
-              # without it the pod does not start at all. The demo user is
-              # deleted once the first admin exists (PR steps); do not flip
-              # this flag before that.
+              # without it the pod does not start at all. The demo user was
+              # deleted on 2026-10-18 (it owned no data), and db:seed does not
+              # recreate it while any user exists. Keep this flag off anyway:
+              # an empty users table (a fresh restore) would bring it back.
               ALLOW_EMAIL_PASSWORD_LOGIN: "false"
-            envFrom: &envFrom
+            envFrom:
               - secretRef:
                   name: dawarich-secret
               - secretRef:
@@ -216,8 +240,21 @@ spec:
                   sleep 5
                 done
                 exec sidekiq-entrypoint.sh sidekiq
-            env: *env
-            envFrom: *envFrom
+            env:
+              <<: *env
+              # config/initializers/sidekiq.rb (1.16.0) starts the yabeda
+              # exporter on PROMETHEUS_EXPORTER_PORT (default 9394) in the
+              # Sidekiq process only, behind METRICS_USERNAME/PASSWORD basic
+              # auth (dawarich-metrics). Scraped by ./servicemonitor.yaml.
+              PROMETHEUS_EXPORTER_ENABLED: "true"
+              PROMETHEUS_EXPORTER_PORT: "9394"
+            envFrom:
+              - secretRef:
+                  name: dawarich-secret
+              - secretRef:
+                  name: dawarich-oidc
+              - secretRef:
+                  name: dawarich-metrics
             resources:
               requests:
                 cpu: 50m
@@ -231,6 +268,10 @@ spec:
         ports:
           http:
             port: 3000
+          # Sidekiq's exporter (same pod). Not on the route: only the
+          # ServiceMonitor reaches it, with the dawarich-metrics credentials.
+          metrics:
+            port: 9394
     route:
       app:
         hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]

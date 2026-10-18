@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/servicemonitor_v1.json
+# Sidekiq's yabeda exporter (sidekiq_* queue depth/latency, job runtimes,
+# dawarich_* counters), served on the `metrics` port of the app Service. Not
+# the web's /metrics on :3000: see PROMETHEUS_EXPORTER_ENABLED in
+# helmrelease.yaml for why that one cannot be scraped by pod IP.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: &app dawarich
+spec:
+  # The labels app-template puts on the Service (checked on the live object).
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: *app
+      app.kubernetes.io/name: *app
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 1m
+      scrapeTimeout: 10s
+      basicAuth:
+        username:
+          name: dawarich-metrics
+          key: METRICS_USERNAME
+        password:
+          name: dawarich-metrics
+          key: METRICS_PASSWORD

@@ -1,0 +1,143 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app photon
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+  # Photon: self-hosted reverse geocoder (komoot/photon, OpenSearch embedded in
+  # one JVM) for Dawarich, so coordinates never leave the cluster (PRIVACY rule
+  # in llm/litellm/app/configmap.yaml; see dawarich/app/helmrelease.yaml).
+  # In-cluster only: no route, Dawarich calls photon.default.svc:2322.
+  values:
+    controllers:
+      photon:
+        # RWO index volume.
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              # rtuszik/photon-docker publishes the same tags to Docker Hub and
+              # GHCR; GHCR per the registry policy. 2.4.0 ships Photon 1.3.0.
+              repository: ghcr.io/rtuszik/photon-docker
+              tag: 2.4.0@sha256:21549c60f9e6488fff3217e40429a652c4b445f374800333fe32859e47cec293
+            env:
+              TZ: ${TIMEZONE}
+              # Sweden only. photon-docker has no prebuilt `db` index for
+              # Sweden (only 16 countries get one), so it downloads the Sweden
+              # JSONL dump (222 MB zst on 2026-10-17) and builds the index in
+              # the container on first start.
+              #
+              # Trips abroad, the Netherlands included, will NOT geocode until
+              # a larger region is chosen. Points outside Sweden come back
+              # blank and are marked as attempted, so after widening the region
+              # they need a forced re-run, in the dawarich app container:
+              #   bin/rails runner 'Point.where(country_name: nil).find_each { |p| p.async_reverse_geocode(force: true) }'
+              # Widening is not just `REGION=se,nl`: with more than one region
+              # photon-docker downloads the whole continent's dump (europe was
+              # 13.3 GB zst) and filters it, so the PVC must grow to ~20Gi+.
+              IMPORT_MODE: jsonl
+              REGION: se
+              # Scheduled refreshes are not implemented in JSONL mode (2.4.0
+              # skips them), so say so instead of pretending. To refresh the
+              # index, set FORCE_UPDATE: "TRUE" for one start (it re-imports
+              # on every start while set), or delete photon_data on the PVC.
+              UPDATE_STRATEGY: DISABLED
+              # Not REVERSE_ONLY, although it saves ~60% disk: it disables
+              # /api, and Dawarich uses the same provider for place search.
+              #
+              # Heap for both the import and the server. Not measured yet: a
+              # Sweden index is well under 1 GB, so 2g is generous; revisit
+              # the request below once there is a week of p95.
+              JAVA_PARAMS: -Xmx2g
+              LOG_LEVEL: INFO
+            probes:
+              # The first start downloads and imports before Photon listens.
+              # 120 x 30 s = 60 min of headroom for that; later starts only
+              # open the existing index (a minute or two).
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: &status
+                    path: /status
+                    port: &port 2322
+                  periodSeconds: 30
+                  failureThreshold: 120
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *status
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *status
+                  periodSeconds: 15
+                  timeoutSeconds: 10
+                  failureThreshold: 3
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+            resources:
+              # Initial guess, not p95: the JVM heap above plus OpenSearch's
+              # off-heap and page cache. The import is the CPU and memory peak.
+              requests:
+                cpu: 100m
+                memory: 1Gi
+              limits:
+                memory: 4Gi
+    defaultPodOptions:
+      # 2.4.0 runs as a non-root user: started as the image's own `photon`
+      # user (9011) the entrypoint skips its chown/gosu step and writes only
+      # under /photon (which that user owns) and the volume below.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 9011
+        runAsGroup: 9011
+        fsGroup: 9011
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+    persistence:
+      # No VolSync: the index is derived data and re-downloads on an empty
+      # volume. Sized from the Sweden dump: 222 MB zst, and Photon's planet
+      # figures (26 GB zst dump -> ~95 GB index) put the index near 0.8 GB.
+      # The import also keeps the dump in /photon/data/temp until it is done.
+      # 5Gi is several times both together, for OSM growth and headroom.
+      data:
+        type: persistentVolumeClaim
+        storageClass: ceph-block
+        accessMode: ReadWriteOnce
+        size: 5Gi
+        globalMounts:
+          - path: /photon/data

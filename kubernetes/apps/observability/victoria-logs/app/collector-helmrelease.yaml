@@ -40,15 +40,29 @@ spec:
         maxDiskUsagePerURL: 2GiB
     collector:
       includePodLabels: true
+    # Fixed send-side sizing. vlagent defaults -remoteWrite.queues to 2x the
+    # CPUs it sees, and with no CPU limit that is the host's: 64 queues on
+    # worker3 and worker4, each with an 8 MiB pending block, and an in-memory
+    # queue of 100 blocks per queue (6400) before it spills to disk. On first
+    # start there is no checkpoint, so it reads every container log from the
+    # beginning; worker3 (211 pods) filled 512Mi in under a second and was
+    # OOMKilled before it could write a checkpoint, so every restart began
+    # from zero again. 4 queues x 2 MiB blocks keeps the in-memory side at
+    # 400 small blocks; the rest of the backlog goes to the 2 GiB disk buffer.
+    extraArgs:
+      remoteWrite.queues: 4
+      remoteWrite.maxBlockSize: 2MiB
     tolerations:
       - operator: Exists
     podAnnotations:
       reloader.stakater.com/auto: "true"
+    # Steady state is 30-50Mi (master2, worker4); the request leaves room for
+    # worker3's larger pod count, the limit for the first-start backlog.
     resources:
       requests:
         cpu: 25m
-        memory: 64Mi
+        memory: 128Mi
       limits:
-        memory: 512Mi
+        memory: 2Gi
     podMonitor:
       enabled: true

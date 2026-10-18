@@ -41,7 +41,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: enqueue
-              image: ghcr.io/ekenheim/atlas:0.6.12
+              image: ghcr.io/ekenheim/atlas:0.6.13
               command: ["/bin/sh", "-c"]
               args:
                 # The photonics universe (0.2.1 rollout): SEC filers with at most 5 new retains
@@ -50,6 +50,8 @@ spec:
                 # Innolight is manual import only (HKEX terms). One failure doesn't stop the rest.
                 # 0.6.12: the memory-and-packaging theme's seven SEC seeds (atlas-beliefs ticket 20a),
                 # SanDisk first: the early-call scorecard (ticket 29) needs its 2025 history and calls.
+                # 0.6.13: the scorecard's held-out cases (IREN, eToro, Snap, POET; ticket 29a), archive
+                # and call transcripts only; they are in no researched theme and no scheduled agent's.
                 # Then each company's TradingView catalog (transcripts and headline leads through the
                 # cluster's MCP proxy; at most 20 calls a job, so a long history takes several nights).
                 # 0.6.5: the universe's reporting dates as calendar leads, one batched call a night
@@ -69,9 +71,11 @@ spec:
                   for c in iqe soitec; do atlas ingest --company "$c" --backfill || rc=1; done;
                   for c in sandisk micron sk-hynix formfactor camtek ase-technology amkor; do
                   atlas ingest --company "$c" --backfill --max-retains 5 || rc=1; done;
+                  for c in iren etoro snap poet-technologies; do
+                  atlas ingest --company "$c" --backfill --max-retains 5 || rc=1; done;
                   for c in lumentum coherent axt applied-optoelectronics fabrinet marvell macom
                   ciena stmicroelectronics iqe soitec innolight sandisk micron sk-hynix formfactor
-                  camtek ase-technology amkor; do
+                  camtek ase-technology amkor iren etoro snap poet-technologies; do
                   atlas jobs enqueue tradingview_catalog --backfill --key "tradingview-$c-$(date -u +%F)"
                   --payload "{\"company\": \"$c\"}" || rc=1; done;
                   atlas jobs enqueue tradingview_calendar --backfill --key "tradingview-calendar-$(date -u +%F)"

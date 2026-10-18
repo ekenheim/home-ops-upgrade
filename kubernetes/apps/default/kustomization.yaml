@@ -15,6 +15,7 @@ resources:
   - ./it-tools/ks.yaml
   - ./outline/ks.yaml
   - ./paperless/ks.yaml
+  - ./paperless-gpt/ks.yaml
   - ./syncthing/ks.yaml
   - ./wyoming-kokoro/ks.yaml
   - ./wyoming-piper/ks.yaml

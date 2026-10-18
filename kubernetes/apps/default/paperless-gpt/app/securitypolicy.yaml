@@ -1,0 +1,36 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# Browser sign-in for paperless-gpt.${SECRET_DOMAIN}. paperless-gpt has no
+# authentication of its own and holds an admin Paperless token, so every
+# request through the route, /api included, must carry an Authentik session
+# (application `paperless-gpt`, authentik Admins only, defined in
+# security/authentik/app/paperless-gpt-oidc.yaml). Same shape as
+# agent-lab/trackinizer/app/securitypolicy.yaml.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: paperless-gpt-oidc
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: paperless-gpt
+  oidc:
+    provider:
+      issuer: https://sso.${SECRET_DOMAIN}/application/o/paperless-gpt/
+    clientID: paperless-gpt
+    clientSecret:
+      # Cross-namespace; allowed by the ReferenceGrant in security.
+      name: authentik-paperless-gpt-oidc
+      namespace: security
+    redirectURL: https://paperless-gpt.${SECRET_DOMAIN}/oauth2/callback
+    logoutPath: /oauth2/logout
+    scopes:
+      - openid
+      - email
+      - profile
+      - offline_access
+    # The access token lives an hour; the refresh token keeps the session
+    # without a full redirect, which the web app's background fetches could not
+    # follow.
+    refreshToken: true

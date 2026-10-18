@@ -1,0 +1,63 @@
+---
+# A store of its own for paperless-gpt's key, same shape as ./agent-lab.yaml:
+# this SA may `get` only litellm-key-paperless-gpt in `llm`, and only
+# `default` may use the store.
+#
+# Consumer: default/paperless-gpt-litellm
+#   remoteRef: {key: litellm-key-paperless-gpt, property: api-key}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-secrets-llm-paperless-gpt
+  namespace: llm
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: external-secrets-llm-paperless-gpt
+  namespace: llm
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["litellm-key-paperless-gpt"]
+    verbs: ["get"]
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["selfsubjectrulesreviews"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: &name external-secrets-llm-paperless-gpt
+  namespace: llm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: *name
+subjects:
+  - kind: ServiceAccount
+    name: *name
+    namespace: llm
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/external-secrets.io/clustersecretstore_v1beta1.json
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: litellm-key-secrets-paperless-gpt
+spec:
+  conditions:
+    - namespaces:
+        - default
+  provider:
+    kubernetes:
+      remoteNamespace: llm
+      server:
+        caProvider:
+          type: "ConfigMap"
+          name: "kube-root-ca.crt"
+          namespace: llm
+          key: "ca.crt"
+      auth:
+        serviceAccount:
+          name: external-secrets-llm-paperless-gpt
+          namespace: llm

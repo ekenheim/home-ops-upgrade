@@ -200,7 +200,7 @@ spec:
       role: admin
   # Home data: local aliases only. `home-assistant` itself falls back to the
   # ChatGPT subscription, never MiniMax. Keys: homeassistant-chat,
-  # facebook-marketplace (Bitwarden).
+  # facebook-marketplace (Bitwarden); paperless-gpt (Git).
   models:
     - home-assistant
     - fast

@@ -36,27 +36,102 @@ spec:
           reloader.stakater.com/auto: "true"
         containers:
           app:
-            image:
+            image: &image
               repository: clickhouse/clickhouse-server
               tag: 26.9-alpine@sha256:ebfa2210dce4d75af8f73ef02588d1a8fc67a44dcdd573a6c8055597177c1ca1
             env:
               CLICKHOUSE_DB: default
               CLICKHOUSE_USER: default
               CLICKHOUSE_DO_NOT_CHOWN: "1"
-              CLICKHOUSE_PASSWORD:
+              CLICKHOUSE_PASSWORD: &password
                 valueFrom:
                   secretKeyRef:
                     name: langfuse-secret
                     key: CLICKHOUSE_PASSWORD
             # Langfuse's guidance is 2Gi+ for production; this one holds a
             # homelab's traces, and the caches below are cut to fit. ClickHouse
-            # sizes itself from the cgroup limit, not the node.
+            # sizes itself from the cgroup limit, not the node, so the limit
+            # stays at 3Gi. The request was 1Gi; working set p95 was 314Mi
+            # (max 318Mi) over its first ~5h of traffic on 2026-10-18. 512Mi
+            # leaves room for the weekly retention mutation below, which
+            # rewrites the oldest month's parts.
             resources:
               requests:
                 cpu: 100m
-                memory: 1Gi
+                memory: 512Mi
               limits:
                 memory: 3Gi
+      # RETENTION. Langfuse's own data retention is an Enterprise Edition
+      # feature when self-hosted (https://langfuse.com/docs/administration/data-retention),
+      # so nothing in this ClickHouse ever expires without this job. At the
+      # first day's rate (~100 MiB/day on disk in events_full) the 20Gi volume
+      # would fill in about 7 months.
+      #
+      # Langfuse 4 writes every span to events_full; events_core_mv copies a
+      # slim version into events_core on INSERT only, so a delete on
+      # events_full never reaches events_core and both are trimmed here. The
+      # legacy traces/observations/scores tables hold 0 rows on 4.63 and are
+      # left alone. The cut is on start_time, the column Langfuse's own
+      # retention uses for observations, and the partition key
+      # (toYYYYMM(start_time)), so a run only rewrites the month that
+      # straddles the cut. Weekly rather than daily for the same reason:
+      # each run rewrites that whole month, so rows live 90 to 97 days.
+      #
+      # blob_storage_file_log is Langfuse's index of the event files in S3.
+      # Langfuse's blob-storage docs say to give it a TTL matching the bucket
+      # lifecycle (30 days, ./objectbucketclaim.yaml). It is set here, and only
+      # when missing (a repeated MODIFY TTL would re-materialize every part),
+      # so a Langfuse migration that recreates the table gets it back.
+      #
+      # mutations_sync=1 makes a run fail visibly if a mutation does. No
+      # shell parameter expansion with braces: Flux's post-build substitution
+      # would read it as a variable.
+      retention:
+        type: cronjob
+        cronjob:
+          schedule: "30 3 * * 0"
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 1
+          failedJobsHistory: 1
+          backoffLimit: 2
+          activeDeadlineSeconds: 7200
+        containers:
+          app:
+            image: *image
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -eu
+                for t in events_full events_core; do
+                  n=$(clickhouse-client --query "SELECT count() FROM $t WHERE start_time < now() - INTERVAL 90 DAY")
+                  echo "$t: $n rows older than 90 days"
+                  if [ "$n" -gt 0 ]; then
+                    clickhouse-client --mutations_sync=1 --query "ALTER TABLE $t DELETE WHERE start_time < now() - INTERVAL 90 DAY"
+                    echo "$t: deleted"
+                  fi
+                done
+                if clickhouse-client --query "SELECT create_table_query FROM system.tables WHERE database = currentDatabase() AND name = 'blob_storage_file_log'" | grep -q ' TTL '; then
+                  echo "blob_storage_file_log: TTL already set"
+                else
+                  clickhouse-client --query "ALTER TABLE blob_storage_file_log MODIFY TTL created_at + INTERVAL 30 DAY DELETE"
+                  echo "blob_storage_file_log: TTL set to 30 days"
+                fi
+            # clickhouse-client reads these, so the password is never on a
+            # command line.
+            env:
+              CLICKHOUSE_HOST: langfuse-clickhouse.llm.svc.cluster.local
+              CLICKHOUSE_USER: default
+              CLICKHOUSE_PASSWORD: *password
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -73,17 +148,23 @@ spec:
           # Native protocol, used by Langfuse's migrations.
           tcp:
             port: 9000
+    # Server only: the retention job talks to the Service and must not mount
+    # the RWO volume.
     persistence:
       data:
         existingClaim: langfuse-clickhouse
-        globalMounts:
-          - path: /var/lib/clickhouse
+        advancedMounts:
+          langfuse-clickhouse:
+            app:
+              - path: /var/lib/clickhouse
       config:
         type: configMap
         identifier: config
-        globalMounts:
-          - path: /etc/clickhouse-server/config.d/langfuse.xml
-            subPath: config.xml
+        advancedMounts:
+          langfuse-clickhouse:
+            app:
+              - path: /etc/clickhouse-server/config.d/langfuse.xml
+                subPath: config.xml
     configMaps:
       config:
         data:

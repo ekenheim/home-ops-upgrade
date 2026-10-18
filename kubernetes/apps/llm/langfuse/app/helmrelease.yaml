@@ -120,10 +120,13 @@ spec:
               value: litellm
             - name: LANGFUSE_DEFAULT_PROJECT_ROLE
               value: OWNER
+        # Requests at p95 of the working set over the first ~5h of traffic
+        # (2026-10-18): web 1007Mi (max 1034Mi), worker 656Mi (max 663Mi).
+        # Both were requested well below that (512Mi / 384Mi).
         resources:
           requests:
             cpu: 50m
-            memory: 512Mi
+            memory: 1Gi
           limits:
             memory: 2Gi
         pdb:
@@ -135,7 +138,7 @@ spec:
         resources:
           requests:
             cpu: 50m
-            memory: 384Mi
+            memory: 700Mi
           limits:
             memory: 2Gi
         pdb:
@@ -199,6 +202,7 @@ spec:
         secretKeyRef:
           name: langfuse-bucket
           key: AWS_SECRET_ACCESS_KEY
+      # Expired after 30 days by the bucket lifecycle (./objectbucketclaim.yaml).
       eventUpload:
         prefix: events/
       # Exports and media are served to the browser through presigned URLs on

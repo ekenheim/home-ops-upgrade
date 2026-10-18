@@ -6,6 +6,6 @@ resources:
   - ./blackbox-exporter/ks.yaml
   - ./lingarr-exporter/ks.yaml
   - ./minimax-quota-exporter/ks.yaml
-  # - ./nut-exporter/ks.yaml
+  - ./nut-exporter/ks.yaml
   - ./smartctl-exporter/ks.yaml
   - ./speedtest-exporter/ks.yaml

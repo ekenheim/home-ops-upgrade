@@ -32,12 +32,21 @@ spec:
           app:
             image:
               repository: ghcr.io/druggeri/nut_exporter
-              tag: "3.3.0"
+              tag: 3.3.0@sha256:276460d141c732772f8b1fcd785a7de272473e6d39fd85c32b163efc2999cb9a
             env:
               TZ: ${TIMEZONE}
-            args:
-              # the first time I set this, the first and last entries were ignored, so I have doubled them.
-              - --nut.vars_enable="battery.charge,battery.charge,battery.runtime,battery.voltage,battery.voltage.nominal,input.voltage,input.voltage.nominal,output.voltage,output.voltage.nominal,ups.realpower,ups.load,ups.status,ups.status"
+              # The NAS (Unraid NUT plugin, upsd 2.8.5 on :3493, anonymous reads)
+              # by IP: `nas.internal` stopped resolving, which is why this was
+              # off from 2026-03-29 (680fbb373) until 2026-10-18.
+              NUT_EXPORTER_SERVER: ${NAS_IP}
+              # Riello VSD 2200 over SNMP (snmp-ups, ietf MIB). It has no
+              # ups.realpower and reports every *.nominal as 0, so ups.load (%)
+              # can't be turned into watts: output.realpower is the UPS's own
+              # wattmeter and is what Kromgo and the Kepler dashboard read.
+              # An env var rather than `--nut.vars_enable="..."` in args: there
+              # the quotes were literal, glued to the first and last names, and
+              # those two were silently dropped.
+              NUT_EXPORTER_VARIABLES: battery.charge,battery.runtime,battery.voltage,battery.temperature,input.voltage,output.voltage,output.current,output.realpower,ups.load,ups.status
             probes:
               liveness:
                 enabled: true

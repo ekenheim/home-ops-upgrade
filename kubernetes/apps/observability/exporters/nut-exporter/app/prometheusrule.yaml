@@ -82,9 +82,11 @@ spec:
           targetLabel: server
         - action: labeldrop
           regex: (pod)
+      # The server comes from NUT_EXPORTER_SERVER; this only names the UPS
+      # (`LIST UPS` on the NAS returns the one, Riello).
       params:
-        server:
-          - nas.internal
+        ups:
+          - Riello
       path: /ups_metrics
       port: metrics
       scheme: http

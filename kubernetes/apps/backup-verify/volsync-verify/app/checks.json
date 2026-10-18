@@ -1,0 +1,22 @@
+{
+  "_comment": "Paths are relative to the PVC root. required: files that must exist and be non-empty. dbs: SQLite files that must pass PRAGMA integrity_check and hold at least one table. max_age_hours: newest file in the restore must be younger than this (only for apps that write all day).",
+  "home-assistant": {
+    "required": [
+      ".homeassistant/configuration.yaml",
+      ".homeassistant/.storage/core.config_entries",
+      ".homeassistant/.storage/core.device_registry"
+    ],
+    "max_age_hours": 48
+  },
+  "zwave-js-ui": {"required": ["settings.json", "nodes.json"]},
+  "actual": {"dbs": ["server-files/account.sqlite"]},
+  "overseerr": {"required": ["settings.json"], "dbs": ["db/db.sqlite3"]},
+  "tautulli": {"dbs": ["tautulli.db"], "max_age_hours": 48},
+  "wizarr": {"dbs": ["database.db"]},
+  "bazarr": {"dbs": ["db/bazarr.db"]},
+  "kavita": {"dbs": ["kavita.db"]},
+  "sabnzbd": {"required": ["sabnzbd.ini"], "dbs": ["admin/history1.db"]},
+  "maintainerr": {"dbs": ["maintainerr.sqlite"]},
+  "openclaw": {"required": [".openclaw/openclaw.json"], "dbs": [".openclaw/state/openclaw.sqlite"]},
+  "memini": {"dbs": ["memini.db"]}
+}

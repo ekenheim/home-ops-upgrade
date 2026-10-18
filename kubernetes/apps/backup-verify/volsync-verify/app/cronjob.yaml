@@ -1,0 +1,75 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: volsync-verify
+spec:
+  # Restores one app a day from MinIO, plus one of R2_APPS from R2 on the
+  # 1st of the month, and reads the data back; verify.sh has the details. 04:30 keeps
+  # clear of the hourly VolSync backups at :00 and the R2 run at 00:00. The alerts in prometheusrule.yaml
+  # fire when a run fails or no run has passed for three days.
+  #
+  # Manual run of specific apps:
+  #   kubectl -n backup-verify create job verify-manual --from=cronjob/volsync-verify --dry-run=client -o json \
+  #     | jq '.spec.template.spec.containers[0].env += [{"name":"VERIFY_TARGETS","value":"wizarr:r2"}]' \
+  #     | kubectl apply -f -
+  schedule: "30 4 * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 7200
+      # A failed Job keeps VolSyncVerifyFailed firing until it is deleted,
+      # so it stays visible for most of a week.
+      ttlSecondsAfterFinished: 518400
+      template:
+        metadata:
+          annotations:
+            descheduler.alpha.kubernetes.io/evict: "false"
+        spec:
+          serviceAccountName: volsync-verify
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: verify
+              image: docker.io/alpine/kubectl:1.35.4@sha256:9ccd823647622b620dce092d0f1406b8b41d152ce08ac963e3d4683770b14dfd
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/sh", "/config/verify.sh"]
+              env:
+                - name: HOME
+                  value: /tmp
+                # Sampled from R2 monthly, in turn; each needs an r2 block in
+                # ../ks.yaml. The two smallest SQLite apps keep R2 requests low.
+                - name: R2_APPS
+                  value: wizarr actual
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: config
+              configMap:
+                name: volsync-verify
+            - name: tmp
+              emptyDir: {}

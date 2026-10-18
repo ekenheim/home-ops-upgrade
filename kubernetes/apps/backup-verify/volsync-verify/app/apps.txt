@@ -1,0 +1,17 @@
+# Apps the verifier rotates through: name, VOLSYNC_CAPACITY, VOLSYNC_UID,
+# VOLSYNC_GID (copied from each app's ks.yaml). One app a day is restored
+# from MinIO, so each comes round every (number of apps) days. R2 is only
+# sampled, from R2_APPS in cronjob.yaml. Every app here needs a minio block
+# in ../ks.yaml and an entry in checks.json.
+home-assistant 15Gi 568 568
+zwave-js-ui 5Gi 568 568
+actual 1Gi 568 568
+overseerr 2Gi 568 568
+tautulli 2Gi 568 568
+wizarr 2Gi 568 568
+bazarr 5Gi 568 568
+kavita 2Gi 568 568
+sabnzbd 2Gi 568 568
+maintainerr 2Gi 568 568
+openclaw 10Gi 1000 100
+memini 5Gi 568 568

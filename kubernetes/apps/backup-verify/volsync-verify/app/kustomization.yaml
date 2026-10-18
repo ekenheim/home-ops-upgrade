@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./rbac.yaml
+  - ./cronjob.yaml
+  - ./prometheusrule.yaml
+configMapGenerator:
+  - name: volsync-verify
+    files:
+      - ./apps.txt
+      - ./checks.json
+      - ./verify.sh
+      - ./check.py
+      - ./check-pod.yaml
+generatorOptions:
+  # verify.sh mounts this into the check pods it creates by name.
+  disableNameSuffixHash: true
+  annotations:
+    # The scripts are full of ${...}; keep Flux from substituting them.
+    kustomize.toolkit.fluxcd.io/substitute: disabled

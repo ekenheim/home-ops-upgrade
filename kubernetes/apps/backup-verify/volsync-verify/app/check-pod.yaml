@@ -1,0 +1,63 @@
+---
+# Template for the pod verify.sh starts against each restored volume; it
+# substitutes the __NAME__, __APP__ and __BACKEND__ tokens. A file of its own
+# so Renovate's kubernetes manager keeps the image current.
+#
+# Runs as root with only CAP_DAC_READ_SEARCH: restored files keep the owners
+# and modes of the source (zwave-js-ui has root-owned 0600 files, openclaw
+# 0700 dirs owned by 1000), and that one capability reads all of them
+# without per-app uids. The volume is mounted read-only.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: __NAME__
+  labels:
+    app.kubernetes.io/name: volsync-verify
+    app.kubernetes.io/component: check
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 900
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: check
+      image: docker.io/library/python:3.15-slim@sha256:ea4f1f290e071bf7d28199cfb3e09f5dbad31b50e9c32fd58f2f2d7be915f3ae
+      command: ["python3", "/config/check.py", "__APP__", "__BACKEND__"]
+      env:
+        - name: PYTHONDONTWRITEBYTECODE
+          value: "1"
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+          add: ["DAC_READ_SEARCH"]
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 1Gi
+      volumeMounts:
+        - name: restore
+          mountPath: /restore
+          readOnly: true
+        - name: work
+          mountPath: /work
+        - name: config
+          mountPath: /config
+          readOnly: true
+  volumes:
+    - name: restore
+      persistentVolumeClaim:
+        claimName: __NAME__
+        readOnly: true
+    - name: work
+      emptyDir:
+        sizeLimit: 4Gi
+    - name: config
+      configMap:
+        name: volsync-verify

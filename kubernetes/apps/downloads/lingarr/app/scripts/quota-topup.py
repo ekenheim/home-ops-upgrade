@@ -23,6 +23,12 @@ Measured 2026-10-17 (102 items in 20 minutes, mostly One Piece episodes of
 twice that. As the window drains the target shrinks,
 and refilling resumes after the next 5-hour boundary.
 
+An empty queue starts a single probe run, not MAX_RUNS_PER_TICK: each run
+scans the whole library (~16k items, 10-20 s), and once every item with an
+English source has Swedish (2026-10-18) four of them every tick queue nothing.
+When the probe finds work the queue is non-empty on the next tick and the
+ramp continues from there.
+
 Does nothing when the quota exporter is stale or MiniMax answered with an
 error; when MiniMax throttled Lingarr recently (THROTTLE_BRAKE or more 429s on
 the lingarr key in 15 minutes: the queue drains instead of growing); and for
@@ -99,6 +105,8 @@ def main():
     # Whole runs that fit: a run queues up to RUN_SIZE items, so rounding up
     # could queue work the window cannot pay for.
     runs = min(MAX_RUNS, (target - active) // RUN_SIZE) if target > active else 0
+    if active == 0:
+        runs = min(runs, 1)
     plan = f"{active} active, target {target} (window allows {window_items:.0f}, week {weekly_items:.0f})"
     if runs <= 0:
         print(f"skip: {plan} ({state})", flush=True)

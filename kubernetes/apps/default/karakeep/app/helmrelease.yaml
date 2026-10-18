@@ -53,6 +53,29 @@ spec:
               CRAWLER_BROWSER_TIMEZONE: ${TIMEZONE}
               DISABLE_NEW_RELEASE_CHECK: "true"
               LOG_LEVEL: info
+              # Prometheus. The web app serves /api/metrics on 3000 and the
+              # background workers serve /metrics on WORKERS_PORT (queue and
+              # job counters, crawl latency); both want PROMETHEUS_AUTH_TOKEN
+              # (karakeep-metrics) as a Bearer token. Unset, the token is
+              # random per start and the workers port is random and bound to
+              # 127.0.0.1, so nothing could scrape either.
+              WORKERS_HOST: 0.0.0.0
+              WORKERS_PORT: &metricsPort 9000
+              # Full-page archive (owner decision D3, 2026-10-18): a monolith
+              # single-file copy of each page next to the screenshot and
+              # readable text, so a bookmark survives link rot. It costs
+              # about 1-10 MB per bookmark on the 10Gi VolSync-backed
+              # karakeep-data claim (grow VOLSYNC_CAPACITY in ../ks.yaml when
+              # it fills) and nothing on worker4. Pages whose archive would
+              # pass 50 MB (video- and image-heavy pages can reach 1 GB) are
+              # kept without one instead.
+              CRAWLER_FULL_PAGE_ARCHIVE: "true"
+              CRAWLER_FULL_PAGE_ARCHIVE_MAX_SIZE_MB: "50"
+              # The archive runs inside the crawl job, and monolith fetches
+              # every asset of the page; a job that runs out of time fails the
+              # whole crawl and is retried. The default 60 s was sized for
+              # screenshot and text only.
+              CRAWLER_JOB_TIMEOUT_SEC: "180"
               # Tesseract models are downloaded on first use; keep them on the
               # PVC instead of re-fetching them into /tmp after every restart.
               OCR_CACHE_DIR: /data/ocr-cache
@@ -77,10 +100,22 @@ spec:
               INFERENCE_IMAGE_MODEL: fast
               INFERENCE_CONTEXT_LENGTH: "4096"
               INFERENCE_OUTPUT_SCHEMA: structured
-              # worker4 queues behind longer jobs; 30 s (the default) times
-              # out a tag request that is merely waiting for a slot.
-              INFERENCE_JOB_TIMEOUT_SEC: "180"
-              OPENAI_TIMEOUT_SEC: "170"
+              # worker4 serves `fast` from 2 slots, and over 24 h on
+              # 2026-10-18 both were busy 28% of the time with up to 20
+              # requests queued behind them (pr-review is the main user). A tag
+              # request spends most of its time waiting for a slot, not
+              # generating, so 180/170 s (and the 30 s default) timed out
+              # requests that were merely queued. The OpenAI timeout stays
+              # under the job timeout so the job sees the HTTP error instead
+              # of being killed mid-request.
+              INFERENCE_JOB_TIMEOUT_SEC: "600"
+              OPENAI_TIMEOUT_SEC: "590"
+              # One tagging / summary job at a time (the default, set so
+              # nobody raises it casually): Karakeep holds at most one of
+              # worker4's two slots, leaving the other for Home Assistant and
+              # the agents. The key (llm/litellm/keys/karakeep.yaml) caps the
+              # embedder and this worker together at 2.
+              INFERENCE_NUM_WORKERS: "1"
               # Semantic and hybrid search, vectors stored in Meilisearch.
               # 1024 is qwen3-embedding-0.6b's native size; changing the model
               # means a reindex from the admin page.
@@ -95,6 +130,8 @@ spec:
                 name: karakeep-oidc
             - secretRef:
                 name: karakeep-litellm
+            - secretRef:
+                name: karakeep-metrics
             probes:
               liveness: &probe
                 enabled: true
@@ -164,6 +201,8 @@ spec:
         ports:
           http:
             port: *port
+          metrics:
+            port: *metricsPort
       chrome:
         controller: chrome
         ports:
@@ -174,6 +213,27 @@ spec:
         ports:
           http:
             port: 7700
+    serviceMonitor:
+      app:
+        service:
+          identifier: app
+        endpoints:
+          - port: http
+            scheme: http
+            path: /api/metrics
+            interval: 1m
+            scrapeTimeout: 10s
+            authorization: &metricsAuth
+              type: Bearer
+              credentials:
+                name: karakeep-metrics
+                key: PROMETHEUS_AUTH_TOKEN
+          - port: metrics
+            scheme: http
+            path: /metrics
+            interval: 1m
+            scrapeTimeout: 10s
+            authorization: *metricsAuth
     route:
       app:
         hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]

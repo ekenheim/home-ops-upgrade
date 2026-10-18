@@ -30,6 +30,10 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      # Gatus `internal` template: the route has no SecurityPolicy (Karakeep
+      # does its own OIDC) and /api/health is public, so this goes through
+      # envoy-internal to the pod.
+      GATUS_URL_PATH: /api/health
       # Not `karakeep`: the HelmRelease's first install left a chart-owned
       # PVC by that name (see persistence in app/helmrelease.yaml).
       CLAIM: karakeep-data

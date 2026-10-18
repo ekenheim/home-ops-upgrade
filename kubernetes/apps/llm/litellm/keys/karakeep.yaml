@@ -5,6 +5,13 @@
 # for text and images, the CPU embedder for vectors. The Secret reaches
 # `default` through the litellm-key-secrets-karakeep store
 # (../clustersecretstore/karakeep.yaml).
+#
+# No budget (`fast` and the embedder cost nothing), but parallel and rpm caps
+# like paperless-gpt's, so a bulk import or reindex can't take both of
+# worker4's slots (both busy 28% of the time over 24 h on 2026-10-18, queue up
+# to 20). 2, not 1: the cap is per key across both models, and the CPU
+# embedder runs alongside the one inference worker (INFERENCE_NUM_WORKERS=1
+# in apps/default/karakeep), which is what holds worker4 to one slot.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMVirtualKey
 metadata:
@@ -18,3 +25,5 @@ spec:
   models:
     - fast
     - qwen3-embedding-0.6b
+  maxParallelRequests: 2
+  rpmLimit: 30

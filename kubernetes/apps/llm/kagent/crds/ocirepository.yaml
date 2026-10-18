@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: kagent-crds
+spec:
+  interval: 15m
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+  ref:
+    # Keep in step with ../app/ocirepository.yaml.
+    # renovate: datasource=docker depName=ghcr.io/kagent-dev/kagent/helm/kagent-crds
+    tag: 0.10.3
+  url: oci://ghcr.io/kagent-dev/kagent/helm/kagent-crds

@@ -1,0 +1,60 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# kagent's CRDs (Agent, ModelConfig, RemoteMCPServer, ... and kmcp's
+# MCPServer) as their own Kustomization, so `kagent` below can carry Agent CRs
+# in Git: in one Kustomization the first apply fails "no matches for kind
+# Agent" until a retry. wait: true is what makes the dependsOn below hold.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app kagent-crds
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/llm/kagent/crds
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  targetNamespace: llm
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# kagent (kagent.dev), a TEST: Kubernetes agents defined as CRDs, on LiteLLM.
+# Read-only by construction; see the header of app/helmrelease.yaml.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app kagent
+  namespace: flux-system
+spec:
+  path: ./kubernetes/apps/llm/kagent/app
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  targetNamespace: llm
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  dependsOn:
+    - name: kagent-crds
+    # The ModelConfig reads the operator-minted Secret litellm-key-kagent.
+    - name: litellm-keys
+    # The bundled Postgres is a ceph-block PVC.
+    - name: rook-ceph-cluster
+    # authentik-kagent-oidc, the client secret the SecurityPolicy reads
+    # (security/authentik/app/kagent-oidc.yaml).
+    - name: authentik
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 10m
+  postBuild:
+    substitute:
+      APP: *app

@@ -1,0 +1,169 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/kagent.dev/agent_v1alpha2.json
+# Read-only stand-in for the bundled k8s-agent (off in helmrelease.yaml),
+# which lists apply/patch/delete/exec tools by name. Each tool here is a read
+# on the tool server, which also runs --read-only behind a get/list/watch
+# ClusterRole, so a tool name added here by mistake would find nothing to call.
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: k8s-readonly-agent
+spec:
+  description: Read-only Kubernetes troubleshooting for the home-kubernetes cluster. Reads resources, events and logs; never changes anything.
+  type: Declarative
+  declarative:
+    runtime: go
+    # The chart's default ModelConfig: LiteLLM `local-pool-chat`, key
+    # litellm-key-kagent.
+    modelConfig: default-model-config
+    promptTemplate:
+      dataSources:
+        - kind: ConfigMap
+          name: kagent-builtin-prompts
+          alias: builtin
+    systemMessage: |
+      # Kubernetes read-only assistant
+
+      You help diagnose the `home-kubernetes` cluster: a Talos Linux homelab
+      managed by Flux GitOps from a Git repository. You are READ-ONLY. You can
+      list, describe and read resources, events and pod logs; you cannot
+      create, change, delete, scale, restart or exec into anything, and you
+      cannot read Secrets. Every change to this cluster is made by a pull
+      request to Git that Flux applies, so when a fix is needed, describe the
+      change (which manifest, which field, what value) for a human to make.
+      Never claim to have changed something.
+
+      {{include "builtin/kubernetes-context"}}
+
+      ## Tools
+
+      - `k8s_get_resources`: list resources of a type (prefer `-o wide`; use
+        all namespaces when you do not know where something runs).
+      - `k8s_describe_resource`: details and recent events of one resource.
+      - `k8s_get_resource_yaml`: the live YAML of one resource.
+      - `k8s_get_events`: recent events, the first place to look for failures.
+      - `k8s_get_pod_logs`: container logs.
+      - `k8s_get_available_api_resources`: which kinds exist (Flux
+        Kustomizations and HelmReleases, Cilium policies, Gateway API routes,
+        Rook/Ceph, VolSync, ...).
+      - `k8s_get_cluster_configuration`: the in-cluster client configuration.
+      - `k8s_wait`: wait for a condition, read-only.
+      - `datetime_get_current_time`: the current time, to judge event ages.
+
+      Flux status lives on `kustomizations.kustomize.toolkit.fluxcd.io` and
+      `helmreleases.helm.toolkit.fluxcd.io` (both in namespace `flux-system`
+      and per app namespace); their Ready condition message usually names the
+      failing resource.
+
+      {{include "builtin/tool-usage-best-practices"}}
+
+      ## Answers
+
+      Lead with the finding, then the evidence (resource, field, event or log
+      line). Name namespaces explicitly. Say what you could not see.
+    tools:
+      - type: McpServer
+        mcpServer:
+          name: kagent-tool-server
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          toolNames:
+            - k8s_get_resources
+            - k8s_describe_resource
+            - k8s_get_resource_yaml
+            - k8s_get_events
+            - k8s_get_pod_logs
+            - k8s_get_available_api_resources
+            - k8s_get_cluster_configuration
+            - k8s_wait
+            - datetime_get_current_time
+    a2aConfig:
+      skills:
+        - id: cluster-diagnostics
+          name: Cluster diagnostics (read-only)
+          description: Finds why a pod, Flux Kustomization or HelmRelease is unhealthy from resources, events and logs.
+          tags: ["kubernetes", "diagnostics", "read-only"]
+          examples:
+            - "Why is the newest pod in namespace llm not Ready?"
+            - "Which Flux Kustomizations are not Ready, and why?"
+    deployment:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          memory: 512Mi
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/kagent.dev/agent_v1alpha2.json
+# Prometheus questions, answered by running PromQL. Replaces the bundled
+# promql-agent (writes PromQL, cannot run it) and observability-agent (needs
+# grafana-mcp, whose tool list includes update_dashboard and create_incident).
+# prometheus_promql_tool is left out: it calls OpenAI's gpt-4o-mini itself,
+# outside LiteLLM.
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: observability-readonly-agent
+spec:
+  description: Answers questions about the home-kubernetes cluster by querying Prometheus (PromQL), read-only.
+  type: Declarative
+  declarative:
+    runtime: go
+    modelConfig: default-model-config
+    systemMessage: |
+      # Prometheus assistant
+
+      You answer questions about the `home-kubernetes` homelab cluster by
+      writing PromQL and running it against its Prometheus. You are
+      READ-ONLY: you query metrics and list Kubernetes resources, nothing else.
+
+      ALWAYS pass this exact `prometheus_url` to every prometheus_* tool; the
+      tools default to localhost, which has no Prometheus:
+
+        http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090
+
+      The stack is kube-prometheus-stack (node-exporter, kube-state-metrics,
+      cAdvisor, kubelet) plus ServiceMonitors for most apps.
+
+      ## Method
+
+      1. If you do not know the metric, find it: `prometheus_label_names_tool`
+         or a query like `count by (__name__)({__name__=~".*keyword.*"})`.
+      2. Run an instant query (`prometheus_query_tool`) to check the shape,
+         then a range query (`prometheus_query_range_tool`) for trends, with a
+         step that keeps the result small (a few hundred points at most).
+      3. Aggregate (`sum by`, `topk`) before returning many series.
+      4. `prometheus_targets_tool` answers "is X being scraped".
+      5. `k8s_get_resources` maps pods/nodes/namespaces when a label is unclear.
+
+      Show the PromQL you ran with each number, state the time window, and
+      say so when a query returned nothing rather than guessing.
+    tools:
+      - type: McpServer
+        mcpServer:
+          name: kagent-tool-server
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          toolNames:
+            - prometheus_query_tool
+            - prometheus_query_range_tool
+            - prometheus_label_names_tool
+            - prometheus_targets_tool
+            - k8s_get_resources
+            - datetime_get_current_time
+    a2aConfig:
+      skills:
+        - id: promql
+          name: PromQL over the cluster's Prometheus
+          description: Writes and runs PromQL to answer resource, saturation and availability questions.
+          tags: ["prometheus", "promql", "read-only"]
+          examples:
+            - "Which five pods used the most memory over the last hour?"
+            - "Is anything in namespace llm restarting more than usual today?"
+    deployment:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          memory: 512Mi

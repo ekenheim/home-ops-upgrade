@@ -1,0 +1,36 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# Browser sign-in for kagent.${SECRET_DOMAIN}. kagent has no login of its own
+# (controller.auth.mode unsecure: every caller is admin@kagent.dev), and the
+# UI can create agents, so every request through the route, /api included,
+# must carry an Authentik session (application `kagent`, authentik Admins
+# only, defined in security/authentik/app/kagent-oidc.yaml). Same shape as
+# vane's.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: kagent-oidc
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: kagent
+  oidc:
+    provider:
+      issuer: https://sso.${SECRET_DOMAIN}/application/o/kagent/
+    clientID: kagent
+    clientSecret:
+      # Cross-namespace; allowed by the ReferenceGrant in security.
+      name: authentik-kagent-oidc
+      namespace: security
+    redirectURL: https://kagent.${SECRET_DOMAIN}/oauth2/callback
+    logoutPath: /oauth2/logout
+    scopes:
+      - openid
+      - email
+      - profile
+      - offline_access
+    # Agent runs stream for minutes and the UI fetches in the background; the
+    # refresh token keeps the session without a full redirect, which those
+    # fetches could not follow.
+    refreshToken: true

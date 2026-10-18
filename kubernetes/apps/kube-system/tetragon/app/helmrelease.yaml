@@ -2,7 +2,8 @@
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 # Tetragon: eBPF process, file and network events, observe-only. Exec events
 # are on for every process by default; the kprobe policies in ../policies add
-# file writes and TCP connects for the agent-lab sandboxes. Nothing here
+# file writes, TCP connects, credential reads, credential changes, mounts and
+# exec from /tmp for the agent-lab sandboxes. Nothing here
 # enforces (no Sigkill/Override actions); Cilium's network policies remain the
 # only control. Hubble relay/UI stay off (see ../../cilium/app/helmrelease.yaml),
 # this does not need them.
@@ -34,14 +35,40 @@ spec:
     tolerations:
       - operator: Exists
     tetragon:
+      # Measured 2026-10-18 with the 64k process cache: working set p95 441Mi
+      # and max 785Mi on worker3 (the ARC runners' node), 335Mi on master2,
+      # 110Mi on worker4. The 1Gi limit OOMKilled worker3's agent 3x in 7h,
+      # and every restart is a blind spot plus a cache rebuild. A full cache
+      # cost master2 ~230Mi over worker4's 1k entries, so the doubled cache
+      # below should add about that again; re-measure after a day.
+      # CPU p95 213m on worker3, 116m on master2, ~0 on worker4.
       resources:
         requests:
-          cpu: 50m
-          memory: 320Mi
+          cpu: 150m
+          memory: 600Mi
         limits:
-          memory: 1Gi
+          memory: 2Gi
+      # 65,536 was full on master2 (65,514) and worker3 (53-65k), with 32 and
+      # 162 LRU evictions/s. An evicted entry is how a still-running process
+      # loses its parent and pod, so namespaced policies and the export
+      # filter below stop matching it. If the size still sits at capacity a
+      # day after this, the TetragonProcessCacheFull alert says so and
+      # tetragon_process_cache_evictions_total is the number to look at.
+      processCacheSize: 131072
+      # Pod association through the CRI instead of only the k8s API watch.
+      # Without it a process whose pod is not in the watcher cache yet (or
+      # any more) gets no pod info: 13/s on master2 and 25/s on worker3
+      # failed pod_info lookups, most of them short-lived Job and runner
+      # pods, exactly the agent-lab case. cgidmap resolves cgroup id -> pod
+      # through the same socket. Talos' CRI containerd listens here (same
+      # path as spegel's containerdSock); the chart mounts it as a Socket.
+      cri:
+        enabled: true
+        socketHostPath: /run/containerd/containerd.sock
+      cgidmap:
+        enabled: true
       # Only the agent-lab namespaces reach the export container (and through
-      # it, Vector and VictoriaLogs). Lines are ORed, fields within a line
+      # it, vlagent and VictoriaLogs). Lines are ORed, fields within a line
       # ANDed. Everything else is still traced, and counted in the metrics
       # below, but never exported.
       exportAllowList: |-
@@ -56,8 +83,10 @@ spec:
         # Not `pod`: ARC runner and agent-lab Job pods are single-use, and a
         # pod label would leave thousands of dead series behind.
         metricsLabelFilter: namespace,workload,binary
+        # The chart's ServiceMonitor has no metricRelabelings, so
+        # servicemonitor.yaml replaces it to drop the kernel-thread series.
         serviceMonitor:
-          enabled: true
+          enabled: false
     tetragonOperator:
       resources:
         requests:

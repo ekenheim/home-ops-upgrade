@@ -10,6 +10,9 @@
 # paths a sandbox should never write: system directories, the mounted
 # ServiceAccount dir, and the files that persist credentials or run code later
 # (.git/config is the core.fsmonitor / filter-driver path in README gap 11).
+# /run/secrets/ as well as /var/run/secrets/: the path is resolved inside the
+# container, and in an image whose /var/run is a symlink the ServiceAccount
+# mount ends up under /run.
 apiVersion: cilium.io/v1alpha1
 kind: TracingPolicyNamespaced
 metadata:
@@ -41,6 +44,7 @@ spec:
                 - /root/
                 - /proc/sys/
                 - /var/run/secrets/
+                - /run/secrets/
             - index: 1
               operator: Mask
               values:
@@ -65,3 +69,137 @@ spec:
       args:
         - index: 0
           type: sock
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/tracingpolicynamespaced_v1alpha1.json
+# Credential reads, privilege changes, mounts and exec from /tmp, observe-only
+# like the policy above (Post or NoPost only, never Sigkill or Override; P12
+# enforcement comes later, once this data is clean). A separate object on
+# purpose: the CRD schema does not check kprobe symbols or argument types, a
+# hook the agent cannot load fails its whole policy, and this way the
+# file-write and connect hooks above keep working if one of these does not.
+# `message` and `tags` are on the export line, so in VictoriaLogs
+# `process_kprobe.policy_name:agent-sandbox-sensitive` and the tags are the
+# filters.
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicyNamespaced
+metadata:
+  name: agent-sandbox-sensitive
+spec:
+  kprobes:
+    # READS of credentials. The sandboxes get no ServiceAccount token
+    # (automount off, agent-lab README trust model 2) and no SSH or git
+    # credentials, so any of these is either a misconfigured Job or code
+    # looking for a token. Prefix covers projected token paths too
+    # (/var/run/secrets/tokens/..., the ..data symlink targets). Postfix on
+    # file names, not `.ssh/` as a directory: matchArgs has no substring
+    # operator for file arguments. HOME is /tmp/home in the factory images,
+    # so a prefix would miss it.
+    - call: security_file_permission
+      syscall: false
+      return: true
+      message: "Credential file read in an agent-lab sandbox"
+      tags: ["agent-lab", "credentials"]
+      args:
+        - index: 0
+          type: file
+        - index: 1
+          type: int # MAY_READ is 0x4
+      returnArg:
+        index: 0
+        type: int
+      selectors:
+        - matchArgs:
+            - index: 0
+              operator: Prefix
+              values:
+                - /var/run/secrets/
+                - /run/secrets/
+            - index: 1
+              operator: Mask
+              values:
+                - "4"
+        - matchArgs:
+            - index: 0
+              operator: Postfix
+              values:
+                - /.git-credentials
+                - /.config/git/credentials
+                - /.ssh/id_rsa
+                - /.ssh/id_ecdsa
+                - /.ssh/id_ed25519
+                - /.ssh/id_dsa
+                - /.ssh/config
+                - /.ssh/authorized_keys
+            - index: 1
+              operator: Mask
+              values:
+                - "4"
+    # Credential changes. commit_creds runs on every execve and fork, so
+    # unfiltered it would double the exec volume against the export rate
+    # limit. The rate limit is in-kernel and keyed on the first 40 bytes of
+    # the new creds (uid, gid, suid, sgid, euid, egid, fsuid, fsgid): the
+    # sandbox's steady uid 1000 shows up once a minute per node, and any
+    # change of id (a setuid binary, setresuid, a user namespace) is a new
+    # key and posts at once. A capability-only change with unchanged ids
+    # inside the same minute is folded into the previous event.
+    - call: commit_creds
+      syscall: false
+      message: "Credentials committed in an agent-lab sandbox"
+      tags: ["agent-lab", "privilege"]
+      args:
+        - index: 0
+          type: cred
+      selectors:
+        - matchActions:
+            - action: Post
+              rateLimit: 1m
+              rateLimitScope: global
+    # Mount attempts. The hook runs before the kernel's may_mount() check,
+    # so a refused mount (no CAP_SYS_ADMIN under `restricted`) is still
+    # recorded; returnArg shows the LSM's verdict, not the final errno.
+    # The new mount API (fsmount/move_mount) does not pass through here.
+    - call: security_sb_mount
+      syscall: false
+      return: true
+      message: "Mount attempt in an agent-lab sandbox"
+      tags: ["agent-lab", "mount"]
+      args:
+        - index: 0
+          type: string # dev_name
+        - index: 1
+          type: path # mount point
+        - index: 2
+          type: string # filesystem type
+      returnArg:
+        index: 0
+        type: int
+    # Exec from /tmp and /dev/shm. Exec events already carry the binary path
+    # for every process in the sandboxes, so this only tags the case worth a
+    # second look. /tmp/home/ is excluded first (selectors are first-match):
+    # it is HOME in the factory images, where npx and OpenCode keep the tools
+    # they download. /workspace is not here on purpose: the exec Jobs run the
+    # install and the tests from /workspace/repo, so node_modules/.bin would
+    # make it every exec; query process_exec.process.binary for it instead.
+    - call: security_bprm_check
+      syscall: false
+      message: "Exec from a writable temp path in an agent-lab sandbox"
+      tags: ["agent-lab", "exec"]
+      args:
+        - index: 0
+          type: linux_binprm
+      selectors:
+        - matchArgs:
+            - index: 0
+              operator: Prefix
+              values:
+                - /tmp/home/
+          matchActions:
+            - action: NoPost
+        - matchArgs:
+            - index: 0
+              operator: Prefix
+              values:
+                - /tmp/
+                - /dev/shm/
+          matchActions:
+            - action: Post

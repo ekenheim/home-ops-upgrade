@@ -1,15 +1,15 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
-# Not "any shell or package manager in agent-verify": the verifier's exec Jobs
-# run the install command and the tests by design (agent-lab README,
-# "Orchestrator contract"), so that would fire on every run. Network and
-# remote-shell tools have no place in either sandbox, whatever the job.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: tetragon
 spec:
   groups:
+    # Not "any shell or package manager in agent-verify": the verifier's exec
+    # Jobs run the install command and the tests by design (agent-lab README,
+    # "Orchestrator contract"), so that would fire on every run. Network and
+    # remote-shell tools have no place in either sandbox, whatever the job.
     - name: tetragon.agent-lab
       rules:
         - alert: AgentSandboxNetworkToolExec
@@ -25,4 +25,88 @@ spec:
             description: >-
               A network or remote-shell tool ran inside an agent-lab sandbox.
               The process tree and its connects are in VictoriaLogs under the
-              tetragon export container; filter on process.pod.namespace.
+              tetragon export container; filter on
+              process_exec.process.pod.namespace (process_kprobe.process.pod.namespace
+              for the connects).
+    # The agent's own health. A Tetragon that restarts, or that has lost
+    # track of which pod a process belongs to, misses exactly the events the
+    # policies above exist for, and nothing else would say so. OOM kills are
+    # already covered cluster-wide by OOMKilled (kube-prometheus-stack's
+    # miscellaneous-rules), so restarts here are any cause.
+    - name: tetragon.health
+      rules:
+        - alert: TetragonAgentRestarted
+          expr: >-
+            increase(kube_pod_container_status_restarts_total{namespace="kube-system", pod=~"tetragon-[a-z0-9]{5}", container="tetragon"}[1h]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              Tetragon agent {{ $labels.pod }} restarted
+            description: >-
+              The Tetragon agent in {{ $labels.pod }} restarted in the last
+              hour. Events between the crash and the restart are lost and
+              the process cache starts empty, so processes already running
+              lose their pod mapping. Check the last termination reason
+              (OOMKilled on worker3 at the old 1Gi limit, 2026-10-18).
+        # 65,536 was full on master2 and worker3 on 2026-10-18; raised to
+        # 131,072. An LRU at capacity evicts live processes' entries.
+        - alert: TetragonProcessCacheFull
+          expr: >-
+            max by (node) (tetragon_process_cache_size / tetragon_process_cache_capacity) > 0.95
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              Tetragon's process cache on {{ $labels.node }} is {{ $value | humanizePercentage }} full
+            description: >-
+              The process cache on {{ $labels.node }} has been above 95% of
+              tetragon.processCacheSize for an hour. Entries are evicted LRU,
+              so running processes lose their parent and pod and the
+              namespaced policies and export filter miss them. Compare
+              rate(tetragon_process_cache_evictions_total[1h]) with the
+              exit rate before raising processCacheSize again.
+        # Failed pod lookups per namespaced event. Baseline before
+        # cri/cgidmap (2026-10-18): 0.42 on master2, 0.19 on worker3, 0.0004
+        # on worker4. The pod_info series with an empty event_type is left
+        # out: it is a second, undocumented count about as large again. An
+        # event whose lookup failed has no namespace, so the ServiceMonitor
+        # drops it from tetragon_events_total: the ratio can pass 1. If this
+        # still fires a day after the cri change, the change did not help;
+        # tetragon_cri_cgidmap_resolutions_total should be rising.
+        - alert: TetragonPodInfoFetchFailures
+          expr: >-
+            sum by (node) (rate(tetragon_event_cache_fetch_failures_total{entry_type="pod_info", event_type!=""}[30m]))
+              /
+            sum by (node) (rate(tetragon_events_total[30m]))
+              > 0.05
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              Tetragon on {{ $labels.node }} fails {{ $value | humanize }} pod lookups per namespaced event
+            description: >-
+              Tetragon gave up resolving the pod for 5 or more events per
+              100 namespaced events on {{ $labels.node }} for an hour. Those
+              events have no namespace, so the agent-lab export filter and
+              the namespace label on tetragon_events_total miss them. Look at
+              tetragon_cri_cgidmap_resolutions_errors_total and the agent log
+              for CRI errors.
+        # exportRateLimit is 6000/min per node (helmrelease.yaml). A drop
+        # means a sandbox did enough to blind the export for the rest of
+        # that minute, which is worth knowing whatever caused it.
+        - alert: TetragonExportRateLimited
+          expr: >-
+            sum by (node) (increase(tetragon_export_ratelimit_events_dropped_total[10m])) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              Tetragon dropped {{ $value | humanize }} exported events on {{ $labels.node }}
+            description: >-
+              The export rate limit (6000 events/min per node) dropped events
+              on {{ $labels.node }} in the last 10 minutes. VictoriaLogs has a
+              RATE_LIMIT_INFO line where the gap starts. The metrics still
+              count everything.

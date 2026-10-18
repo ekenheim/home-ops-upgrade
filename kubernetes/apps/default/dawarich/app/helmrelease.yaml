@@ -141,14 +141,15 @@ spec:
               # reverse_geocoded_at are picked up by the nightly job (01:15).
               PHOTON_API_HOST: photon.default.svc.cluster.local:2322
               PHOTON_API_USE_HTTPS: "false"
-              # Off in the web container, on in Sidekiq (overridden below). The
-              # web's /metrics lives on :3000 behind force_ssl and the host
-              # check, so Prometheus cannot scrape it by pod IP (a 301 to
-              # https; the operator's ServiceMonitor has no header support),
+              # PROMETHEUS_EXPORTER_ENABLED is deliberately not in this shared
+              # map: unset means off, and only Sidekiq adds it (below; a merge
+              # key cannot override a key it brings in, kubeconform rejects
+              # that). The web's /metrics lives on :3000 behind force_ssl and
+              # the host check, so Prometheus cannot scrape it by pod IP (a 301
+              # to https; the operator's ServiceMonitor has no header support),
               # and turning it on would also publish /metrics on the public
               # hostname. Sidekiq's exporter is a plain WEBrick on :9394 with
               # the queue and job metrics, which is what is worth watching.
-              PROMETHEUS_EXPORTER_ENABLED: "false"
               DATABASE_HOST: 127.0.0.1
               DATABASE_PORT: "5432"
               DATABASE_USERNAME: dawarich

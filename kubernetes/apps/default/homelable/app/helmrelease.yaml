@@ -83,7 +83,7 @@ spec:
               OIDC_COOKIE_SECURE: "true"
               # Initial scan range; the Scan Network dialog can change it
               # (persisted in scan_config.json on the PVC).
-              SCANNER_RANGES: '["192.168.50.0/24"]'
+              SCANNER_RANGES: '["192.168.50.0/24", "192.168.1.0/24"]'
               # Mesh imports talk to the brokers over MQTT request/response,
               # nothing goes through Home Assistant. Credentials come from
               # homelable-mqtt. Zigbee2MQTT is currently disabled in
@@ -98,6 +98,15 @@ spec:
               ZWAVE_MQTT_PORT: "1883"
               ZWAVE_PREFIX: zwave
               ZWAVE_GATEWAY_NAME: zwavejs2mqtt
+              # UniFi import: switches, APs and the gateway, plus which switch
+              # port each client hangs off, so the map's links come from the
+              # controller instead of guesswork. The controller is a UniFi OS
+              # gateway (UnPoller uses the same URL), which listens on 443.
+              # Credentials come from homelable-unifi.
+              UNIFI_URL: ${UNIFI_CONTROLLER_IP}
+              UNIFI_PORT: "443"
+              UNIFI_SITE: default
+              UNIFI_VERIFY_TLS: "false"
             envFrom:
               - secretRef:
                   name: homelable-secret
@@ -105,6 +114,8 @@ spec:
                   name: homelable-oidc
               - secretRef:
                   name: homelable-mqtt
+              - secretRef:
+                  name: homelable-unifi
             probes:
               liveness: &backendprobe
                 enabled: true

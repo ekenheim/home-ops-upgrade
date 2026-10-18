@@ -30,7 +30,7 @@ jobs:
           secrets: |
             e2c5d873-fea3-43c6-a5e8-b1650077db0d > CLOUDFLARE_API_KEY
             163f1577-1009-4bbd-84cc-b165007809c3 > CLOUDFLARE_ACCOUNT_ID
-            d7abec51-f77a-49fd-be89-b13400f196e8 > KUBECONFIG
+            d7abec51-f77a-49fd-be89-b13400f196e8 > KUBECONFIG_CONTENT
             d3349f37-6ff4-406b-861a-b16101048306 > BOT_APP_ID
             12826224-0a9e-45f2-b8bb-b1610104f8c4 > BOT_APP_PRIVATE_KEY
 
@@ -77,16 +77,22 @@ jobs:
         with:
           node-version: 24.x
 
+      # The Bitwarden secret holds the kubeconfig as plain YAML (what
+      # bitwarden:push-main writes), not base64.
       - name: Write kubeconfig
-        id: kubeconfig
-        uses: timheuer/base64-to-file@v2
-        with:
-          encodedString: "${{ env.KUBECONFIG }}"
-          fileName: kubeconfig
+        shell: bash
+        run: |
+          printf '%s' "$KUBECONFIG_CONTENT" > "$RUNNER_TEMP/kubeconfig"
+          chmod 600 "$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+
+      # crd-extractor exits 0 with "No CRDs found" when it can't reach the
+      # cluster, which hid a stale credential from May to October 2026.
+      - name: Check cluster access
+        shell: bash
+        run: kubectl get crd --request-timeout=30s > /dev/null
 
       - name: Download and run crd-extractor
-        env:
-          KUBECONFIG: "${{ steps.kubeconfig.outputs.filePath }}"
         shell: bash
         run: |
           curl -fsSL -o $GITHUB_WORKSPACE/crd-extractor.sh \

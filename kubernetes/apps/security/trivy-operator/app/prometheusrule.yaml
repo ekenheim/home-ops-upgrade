@@ -1,0 +1,60 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+# Per namespace, not per image: one image with a Critical CVE usually runs in
+# several workloads, and a per-image alert would fire once for each. With
+# ignoreUnfixed on, every Critical counted here has a fixed version upstream.
+#
+# max_over_time bridges the rescans: when a report reaches scannerReportTTL
+# it is deleted and its series disappears until the rescan lands, which with
+# two scan slots can be a while. Without it the `for` would restart on every
+# rescan cycle.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: trivy-operator
+spec:
+  groups:
+    - name: trivy-operator.vulnerabilities
+      rules:
+        - alert: TrivyCriticalVulnerabilities
+          expr: >-
+            sum by (namespace) (
+              max_over_time(trivy_image_vulnerabilities{severity="Critical"}[6h])
+            ) > 0
+          for: 6h
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              {{ $value }} fixable Critical vulnerabilities in {{ $labels.namespace }}
+            description: >-
+              Trivy reports {{ $value }} Critical vulnerabilities with a fixed
+              version available, summed over the workloads in
+              {{ $labels.namespace }}. Per image in the Trivy Operator
+              dashboard, or `kubectl get vulnerabilityreports -n
+              {{ $labels.namespace }} -o wide`.
+    - name: trivy-operator.health
+      rules:
+        - alert: TrivyOperatorDown
+          expr: >-
+            absent(up{job="trivy-operator", namespace="security"} == 1)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Trivy Operator is down or not scraped
+            description: >-
+              No healthy trivy-operator metrics target in security for 15m.
+              Reports are not being created or refreshed, and the
+              vulnerability alerts above go quiet with it.
+        - alert: TrivyServerDown
+          expr: >-
+            kube_statefulset_status_replicas_ready{namespace="security", statefulset="trivy-server"} < 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: trivy-server has no ready replica
+            description: >-
+              Scan jobs run in ClientServer mode against trivy-server; while
+              it is down every vulnerability scan fails and is retried.

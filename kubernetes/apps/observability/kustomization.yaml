@@ -16,6 +16,7 @@ resources:
   - ./thanos/ks.yaml
   - ./unpoller/ks.yaml
   - ./victoria-logs/ks.yaml
+  - ./vmalert-logs/ks.yaml
   #- ./goldilocks/ks.yaml
   # Exporters
   - ./exporters

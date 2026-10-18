@@ -242,8 +242,9 @@ data:
       mcp: {
         servers: {
           // Everything through toolhive's mcp-gateway: Home Assistant, arr,
-          // Seerr, UniFi, Grafana, read-only kubectl and Flux, platform, wiki,
-          // memory, tradingview, context7 (current library docs).
+          // Seerr, UniFi, Grafana, VictoriaLogs (pod logs), read-only kubectl
+          // and Flux, platform, wiki, memory, tradingview, context7 (current
+          // library docs).
           // The agent sees two tools (find_tool, call_tool) instead of ~280
           // schemas; find_tool searches by embedding.
           // connectionTimeoutMs: initialize blocks while vMCP embeds tool
@@ -288,10 +289,11 @@ data:
 
     ## Tools
 
-    ### toolhive: Home Assistant, Grafana/Prometheus, kubectl, Flux, arr, Seerr, UniFi and more
+    ### toolhive: Home Assistant, Grafana/Prometheus, VictoriaLogs (pod logs), kubectl, Flux, arr, Seerr, UniFi and more
 
     - Everything lives behind two tools: `toolhive__find_tool` (argument `tool_description`) and `toolhive__call_tool` (arguments `tool_name` and `parameters`).
-    - `tool_name` is server-prefixed exactly as find_tool returns it, e.g. `ha-mcp_ha_get_state`, `grafana_query_prometheus`, `flux-mcp_get_kubernetes_events`.
+    - `tool_name` is server-prefixed exactly as find_tool returns it, e.g. `ha-mcp_ha_get_state`, `grafana_query_prometheus`, `flux-mcp_get_kubernetes_events`, `victorialogs-mcp_stats_query`.
+    - **Pod logs** for every namespace (30 days) are in VictoriaLogs through `victorialogs-mcp_*` (LogsQL). Count first with `stats_query` or `hits`, then fetch a few lines with `query` and a small `limit`. Quote counts and short excerpts, never whole log dumps.
     - **Home Assistant** holds the Withings scale and sleep data, room sensors, doors and weather. Read it through `ha-mcp_*`. No HA URL, token or OAuth is needed: never ask Robin for one, and never curl Home Assistant.
     - **Lists inside `parameters` must be plain JSON arrays**: `"entity_id": ["sensor.a", "sensor.b"]`. Never wrap a list in an object such as `{"item": [...]}`. The servers reject it, and that wrapper has broken the daily health digest most mornings.
     - If toolhive is "not connected" or slow, the gateway is rebuilding its tool index (a few minutes after a toolhive change). Say so in one line and try again later. Do not fall back to curl or exec, and do not conclude that a service needs new credentials.

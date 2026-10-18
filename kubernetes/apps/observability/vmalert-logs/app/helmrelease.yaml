@@ -1,0 +1,158 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# vmalert evaluating LogsQL rules against VictoriaLogs and sending to the same
+# Alertmanager as Prometheus, so log alerts follow the existing routing:
+# warning/critical -> alert-triage + Discord, info -> Discord only.
+#
+# Alerts carry counts and labels (namespace, container, Flux object), never log
+# lines: alert-triage forwards alerts to an LLM, and the lines themselves
+# stay in VictoriaLogs. Every expression below was run through
+# /select/logsql/stats_query on 2026-10-18 (see each rule).
+#
+# vmalert appends `_time:<group interval>` to each expression, so the group
+# interval is also the counting window. No remoteWrite: there is no
+# VictoriaMetrics to store alert state in, so a restart re-evaluates from
+# scratch and a pending `for:` starts over. Alerting rules only; a recording
+# rule would need remoteWrite.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vmalert-logs
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: victoria-metrics-alert
+      version: 0.51.0
+      sourceRef:
+        kind: HelmRepository
+        name: victoria-metrics
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    server:
+      fullnameOverride: vmalert-logs
+      image:
+        registry: quay.io
+        repository: victoriametrics/vmalert
+        tag: v1.154.0@sha256:f11d77f9ff68dfd63c871d0e59ae7b479f9c3fd0e8a685fef690fb88b794d938
+      datasource:
+        url: http://victoria-logs.observability.svc.cluster.local:9428
+      # Both Alertmanager replicas, as Prometheus does; they deduplicate
+      # between themselves. The ClusterIP Service would reach only one.
+      notifiers:
+        - url: http://alertmanager-kube-prometheus-stack-0.alertmanager-operated.observability.svc.cluster.local:9093
+        - url: http://alertmanager-kube-prometheus-stack-1.alertmanager-operated.observability.svc.cluster.local:9093
+      extraArgs:
+        rule.defaultRuleType: vlogs
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
+      config:
+        alerts:
+          groups:
+            - name: logs-bursts
+              interval: 5m
+              rules:
+                # 0 matches over the last 24h at the threshold; unthresholded,
+                # 2 lines (Grafana's VictoriaLogs plugin panicking on
+                # field_names). Excluded on purpose:
+                #   - actions-runner-system: CI output (14 of 16 "panic"
+                #     hits in 24h were test runs).
+                #   - Trivy scan jobs: they print vulnerability texts.
+                #   - alert-triage: it logs the alert digests it writes,
+                #     which quote "OOMKilled" and would echo this alert.
+                # Container OOM kills are the metric alert OOMKilled; this
+                # catches the in-process ones (Go "fatal error:", Java
+                # OutOfMemoryError, "out of memory") and Go panics.
+                - alert: LogPanicOrOOMBurst
+                  expr: >-
+                    ("panic:" OR "panic triggered" OR "fatal error:" OR "out of memory" OR OutOfMemoryError)
+                    -kubernetes.pod_namespace:actions-runner-system
+                    -kubernetes.pod_labels.app.kubernetes.io/managed-by:=trivy-operator
+                    -kubernetes.pod_labels.app.kubernetes.io/name:=alert-triage
+                    | stats by (kubernetes.pod_namespace, kubernetes.container_name) count() as lines
+                    | rename kubernetes.pod_namespace as namespace, kubernetes.container_name as container
+                    | filter lines:>=3
+                  labels:
+                    severity: warning
+                  annotations:
+                    summary: >-
+                      {{ $value }} panic or out-of-memory lines from {{ $labels.namespace }}/{{ $labels.container }} in 5 minutes
+                    description: >-
+                      Container {{ $labels.container }} in {{ $labels.namespace }} logged
+                      {{ $value }} panic, fatal-error or out-of-memory lines in 5 minutes.
+                      The lines are in VictoriaLogs: kubernetes.pod_namespace:{{ $labels.namespace }}
+                      kubernetes.container_name:{{ $labels.container }} ("panic:" OR "fatal error:" OR "out of memory").
+                # Info, not warning: the metric alerts CephSlowOps and
+                # CephDaemonSlowOps already page on sustained slow ops (30s).
+                # This adds which daemon complained, and catches short bursts
+                # that clear before the metric rule's `for`. 0 matches in 24h.
+                - alert: CephSlowOpsLogged
+                  expr: >-
+                    kubernetes.pod_namespace:rook-ceph i("slow ops")
+                    | stats by (kubernetes.pod_labels.ceph_daemon_type, kubernetes.pod_labels.ceph_daemon_id) count() as lines
+                    | rename kubernetes.pod_labels.ceph_daemon_type as daemon_type, kubernetes.pod_labels.ceph_daemon_id as daemon_id
+                    | filter lines:>=3
+                  labels:
+                    severity: info
+                  annotations:
+                    summary: >-
+                      Ceph {{ $labels.daemon_type }}.{{ $labels.daemon_id }} logged slow ops {{ $value }} times in 5 minutes
+                    description: >-
+                      Ceph {{ $labels.daemon_type }}.{{ $labels.daemon_id }} reported slow operations
+                      {{ $value }} times in 5 minutes. On a mon this names the OSDs involved;
+                      check `ceph health detail` from the toolbox.
+                # Authentik writes each Event as a "Created Event" log line
+                # with its action (login, authorize_application, ...; 8 in
+                # 24h, none failed). Grouped by action only: the client IP and
+                # username stay in the logs, not in the alert.
+                - alert: AuthentikAuthFailureBurst
+                  expr: >-
+                    kubernetes.pod_namespace:security event:="Created Event" action:in(login_failed, suspicious_request)
+                    | stats by (action) count() as events
+                    | filter events:>=5
+                  labels:
+                    severity: warning
+                  annotations:
+                    summary: >-
+                      {{ $value }} Authentik {{ $labels.action }} events in 5 minutes
+                    description: >-
+                      Authentik recorded {{ $value }} {{ $labels.action }} events in 5 minutes,
+                      a burst well above normal (no failures in the day before this rule).
+                      The Events list in the Authentik admin UI has the client and user.
+            - name: logs-flux
+              # Flux retries a failing object every minute or so, so a
+              # persistent failure logs about one error a minute and a
+              # transient one or two. On 2026-10-18 this matched two real,
+              # ongoing failures: tuppr-upgrades (15 in 15m, tuppr's webhook
+              # unreachable) and nut-exporter (11, CLUSTER_DOMAIN unset).
+              interval: 15m
+              rules:
+                - alert: FluxReconcileErrorBurst
+                  expr: >-
+                    kubernetes.pod_namespace:flux-system level:error
+                    | stats by (controllerKind, namespace, name) count() as errors
+                    | filter errors:>=10
+                  labels:
+                    severity: warning
+                  annotations:
+                    summary: >-
+                      Flux {{ $labels.controllerKind }} {{ $labels.namespace }}/{{ $labels.name }} logged {{ $value }} errors in 15 minutes
+                    description: >-
+                      The Flux controllers logged {{ $value }} errors for {{ $labels.controllerKind }}
+                      {{ $labels.namespace }}/{{ $labels.name }} in 15 minutes, so it is failing
+                      on every retry. `kubectl -n {{ $labels.namespace }} get {{ $labels.controllerKind }}
+                      {{ $labels.name }}` shows the reason.
+    serviceMonitor:
+      enabled: true

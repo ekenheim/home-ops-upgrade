@@ -1,0 +1,64 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcpserver_v1beta1.json
+# VictoriaMetrics/mcp-victorialogs: LogsQL search and stats over the cluster's
+# pod logs (apps/observability/victoria-logs), for kagent, Hermes and OpenClaw
+# through the mcp-gateway. Every tool is a read of VictoriaLogs' /select API;
+# the server has no write path, and mcptoolconfig.yaml pins the surface.
+#
+# PRIVACY: this reads ALL namespaces for 30 days, `default` (paperless,
+# Dawarich, Immich, Home Assistant), `media` and `downloads` included, and
+# OpenClaw sends what it reads to MiniMax. That was accepted on 2026-10-18
+# (review decision D1, the same exposure grafana-mcp's datasource proxy
+# already has), so there is no namespace scoping here. To scope it later, put
+# a vmauth in front with `extra_filters` and point VL_INSTANCE_ENTRYPOINT at
+# it.
+#
+# Network: no NetworkPolicy selects this pod or victoria-logs (checked
+# 2026-10-18), so llm -> observability:9428 is open.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: &name victorialogs-mcp
+spec:
+  groupRef:
+    name: mcp-tools
+  image: ghcr.io/victoriametrics/mcp-victorialogs:v1.9.0@sha256:753bb4fbe402ca1a782842f44636830f9895736f11d7fe783b924f8a0daf083d
+  transport: streamable-http
+  proxyMode: streamable-http
+  proxyPort: 8080
+  mcpPort: 8081
+  toolConfigRef:
+    name: *name
+  audit:
+    enabled: true
+  env:
+    - name: VL_INSTANCE_ENTRYPOINT
+      value: http://victoria-logs.observability.svc.cluster.local:9428
+    - name: MCP_SERVER_MODE
+      value: http
+    # The default is localhost:8081, which toolhive's proxy (another pod)
+    # cannot reach: the MCPServer would report Ready with nothing connected.
+    - name: MCP_LISTEN_ADDR
+      value: 0.0.0.0:8081
+    - name: MCP_LOG_FORMAT
+      value: json
+  # spec.resources lands on the toolhive proxy on operator v0.42.0, not on the
+  # `mcp` container (see ../context7/mcpserver.yaml), so both are set. A Go
+  # binary that streams VictoriaLogs responses through; the query tool's
+  # default is 1000 lines.
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: mcp
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 256Mi

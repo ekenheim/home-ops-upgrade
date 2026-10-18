@@ -1,0 +1,37 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/toolhive.stacklok.dev/mcptoolconfig_v1beta1.json
+# Explicit allow list, so an image bump cannot silently add tools. All 13
+# upstream tools (v1.9.0) only read; left out are `flags` (the server's
+# command line, no use to an agent) and `stream_ids` (internal IDs, `streams`
+# covers it). If the mcp-gateway starts rejecting this server's health checks
+# after an image bump (stacklok/toolhive#6684, a modern-revision server behind
+# the tool filter), drop toolConfigRef as context7 did. v1.9.0 is built on
+# mcp-go v0.47, which predates that revision, like kubectl-mcp, whose filter
+# works.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPToolConfig
+metadata:
+  name: victorialogs-mcp
+spec:
+  toolsFilter:
+    - query
+    - stats_query
+    - stats_query_range
+    - hits
+    - facets
+    - field_names
+    - field_values
+    - streams
+    - stream_field_names
+    - stream_field_values
+    - documentation
+  toolsOverride:
+    query:
+      description: >-
+        Executes a LogsQL query against the cluster's pod logs (VictoriaLogs,
+        30 days, every namespace) and returns matching lines. Start narrow:
+        filter on kubernetes.pod_namespace, kubernetes.pod_name or
+        kubernetes.container_name and a short time range, and pass a small
+        limit (the default is 1000 lines). To count or compare, use
+        stats_query or hits instead of fetching lines. JSON log fields are
+        top-level fields (level, error, ...); the message is _msg.

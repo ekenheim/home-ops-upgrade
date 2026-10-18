@@ -1,0 +1,90 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+# Health of the log pipeline itself. Both ends are scraped already (the
+# server's ServiceMonitor as job victoria-logs, the collectors' PodMonitor as
+# job observability/victoria-logs-collector); metric names checked against
+# Prometheus on 2026-10-18, when every series below was 0.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: victoria-logs
+spec:
+  groups:
+    - name: victoria-logs
+      rules:
+        # vlagent spills to its 2 GiB hostPath buffer only when it cannot
+        # send; in normal running the persistent queue is empty on every node.
+        # Not "rising": once the buffer is full it stops growing and the
+        # oldest data is dropped (VictoriaLogsRowsDropped then fires too).
+        - alert: VictoriaLogsCollectorBacklog
+          expr: max by (pod) (vlagent_remotewrite_pending_data_bytes{job="observability/victoria-logs-collector"}) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              vlagent {{ $labels.pod }} has {{ $value | humanize1024 }}B of logs it cannot send
+            description: >-
+              The collector has been buffering to disk for 15 minutes, so
+              victoria-logs is down, refusing writes or too slow. The buffer
+              is capped at 2 GiB per node; past that, logs are lost. Check
+              the victoria-logs-0 pod and vlagent_remotewrite_errors_total.
+        # Both ends export vl_rows_dropped_total. reason="debug" only counts
+        # rows sent with debug=1, which are dropped on purpose.
+        - alert: VictoriaLogsRowsDropped
+          expr: >-
+            sum by (job, pod, reason) (increase(vl_rows_dropped_total{namespace="observability", reason!="debug"}[10m])) > 0
+            or
+            sum by (job, pod) (increase(vlagent_remotewrite_packets_dropped_total{namespace="observability"}[10m])) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              {{ $labels.pod }} dropped {{ $value | humanize }} log rows or blocks in 10 minutes{{ with $labels.reason }} ({{ . }}){{ end }}
+            description: >-
+              Logs were discarded instead of stored: on the server for a
+              reason such as too_many_fields or a timestamp outside
+              retention, on a collector because its disk buffer was full.
+        - alert: VictoriaLogsRestarted
+          expr: >-
+            increase(kube_pod_container_status_restarts_total{namespace="observability", container=~"vlogs|vlagent"}[1h]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              {{ $labels.container }} in {{ $labels.pod }} restarted
+            description: >-
+              A VictoriaLogs server or collector container restarted in the
+              last hour. Check its last state (OOMKilled at 4Gi once on
+              2026-10-18 for the server). A collector restart re-reads from
+              its checkpoint, so nothing is lost unless it crash-loops.
+        # Not 80%: retentionDiskSpaceUsage (helmrelease.yaml) caps the data
+        # at 40 GiB of the 50 Gi volume, so above 80% is where the cap is
+        # meant to hold it, and an 80% alert would fire for as long as
+        # retention is disk-bound. Past 90% the cap is not holding.
+        - alert: VictoriaLogsVolumeFilling
+          expr: >-
+            kubelet_volume_stats_used_bytes{namespace="observability", persistentvolumeclaim="server-volume-victoria-logs-0"}
+            / kubelet_volume_stats_capacity_bytes{namespace="observability", persistentvolumeclaim="server-volume-victoria-logs-0"}
+            > 0.9
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: >-
+              The VictoriaLogs volume is {{ $value | humanizePercentage }} full
+            description: >-
+              The 40 GiB retention cap should keep it near 80%. Find the
+              namespace that grew (VictoriaLogs dashboard) and either exclude
+              it in collector-helmrelease.yaml or grow the PVC.
+        - alert: VictoriaLogsReadOnly
+          expr: max(vl_storage_is_read_only{job="victoria-logs"}) == 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: VictoriaLogs storage is read-only
+            description: >-
+              Free disk fell below -storage.minFreeDiskSpaceBytes and
+              VictoriaLogs stopped accepting logs. The collectors buffer up to
+              2 GiB each, then drop.

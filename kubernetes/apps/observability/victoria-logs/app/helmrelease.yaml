@@ -47,10 +47,16 @@ spec:
         size: 50Gi
       podAnnotations:
         reloader.stakater.com/auto: "true"
+      # Working set p95 925Mi, max 2.5Gi over 3 days (2026-10-18), with about
+      # 6.5M rows/day. It was OOMKilled at 4Gi once, 18 s after it started
+      # on 10-18 (cause not established; the collectors' buffered backlog
+      # arriving at once is the likely one), and has stayed under 1Gi since.
+      # The limit stays at 4Gi; VictoriaLogsRestarted (prometheusrule.yaml)
+      # reports a repeat.
       resources:
         requests:
           cpu: 50m
-          memory: 512Mi
+          memory: 1Gi
         limits:
           memory: 4Gi
       # ClusterIP (the chart defaults to headless) so the HTTPRoute and

@@ -1,6 +1,15 @@
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
-# Private ranges only, same as datasci/docat.
+# Two gates on logs.${SECRET_DOMAIN}, both required:
+#   - oidc: an Authentik session (application `victoria-logs`, authentik
+#     Admins only, security/authentik/app/victoria-logs-oidc.yaml). vmui reads
+#     30 days of every pod's logs, and VictoriaLogs has no auth of its own.
+#   - authorization: private ranges only, as before (same as datasci/docat).
+# One policy, not two: Envoy Gateway applies only the oldest SecurityPolicy
+# per HTTPRoute and marks the rest Conflicted. In v1.9.2 the OAuth2 filter
+# (order 9) runs before RBAC (order 301), so an off-LAN client is sent to
+# Authentik first and gets a 403 after signing in.
+# Grafana and vmalert use the Service directly and pass neither gate.
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
@@ -10,6 +19,25 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: victoria-logs
+  oidc:
+    provider:
+      issuer: https://sso.${SECRET_DOMAIN}/application/o/victoria-logs/
+    clientID: victoria-logs
+    clientSecret:
+      # Cross-namespace; allowed by the ReferenceGrant in security.
+      name: authentik-victoria-logs-oidc
+      namespace: security
+    redirectURL: https://logs.${SECRET_DOMAIN}/oauth2/callback
+    logoutPath: /oauth2/logout
+    scopes:
+      - openid
+      - email
+      - profile
+      - offline_access
+    # vmui polls (live tailing, hits) in the background; the refresh token
+    # keeps the session without a full redirect, which those fetches could
+    # not follow.
+    refreshToken: true
   authorization:
     defaultAction: Deny
     rules:

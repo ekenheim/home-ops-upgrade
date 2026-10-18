@@ -8,4 +8,5 @@ resources:
   - ./grafana-datasource.yaml
   - ./httproute.yaml
   - ./securitypolicy.yaml
-  - ../../../../templates/gatus/internal
+  - ./prometheusrule.yaml
+  - ./gatus.yaml

@@ -1,7 +1,8 @@
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
-# vmui lives at /select/vmui. LAN only, see securitypolicy.yaml: VictoriaLogs
-# has no auth of its own and /insert accepts writes.
+# vmui lives at /select/vmui. LAN plus an Authentik session, see
+# securitypolicy.yaml: VictoriaLogs has no auth of its own, and through this
+# route /insert accepts writes and /select reads every pod's logs.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

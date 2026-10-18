@@ -1,0 +1,38 @@
+---
+# Two checks instead of templates/gatus/internal. With OIDC on the route,
+# https://logs.${SECRET_DOMAIN}/health answers 302 to Authentik, and Gatus
+# follows redirects by default, so the template would have reported
+# Authentik's login page as "VictoriaLogs up".
+#   - victoria-logs: the server itself, through its Service.
+#   - victoria-logs-route: the gateway, without following the redirect. 302
+#     means envoy-internal has an Accepted SecurityPolicy; a policy whose
+#     OIDC discovery failed serves 500 instead (vane-oidc, 2026-10-18: its
+#     Authentik blueprint missed its apply during a worker roll, discovery
+#     was 404 and the route failed closed until the next worker restart).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: victoria-logs-gatus-ep
+  labels:
+    gatus.io/enabled: "true"
+data:
+  config.yaml: |
+    endpoints:
+      - name: victoria-logs
+        group: internal
+        url: http://victoria-logs.observability.svc.cluster.local:9428/health
+        interval: 1m
+        conditions:
+          - "[STATUS] == 200"
+        alerts:
+          - type: discord
+      - name: victoria-logs-route
+        group: internal
+        url: https://logs.${SECRET_DOMAIN}/select/vmui/
+        interval: 1m
+        client:
+          ignore-redirect: true
+        conditions:
+          - "[STATUS] == 302"
+        alerts:
+          - type: discord

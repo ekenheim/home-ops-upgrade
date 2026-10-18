@@ -13,4 +13,5 @@ resources:
   - ./langfuse-oidc.yaml
   - ./homelable-oidc.yaml
   - ./kagent-oidc.yaml
+  - ./victoria-logs-oidc.yaml
   - ../../../../templates/gatus/infra

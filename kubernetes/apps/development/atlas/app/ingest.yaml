@@ -52,6 +52,7 @@ spec:
                 # SanDisk first: the early-call scorecard (ticket 29) needs its 2025 history and calls.
                 # 0.6.14: one-off daily closes around three scorecard as-of dates (SanDisk, IREN, POET),
                 # for sizing the scorecard's controls only (atlas ticket 29); fixed keys, so enqueued once.
+                # No shell parameter expansion here (dollar-brace): Flux strict post-build substitution reads it as a variable.
                 # 0.6.13: the scorecard's held-out cases (IREN, eToro, Snap, POET; ticket 29a), archive
                 # and call transcripts only; they are in no researched theme and no scheduled agent's.
                 # Then each company's TradingView catalog (transcripts and headline leads through the
@@ -80,11 +81,12 @@ spec:
                   camtek ase-technology amkor iren etoro snap poet-technologies; do
                   atlas jobs enqueue tradingview_catalog --backfill --key "tradingview-$c-$(date -u +%F)"
                   --payload "{\"company\": \"$c\"}" || rc=1; done;
-                  for spec in sandisk:2025-02-20:2025-03-05 iren:2025-03-24:2025-04-04
-                  poet-technologies:2025-11-20:2025-12-03; do
-                  c="${spec%%:*}"; rest="${spec#*:}"; start="${rest%%:*}"; end="${rest#*:}";
-                  atlas jobs enqueue tradingview_prices --backfill --key "scorecard-close-$c"
-                  --payload "{\"company\": \"$c\", \"start\": \"$start\", \"end\": \"$end\"}" || rc=1; done;
+                  atlas jobs enqueue tradingview_prices --backfill --key "scorecard-close-sandisk"
+                  --payload '{"company": "sandisk", "start": "2025-02-20", "end": "2025-03-05"}' || rc=1;
+                  atlas jobs enqueue tradingview_prices --backfill --key "scorecard-close-iren"
+                  --payload '{"company": "iren", "start": "2025-03-24", "end": "2025-04-04"}' || rc=1;
+                  atlas jobs enqueue tradingview_prices --backfill --key "scorecard-close-poet-technologies"
+                  --payload '{"company": "poet-technologies", "start": "2025-11-20", "end": "2025-12-03"}' || rc=1;
                   atlas jobs enqueue tradingview_calendar --backfill --key "tradingview-calendar-$(date -u +%F)"
                   --payload '{"companies": ["lumentum", "coherent", "axt", "applied-optoelectronics", "fabrinet", "marvell", "macom", "ciena", "stmicroelectronics", "iqe", "soitec", "innolight", "sandisk", "micron", "sk-hynix", "formfactor", "camtek", "ase-technology", "amkor"]}' || rc=1;
                   atlas memory backfill --theme photonics --max-sections 2000

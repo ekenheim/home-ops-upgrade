@@ -368,6 +368,9 @@ spec:
       - natel-discrete-panel
       - pr0ps-trackmap-panel
       - vonage-status-panel
+      # "id version" is pinned: Grafana 12 migrates GF_INSTALL_PLUGINS into
+      # preinstall_sync, which reads the second word as the version.
+      - victoriametrics-logs-datasource 0.32.0
     serviceMonitor:
       enabled: true
       metricRelabelings:

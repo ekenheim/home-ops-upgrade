@@ -80,7 +80,7 @@ spec:
           - path: /var/lib/clickhouse
       config:
         type: configMap
-        name: langfuse-clickhouse-config
+        identifier: config
         globalMounts:
           - path: /etc/clickhouse-server/config.d/langfuse.xml
             subPath: config.xml

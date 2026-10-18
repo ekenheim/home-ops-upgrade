@@ -1034,10 +1034,10 @@ data:
       # `langfuse_otel` (OTLP to /api/public/otel), not the older `langfuse`
       # SDK callback: it is the one that speaks Langfuse 4's ingestion
       # version. It reads LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY /
-      # LANGFUSE_HOST, which helmrelease.yaml takes from langfuse-secret. Those
-      # env refs are optional, so the gateway still starts if Langfuse is
-      # absent; but a LiteLLM that started before langfuse-secret existed has
-      # empty env and needs one restart to start exporting.
+      # LANGFUSE_HOST; helmrelease.yaml loads the key pair from the
+      # langfuse-litellm Secret, optionally, so the gateway still starts if
+      # Langfuse is absent. A LiteLLM that started before that Secret existed
+      # has no keys and needs one restart to start exporting.
       #
       # A team-level `logging` entry in a LiteLLMTeam's metadata would take
       # precedence over this list for that team.

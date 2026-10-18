@@ -85,7 +85,7 @@ spec:
         pod:
           additionalEnv:
             # First boot creates the org and the `litellm` project with a
-            # known key pair (langfuse-secret), and every later SSO user joins
+            # known key pair (langfuse-litellm), and every later SSO user joins
             # both as OWNER. Only authentik Admins can sign in at all.
             - name: LANGFUSE_INIT_ORG_ID
               value: homelab
@@ -98,13 +98,13 @@ spec:
             - name: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
               valueFrom:
                 secretKeyRef:
-                  name: langfuse-secret
-                  key: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+                  name: langfuse-litellm
+                  key: LANGFUSE_PUBLIC_KEY
             - name: LANGFUSE_INIT_PROJECT_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: langfuse-secret
-                  key: LANGFUSE_INIT_PROJECT_SECRET_KEY
+                  name: langfuse-litellm
+                  key: LANGFUSE_SECRET_KEY
             - name: LANGFUSE_DEFAULT_ORG_ID
               value: homelab
             - name: LANGFUSE_DEFAULT_ORG_ROLE

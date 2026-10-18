@@ -1,0 +1,20 @@
+---
+# Grafana datasource for VictoriaLogs. The Grafana sidecar picks up any
+# ConfigMap with grafana_datasource: "1" from any namespace; the plugin itself
+# is installed by grafana/app/helmrelease.yaml (`plugins:`).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: victoria-logs-datasource
+  labels:
+    grafana_datasource: "1"
+data:
+  victoria-logs-datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: VictoriaLogs
+        type: victoriametrics-logs-datasource
+        uid: victoria-logs
+        access: proxy
+        url: http://victoria-logs.observability.svc.cluster.local:9428
+        editable: false

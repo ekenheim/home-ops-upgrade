@@ -1,0 +1,67 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# Central pod logs. Single-node VictoriaLogs; the vlagent DaemonSet in
+# collector-helmrelease.yaml ships every container's stdout/stderr here.
+# Query it from Grafana (VictoriaLogs datasource, grafana-datasource.yaml) or
+# the built-in vmui at https://logs.${SECRET_DOMAIN}/select/vmui.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app victoria-logs
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: victoria-logs-single
+      version: 0.13.10
+      sourceRef:
+        kind: HelmRepository
+        name: victoria-metrics
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+  values:
+    server:
+      fullnameOverride: *app
+      image:
+        registry: quay.io
+        repository: victoriametrics/victoria-logs
+        tag: v1.53.0@sha256:251121fa882af99b95ba0c230a4a2f412ea602d2698c64a96c58dc9842bb755d
+      # Whichever comes first: 30 days, or 40 GiB on the 50 Gi volume. The
+      # disk cap drops the oldest days so a chatty pod cannot fill the PVC
+      # and stop ingestion.
+      retentionPeriod: 30d
+      retentionDiskSpaceUsage: 40
+      persistentVolume:
+        enabled: true
+        storageClassName: ceph-block
+        size: 50Gi
+      podAnnotations:
+        reloader.stakater.com/auto: "true"
+      resources:
+        requests:
+          cpu: 50m
+          memory: 512Mi
+        limits:
+          memory: 4Gi
+      # ClusterIP (the chart defaults to headless) so the HTTPRoute and
+      # Grafana reach it through one stable Service address.
+      service:
+        clusterIP: ""
+      serviceMonitor:
+        enabled: true
+    dashboards:
+      enabled: true
+      labels:
+        grafana_dashboard: "1"
+      annotations:
+        grafana_folder: System

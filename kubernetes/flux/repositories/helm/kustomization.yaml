@@ -46,6 +46,7 @@ resources:
   - ./spegel.yaml
   - ./stakater.yaml
   - ./stevehipwell.yaml
+  - ./victoria-metrics.yaml
   - ./tofu-controller.yaml
   - ./userinit-controller.yaml
   - ./weave-gitops.yaml

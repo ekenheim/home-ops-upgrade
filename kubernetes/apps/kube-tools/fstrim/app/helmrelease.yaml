@@ -22,22 +22,50 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
+  # Weekly fstrim of every mounted filesystem on each node the pods land on.
+  # Talos v1.13 does not trim on its own. Talos v1.14 adds a built-in
+  # FilesystemTrimConfig document (siderolabs/talos v1.14.0 release notes,
+  # "Filesystem Trim"), and onedr0p/home-ops uses `interval: 168h` in
+  # talos/cluster.yaml.j2. Clusters upgraded from older Talos do NOT get that
+  # document by default, so retire this CronJob only after the Talos 1.14
+  # upgrade AND adding FilesystemTrimConfig to talconfig.yaml.
   values:
     controllers:
       fstrim:
         type: cronjob
         cronjob:
           schedule: "@weekly"
-          parallelism: 4 # Set to my total number of nodes
+          # Originally "total number of nodes". On 2026-10-18 only master2 and
+          # worker3 accept these pods (worker4 is tainted llm-workload and this
+          # job does not tolerate it, so worker4 is never trimmed), so maxSkew 1
+          # puts two pods on each; a second fstrim on a node is a no-op.
+          parallelism: 4
           successfulJobsHistory: 0
           failedJobsHistory: 0
         containers:
           app:
+            # Was ghcr.io/onedr0p/kubanetics:2025.3.2: archived upstream (last
+            # release March 2025), 28 Critical / 652 High in Trivy. onedr0p
+            # dropped his fstrim job on 2025-02-10 (home-ops adb46caf4) and
+            # trims through Talos now. Only busybox sh, pgrep and nsenter are
+            # needed here, because fstrim itself runs from the kubelet's mount
+            # namespace (the host's own util-linux). home-operations/busybox is
+            # a maintained ghcr rebuild of docker.io/library/busybox.
             image:
-              repository: ghcr.io/onedr0p/kubanetics
-              tag: 2025.3.2@sha256:309a7587c2aa7ce6a99812a61c5024240a21b708f94802a09105c61513572164
-            env:
-              SCRIPT_NAME: fstrim.sh
+              repository: ghcr.io/home-operations/busybox
+              tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
+            # The kubanetics fstrim.sh, inlined. Only bare $var (never dollar-
+            # brace): Flux postBuild substitution would eat the braced form.
+            # "kubele[t]" keeps pgrep -f from matching this sh, whose own
+            # command line contains the pattern; -o picks one PID.
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -eu
+                pid=$(pgrep -o -f '/usr/local/bin/kubele[t]') || { echo "kubelet not found"; exit 1; }
+                echo "Trimming filesystems in the mount namespace of kubelet (pid $pid)"
+                nsenter --mount=/host/proc/$pid/ns/mnt --net=/host/proc/$pid/ns/net -- \
+                  sh -c "fstrim --verbose --quiet-unsupported --all"
             resources:
               requests:
                 cpu: 25m

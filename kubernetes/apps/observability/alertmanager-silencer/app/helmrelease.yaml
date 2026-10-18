@@ -34,12 +34,51 @@ spec:
           successfulJobsHistory: 0
         containers:
           app:
+            # Was ghcr.io/onedr0p/kubanetics:2025.3.2: archived upstream (last
+            # release March 2025), 28 Critical / 652 High in Trivy. The
+            # Alertmanager image ships amtool and a busybox sh, which is all
+            # the script needs; it is pinned to the version the
+            # kube-prometheus-stack Alertmanager runs (v0.34.1 on 2026-10-18).
+            # onedr0p dropped this CronJob in June 2024 and has used giantswarm
+            # silence-operator (Silence CRs, chart from gsoci.azurecr.io) since
+            # December 2024; moving to it would add a new chart registry here.
             image:
-              repository: ghcr.io/onedr0p/kubanetics
-              tag: 2025.3.2@sha256:309a7587c2aa7ce6a99812a61c5024240a21b708f94802a09105c61513572164
+              repository: quay.io/prometheus/alertmanager
+              tag: v0.34.1@sha256:e9733bafb1bdef9b00e25a21f8f99dc26a22224bf16641ad754d1649f4c3357a
+            # The kubanetics alertmanager-silencer.sh, ported from bash + jq to
+            # busybox sh: amtool --quiet prints only silence IDs. Each
+            # MATCHERS_n value is one silence; it is word-split on purpose so
+            # every label=value becomes its own amtool matcher. Only bare $var
+            # (never dollar-brace): Flux postBuild substitution would eat the
+            # braced form. Silences live on the Alertmanager PVC, so a normal
+            # run only logs "Silence already exists"; this re-creates them
+            # after Alertmanager state is lost.
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -eu
+                env | sed -n 's/^MATCHERS_[0-9]*=//p' | sort | while read -r matchers; do
+                  if [ -n "$(amtool --alertmanager.url="$ALERTMANAGER_URL" silence query --quiet $matchers)" ]; then
+                    echo "Silence already exists for $matchers"
+                  else
+                    echo "Creating silence for $matchers"
+                    amtool --alertmanager.url="$ALERTMANAGER_URL" silence add $matchers \
+                      --author=alertmanager-silencer --comment="Managed by the alertmanager-silencer CronJob" --duration=42069d
+                  fi
+                done
             env:
-              SCRIPT_NAME: alertmanager-silencer.sh
               ALERTMANAGER_URL: http://alertmanager-operated.observability.svc.cluster.local:9093
+              # Checked 2026-10-18 against Prometheus ALERTS (14 days of
+              # retention): CephNodeInconsistentMTU fires all the time on the
+              # Cilium interfaces (cilium_host, cilium_net, lxc_health have a
+              # different MTU from the physical NICs); CephMonClockSkew and the
+              # /etc/nfsmount.conf DiskspaceWarning fired this fortnight. The
+              # rest did not fire in 14 days but their rules still exist.
+              # MATCHERS_4 (device=/dev/sda6) matches nothing now: no node
+              # exports /dev/sda6. master2's /var and /var/mnt/local-hostpath
+              # (/dev/sda4) fired CephNodeDiskspaceWarning unsilenced; left as
+              # is for the owner to decide, since silencing it would hide a
+              # real disk-full on the sole etcd node.
               MATCHERS_0: alertname=CephNodeInconsistentMTU
               MATCHERS_1: alertname=CephNodeNetworkPacketErrors
               MATCHERS_2: alertname=CephMonClockSkew

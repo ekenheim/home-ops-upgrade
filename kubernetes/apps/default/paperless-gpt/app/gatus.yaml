@@ -1,0 +1,42 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "${APP}-gatus-ep"
+  labels:
+    gatus.io/enabled: "true"
+data:
+  config.yaml: |
+    endpoints:
+      # The route's DNS record, as templates/gatus/guarded checks it.
+      - name: "${APP}"
+        group: guarded
+        url: 1.1.1.1
+        interval: 1m
+        ui:
+          hide-hostname: true
+          hide-url: true
+        dns:
+          query-name: "${APP}.${SECRET_DOMAIN}"
+          query-type: A
+        conditions:
+          - "[DNS_RCODE] == NOERROR"
+        alerts:
+          - type: discord
+      # The pod itself. The DNS check above stays green while the pod is down
+      # (it was, for 6 h on 2026-10-18, with the Secret missing), and the
+      # `internal` template's route check would only see the Authentik
+      # redirect: every route request goes through the OIDC SecurityPolicy
+      # first. So this goes to the Service. /api/version is unauthenticated
+      # and answers without calling Paperless or LiteLLM.
+      - name: "${APP}"
+        group: internal
+        url: "http://${APP}.default.svc.cluster.local:8080/api/version"
+        interval: 1m
+        ui:
+          hide-hostname: true
+          hide-url: true
+        conditions:
+          - "[STATUS] == 200"
+        alerts:
+          - type: discord

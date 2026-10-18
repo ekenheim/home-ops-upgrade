@@ -59,9 +59,15 @@ spec:
               PAPERLESS_CONSUMER_POLLING: "60"
               PAPERLESS_CONSUMER_RECURSIVE: "true"
               PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: "true"
-              # Configure OCR
-              PAPERLESS_OCR_LANGUAGES: nld
-              PAPERLESS_OCR_LANGUAGE: nld
+              # Configure OCR. The image ships Tesseract deu, eng, fra, ita and
+              # spa. init-tesseract-langs apt-installs every other
+              # tesseract-ocr-<lang> listed in PAPERLESS_OCR_LANGUAGES
+              # (space-separated) at each start, as root; nld comes in that
+              # way. swe added 2026-10-18 for Swedish post and receipts
+              # (tesseract-ocr-swe 1:4.1.0-2, trixie/main). The OCR language
+              # itself joins them with `+`.
+              PAPERLESS_OCR_LANGUAGES: nld swe
+              PAPERLESS_OCR_LANGUAGE: nld+swe
               # Configure redis integration
               PAPERLESS_REDIS: redis://dragonfly.database.svc.cluster.local:6379
               # Configure user permissions

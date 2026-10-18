@@ -10,6 +10,9 @@
 // the UI) is left alone, but edits to the LiteLLM provider itself are reset
 // here on the next restart: change the lists below instead.
 //
+// No template literals here: Flux's postBuild substitution would read them
+// as variables (the ConfigMap is built by this Kustomization).
+//
 // Field layout follows src/lib/config/{index,types}.ts at v1.12.2; recheck it
 // when bumping the image.
 import crypto from 'node:crypto';
@@ -22,7 +25,7 @@ const configPath = path.join(dataDir, 'config.json');
 const required = (name) => {
   const value = process.env[name];
   if (!value) {
-    console.error(`seed: ${name} is not set`);
+    console.error('seed: ' + name + ' is not set');
     process.exit(1);
   }
   return value;
@@ -67,7 +70,7 @@ if (fs.existsSync(configPath)) {
   try {
     config = { ...config, ...JSON.parse(fs.readFileSync(configPath, 'utf-8')) };
   } catch (err) {
-    console.error(`seed: ${configPath} is not valid JSON, starting over:`, err.message);
+    console.error('seed: ' + configPath + ' is not valid JSON, starting over:', err.message);
   }
 }
 
@@ -81,4 +84,4 @@ config.setupComplete = true;
 // The file holds the LiteLLM key.
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2), { mode: 0o600 });
 fs.chmodSync(configPath, 0o600);
-console.log(`seed: wrote ${configPath} (${config.modelProviders.length} provider(s))`);
+console.log('seed: wrote ' + configPath + ' (' + config.modelProviders.length + ' provider(s))');

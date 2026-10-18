@@ -15,7 +15,8 @@ mlflow, minio, ray and marimo all answer 200. What it could not do is
   `minio-secondary`, and clients should not touch S3 at all because the
   tracking server proxies artifacts);
 - wrote notebooks calling `ray.init()` from marimo, which cannot work: the Ray
-  cluster is Python 3.10 / Ray 2.54.0 and marimo is Python 3.13.
+  cluster is Python 3.12 / Ray 2.59.0 (3.10 / 2.54.0 when this was written)
+  and marimo is Python 3.13.
 
 Facts are exposed as **tools** rather than pasted into hermes' system prompt
 deliberately. hermes runs on a 131,072-token window; a thirty-item platform

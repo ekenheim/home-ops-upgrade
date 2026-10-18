@@ -124,6 +124,25 @@
       }
     },
     {
+      // rayproject/ray used to be held at exactly 2.54.0 (packageRules.json5)
+      // because the worker group ran ghcr.io/ekenheim/grid-resilience-ray-worker,
+      // built against that Ray. grid-resilience was disabled 2026-10-18 and
+      // head and workers now share one stock image from the ray-cluster
+      // HelmRelease, so the pin is gone and Ray is tracked normally.
+      // The example Jobs (datasci/ray/examples) are Ray Client drivers and
+      // must run the cluster's exact Ray version and Python minor, so they
+      // move in the same PR. The tag's -py312-cpu suffix keeps updates on
+      // that variant. Not reached by Renovate: the ray_version / head_image
+      // facts in llm/toolhive/platform-mcp/server/platform_mcp.py.
+      "description": ["Ray Group"],
+      "groupName": "Ray",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["rayproject/ray"],
+      "group": {
+        "commitMessageTopic": "{{{groupName}}} group"
+      }
+    },
+    {
       "description": ["Rook-Ceph Group"],
       "groupName": "Rook-Ceph",
       "matchDatasources": ["docker"],

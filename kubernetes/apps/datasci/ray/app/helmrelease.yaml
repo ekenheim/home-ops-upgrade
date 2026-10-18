@@ -24,11 +24,20 @@ spec:
       retries: 3
   values:
     image:
-      # Hold at 2.54.0 to match grid-resilience-ray-worker:v1.0.18 (built
-      # against Ray 2.54.0). Ray enforces an exact version match between
-      # head and workers; bump only in lockstep with a worker rebuild.
+      # One stock image for head AND workers: the worker group sets no image
+      # of its own, so the chart renders this for both and they cannot drift
+      # (Ray refuses a head/worker version mismatch, even a patch one).
+      # The custom grid-resilience-ray-worker image is gone with
+      # grid-resilience (disabled 2026-10-18); jobs that need libraries bring
+      # them through runtime_env or their own driver image.
+      # CPU variant with an explicit Python suffix: Ray Client drivers must
+      # match the cluster's Ray version AND Python minor, and the suffix keeps
+      # Renovate on py312 (the bare tag is py310, EOL 2026-10). 3.12 matches
+      # jupyter-lab (3.12.9) and the alphaos Dagster image; marimo (3.13)
+      # still cannot be a Ray Client driver and should use the Jobs API.
+      # The examples under ../examples pin the same ref (Renovate "Ray" group).
       repository: rayproject/ray
-      tag: 2.54.0
+      tag: 2.59.0-py312-cpu@sha256:0ffca209fb4c984d648db550b8dbe7879bdba3bbb5d96ee5894843cf6ac12eb5
       pullPolicy: IfNotPresent
 
     head:
@@ -69,67 +78,11 @@ spec:
             secretKeyRef:
               name: mlflow-minio-creds
               key: AWS_SECRET_ACCESS_KEY
-        - name: GRID_GOLD_BUCKET_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: grid-resilience-gold
-              key: BUCKET_HOST
-        - name: GRID_GOLD_BUCKET_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: grid-resilience-gold
-              key: BUCKET_PORT
-        - name: GRID_GOLD_BUCKET_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: grid-resilience-gold
-              key: BUCKET_NAME
-        - name: GRID_GOLD_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: grid-resilience-gold
-              key: AWS_ACCESS_KEY_ID
-        - name: GRID_GOLD_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: grid-resilience-gold
-              key: AWS_SECRET_ACCESS_KEY
-        - name: GRID_SILVER_BUCKET_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: grid-resilience-silver
-              key: BUCKET_HOST
-        - name: GRID_SILVER_BUCKET_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: grid-resilience-silver
-              key: BUCKET_PORT
-        - name: GRID_SILVER_BUCKET_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: grid-resilience-silver
-              key: BUCKET_NAME
-        - name: GRID_SILVER_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: grid-resilience-silver
-              key: AWS_ACCESS_KEY_ID
-        - name: GRID_SILVER_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: grid-resilience-silver
-              key: AWS_SECRET_ACCESS_KEY
 
     worker:
       annotations:
         descheduler.alpha.kubernetes.io/evict: "false"
       groupName: workergroup
-      image:
-        repository: ghcr.io/ekenheim/grid-resilience-ray-worker
-        tag: v1.0.18
-        pullPolicy: Always
-      imagePullSecrets:
-        - name: ghcr-pull
       replicas: 2
       minReplicas: 1
       maxReplicas: 12
@@ -162,56 +115,6 @@ spec:
           valueFrom:
             secretKeyRef:
               name: mlflow-minio-creds
-              key: AWS_SECRET_ACCESS_KEY
-        - name: GRID_GOLD_BUCKET_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: grid-resilience-gold
-              key: BUCKET_HOST
-        - name: GRID_GOLD_BUCKET_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: grid-resilience-gold
-              key: BUCKET_PORT
-        - name: GRID_GOLD_BUCKET_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: grid-resilience-gold
-              key: BUCKET_NAME
-        - name: GRID_GOLD_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: grid-resilience-gold
-              key: AWS_ACCESS_KEY_ID
-        - name: GRID_GOLD_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: grid-resilience-gold
-              key: AWS_SECRET_ACCESS_KEY
-        - name: GRID_SILVER_BUCKET_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: grid-resilience-silver
-              key: BUCKET_HOST
-        - name: GRID_SILVER_BUCKET_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: grid-resilience-silver
-              key: BUCKET_PORT
-        - name: GRID_SILVER_BUCKET_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: grid-resilience-silver
-              key: BUCKET_NAME
-        - name: GRID_SILVER_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: grid-resilience-silver
-              key: AWS_ACCESS_KEY_ID
-        - name: GRID_SILVER_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: grid-resilience-silver
               key: AWS_SECRET_ACCESS_KEY
 
     rayDashboard:

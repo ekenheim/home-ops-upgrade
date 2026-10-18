@@ -99,7 +99,7 @@ SERVICES = {
         "status": "running",
         "namespace": "datasci",
         "cluster_name": "ray-kuberay",
-        "operator": "KubeRay (kuberay-operator), chart ray-cluster 1.7.0",
+        "operator": "KubeRay (kuberay-operator chart 1.7.0); RayCluster from chart ray-cluster 1.7.1",
         "crds": ["rayclusters.ray.io", "rayjobs.ray.io", "rayservices.ray.io", "raycronjobs.ray.io"],
         "internal": {
             "client": "ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001",
@@ -109,10 +109,10 @@ SERVICES = {
         },
         "browser": f"https://kuberay.{DOMAIN}",
         "lan_loadbalancer": "192.168.50.182 (Service ray-external: 10001/8265/8000/8080/6379)",
-        "ray_version": "2.54.0",
-        "python_version": "3.10.19",
-        "head_image": "rayproject/ray:2.54.0",
-        "worker_image": "ghcr.io/ekenheim/grid-resilience-ray-worker:v1.0.18",
+        "ray_version": "2.59.0",
+        "python_version": "3.12",
+        "head_image": "rayproject/ray:2.59.0-py312-cpu",
+        "worker_image": "rayproject/ray:2.59.0-py312-cpu (same stock image as the head)",
         "autoscaling": "enabled in-tree; workergroup min 1 / max 12, 8 CPU + 16G limit each",
         "client_env": {"RAY_ADDRESS": "ray://ray-kuberay-head-svc.datasci.svc.cluster.local:10001"},
         "preferred_access": (
@@ -121,13 +121,14 @@ SERVICES = {
         ),
         "gotchas": [
             "Ray enforces an exact Ray-version match between driver and cluster, and is "
-            "intolerant of a Python minor-version mismatch. The cluster is Python 3.10 / "
-            "Ray 2.54.0; marimo is Python 3.13. A `ray.init(address=...)` from a marimo "
+            "intolerant of a Python minor-version mismatch. The cluster is Python 3.12 / "
+            "Ray 2.59.0; marimo is Python 3.13. A `ray.init(address=...)` from a marimo "
             "notebook CANNOT work -- this is the single most common wrong assumption in "
-            "notebooks written against this cluster.",
-            "The head image tag is pinned to match the custom worker image, which is "
-            "built against Ray 2.54.0. Bump both in lockstep or the workers refuse to "
-            "join.",
+            "notebooks written against this cluster. A Python 3.12 driver (jupyter-lab, "
+            "or a pipeline image) needs exactly ray[client]==2.59.0.",
+            "Workers run the stock image with only Ray's base dependencies -- no PyMC, "
+            "torch or project code. Ship libraries per job via runtime_env "
+            "(pip / working_dir) rather than expecting them on the workers.",
         ],
     },
     "spark": {
@@ -355,9 +356,9 @@ RUNTIMES = {
         "python": "3.13.15",
         "packaging": "PEP 723 per-notebook, built by uv into a per-session sandbox venv",
         "can_reach": "mlflow, minio (primary, credentialed), postgres, ray dashboard HTTP",
-        "cannot": "act as a Ray driver -- Python 3.13 against a 3.10 cluster",
+        "cannot": "act as a Ray driver -- Python 3.13 against a 3.12 cluster",
     },
-    "ray_cluster": {"python": "3.10.19", "ray": "2.54.0"},
+    "ray_cluster": {"python": "3.12", "ray": "2.59.0"},
     "dagster_pipeline_images": {
         "python": "3.14-slim in build/bandit-pipeline; 3.x varies per pipeline repo",
         "packaging": "pip + requirements.txt inside a Dockerfile under build/",
@@ -654,7 +655,7 @@ TOOLS = [
             "Python and library versions for each place code can run (marimo, the Ray "
             "cluster, Dagster pipeline images, hermes) and the compatibility rules between "
             "them -- most importantly that marimo's Python 3.13 cannot drive the Ray "
-            "cluster's Python 3.10. Also covers uv vs Conda and PEP 723 vs image-level deps."
+            "cluster's Python 3.12. Also covers uv vs Conda and PEP 723 vs image-level deps."
         ),
         "inputSchema": {"type": "object", "properties": {}},
     },

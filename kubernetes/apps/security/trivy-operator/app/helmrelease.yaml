@@ -172,9 +172,9 @@ spec:
             cpu: null
             memory: 2Gi
     nodeCollector:
-      registry: ghcr.io
-      repository: aquasecurity/node-collector
-      tag: 0.3.1@sha256:f4702ce4667388f0219d6248d623a7e816231c2d4561d6af01c3ae053e524025
+      # Image left to the chart (ghcr.io/aquasecurity/node-collector:0.3.1 in
+      # 0.37.0): Renovate's helm-values manager only reads image blocks under
+      # a key ending in `image`, so a pin here would never be bumped.
       # One job per node (useNodeSelector pins it), worker4 and the sole etcd
       # member included, same as tetragon: an infra assessment that skips a
       # node is quietly incomplete.
@@ -184,6 +184,8 @@ spec:
       # Chart defaults minus /etc/systemd and /lib/systemd: Talos has no
       # systemd and a read-only /etc and /lib, so those hostPaths leave the
       # pod stuck in ContainerCreating (aquasecurity/trivy-operator#2566).
+      # The /var/lib ones that only exist on a control plane are created
+      # empty on the workers; /var is writable on Talos, so that is harmless.
       volumeMounts:
         - name: var-lib-etcd
           mountPath: /var/lib/etcd

@@ -40,6 +40,30 @@ spec:
         maxDiskUsagePerURL: 2GiB
     collector:
       includePodLabels: true
+      # Trivy Operator scan Jobs (security/trivy-operator). Their pods carry
+      # app.kubernetes.io/managed-by=trivy-operator (the operator's own pod
+      # does not) and print whole scan reports: 63k rows in 10 minutes on
+      # 2026-10-18, more than every other namespace together, much of it from
+      # rescanning each hourly VolSync mover Job. The reports themselves are
+      # in the VulnerabilityReport CRs and the trivy_* metrics. vlagent
+      # applies this before it opens the log file, so skipped pods cost
+      # nothing. A LogsQL filter, no pipes; the field may contain `/`
+      # unquoted (tested against VictoriaLogs).
+      excludeFilter: kubernetes.pod_labels.app.kubernetes.io/managed-by:=trivy-operator
+      # The chart default (message, msg, log), plus Tetragon's export lines
+      # (kube-system tetragon export-stdout), which have none of the three
+      # and were all stored as "missing _msg field". First match wins, so no
+      # pod that has one of the first three changes. The matched field is
+      # MOVED into _msg (VictoriaLogs keeps no `msg` field either): for
+      # Tetragon, filter the binary with `_msg:` and everything else
+      # (process_exec.process.pod.namespace, ...arguments) as before.
+      msgField:
+        - message
+        - msg
+        - log
+        - process_exec.process.binary
+        - process_exit.process.binary
+        - process_kprobe.process.binary
     # Fixed send-side sizing. vlagent defaults -remoteWrite.queues to 2x the
     # CPUs it sees, and with no CPU limit that is the host's: 64 queues on
     # worker3 and worker4, each with an 8 MiB pending block, and an in-memory
@@ -56,12 +80,14 @@ spec:
       - operator: Exists
     podAnnotations:
       reloader.stakater.com/auto: "true"
-    # Steady state is 30-50Mi (master2, worker4); the request leaves room for
-    # worker3's larger pod count, the limit for the first-start backlog.
+    # Working set over 3 days (2026-10-18): worker3 p95 141Mi, max 246Mi;
+    # master2 p95 70Mi; worker4 under 50Mi. The request is worker3's p95
+    # with a little room (the Trivy filter above should bring it down); the
+    # limit is for the first-start backlog.
     resources:
       requests:
         cpu: 25m
-        memory: 128Mi
+        memory: 160Mi
       limits:
         memory: 2Gi
     podMonitor:

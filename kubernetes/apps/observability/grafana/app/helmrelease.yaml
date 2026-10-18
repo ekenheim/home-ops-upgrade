@@ -370,7 +370,13 @@ spec:
       - vonage-status-panel
       # "id version" is pinned: Grafana 12 migrates GF_INSTALL_PLUGINS into
       # preinstall_sync, which reads the second word as the version.
-      - victoriametrics-logs-datasource 0.32.0
+      # Renovate bumps it from the GitHub releases of
+      # VictoriaMetrics/victorialogs-datasource (customManagers.json5).
+      # Grafana installs from the grafana.com catalog, which can trail a
+      # GitHub release by hours; if a bump fails to install, check
+      # https://grafana.com/api/plugins/victoriametrics-logs-datasource/versions.
+      # 0.33.1 is in the catalog (2026-10-16) and adds Drilldown.
+      - victoriametrics-logs-datasource 0.33.1
     serviceMonitor:
       enabled: true
       metricRelabelings:

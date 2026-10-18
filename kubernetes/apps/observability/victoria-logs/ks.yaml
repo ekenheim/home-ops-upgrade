@@ -25,5 +25,3 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      GATUS_SUBDOMAIN: logs
-      GATUS_URL_PATH: /health

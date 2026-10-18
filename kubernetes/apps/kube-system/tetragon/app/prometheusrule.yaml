@@ -25,9 +25,9 @@ spec:
             description: >-
               A network or remote-shell tool ran inside an agent-lab sandbox.
               The process tree and its connects are in VictoriaLogs under the
-              tetragon export container; filter on
+              tetragon export-stdout container; filter on
               process_exec.process.pod.namespace (process_kprobe.process.pod.namespace
-              for the connects).
+              for the connects). The binary is each line's _msg.
     # The agent's own health. A Tetragon that restarts, or that has lost
     # track of which pod a process belongs to, misses exactly the events the
     # policies above exist for, and nothing else would say so. OOM kills are

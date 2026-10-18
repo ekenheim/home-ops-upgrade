@@ -18,7 +18,8 @@ resources:
   - ./hempriser/ks.yaml
   #- ./grid-reliance/ks.yaml
   #- ./growthbook/ks.yaml
-  - ./medusa/ks.yaml
+  # Off since 2026-10-18 (owner): the ecom Medusa backend is shelved.
+  #- ./medusa/ks.yaml
   - ./strapi/ks.yaml
   - ./strapi-ecom/ks.yaml
   - ./marketing-agency/ks.yaml

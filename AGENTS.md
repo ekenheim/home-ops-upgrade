@@ -82,8 +82,8 @@ Git push → Flux GitRepository sync → cluster-apps Kustomization
 Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 
 - **`llm`** — LLM platform (split out of `datasci` 2026-08-29): LiteLLM gateway + litellm-operator (virtual keys), LLMKube llama.cpp InferenceServices on worker4, CPU embeddings, ComfyUI, whisper.cpp, Lemonade TTS, ToolHive (MCP servers), memini / hindsight (memory), SearXNG, Hermes, OpenClaw (Discord agent gateway with scheduled jobs; its config and workspace `AGENTS.md` are in `openclaw/app/configmap.yaml`, and its cron jobs live on the PVC, so `openclaw/jobs.sh` is re-run by hand after a change, not applied by Flux), Langflow, SillyTavern, OpenCode, repo-wiki, alert-triage, dispatch / courier (agentic coding loop). See `kubernetes/apps/llm/README.md` and `PLATFORM-PLAN.md`.
-- **`agent-lab`** — agent-factory sandboxes: `agent-control`, `agent-work`, `agent-verify`, `trackinizer` namespaces with default-deny Cilium policies, quotas, an Envoy egress gateway that injects the LiteLLM key, and a Postgres ledger. See `kubernetes/apps/agent-lab/README.md`.
-- **`datasci`** — ML / data platform: Ray, Spark, Dagster, MLflow, Seldon Core, Label Studio, Jupyter Lab, Marimo, Qdrant, FalkorDB, Docat, grid-reliance-infra. Dask, Prefect, Flyte and Bandit (bandit-demo, banditweb; off since 2026-10-15) are disabled.
+- **`agent-lab`** — agent-factory sandboxes: `agent-control`, `agent-work`, `agent-verify`, `trackinizer` namespaces with default-deny Cilium policies, quotas, an Envoy egress gateway that injects the LiteLLM key, and a Postgres ledger. The factory itself (`agent-lab/factory`) is off since 2026-10-18. See `kubernetes/apps/agent-lab/README.md`.
+- **`datasci`** — ML / data platform: Ray, Spark, Dagster, MLflow, Seldon Core, Label Studio, Jupyter Lab, Marimo, Qdrant, FalkorDB, Docat. Dask, Prefect, Flyte, Bandit (bandit-demo, banditweb; off since 2026-10-15) and grid-reliance-infra (off since 2026-10-18) are disabled.
 - **`database`** — Crunchy Postgres, Dragonfly. MariaDB is disabled.
 - **`media`** — Plex, Overseerr, Tautulli, Wizarr, Kavita, Maintainerr, xTeve.
 - **`downloads`** — Sonarr, Radarr (+ radarr4k), Prowlarr, Bazarr, Kapowarr, Lingarr, Recyclarr, SABnzbd, arr-mcp.
@@ -94,7 +94,7 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - **`observability`** — kube-prometheus-stack, Grafana (dashboards as ConfigMaps in Git), Thanos, Karma, Gatus, Kromgo, UnPoller, exporters, alertmanager-silencer.
 - **`kube-system`** — Cilium, CoreDNS, Spegel, metrics-server, Kubelet CSR approver, k8s-gpu-dra-driver.
 - **`kube-tools`** — descheduler, node-feature-discovery, device plugins (Intel + Nvidia), Reloader, tuppr, renovate-operator, fstrim, nfs-stale-watchdog.
-- **`development`** — Harbor, Redpanda, Strapi (×2), Medusa, Rybbit, Bytewax, Atlas, side projects (alphaos, hempriser, marketing-agency). Metabase, Meilisearch, Airbyte, Umami, GrowthBook are disabled.
+- **`development`** — Harbor, Redpanda, Strapi (×2), Rybbit, Bytewax, Atlas, side projects (alphaos, hempriser, marketing-agency). Metabase, Meilisearch, Airbyte, Umami, GrowthBook and Medusa (off since 2026-10-18) are disabled.
 - **`rook-ceph`** — distributed storage operator + cluster.
 - **`istio-system`** (Istio base / istiod / gateway, Gateway API CRDs, seldon-core), **`cert-manager`**, **`external-secrets`**, **`flux-system`**, **`actions-runner-system`** (ARC controller + 7 scale sets: general, atlas, bandit, banditweb, ecom, grid-reliance, nordic-housing), **`blog`**.
 - Disabled namespaces still present in the tree: **`argocd`** (deployKF experiment, off), **`vpn`**.

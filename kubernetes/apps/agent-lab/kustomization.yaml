@@ -21,5 +21,7 @@ resources:
   - ./network-policy/ks.yaml
   - ./egress-gateway/ks.yaml
   - ./ledger/ks.yaml
-  - ./factory/ks.yaml
+  # Off since 2026-10-18 (owner): the agent factory is shelved. The sandboxes,
+  # egress gateway, ledger and trackinizer stay.
+  #- ./factory/ks.yaml
   - ./trackinizer/ks.yaml

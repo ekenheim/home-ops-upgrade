@@ -45,11 +45,31 @@ RUN printf 'export default [\n  "strapi::logger",\n  "strapi::errors",\n  "strap
 # type-checked by `strapi build`, which is strict since the 5.4x scaffold.
 COPY server.ts plugins.ts config/
 RUN npm run build
+# Drop the plugin-authoring toolchain once the admin panel is built.
+# strapi-plugin-translate declares @strapi/sdk-plugin as a peerDependency, so
+# npm installs it (5.4.0) and with it @strapi/pack-up 5.1.1, which pins
+# vite 5.4.21 and esbuild 0.20.2 / 0.21.5 exactly. Those esbuild binaries are
+# built with Go 1.20.12, which was 4 of the image's 5 Critical and 53 of
+# its High findings in Trivy on 2026-10-19. Nothing else in node_modules
+# requires either package (grep of the 5.58.0 image), and neither `strapi build`
+# nor `strapi develop` runs them: they build plugins for publishing to npm.
+RUN rm -rf node_modules/@strapi/sdk-plugin node_modules/@strapi/pack-up
 
 # Stage 2: lean runtime image that ships the pre-built project as a seed template.
 FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
 
-RUN apk add --no-cache build-base vips-dev bash
+# `apk upgrade` takes Alpine's security fixes at build time instead of waiting
+# for the next node:24-alpine digest (the 5.58.0 image of 2026-10-14 still had
+# expat 2.8.5, High CVE-2026-77214, until #7799 moved the base).
+RUN apk upgrade --no-cache && apk add --no-cache build-base vips-dev bash
+
+# The npm that node:24-alpine bundles (11.19.1 in 24.22.0) ships brace-expansion
+# 5.0.9, undici 6.28.0 and http-cache-semantics 4.2.0, four High findings.
+# 11.21.1 bundles 5.0.12, 6.29.0 and 4.3.0. Stay on npm 11 (the line Node 24
+# ships); npm 12 is a major and Renovate will not auto-merge it.
+# renovate: datasource=npm depName=npm
+ARG NPM_VERSION=11.21.1
+RUN npm install --global --no-audit --no-fund npm@${NPM_VERSION} && npm cache clean --force
 
 # Bake the complete project (including node_modules) into the image.
 # On first pod start the entrypoint copies this to the PVC mount at /srv/app.

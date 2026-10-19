@@ -221,6 +221,18 @@
       "matchDepTypes": ["feature"],
       "pinDigests": false
     },
+    {
+      // Kavita runs one-way DB migrations on start in nearly every release
+      // (0.8.0 rewrote chapters and exported progress; 0.8.4 dropped people
+      // metadata until a forced scan; 0.9.1 reworked scrobbling and OAuth).
+      // The old image cannot open a migrated kavita.db, so each bump needs a
+      // fresh VolSync snapshot first and is merged by hand. Without this rule
+      // autoMergeApps.json5 would merge 0.9.1 -> 0.9.2 as a patch.
+      "description": ["Never automerge Kavita (one-way DB migrations)"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/kareadita/kavita"],
+      "automerge": false
+    },
     // The dispatch hold at <0.5.41 was removed here on 2026-08-29. It existed
     // because 0.5.41 tightened the CSP to `script-src 'self'` without a nonce,
     // which blocked Next.js's inline RSC bootstrap and left the UI unhydrated.

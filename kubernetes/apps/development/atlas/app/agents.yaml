@@ -61,7 +61,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.18
+              image: ghcr.io/ekenheim/atlas-agent:0.6.19
               args: ["scout"]
               env:
                 - name: ATLAS_MCP_URL
@@ -120,7 +120,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.18
+              image: ghcr.io/ekenheim/atlas-agent:0.6.19
               args: ["researcher"]
               env:
                 - name: ATLAS_MCP_URL
@@ -179,7 +179,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.18
+              image: ghcr.io/ekenheim/atlas-agent:0.6.19
               args: ["skeptic"]
               env:
                 - name: ATLAS_MCP_URL
@@ -240,7 +240,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.18
+              image: ghcr.io/ekenheim/atlas-agent:0.6.19
               command: ["/opt/atlas-agent/agent/scorecard-run.sh"]
               env:
                 - name: ATLAS_MCP_URL
@@ -300,7 +300,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.18
+              image: ghcr.io/ekenheim/atlas-agent:0.6.19
               args: ["watch"]
               env:
                 - name: ATLAS_MCP_URL
@@ -311,6 +311,126 @@ spec:
                   value: claude-opus-5-5
                 - name: ATLAS_WATCH_DEMAND_DRIVER
                   value: "Factory automation and humanoid-robot programmes at automakers, electronics makers and logistics operators, and the robot makers scaling production to serve them"
+              envFrom:
+                - secretRef:
+                    name: atlas-agent-claude
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests: { cpu: 50m, memory: 256Mi }
+                limits: { memory: 1Gi }
+          volumes:
+            - name: tmp
+              emptyDir: {}
+---
+# The Chokepoint Watch for power equipment (greenfield, 2026-10-19): Saturdays 12:00 UTC, after
+# robotics' 05:00 run and its 2 h deadline, so no two judge-using agents share a 5-hour window.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: atlas-agent-watch-power-equipment
+  namespace: development
+spec:
+  schedule: "0 12 * * 6"
+  timeZone: UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 6
+  failedJobsHistoryLimit: 6
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 7200
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: atlas
+            app.kubernetes.io/component: agent-watch
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: ghcr-pull
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+          containers:
+            - name: agent
+              image: ghcr.io/ekenheim/atlas-agent:0.6.19
+              args: ["watch"]
+              env:
+                - name: ATLAS_MCP_URL
+                  value: http://atlas.development.svc.cluster.local:8000/mcp
+                - name: ATLAS_AGENT_THEME
+                  value: power-equipment
+                - name: ATLAS_AGENT_MODEL
+                  value: claude-opus-5-5
+                - name: ATLAS_WATCH_DEMAND_DRIVER
+                  value: "Data-center campuses, utility grid build-outs and electrification ordering transformers, switchgear, cable, gas turbines and engines faster than their makers add qualified capacity"
+              envFrom:
+                - secretRef:
+                    name: atlas-agent-claude
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests: { cpu: 50m, memory: 256Mi }
+                limits: { memory: 1Gi }
+          volumes:
+            - name: tmp
+              emptyDir: {}
+---
+# The Chokepoint Watch for aerospace and defence (greenfield, 2026-10-19): Sundays 05:00 UTC, a day
+# no other judge-using agent fires.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: atlas-agent-watch-aerospace-defence
+  namespace: development
+spec:
+  schedule: "0 5 * * 0"
+  timeZone: UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 6
+  failedJobsHistoryLimit: 6
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 7200
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: atlas
+            app.kubernetes.io/component: agent-watch
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: ghcr-pull
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+          containers:
+            - name: agent
+              image: ghcr.io/ekenheim/atlas-agent:0.6.19
+              args: ["watch"]
+              env:
+                - name: ATLAS_MCP_URL
+                  value: http://atlas.development.svc.cluster.local:8000/mcp
+                - name: ATLAS_AGENT_THEME
+                  value: aerospace-defence
+                - name: ATLAS_AGENT_MODEL
+                  value: claude-opus-5-5
+                - name: ATLAS_WATCH_DEMAND_DRIVER
+                  value: "Munitions restocking and missile production ramps in the US and Europe, and commercial aircraft and engine production rates, drawing on castings, forgings, energetics, rocket motors and specialty metals"
               envFrom:
                 - secretRef:
                     name: atlas-agent-claude

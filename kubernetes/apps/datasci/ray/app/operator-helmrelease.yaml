@@ -14,7 +14,7 @@ spec:
       # ImagePullBackOff'd and rolled back, leaving `ray` blocked behind it.
       # The image exists since the v1.7.1 release (2026-09-21) and the
       # Renovate skip is gone, so expect a 1.7.1 patch PR.
-      version: 1.7.0
+      version: 1.7.1
       sourceRef:
         kind: HelmRepository
         name: kuberay

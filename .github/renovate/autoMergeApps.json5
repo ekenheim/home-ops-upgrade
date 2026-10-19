@@ -33,6 +33,9 @@
         // Storage layer
         '/rook.ceph/',
         '/rook-ceph/',
+        // OpenEBS Local PV Hostpath backs the Crunchy pgdata volumes and the
+        // VolSync caches. Its chart moved off a dead mirror on 2026-10-19.
+        '/openebs/',
         // Hardware / device plugins
         '/intel-device-plugins-operator/',
         '/intel-device-plugins-gpu/',

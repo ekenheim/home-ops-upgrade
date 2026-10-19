@@ -1,15 +1,16 @@
 ---
-# yaml-language-server: $schema=https://kube-schemas.pages.dev/source.toolkit.fluxcd.io/ocirepository_v1.json
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/source.toolkit.fluxcd.io/helmrepository_v1.json
+# Upstream OpenEBS chart repo. Until 2026-10 this was an OCIRepository on
+# oci://ghcr.io/home-operations/charts-mirror/openebs, which stopped at chart
+# 4.4.0 while upstream moved on to 4.6.2 (docs/image-staleness-2026-10-19.md).
+# Upstream's documented source for the umbrella chart is this classic Helm
+# repo (no OCI copy of it was found on 2026-10-19), so the chart version is
+# pinned in kubernetes/apps/storage/openebs/app/helmrelease.yaml.
 apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
+kind: HelmRepository
 metadata:
   name: openebs
   namespace: flux-system
 spec:
-  interval: 5m
-  layerSelector:
-    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
-    operation: copy
-  ref:
-    tag: 4.4.0
-  url: oci://ghcr.io/home-operations/charts-mirror/openebs
+  interval: 2h
+  url: https://openebs.github.io/openebs

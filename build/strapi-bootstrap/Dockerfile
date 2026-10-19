@@ -1,7 +1,7 @@
 # Stage 1: scaffold a vanilla Strapi v5 project and install its dependencies.
 # This runs during CI/Docker build where there is no TTY — create-strapi-app
 # handles non-interactive environments with CI=true.
-FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS builder
+FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f AS builder
 
 RUN apk add --no-cache build-base gcc autoconf automake zlib-dev libpng-dev vips-dev git bash
 
@@ -47,7 +47,7 @@ COPY server.ts plugins.ts config/
 RUN npm run build
 
 # Stage 2: lean runtime image that ships the pre-built project as a seed template.
-FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
 
 RUN apk add --no-cache build-base vips-dev bash
 

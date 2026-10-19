@@ -68,7 +68,7 @@ RUN apk upgrade --no-cache && apk add --no-cache build-base vips-dev bash
 # 11.21.1 bundles 5.0.12, 6.29.0 and 4.3.0. Stay on npm 11 (the line Node 24
 # ships); npm 12 is a major and Renovate will not auto-merge it.
 # renovate: datasource=npm depName=npm
-ARG NPM_VERSION=11.21.1
+ARG NPM_VERSION=12.2.0
 RUN npm install --global --no-audit --no-fund npm@${NPM_VERSION} && npm cache clean --force
 
 # Bake the complete project (including node_modules) into the image.

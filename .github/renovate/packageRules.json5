@@ -148,10 +148,10 @@
     {
       // Same <date>-<sha> scheme as searxng above (2024.10.22-7ca5933): docker
       // versioning reads the sha as a compatibility suffix and offers nothing
-      // with a different sha, so it-tools sat on 2023.12.21 for ten months.
-      // A separate rule because upstream releases a few times a year, so it
-      // needs no monthly cadence. A new year is a major and waits for a hand
-      // merge; within a year it automerges.
+      // with a different sha, so it-tools sat on 2023.12.21 for two years after
+      // 2024.10.22 was out. A separate rule because upstream releases rarely
+      // (nothing since 2024-10), so it needs no monthly cadence. A new year is
+      // a major and waits for a hand merge; within a year it automerges.
       "description": ["Date-plus-sha versioning for it-tools"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/corentinth/it-tools"],

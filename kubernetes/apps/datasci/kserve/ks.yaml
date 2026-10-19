@@ -45,6 +45,10 @@ spec:
     # Certificate in the chart; without cert-manager the webhooks have no CA
     # and every InferenceService apply is rejected.
     - name: cert-manager
+    # The controller only watches HTTPRoutes if their CRD exists when it
+    # starts; on a rebuild it would otherwise come up without Gateway API
+    # routing until restarted.
+    - name: gateway-api-crds
   path: ./kubernetes/apps/datasci/kserve/app
   prune: true
   sourceRef:

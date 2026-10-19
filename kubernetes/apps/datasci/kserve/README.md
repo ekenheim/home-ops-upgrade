@@ -132,6 +132,9 @@ spec:
       - name: kserve-container
         image: harbor.<domain>/datasci/<name>:<version>
         ports: [{containerPort: 8080, protocol: TCP}]
+        # MLflow's scoring server answers /health (and /ping) once the model
+        # has loaded. Without a probe, the pod counts as Ready before then.
+        readinessProbe: {httpGet: {path: /health, port: 8080}, periodSeconds: 10}
         resources: {requests: {cpu: 100m, memory: 512Mi}, limits: {memory: 2Gi}}
 ```
 
@@ -167,7 +170,8 @@ annotations work too.
 
 ## Canary and A/B
 
-Both Standard mode and the HTTPRoutes support named canaries (KServe 0.20+).
+Both Standard mode and the HTTPRoutes support named canaries. This is
+checked against the installed v0.21.0 CRD and controller.
 Each canary gets its own Deployment and Service. Its `trafficPercent` becomes
 a weighted `backendRef` on the routes, and stable gets the rest.
 

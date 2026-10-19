@@ -87,7 +87,7 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - **`database`** — Crunchy Postgres, Dragonfly. MariaDB is disabled.
 - **`media`** — Plex, Overseerr, Tautulli, Wizarr, Kavita, Maintainerr, Dispatcharr (IPTV tuner for Plex; xTeve removed 2026-10-19).
 - **`downloads`** — Sonarr, Radarr (+ radarr4k), Prowlarr, Bazarr, Kapowarr, Lingarr, Recyclarr, SABnzbd, arr-mcp.
-- **`default`** — Home Assistant, Z-Wave JS UI, Music Assistant, Mosquitto, Wyoming (whisper / piper / kokoro), Immich, Paperless, Syncthing, Actual, Outline, PairDrop, FileBrowser, IT-Tools, Gatus endpoints.
+- **`default`** — Home Assistant, Z-Wave JS UI, Music Assistant, Mosquitto, Wyoming (whisper / piper / kokoro), Immich, Paperless, Syncthing, Actual, Outline, FileBrowser, IT-Tools, Gatus endpoints.
 - **`network`** — Cloudflared, Envoy Gateway, external-dns, Tailscale, echo-server. Headscale is disabled.
 - **`security`** — Authentik.
 - **`storage`** — OpenEBS, MinIO (primary + secondary), snapshot-controller, VolSync.

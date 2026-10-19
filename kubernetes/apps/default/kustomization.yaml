@@ -21,7 +21,9 @@ resources:
   - ./wyoming-piper/ks.yaml
   - ./wyoming-whisper/ks.yaml
   - ./wyoming-speech-to-phrase/ks.yaml
-  - ./pairdrop/ks.yaml
+  # Off since 2026-10-19 (owner): never used. It was public on envoy-external,
+  # and upstream hasn't released since 2025-02 (5 Critical / 43 High in Trivy).
+  #- ./pairdrop/ks.yaml
   - ./filebrowser/ks.yaml
   #- ./zigbee2mqtt/ks.yaml
   - ./zwave-js-ui/ks.yaml

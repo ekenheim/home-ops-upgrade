@@ -6,4 +6,4 @@ resources:
   - ./externalsecret.yaml
   - ./cms
   - ../../../../templates/volsync
-  - ../../../../templates/gatus/guarded
+  - ../../../../templates/gatus/external

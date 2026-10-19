@@ -135,9 +135,79 @@
       "versioning": "regex:^rocm-(?<major>\\d+)\\.(?<minor>\\d+)(\\.(?<patch>\\d+))?$"
     },
     {
+      // text-embeddings-inference tags its CPU build cpu-1.8.3. Docker
+      // versioning finds no version in that (the lookup on 2026-10-19 had no
+      // currentVersion), so nothing was ever offered while upstream reached
+      // cpu-1.9.4. The anchors skip the floating cpu-1.9, the -grpc variants
+      // and the per-commit cpu-sha-<sha> tags. Patch and minor automerge.
+      "description": ["Prefix-aware versioning for text-embeddings-inference CPU tags"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/huggingface/text-embeddings-inference"],
+      "versioning": "regex:^cpu-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      // Same <date>-<sha> scheme as searxng above (2024.10.22-7ca5933): docker
+      // versioning reads the sha as a compatibility suffix and offers nothing
+      // with a different sha, so it-tools sat on 2023.12.21 for ten months.
+      // A separate rule because upstream releases a few times a year, so it
+      // needs no monthly cadence. A new year is a major and waits for a hand
+      // merge; within a year it automerges.
+      "description": ["Date-plus-sha versioning for it-tools"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/corentinth/it-tools"],
+      "versioning": "regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})-(?<build>[0-9a-f]+)$"
+    },
+    {
+      // postgis tags are <PG major>-<PostGIS x.y>[-alpine]. Docker versioning
+      // reads 17 as the version and -3.5-alpine as a suffix, so 17-3.6-alpine
+      // never showed. Here the PG major is the major (still disabled for
+      // dawarich by the sidecar rule at the top of this file) and a PostGIS
+      // release is minor.patch. The anchors skip 17-3.6.0alpha1-alpine and
+      // 18-3.7.0rc2-alpine; -alpine must match the current tag. No automerge:
+      // a PostGIS bump needs `ALTER EXTENSION postgis UPDATE;` in the database
+      // afterwards.
+      "description": ["PG-major + PostGIS versioning for postgis images, never automerged"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["docker.io/postgis/postgis"],
+      "versioning": "regex:^(?<major>\\d+)-(?<minor>\\d+)\\.(?<patch>\\d+)(?<compatibility>-alpine)?$",
+      "automerge": false
+    },
+    {
+      // gpu-jupyter tags look like v1.9_cuda-12.6_ubuntu-24.04_python-only and
+      // did not parse at all (v1.10 and v1.11 were never offered). Release
+      // number is major.minor, the CUDA version patch.build: one release has
+      // shipped several CUDA builds (v1.5 with 11.6, 11.8 and 12.0), and this
+      // picks the newest. Only the python-only flavour. Never automerged: a
+      // new CUDA (v1.11 is cuda-13.0) has to be supported by the host driver.
+      // The HelmRelease writes the short name, so both forms are listed.
+      "description": ["gpu-jupyter release versioning, never automerged"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["cschranz/gpu-jupyter", "docker.io/cschranz/gpu-jupyter"],
+      "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)_cuda-(?<patch>\\d+)\\.(?<build>\\d+)_ubuntu-[\\d.]+_python-only$",
+      "automerge": false
+    },
+    {
+      // Langflow is a Python package and tags its images with PEP 440
+      // versions: 1.5.0.post1, 1.13.0.dev43, 1.13.0rc0. Docker versioning
+      // rejects .postN (skipReason invalid-value on 2026-10-19), which froze
+      // langflow at 1.5.0.post1. pep440 parses all of them, treats .devN and
+      // rcN as unstable (skipped), and ignores the -amd64/-arm64 per-arch
+      // tags. The HelmRelease writes the short name, so both forms are listed.
+      // Never automerged: every minor runs Alembic migrations on the Postgres
+      // database at startup (Langflow's docs say pg_dump first), and minors
+      // change auth defaults (1.11 images turn auto-login off, 1.12 makes the
+      // MCP endpoints require an API key).
+      "description": ["PEP 440 versioning for langflow images, never automerged"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["langflowai/langflow", "docker.io/langflowai/langflow"],
+      "versioning": "pep440",
+      "automerge": false
+    },
+    {
       // Hold Kubernetes < 1.36 until Talos 1.13 GAs — talosctl 1.12.x
       // refuses the 1.35 -> 1.36 upgrade path. Lift this rule in the same
-      // PR that bumps ghcr.io/siderolabs/installer to v1.13.x.
+      // PR that bumps the Talos installer to v1.13.x (tracked as
+      // ghcr.io/siderolabs/installer-base since 2026-10-19).
       //
       // NOTE: talconfig.yaml is now on talosVersion v1.13.9, so that lift
       // condition has been met — this hold is stale. Lifting it starts a
@@ -159,16 +229,11 @@
       ],
       "allowedVersions": "<1.36.0"
     },
-    {
-      // Chart 1.7.1 defaults to quay.io/kuberay/operator:v1.7.1, an image
-      // upstream never pushed (404 on 2026-09-19; only v1.7.0 exists). The
-      // upgrade ImagePullBackOffs, times out and rolls back on every attempt.
-      // Skips only that version, so 1.7.2+ is proposed normally.
-      "description": ["Skip kuberay-operator chart 1.7.1 (references a missing image)"],
-      "matchDatasources": ["helm"],
-      "matchPackageNames": ["kuberay-operator"],
-      "allowedVersions": "!/^1\\.7\\.1$/"
-    },
+    // The kuberay-operator chart 1.7.1 skip was removed on 2026-10-19. The
+    // chart's default image quay.io/kuberay/operator:v1.7.1 was missing when
+    // the rule went in (2026-09-19), so every upgrade ImagePullBackOff'd and
+    // rolled back. Upstream pushed it with the v1.7.1 release (2026-09-21;
+    // quay digest e69b9cde on 2026-10-19), so 1.7.1 is proposed again.
     {
       // 0.9.28 (defilantech/LLMKube#1829) passes spec.args verbatim whenever
       // spec.command is set, dropping the runtime-built args. Our llama.cpp

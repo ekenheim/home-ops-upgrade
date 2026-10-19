@@ -82,8 +82,17 @@ spec:
       # Reports expire and are rescanned after this, which is how new CVEs in
       # the DB reach old images. Rescans are cheap (layers already analysed
       # are cached in trivy-server); the etcd write volume is what this
-      # trades against.
+      # trades against. Only an expired VulnerabilityReport is always
+      # deleted: an expired ConfigAuditReport only when the audit policies
+      # changed, and ExposedSecretReports get no TTL. Lowering this does not
+      # clear old-revision reports; trivy-report-pruner does.
       scannerReportTTL: 48h
+      # Old ReplicaSets of a Deployment are not scanned. These are also meant
+      # to mark an old ReplicaSet's reports for deletion, but 0.35.0 checks
+      # for running pods first and skips a ReplicaSet at 0 before it gets
+      # there, so the reports of every pre-upgrade revision stayed on the
+      # dashboard. security/trivy-report-pruner deletes them hourly; its
+      # HelmRelease has the details.
       vulnerabilityScannerScanOnlyCurrentRevisions: true
       configAuditScannerScanOnlyCurrentRevisions: true
       # SbomReports (one per container, large) are only needed for

@@ -12,6 +12,9 @@
 # Upgrades: the image tag is the Strapi version (pinned in build/strapi-bootstrap/Dockerfile,
 # bumped by Renovate). The project itself lives on the PVC, so the init container runs
 # strapi-sync.sh, which upgrades the PVC whenever the image is newer. It never downgrades.
+# A rebuild at the same version (base-image or dependency security fixes) re-pushes the
+# same tag with a new digest; Renovate bumps the digest here, and strapi-sync.sh then
+# refreshes the PVC's node_modules because the template's package-lock.json changed.
 #
 # See README.md for the production Dockerfile and bootstrap image instructions.
 apiVersion: apps/v1

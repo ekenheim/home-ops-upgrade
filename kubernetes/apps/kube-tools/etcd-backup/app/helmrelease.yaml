@@ -47,7 +47,7 @@ spec:
           talosctl:
             image:
               repository: ghcr.io/siderolabs/talosctl
-              tag: v1.13.10@sha256:3116f64c97ddffb53bd3c5bf87c8614d99f04df4326177dbbb7702b5087f0e4d
+              tag: v1.14.4@sha256:b3233234327350f20ed194f3fad83d90a64344c1940f839c7b0c0abef50c8c33
             args: ["--nodes", "192.168.50.10", "etcd", "snapshot", "/snapshot/etcd.snapshot"]
             resources:
               requests:

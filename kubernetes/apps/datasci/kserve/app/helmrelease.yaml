@@ -1,0 +1,125 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+#
+# KServe controller (kserve-resources): turns an InferenceService into a
+# Deployment + Service + HPA ("Standard" mode, formerly RawDeployment: no
+# Knative, no Istio) and an HTTPRoute on envoy-internal. Chosen over Ray
+# Serve, BentoML/Yatai, bare `mlflow models serve` and Triton on 2026-10-19;
+# the comparison is in ../README.md.
+#
+# Idle cost: this one pod (manager + kube-rbac-proxy). No DaemonSet
+# (localmodel off), no Knative, no KEDA. Models cost what their own pods
+# request.
+#
+# Webhooks: seven, all failurePolicy Fail, but scoped to serving.kserve.io
+# objects and to pods labelled serving.kserve.io/inferenceservice. Nothing
+# else in the cluster passes through them, so this pod being down blocks
+# InferenceService changes, not unrelated workloads.
+#
+# Images: the chart builds every image ref (controller, storage-initializer,
+# agent, router) as <image>:<kserve.version>, and the three KServe charts are
+# released together, so the chart version Renovate bumps is the image pin
+# (as for kuberay-operator and kagent). v0.21.0 verified on Docker Hub
+# 2026-10-19: kserve-controller sha256:74c5de4f..., storage-initializer
+# sha256:3a3a6a80..., agent sha256:eb4d4cc8..., router sha256:ccd72616....
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kserve
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: kserve-resources
+      version: v0.21.0
+      interval: 30m
+      sourceRef:
+        kind: HelmRepository
+        name: kserve
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    kserve:
+      controller:
+        # Standard = plain Deployments. "RawDeployment" is the deprecated
+        # alias; the chart default "Knative" needs Knative Serving, which
+        # this cluster does not run.
+        deploymentMode: Standard
+        # Chart default is Always; with Spegel a restart should not need a
+        # Docker Hub round trip.
+        imagePullPolicy: IfNotPresent
+        gateway:
+          # Hostnames: {{ .Name }}-{{ .Namespace }}.<domain> (chart default
+          # template), e.g. iris-datasci.${SECRET_DOMAIN}. One label under the
+          # domain, so the *.${SECRET_DOMAIN} cert on envoy-internal covers
+          # it, and external-dns-unifi publishes it from the HTTPRoute.
+          domain: ${SECRET_DOMAIN}
+          # status.url is what clients read; envoy-internal terminates TLS.
+          urlScheme: https
+          ingressGateway:
+            # The controller writes an HTTPRoute per InferenceService with a
+            # parentRef to this Gateway (no sectionName: the `http` listener
+            # only admits routes from `network`, so it attaches to `https`).
+            # envoy-internal is LAN-only; external-dns-cloudflare only
+            # publishes envoy-external routes, so nothing here goes public.
+            enableGatewayApi: true
+            kserveGateway: network/envoy-internal
+            createGateway: false
+        # No usage data yet (first install). The chart default is 100m/300Mi
+        # with requests = limits. The manager caches every Pod, Deployment
+        # and Service in the cluster (385 / 217 / 256 on 2026-10-19), like
+        # kuberay-operator, which idles at 2m / 190Mi; the Seldon v2
+        # controller it replaces sat at 17m / 164Mi. Revisit after a week of
+        # container_memory_working_set_bytes. The chart deep-merges
+        # resources, so a limit left out keeps the chart's value: set both.
+        resources:
+          requests:
+            cpu: 20m
+            memory: 192Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        # Only fronts the controller's metrics port. Chart default is
+        # 100m/300Mi requested; the chart hardcodes --v=10 (verbose), which
+        # cannot be changed through values.
+        rbacProxy:
+          resources:
+            requests:
+              cpu: 5m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      # Default resources for a predictor container that sets none. The chart
+      # default is 1 CPU / 2Gi with requests = limits, per model, which
+      # worker3 (at ~90% of memory requested, 2026-10-19) cannot absorb.
+      # Small sklearn/xgboost models idle at well under 256Mi; set real
+      # numbers on each InferenceService.
+      inferenceservice:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: "1"
+            memory: 2Gi
+      storage:
+        # storage-initializer: the init container that downloads the model
+        # (s3://, gs://, https://, hf://) into /mnt/models before the server
+        # starts. Default requests are 100m/100Mi; kept.
+        s3:
+          # MLflow's artifact store (datasci/mlflow: --artifacts-destination
+          # s3://mlflow-artifacts/ on minio-secondary). With these set, an
+          # InferenceService only names the credentials Secret
+          # (serving.kserve.io/secretName: mlflow-minio-creds); its keys
+          # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY are the chart defaults.
+          endpoint: minio-secondary.storage.svc.cluster.local:9000
+          useHttps: "0"
+          verifySSL: "0"
+          region: us-east-1

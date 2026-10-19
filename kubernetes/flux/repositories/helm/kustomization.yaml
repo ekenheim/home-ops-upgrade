@@ -66,4 +66,5 @@ resources:
   - ./dify.yaml
   - ./langfuse.yaml
   - ./kagent.yaml
+  - ./kserve.yaml
   #- ./argocd.yaml

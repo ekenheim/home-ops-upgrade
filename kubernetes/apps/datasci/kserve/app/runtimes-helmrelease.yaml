@@ -1,0 +1,90 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+#
+# ClusterServingRuntimes: which server image runs a given modelFormat. The
+# chart renders every runtime it knows; the ones below are switched off with
+# spec.disabled (the objects exist, but nothing selects them).
+#
+# Enabled: KServe's own sklearn, xgboost and lightgbm servers (KServe 0.21:
+# scikit-learn ~1.5.1, xgboost ~2.1.1, lightgbm ~4.6.0). sklearnserver loads
+# the first .joblib/.pkl/.pickle and xgbserver the first .bst/.json/.ubj in
+# the model dir, so they read what MLflow 3's sklearn (model.pkl, default
+# cloudpickle; not skops) and xgboost (model.ubj) flavours write, straight
+# from the MLflow artifact dir: the serving convention in ../README.md.
+# lgbserver only loads .bst, and MLflow's lightgbm flavour writes model.lgb,
+# so a LightGBM model needs a model.bst logged next to it (README). Images
+# follow the chart version
+# (kserve/<runtime>:v0.21.0; sklearnserver sha256:8967d3fa...,
+# xgbserver sha256:9a1d5634..., lgbserver sha256:c7bcff67..., checked
+# 2026-10-19).
+#
+# Disabled, and why:
+# - mlserver: `modelFormat: mlflow` resolves to docker.io/seldonio/mlserver,
+#   Seldon's server (the chart pins 1.5.0; upstream's last release is 1.7.1,
+#   June 2025), and only claims MLflow format versions 1 and 2; this MLflow
+#   is 3.17. Serve arbitrary pyfunc
+#   models from a `mlflow models build-docker` image instead (README).
+# - tritonserver, torchserve, tensorflow, paddle, pmml, autogluon,
+#   predictiveserver: no models in those formats; torchserve upstream is
+#   archived. Re-enable one here when a model needs it.
+# - huggingfaceserver(+multinode), vllm: LLM serving belongs to LLMKube on
+#   worker4 and LiteLLM (apps/llm), not here.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kserve-runtime-configs
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: kserve-runtime-configs
+      version: v0.21.0
+      interval: 30m
+      sourceRef:
+        kind: HelmRepository
+        name: kserve
+        namespace: flux-system
+  # The ClusterServingRuntime validating webhook is served by the controller
+  # pod; installing before it is Ready fails with "connection refused".
+  dependsOn:
+    - name: kserve
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    kserve:
+      servingruntime:
+        enabled: true
+        sklearnserver:
+          disabled: false
+        xgbserver:
+          disabled: false
+        lgbserver:
+          disabled: false
+        mlserver:
+          disabled: true
+        tensorflow:
+          disabled: true
+        huggingfaceserver:
+          disabled: true
+        huggingfaceserver_multinode:
+          disabled: true
+        tritonserver:
+          disabled: true
+        pmmlserver:
+          disabled: true
+        predictiveserver:
+          disabled: true
+        paddleserver:
+          disabled: true
+        autogluonserver:
+          disabled: true
+        torchserve:
+          disabled: true
+        vllmserver:
+          disabled: true

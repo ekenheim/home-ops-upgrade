@@ -94,3 +94,25 @@ spec:
           - backendRefs:
               - identifier: client
                 port: 3002
+      tracking:
+        # Public on purpose: what the tracker on digitomara.com calls from
+        # visitors' browsers (rybbit v2.9.1 server/src/index.ts). Exact and
+        # longer-prefix matches beat `main`'s /api, which is private
+        # (securitypolicy.yaml).
+        hostnames: ["rybbit.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - matches:
+              - path: {type: Exact, value: /api/script.js}
+              - path: {type: Exact, value: /api/replay.js}
+              - path: {type: Exact, value: /api/metrics.js}
+              - path: {type: Exact, value: /api/track}
+              - path: {type: Exact, value: /api/identify}
+              - path: {type: PathPrefix, value: /api/site/tracking-config}
+              - path: {type: PathPrefix, value: /api/session-replay/record}
+            backendRefs:
+              - identifier: backend
+                port: 3001

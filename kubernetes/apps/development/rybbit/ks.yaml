@@ -58,6 +58,8 @@ spec:
   postBuild:
     substitute:
       APP: rybbit
+      # The dashboard is private; Gatus checks the tracker script, which isn't.
+      GATUS_URL_PATH: /api/script.js
     substituteFrom:
       - kind: ConfigMap
         name: cluster-settings

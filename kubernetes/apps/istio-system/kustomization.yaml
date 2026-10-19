@@ -12,5 +12,8 @@ resources:
   - istio-gateway-ks.yaml
   - istio-extras-ks.yaml
 
-
-  #- ./seldon-core/ks.yaml - disabled for now as it's not ready for use. and uncertain about istio integration.
+  # Seldon Core v1: its directory is gone. Disabling it here with prune: false
+  # left the operator HelmRelease (istio-system/seldon-core) running unmanaged;
+  # found 2026-10-19 and deleted by hand, keeping the machinelearning.seldon.io
+  # CRD.
+  #- ./seldon-core/ks.yaml

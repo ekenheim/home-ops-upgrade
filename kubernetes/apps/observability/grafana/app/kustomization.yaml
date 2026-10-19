@@ -7,5 +7,6 @@ resources:
   - ./externalsecret.yaml
   - ./dashboards/apps
   - ./dashboards/ray
-  - ./dashboards/seldon
+  # Off since 2026-10-19 with Seldon Core v2 (datasci/kustomization.yaml).
+  #- ./dashboards/seldon
   - ../../../../templates/gatus/infra

@@ -1,8 +1,8 @@
 # `llm` namespace
 
 Split out of `datasci` on 2026-08-29. `datasci` keeps the data-science platform
-(mlflow, ray, spark, dagster, marimo, jupyter-lab, qdrant, falkordb, seldon,
-kubeflow, label-studio); everything that serves, proxies, tools or drives an LLM
+(mlflow, ray, spark, dagster, marimo, jupyter-lab, qdrant, falkordb,
+label-studio; Seldon Core off since 2026-10-19); everything that serves, proxies, tools or drives an LLM
 lives here.
 
 | App | Role |

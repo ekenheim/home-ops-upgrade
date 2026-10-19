@@ -36,9 +36,19 @@ spec:
           reloader.stakater.com/auto: "true"
         containers:
           app:
+            # kizaing/kavita stopped publishing at 0.7.8 (2024-01); upstream
+            # now pushes the same multi-arch index to docker.io/jvmilazz0/kavita
+            # and ghcr.io/kareadita/kavita (digest sha256:31181a32... on both,
+            # 2026-10-19). Image tag 0.9.1 is GitHub release v0.9.1.4.
+            # Every release since 0.7.9 runs one-way DB migrations on start
+            # (0.7.8 -> 0.9.1 crosses the 0.8.0 rewrite). The old image cannot
+            # open a migrated kavita.db: roll back with a VolSync restore, not
+            # a tag. packageRules.json5 keeps Renovate bumps here hand-merged.
+            # No probes on purpose: the migrations run before port 5000 opens,
+            # and a probe that kills the pod mid-migration corrupts the DB.
             image:
-              repository: kizaing/kavita
-              tag: 0.7.8@sha256:48b3c2c07f90feb4641ddb791f96a1bf6e70a2b27da8c8b2ca0cc2c627b91d72
+              repository: ghcr.io/kareadita/kavita
+              tag: 0.9.1@sha256:31181a32f0dda73cae68721867028a7253d57881b58bea5754cd9e578e75421a
             env:
               TZ: ${TIMEZONE}
             resources:
@@ -78,6 +88,9 @@ spec:
       config:
         existingClaim: *app
         globalMounts:
+          # The official image still reads /kavita/config (0.9.1 docs:
+          # "/kavita/config must not be changed"). /config is only the
+          # LinuxServer.io image's path.
           - path: /kavita/config
       data:
         type: nfs

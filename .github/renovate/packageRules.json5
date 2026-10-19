@@ -181,6 +181,23 @@
       "allowedVersions": "<0.9.28"
     },
     {
+      // Hermes Agent switched from CalVer to SemVer. Its tags ran
+      // v2026.7.1 ... v2026.9.24 (each one really 0.18.0 ... 0.21.5), then
+      // v0.21.6 on 2026-10-08 began plain SemVer. Renovate compares the two
+      // schemes numerically, so it ranked v2026.9.24 above every v0.x and
+      // offered nothing from 2026-09-24 until hermes was bumped to v0.22.2 by
+      // hand on 2026-10-19. This keeps the old CalVer tags (any four-digit
+      // first component) from ever being proposed again as "newer" than the
+      // pinned 0.x. Same negated-regex form as the kuberay rule above.
+      // Docker Hub also carries rc.N-vX.Y.Z and -desktop / -amd64 tags;
+      // docker versioning already skips those (not a version, or a
+      // different suffix from the pinned tag).
+      "description": ["Never propose hermes-agent's retired CalVer tags (v2026.x)"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["docker.io/nousresearch/hermes-agent"],
+      "allowedVersions": "!/^v?\\d{4}\\./"
+    },
+    {
       // A rolling tag (latest, rocm7, vulkan-radv, 24-alpine, 18) with no
       // digest never updates: the pull policy defaults to IfNotPresent, so a
       // node keeps whichever build it cached first, and nothing in Git says

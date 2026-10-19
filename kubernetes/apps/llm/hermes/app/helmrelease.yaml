@@ -36,14 +36,25 @@ spec:
           init:
             # The hermes image, not alpine: rendering config.yaml is a YAML
             # merge now (see merge-config.py in the ConfigMap), and this image
-            # already carries python3 + PyYAML. It is also the image the app
-            # container runs, so it is on the node either way -- alpine plus a
-            # `pip install pyyaml` would be a second pull and a network
+            # already carries python3 + a YAML library. It is also the image
+            # the app container runs, so it is on the node either way --
+            # alpine plus a `pip install` would be a second pull and a network
             # dependency on every pod start. Anchored here rather than on the
             # app container below because a YAML alias must follow its anchor.
+            # The library is ruamel.yaml since v0.22.0: that release moved the
+            # venv to Python 3.14 and dropped PyYAML, so the script's old
+            # `import yaml` would have crashlooped this container. `python3`
+            # here is the venv's, reached through the image PATH.
+            #
+            # Versioning: upstream switched from CalVer (v2026.9.24, which
+            # was really 0.21.5) to SemVer at v0.21.6 on 2026-10-08. Renovate
+            # ranked 2026.x above every 0.x and offered nothing for three
+            # weeks; .github/renovate/packageRules.json5 now blocks the CalVer
+            # tags. Use the plain tag, not `-desktop` (the Bot Screen build,
+            # ~230 MB more).
             image: &image
               repository: docker.io/nousresearch/hermes-agent
-              tag: v2026.9.24@sha256:fca358f12efd65bfaaca05884166f15c0e2788375ca30d77061ac1ebc96452b7
+              tag: v0.22.2@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
             command:
               - sh
               - -c
@@ -151,6 +162,16 @@ spec:
               # ~6 min, rescanning 934k files on master1 each time. The cache
               # is regenerable, so the overlay is fine; it just must not be
               # backed up.
+              # Since v0.22.0 this only covers uv run directly (the agent's
+              # terminal, uvx MCP servers). hermes' own package manager (PM)
+              # passes uv its own UV_CACHE_DIR, /opt/data/cache/uv, and builds
+              # lazy extras (voice / faster-whisper, edge-tts, ...) as
+              # generations under /opt/data/installs. Both are on the PVC.
+              # The image seeds that cache with ~27 MB / 15k files, far from
+              # the 1.25M above, but check `du -sh /opt/data/cache/uv
+              # /opt/data/installs` if the backup slows down again.
+              # /opt/data/lazy-packages (cp313 wheels for the old image's lazy
+              # installs) is no longer read by anything.
               UV_CACHE_DIR: /tmp/uv-cache
               # The dashboard runs HERE, in the same container as the gateway,
               # rather than as its own container. gateway/status.py resolves

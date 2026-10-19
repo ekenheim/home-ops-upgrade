@@ -12,6 +12,5 @@ resources:
   - ./tautulli/ks.yaml
   - ./maintainerr/ks.yaml
   - ./wizarr/ks.yaml
-  - ./xteve/ks.yaml
   - ./dispatcharr/ks.yaml
   #- ./ersatztv/ks.yaml

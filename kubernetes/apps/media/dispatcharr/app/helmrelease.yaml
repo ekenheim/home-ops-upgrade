@@ -28,8 +28,9 @@ spec:
     - name: volsync
       namespace: storage
   # Dispatcharr: IPTV manager (M3U / Xtream sources, EPG matching, stream
-  # proxy, DVR) that Plex sees as an HDHomeRun tuner. Runs next to xTeve until
-  # the Plex tuner has moved over.
+  # proxy, DVR) that Plex sees as an HDHomeRun tuner. It replaced xTeve
+  # (k8s-at-home/xteve, abandoned since 2021, 72 Critical in Trivy), which was
+  # removed on 2026-10-19.
   #
   # Upstream's "modular" layout (docker/docker-compose.yml): one image, two
   # entrypoints. `app` runs nginx on :9191 in front of uWSGI (UI, API, M3U/EPG

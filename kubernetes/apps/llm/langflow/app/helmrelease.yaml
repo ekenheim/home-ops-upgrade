@@ -27,11 +27,15 @@ spec:
     controllers:
       langflow:
         replicas: 1
+        # Langflow runs its Alembic migrations on startup and its docs ask for
+        # a single instance while they run. RollingUpdate would start the new
+        # version beside the old one against the same database.
+        strategy: Recreate
         containers:
           app:
             image:
               repository: langflowai/langflow
-              tag: 1.5.0.post1
+              tag: 1.12.6@sha256:a0396e089eb97fa471ef8affc492b8c56abb3758040a5ddaa80814b0abad15bf
             envFrom:
               - secretRef:
                   name: langflow-db-secret
@@ -41,7 +45,19 @@ spec:
                   secretKeyRef:
                     name: langflow-db-secret
                     key: LANGFLOW_DATABASE_URL
-              LANGFLOW_CONFIG_DIR: app/langflow
+              # The image has set LANGFLOW_AUTO_LOGIN=false since 1.11
+              # (langflow#14164), and no superuser password is set here. With
+              # auto-login off, startup first tears down the default `langflow`
+              # superuser if it has never logged in (its folders, flows,
+              # variables and API keys cascade with it), then fails on the
+              # empty password. Keep the 1.5 behaviour explicitly.
+              LANGFLOW_AUTO_LOGIN: "true"
+              # Absolute path: the 1.12 image runs as uid 1000 in a root-owned
+              # /app, so the old relative `app/langflow` (/app/app/langflow)
+              # cannot be created. /app/langflow is pre-created for that user
+              # (checked in the 1.12.6 image, 2026-10-19). No PVC: the secret
+              # key is regenerated on restart, as before.
+              LANGFLOW_CONFIG_DIR: /app/langflow
               LANGFLOW_MCP_ENABLED: "true"
               LANGFLOW_MCP_DEBUG: "true"
     service:

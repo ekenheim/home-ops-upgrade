@@ -480,6 +480,8 @@ controlPlane:
             enabled: true
             allowedRoles:
               - os:admin
+              # kube-tools/etcd-backup: etcd snapshots only.
+              - os:etcd:backup
             allowedKubernetesNamespaces:
               - kube-tools
 

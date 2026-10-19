@@ -1,0 +1,106 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app etcd-backup
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  # Daily etcd snapshot to the NAS. Nothing else backs up etcd, and master2 is
+  # the only member until the DeskMini control planes join: losing its SATA
+  # install disk would otherwise mean rebuilding the cluster from Git. The
+  # snapshot goes to the "ceph2" share next to MinIO's data, as a plain file
+  # that only talosctl is needed to restore (see README.md). Secrets inside it
+  # are already secretbox-encrypted by Talos, so no extra encryption here.
+  values:
+    controllers:
+      etcd-backup:
+        type: cronjob
+        cronjob:
+          schedule: "15 3 * * *"
+          concurrencyPolicy: Forbid
+          backoffLimit: 2
+          successfulJobsHistory: 1
+          failedJobsHistory: 2
+        initContainers:
+          # talosctl reads the ServiceAccount's talosconfig from
+          # /var/run/secrets/talos.dev on its own. With no nodes set, the call
+          # goes to the talos.default endpoint, i.e. a control plane node,
+          # which snapshots its own etcd member.
+          talosctl:
+            image:
+              repository: ghcr.io/siderolabs/talosctl
+              tag: v1.13.10@sha256:3116f64c97ddffb53bd3c5bf87c8614d99f04df4326177dbbb7702b5087f0e4d
+            args: ["etcd", "snapshot", "/snapshot/etcd.snapshot"]
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 256Mi
+        containers:
+          app:
+            image:
+              repository: ghcr.io/home-operations/busybox
+              tag: 1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
+            # Only bare $var (never dollar-brace): Flux postBuild substitution
+            # would eat the braced form. The copy is written to .tmp and renamed,
+            # so a cut-off copy never looks like a good snapshot.
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -eu
+                size=$(stat -c %s /snapshot/etcd.snapshot)
+                [ "$size" -gt 1048576 ] || { echo "snapshot is only $size bytes"; exit 1; }
+                dir=/backup/etcd-snapshots
+                mkdir -p $dir
+                name=etcd-$(date +%Y%m%d-%H%M%S).snapshot.gz
+                gzip -c /snapshot/etcd.snapshot > $dir/$name.tmp
+                mv $dir/$name.tmp $dir/$name
+                find $dir -name 'etcd-*.snapshot.gz' -mtime +14 -delete
+                find $dir -name '*.tmp' -mtime +1 -delete
+                echo "wrote $dir/$name (raw $size bytes)"
+                ls -l $dir
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 128Mi
+    persistence:
+      snapshot:
+        type: emptyDir
+        globalMounts:
+          - path: /snapshot
+      talos:
+        type: secret
+        name: etcd-backup
+        advancedMounts:
+          etcd-backup:
+            talosctl:
+              - path: /var/run/secrets/talos.dev
+                readOnly: true
+      nas:
+        # Unraid share "ceph2" (see storage/minio/app/pv.yaml). Root squash:
+        # files land as nobody:users.
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: /mnt/user/ceph2
+        advancedMounts:
+          etcd-backup:
+            app:
+              - path: /backup

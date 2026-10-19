@@ -16,5 +16,6 @@ resources:
   - ./nfs-stale-watchdog/ks.yaml
   - ./kepler/ks.yaml
   - ./tuppr/ks.yaml
+  - ./etcd-backup/ks.yaml
   # Self-hosted Renovate (replaces the Mend app), after joryirving.
   - ./renovate-operator/ks.yaml

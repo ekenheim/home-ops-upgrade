@@ -178,7 +178,7 @@ spec:
   # Same ROCm build as ornith, and NOT vulkan-radv: Vulkan on AMD produces
   # subtle numerical errors that degrade long-context reasoning and tool
   # calls from ~70-80k tokens. Full citation in ornith-35b.yaml.
-  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-10.0@sha256:c90a51e64a0d5b818c2b98717abd223c66e5437aeef0c3fa3313df395d116cb7
+  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-10.0@sha256:74f27119e21cce8bb99a27e7ac23a7e80fbfc01d950d21a03944008e2f093259
   command:
     - llama-server
   replicas: 1

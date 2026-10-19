@@ -7,6 +7,10 @@
 # in the HelmRelease (48h, scannerReportTTL). Before it, Unknown held MEDIUM+
 # findings the operator had lost the severity of (trivy-operator#3022); an
 # Unknown count above 0 again means that bug is back.
+# Counts are per running workload: reports of a Deployment's old revisions
+# (ReplicaSets at 0 after an upgrade) are deleted within the hour by
+# security/trivy-report-pruner, so an image older than what runs here is a
+# sign that CronJob is failing.
 apiVersion: v1
 kind: ConfigMap
 metadata:

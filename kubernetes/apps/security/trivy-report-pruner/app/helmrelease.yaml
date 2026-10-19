@@ -1,0 +1,165 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# Deletes the Trivy Operator reports (security/trivy-operator) of ReplicaSets
+# that no longer run anything: the old revisions a Deployment rollout scales
+# to 0 and keeps for revisionHistoryLimit. Without this the Trivy dashboard
+# and the trivy_* alerts count the image a workload ran before its last
+# upgrade as if it still ran: langflow 1.5.0.post1 after the 1.12.6 upgrade,
+# grafana 12.3.1 after 13.2.4. 121 such reports were deleted by hand on
+# 2026-10-19.
+#
+# The operator has no option for this (0.35.0 / chart 0.37.0, and upstream
+# main as of 2026-10-19):
+#   - *ScanOnlyCurrentRevisions (on in the HelmRelease) stops scans of old
+#     revisions, and is meant to mark their reports report-ttl=0s for the
+#     TTL controller. But SkipProcessing (pkg/operator/workload/helper.go)
+#     returns on "no active pods" before it reaches the revision check, so the
+#     mark only happens if an old ReplicaSet is reconciled while it still has
+#     pods. With strategy Recreate (112 of 212 Deployments, langflow among
+#     them) the old ReplicaSet is at 0 before the Deployment's revision moves,
+#     so never; with RollingUpdate (grafana) it mostly loses the race.
+#   - scannerReportTTL (48h) deletes an expired VulnerabilityReport, so those
+#     ghosts last up to 48h. An expired ConfigAuditReport is only deleted when
+#     the audit policies changed (applicableForDeletion in
+#     pkg/operator/ttl_report.go), and ExposedSecretReports carry no TTL at
+#     all, so those two kinds stay until the ReplicaSet itself is deleted.
+#   - Lowering the TTL would not touch those two and would double the rescans
+#     of ~300 workloads on 2 scan slots. revisionHistoryLimit 0 on every
+#     Deployment would be a change to 200+ files and lose rollbacks.
+#
+# A deleted report stays deleted: the operator reconciles the ReplicaSet
+# again, finds no pods and skips it. A Deployment scaled to 0 on purpose
+# (tuppr, litellm-admin, ornith-35b on 2026-10-19) loses its reports too and
+# is rescanned when it scales up, which the 48h TTL did anyway.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: trivy-report-pruner
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      trivy-report-pruner:
+        type: cronjob
+        cronjob:
+          # Hourly: a ghost lasts at most an hour after a rollout. A run with
+          # nothing to delete is five list calls.
+          schedule: "17 * * * *"
+          successfulJobsHistory: 0
+          backoffLimit: 2
+        serviceAccount:
+          identifier: trivy-report-pruner
+        containers:
+          app:
+            # The repo's kubectl image (nfs-stale-watchdog, volsync-verify,
+            # posterizarr, cdi-stale-watchdog). It has no jq, so the join is
+            # jsonpath + awk.
+            image:
+              repository: docker.io/alpine/kubectl
+              tag: 1.35.4@sha256:9ccd823647622b620dce092d0f1406b8b41d152ce08ac963e3d4683770b14dfd
+            # Reports are listed before ReplicaSets: a report that appears
+            # between the two lists belongs to a ReplicaSet that already exists
+            # when ReplicaSets are listed, so a new revision's first report is
+            # never mistaken for a ghost. "Not in the replicas > 0 set" covers
+            # both a ReplicaSet at 0 and one that is gone. The operator names
+            # the ReplicaSet in the trivy-operator.resource.name label, in the
+            # report's own namespace. Only bare $var (never dollar-brace):
+            # Flux postBuild substitution would eat the braced form.
+            # DRY_RUN=true deletes with --dry-run=server.
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -eu
+                reports=""
+                for kind in vulnerabilityreports configauditreports exposedsecretreports sbomreports; do
+                  out=$(kubectl get "$kind" -A -l trivy-operator.resource.kind=ReplicaSet \
+                    -o jsonpath='{range .items[*]}{.metadata.namespace} {.metadata.name} {.metadata.labels.trivy-operator\.resource\.name}{"\n"}{end}')
+                  reports="$reports$(printf '%s\n' "$out" | sed "/^$/d; s/^/$kind /")
+                "
+                done
+                live=$(kubectl get replicasets -A \
+                  -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name} {.spec.replicas}{"\n"}{end}' \
+                  | awk '$2 > 0 {print $1}')
+                if [ -z "$live" ]; then
+                  echo "no ReplicaSet has replicas > 0, refusing to delete anything"
+                  exit 1
+                fi
+                stale=$({ printf '%s\n' "$live" | sed 's/^/live /'; printf '%s' "$reports"; } \
+                  | awk '$1 == "live" {live[$2] = 1; next} NF == 4 && !(($2 "/" $4) in live) {print $1, $2, $3}')
+                echo "$(printf '%s' "$reports" | grep -c . || true) ReplicaSet reports, $(printf '%s\n' "$live" | grep -c .) ReplicaSets with replicas > 0, $(printf '%s' "$stale" | grep -c . || true) reports to delete"
+                dry=""
+                if [ "$DRY_RUN" = "true" ]; then dry="--dry-run=server"; fi
+                printf '%s\n' "$stale" | while read -r kind ns name; do
+                  [ -n "$name" ] || continue
+                  echo "deleting $kind $ns/$name"
+                  kubectl -n "$ns" delete "$kind" "$name" --ignore-not-found --wait=false $dry
+                done
+            env:
+              DRY_RUN: "false"
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            probes:
+              liveness: &noProbes
+                enabled: false
+              readiness: *noProbes
+              startup: *noProbes
+            # kubectl decodes the full reports to print three fields: about
+            # 25 MB of JSON across the four kinds on 2026-10-19 (VulnerabilityReports
+            # are most of it).
+            resources:
+              requests:
+                cpu: 25m
+                memory: 64Mi
+              limits:
+                memory: 512Mi
+    defaultPodOptions:
+      # app-template 5 defaults this off; kubectl needs the token.
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile: { type: RuntimeDefault }
+    serviceAccount:
+      trivy-report-pruner: {}
+    rbac:
+      roles:
+        trivy-report-pruner:
+          type: ClusterRole
+          rules:
+            - apiGroups: ["apps"]
+              resources: ["replicasets"]
+              verbs: ["list"]
+            # get: kubectl delete reads the object before deleting it.
+            - apiGroups: ["aquasecurity.github.io"]
+              resources:
+                - vulnerabilityreports
+                - configauditreports
+                - exposedsecretreports
+                - sbomreports
+              verbs: ["get", "list", "delete"]
+      bindings:
+        trivy-report-pruner:
+          type: ClusterRoleBinding
+          roleRef:
+            identifier: trivy-report-pruner
+          subjects:
+            - identifier: trivy-report-pruner

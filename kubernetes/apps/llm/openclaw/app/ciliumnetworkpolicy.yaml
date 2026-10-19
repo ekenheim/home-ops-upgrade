@@ -1,0 +1,91 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# OpenClaw takes untrusted input (Discord, web_fetch results) and has exec on
+# an allowlist, so its own process should reach only what it needs, not every
+# pod in the cluster and the LAN. Default-deny both ways:
+#
+#   ingress  :18789 <- envoy-internal (the OIDC-guarded Control UI route).
+#                      Kubelet probes from the node are allowed by Cilium
+#                      regardless. Nothing else in the repo calls OpenClaw.
+#   egress   DNS, LiteLLM :4000, the ToolHive vMCP gateway :4483, SearXNG
+#            :8080, memini :8080 (the URLs in configmap.yaml), and the
+#            internet on 80/443 for Discord, web_fetch, upstream-watch and the
+#            ClawHub/npm plugin installs at start. RFC1918 and Tailscale's
+#            CGNAT range are excluded, so the NAS, Home Assistant's host and
+#            the rest of the LAN are out of reach.
+#
+# Home Assistant, Grafana, the arrs and UniFi stay reachable through the
+# ToolHive tools; limiting those is a matter of which tools OpenClaw gets.
+# With kube-proxy replacement the policy sees backend ports, which are also
+# each Service's port here. A 15-minute Hubble capture on 2026-10-19 (idle, no
+# conversation) showed only kubelet probes and the Discord gateway.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: openclaw
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: openclaw
+  enableDefaultDeny:
+    ingress: true
+    egress: true
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.envoyproxy.io/owning-gateway-name: envoy-internal
+      toPorts:
+        - ports:
+            - port: "18789"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: litellm
+      toPorts:
+        - ports:
+            - port: "4000"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            toolhive-name: mcp-gateway
+      toPorts:
+        - ports:
+            - port: "4483"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: searxng
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: memini
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    - toCIDRSet:
+        - cidr: 0.0.0.0/0
+          except:
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+            - 100.64.0.0/10
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP

@@ -21,7 +21,21 @@ data:
     import shutil
     import time
 
-    import yaml
+    # ruamel.yaml, not PyYAML. v0.22.0 moved the image's venv to Python 3.14
+    # and dropped PyYAML from it (only ruamel.yaml 0.18.16 is left), so
+    # `import yaml` would fail and take the whole pod down with this init
+    # container. ruamel.yaml is a core hermes dependency in the v2026.9.x
+    # images too, so a rollback still renders.
+    from ruamel.yaml import YAML, YAMLError
+
+    # typ="safe" so the ConfigMap's comments are not copied onto the PVC (the
+    # round-trip loader would carry all of them over). The safe representer
+    # sorts keys by default; turn that off to keep the order written below,
+    # as PyYAML's sort_keys=False did.
+    yaml = YAML(typ="safe", pure=True)
+    yaml.default_flow_style = False
+    yaml.width = 100
+    yaml.representer.sort_base_mapping_type_on_output = False
 
     SRC = "/tmp/config.yaml"
     DST = "/opt/data/config.yaml"
@@ -40,8 +54,8 @@ data:
     def load(path):
         try:
             with open(path) as handle:
-                loaded = yaml.safe_load(handle)
-        except (OSError, yaml.YAMLError) as exc:
+                loaded = yaml.load(handle)
+        except (OSError, YAMLError) as exc:
             log("could not read " + path + ": " + str(exc))
             return {}
         return loaded if isinstance(loaded, dict) else {}
@@ -103,7 +117,7 @@ data:
     # a truncated config that hermes refuses to start from.
     staged = DST + ".new"
     with open(staged, "w") as handle:
-        yaml.safe_dump(base, handle, sort_keys=False, default_flow_style=False, width=100)
+        yaml.dump(base, handle)
     os.chown(staged, HERMES_UID, HERMES_GID)
     os.chmod(staged, 0o600)
     os.replace(staged, DST)
@@ -304,8 +318,10 @@ data:
     memory:
       # memini, through upstream's eleboucher/memini-hermes plugin, which the
       # init container installs onto the PVC (see helmrelease.yaml; replaced
-      # agentmemory 2026-09-17). hindsight is the next candidate: its
-      # provider ships in the image under plugins/memory/hindsight.
+      # agentmemory 2026-09-17). hindsight is the next candidate. Its
+      # provider left the image in v0.22.0 (plugins/memory/hindsight is gone)
+      # and is now a plugin-catalog entry, so it would be installed onto the
+      # PVC the same way memini is.
       provider: memini
       auto_migrate: true
     compression:
@@ -354,7 +370,7 @@ data:
     # added from the dashboard or with `hermes mcp add` persists across pod
     # restarts on its own. Until 2026-08-17 the init container overwrote the
     # file outright and a UI-added `outline` server was silently lost on the
-    # first restart; see the merge script in the HelmRelease.
+    # first restart; see merge-config.py at the top of this ConfigMap.
     #
     # Precedence on a name collision is git-wins, so a server listed here
     # cannot be edited from the UI -- and deleting one here does NOT delete it

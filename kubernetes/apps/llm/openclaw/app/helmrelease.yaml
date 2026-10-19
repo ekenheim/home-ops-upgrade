@@ -91,7 +91,17 @@ spec:
                     echo "WARN: official plugin update failed; starting with installed versions"
                   fi
                 fi
-                exec node dist/index.js gateway
+                # Start through the image's own activation step. This `command`
+                # replaces the image ENTRYPOINT (tini + docker-entrypoint.mjs),
+                # whose job is to run `doctor --fix --non-interactive` before a
+                # foreground gateway: agent database schema migrations happen
+                # there and nowhere else. Skipping it crash-looped 2026.10.5 on
+                # "agent database ... uses schema version 24; run openclaw
+                # doctor --fix" until Helm rolled back (2026-10-18). The
+                # entrypoint exits non-zero if Doctor cannot repair the state,
+                # backs up each database as *.pre-startup-migration-<id>.bak
+                # first, then execs the gateway in its place.
+                exec node /app/docker-entrypoint.mjs node dist/index.js gateway
             env:
               TZ: "${TIMEZONE}"
               HOME: /home/node
@@ -110,8 +120,9 @@ spec:
               - secretRef:
                   name: openclaw-gateway
             probes:
-              # First start installs plugins from ClawHub and npm before the
-              # gateway binds; allow 10 minutes.
+              # First start installs plugins from ClawHub and npm, and Doctor
+              # migrates the state databases, before the gateway binds; allow
+              # 10 minutes.
               startup:
                 enabled: true
                 custom: true

@@ -1,0 +1,36 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: etcd-backup
+spec:
+  groups:
+    - name: etcd-backup
+      rules:
+        - alert: EtcdBackupStale
+          expr: time() - kube_cronjob_status_last_successful_time{namespace="kube-tools", cronjob="etcd-backup"} > 36 * 3600
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: No etcd snapshot has reached the NAS in 36h
+            description: >-
+              kube-tools/etcd-backup last succeeded
+              {{ $value | humanizeDuration }} ago. Check the last Job's logs:
+              the talosctl init container (Talos API access) or the copy to
+              the NAS share ceph2/etcd-snapshots.
+        - alert: EtcdBackupNeverSucceeded
+          expr: |
+            kube_cronjob_info{namespace="kube-tools", cronjob="etcd-backup"}
+              unless on (namespace, cronjob) kube_cronjob_status_last_successful_time
+          for: 26h
+          labels:
+            severity: warning
+          annotations:
+            summary: The etcd backup CronJob has never succeeded
+            description: >-
+              kube-tools/etcd-backup has existed for over a day without a
+              successful run. If the etcd-backup Secret in kube-tools is
+              missing, os:etcd:backup has not been applied to the control
+              plane yet (talconfig.yaml, kubernetesTalosAPIAccess).

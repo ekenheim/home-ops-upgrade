@@ -9,7 +9,6 @@ resources:
   - ./alphaos/ks.yaml
   - ./atlas/ks.yaml
   #- ./umami/ks.yaml
-  - ./bytewax/ks.yaml
   #- ./meilisearch/ks.yaml
   #- ./airbyte/ks.yaml
   #- ./metabase/ks.yaml

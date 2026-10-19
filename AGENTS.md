@@ -94,7 +94,7 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - **`observability`** — kube-prometheus-stack, Grafana (dashboards as ConfigMaps in Git), Thanos, Karma, Gatus, Kromgo, UnPoller, exporters, alertmanager-silencer.
 - **`kube-system`** — Cilium, CoreDNS, Spegel, metrics-server, Kubelet CSR approver, k8s-gpu-dra-driver.
 - **`kube-tools`** — descheduler, node-feature-discovery, device plugins (Intel + Nvidia), Reloader, tuppr, renovate-operator, fstrim, nfs-stale-watchdog.
-- **`development`** — Harbor, Redpanda, Strapi (×2), Rybbit, Bytewax, Atlas, side projects (alphaos, hempriser, marketing-agency). Metabase, Meilisearch, Airbyte, Umami, GrowthBook and Medusa (off since 2026-10-18) are disabled.
+- **`development`** — Harbor, Redpanda, Strapi (×2), Rybbit, Atlas, side projects (alphaos, hempriser, marketing-agency). Metabase, Meilisearch, Airbyte, Umami, GrowthBook and Medusa (off since 2026-10-18) are disabled.
 - **`rook-ceph`** — distributed storage operator + cluster.
 - **`istio-system`** (Istio base / istiod / gateway, Gateway API CRDs; the Seldon Core v1 operator is disabled), **`cert-manager`**, **`external-secrets`**, **`flux-system`**, **`actions-runner-system`** (ARC controller + 5 scale sets: general, atlas, bandit, banditweb, nordic-housing; ecom and grid-reliance off since 2026-10-18), **`blog`**.
 - Disabled namespaces still present in the tree: **`argocd`** (deployKF experiment, off), **`vpn`**.

@@ -151,7 +151,7 @@ Everything that serves, proxies or drives an LLM lives in the `llm` namespace. [
 Full monitoring stack: [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) with [Grafana](https://grafana.com/) (dashboards live in Git as ConfigMaps), long-term metrics via [Thanos](https://thanos.io/), [Karma](https://github.com/prymitive/karma) for alerts, [UnPoller](https://unpoller.com/) for the UniFi gear, external health monitoring with [Gatus](https://gatus.dev/), and [Kromgo](https://github.com/kashalls/kromgo) for the README badges above.
 
 ### Development / Internal Tools
-[Harbor](https://goharbor.io/) as a private OCI registry, [Redpanda](https://redpanda.com/) as a Kafka-compatible event streaming platform, [Strapi](https://strapi.io/) and [Medusa](https://medusajs.com/) for headless CMS / commerce, [Rybbit](https://rybbit.io/) for web analytics, and [Bytewax](https://github.com/bytewax/bytewax) for stream processing, plus a handful of side projects. [Authentik](https://goauthentik.io/) provides SSO for everything; [Crunchy Postgres](https://github.com/CrunchyData/postgres-operator) and [Dragonfly](https://www.dragonflydb.io/) are the shared databases.
+[Harbor](https://goharbor.io/) as a private OCI registry, [Redpanda](https://redpanda.com/) as a Kafka-compatible event streaming platform, [Strapi](https://strapi.io/) and [Medusa](https://medusajs.com/) for headless CMS / commerce, and [Rybbit](https://rybbit.io/) for web analytics, plus a handful of side projects. [Authentik](https://goauthentik.io/) provides SSO for everything; [Crunchy Postgres](https://github.com/CrunchyData/postgres-operator) and [Dragonfly](https://www.dragonflydb.io/) are the shared databases.
 
 ---
 

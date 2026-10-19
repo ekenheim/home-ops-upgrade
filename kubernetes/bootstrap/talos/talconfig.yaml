@@ -1,6 +1,9 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/budimanjojo/talhelper/master/pkg/config/schemas/talconfig.json
 ---
-# renovate: datasource=docker depName=ghcr.io/siderolabs/installer
+# Renovate reads the version from installer-base: ghcr.io/siderolabs/installer
+# stops at v1.13.11 and Talos 1.14 publishes only installer-base. Nodes still
+# install from the factory images below; this only tracks the version.
+# renovate: datasource=docker depName=ghcr.io/siderolabs/installer-base
 talosVersion: v1.13.11
 # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
 kubernetesVersion: v1.35.9

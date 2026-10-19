@@ -262,9 +262,13 @@ spec:
         # it. ~85 MB model, pulled on first start. Set enabled: false to fall
         # back to plain reciprocal-rank fusion if this is ever in the way.
         enabled: true
+        # TEI 1.9 dropped the default --model-id and made --auto-truncate
+        # default to true. The chart passes `--model-id
+        # cross-encoder/ms-marco-MiniLM-L-6-v2 --auto-truncate` itself, and
+        # 1.9 still accepts the bare flag (checked 2026-10-19).
         image:
           repository: ghcr.io/huggingface/text-embeddings-inference
-          tag: cpu-1.8.3@sha256:8de25e75ce39617f17f2f6c77d60a4f75b65e779ed5005420eb1400072a15c1c
+          tag: cpu-1.9.4@sha256:2538ea1c9640d3763b15af668039d24172d063b42337b0c27796fc2be180c78d
         resources:
           requests:
             cpu: 100m

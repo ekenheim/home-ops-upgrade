@@ -1,6 +1,11 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   rebaseWhen: 'behind-base-branch',
+  // Flag dependencies whose upstream has stopped releasing (on the Dependency
+  // Dashboard). Renovate can't update an image nobody publishes any more
+  // (k8s-at-home/xteve, onedr0p/kubanetics, Grafana's old chart repo), and
+  // those were the stalest, most vulnerable images Trivy found on 2026-10-18.
+  abandonmentThreshold: '6 months',
   // No hostRules here. The self-hosted job (renovate-operator) supplies the
   // ghcr.io credential for the private ghcr.io/ekenheim/* images from its env:
   // see kubernetes/apps/kube-tools/renovate-operator/jobs/home-ops.yaml.

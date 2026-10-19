@@ -38,8 +38,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/joryirving/bazarr
-              tag: 1.6.2@sha256:f04f1f432dfbbe063f6708c3407c24d41d61a11b5de77e94df732311ee54d0d5
+              repository: ghcr.io/home-operations/bazarr
+              tag: 1.6.2@sha256:17dc1cff22e99694ffbfb06555526cb47a66b362b4d6c982f06b557f7caae2bb
             env:
               TZ: "${TIMEZONE}"
               BAZARR__INSTANCE_NAME: bazarr

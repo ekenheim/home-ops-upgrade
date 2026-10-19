@@ -310,6 +310,21 @@ data:
         password_hash: $${DASHBOARD_PASSWORD_HASH}
     toolsets:
       - hermes-cli
+    # Hosted-app connectors (new in v0.22.0) OFF, by owner decision on
+    # 2026-10-19. Asked to use Linear, Notion, Gmail and the like, hermes
+    # would mint a free Nous "connectors-only" identity and route those tool
+    # calls -- with the conversation data they carry -- through Nous' tool
+    # gateway, an egress path outside LiteLLM that nothing here accounts for.
+    # The key is tools.connectors.enabled (hermes_cli/config_defaults.py,
+    # read by tools/connectors/gateway/config.py); false makes
+    # connectors_available() fail closed, so the manage_connections tool is
+    # dropped from the schema. The mcp_servers below are unaffected: they are
+    # loaded directly, not through the connectors gateway. Adding an MCP server
+    # still works from the dashboard or `hermes mcp add`, just not from the
+    # in-chat connect card.
+    tools:
+      connectors:
+        enabled: false
     terminal:
       backend: local
       cwd: /opt/data/workspace

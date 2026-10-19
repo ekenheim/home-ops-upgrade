@@ -257,10 +257,21 @@
       // Docker Hub also carries rc.N-vX.Y.Z and -desktop / -amd64 tags;
       // docker versioning already skips those (not a version, or a
       // different suffix from the pinned tag).
-      "description": ["Never propose hermes-agent's retired CalVer tags (v2026.x)"],
+      //
+      // Also never automerged (owner decision, 2026-10-19), digests included.
+      // The init container runs this image's python3 and hermes CLI directly
+      // (merge-config.py, the memini plugin install), so it depends on image
+      // internals no changelog promises. v0.22.0 dropped PyYAML from the venv,
+      // and the old `import yaml` would have crash-looped the init container
+      // had that bump auto-merged (fixed in #7771). Under SemVer 0.x a
+      // 0.22 -> 0.23 bump is a "minor", which autoMergeApps.json5 would
+      // otherwise merge. This file loads after the automerge files, so this
+      // wins.
+      "description": ["Never propose hermes-agent's retired CalVer tags (v2026.x); never automerge it"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["docker.io/nousresearch/hermes-agent"],
-      "allowedVersions": "!/^v?\\d{4}\\./"
+      "allowedVersions": "!/^v?\\d{4}\\./",
+      "automerge": false
     },
     {
       // A rolling tag (latest, rocm7, vulkan-radv, 24-alpine, 18) with no

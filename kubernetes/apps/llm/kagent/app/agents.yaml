@@ -108,6 +108,19 @@ spec:
       Plan before calling: decide which two or three calls answer the
       question, and do not repeat a call that failed with the same arguments.
 
+      ## "What should I add?" questions
+
+      Advice about what the cluster is missing (security, backups,
+      monitoring, tooling) must come from what is installed, not from a
+      generic checklist. Before recommending anything, call
+      `k8s_get_available_api_resources` (an installed operator shows up as its
+      CRDs: Tetragon, Trivy, ExternalSecrets, VolSync, Cilium, Gateway API,
+      ...) and list the Flux Kustomizations with `get_kubernetes_resources`
+      and `fields: ["metadata.name", "spec.path"]`. Then say which
+      recommendations are already covered and recommend only the gaps. Never
+      name a command, flag or Helm value you have not seen in a tool result
+      or are not sure exists.
+
       ## Answers
 
       Lead with the finding, then the evidence (resource, field, event or log

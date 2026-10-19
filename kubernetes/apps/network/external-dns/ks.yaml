@@ -13,7 +13,10 @@ spec:
   dependsOn:
     - name: external-secrets-stores
   path: ./kubernetes/apps/network/external-dns/cloudflare
-  prune: false
+  # prune: true since 2026-10-19 (was false, with no reason recorded). Flux
+  # inventory matched Git when it was switched, so nothing was pruned. With
+  # false, Dask and Seldon kept running after they were removed from Git.
+  prune: true
   sourceRef:
     kind: GitRepository
     name: home-kubernetes
@@ -36,7 +39,10 @@ spec:
   dependsOn:
     - name: external-secrets-stores
   path: ./kubernetes/apps/network/external-dns/unifi
-  prune: false
+  # prune: true since 2026-10-19 (was false, with no reason recorded). Flux
+  # inventory matched Git when it was switched, so nothing was pruned. With
+  # false, Dask and Seldon kept running after they were removed from Git.
+  prune: true
   sourceRef:
     kind: GitRepository
     name: home-kubernetes

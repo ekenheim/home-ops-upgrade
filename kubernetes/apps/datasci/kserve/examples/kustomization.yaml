@@ -1,0 +1,9 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+# Opt-in example models; applied by hand with `kubectl apply -k`, never by
+# Flux. See ../README.md.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: datasci
+resources:
+  - ./sklearn-iris.yaml

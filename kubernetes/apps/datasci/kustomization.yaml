@@ -29,3 +29,5 @@ resources:
   # Experiments were bandit leftovers, not Ready for 223 days, while the
   # mlserver-0 and triton-0 Servers held ~2.25Gi each on worker3.
   #- ./seldon-core/ks.yaml
+  # Model serving from 2026-10-19 (replaces Seldon Core): see kserve/README.md.
+  - ./kserve/ks.yaml

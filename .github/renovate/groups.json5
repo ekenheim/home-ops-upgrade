@@ -115,6 +115,21 @@
       }
     },
     {
+      // kserve-crd, kserve-resources and kserve-runtime-configs
+      // (apps/datasci/kserve) are cut from one tag, and every KServe image
+      // (controller, storage-initializer, sklearn/xgb/lgb servers) takes its
+      // tag from the chart version. A controller ahead of its CRDs, or the
+      // runtimes ahead of the controller, is untested upstream, so all three
+      // move in one PR.
+      "description": ["KServe Group"],
+      "groupName": "KServe",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["/^ghcr\\.io\\/kserve\\/charts\\//"],
+      "group": {
+        "commitMessageTopic": "{{{groupName}}} group"
+      }
+    },
+    {
       "description": ["Kyoo Group"],
       "groupName": "Kyoo",
       "matchDatasources": ["docker", "github-releases"],

@@ -1,0 +1,35 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/serving.kserve.io/inferenceservice_v1beta1.json
+# Smoke test for the platform, NOT applied by Flux (../app does not list
+# ../examples). Upstream's public sklearn iris model (a model.joblib in a
+# public GCS bucket, no credentials). Apply, query, delete:
+#
+#   kubectl apply -k kubernetes/apps/datasci/kserve/examples
+#   kubectl -n datasci get isvc sklearn-iris -w      # READY True, URL https://...
+#   curl -s https://sklearn-iris-datasci.<domain>/v1/models/sklearn-iris:predict \
+#     -H 'Content-Type: application/json' \
+#     -d '{"instances": [[6.8, 2.8, 4.8, 1.4], [6.0, 3.4, 4.5, 1.6]]}'
+#   # -> {"predictions":[1,1]}
+#   kubectl delete -k kubernetes/apps/datasci/kserve/examples
+#
+# For a model from this cluster's MLflow registry, see ../README.md.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: sklearn-iris
+  namespace: datasci
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 1
+    model:
+      modelFormat:
+        name: sklearn
+      storageUri: gs://kfserving-examples/models/sklearn/1.0/model
+      # A 4-feature iris classifier; the server image is the heavy part.
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          memory: 1Gi

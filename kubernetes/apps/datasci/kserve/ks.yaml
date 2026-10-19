@@ -1,0 +1,59 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# KServe's CRDs (InferenceService, ServingRuntime, ClusterServingRuntime,
+# InferenceGraph, TrainedModel, ClusterStorageContainer) as their own
+# Kustomization, so `kserve` below never applies a ClusterServingRuntime
+# before its CRD exists. wait: true is what makes the dependsOn hold.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app kserve-crds
+  namespace: flux-system
+spec:
+  targetNamespace: datasci
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  path: ./kubernetes/apps/datasci/kserve/crds
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# KServe (CNCF incubating, Apache-2.0): the model-serving platform that
+# replaces Seldon Core. The controller and its ClusterServingRuntimes only;
+# no model is served from Git yet. See ./README.md for why KServe and how to
+# serve an MLflow-registered model.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app kserve
+  namespace: flux-system
+spec:
+  targetNamespace: datasci
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: kserve-crds
+    # The webhook serving cert comes from a cert-manager Issuer and
+    # Certificate in the chart; without cert-manager the webhooks have no CA
+    # and every InferenceService apply is rejected.
+    - name: cert-manager
+  path: ./kubernetes/apps/datasci/kserve/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false
+  interval: 30m
+  retryInterval: 1m
+  timeout: 10m
+  postBuild:
+    substitute:
+      APP: *app

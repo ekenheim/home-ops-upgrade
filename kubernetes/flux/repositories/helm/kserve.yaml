@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/source.toolkit.fluxcd.io/helmrepository_v1beta2.json
+# KServe's charts (apps/datasci/kserve): kserve-crd, kserve-resources and
+# kserve-runtime-configs, all released together under one version. A
+# HelmRepository, not an OCIRepository + chartRef: helm-controller appends the
+# OCI digest to .Chart.Version for chartRef sources (see kagent.yaml), and these
+# charts default every image tag to the chart's version (kserve.version), so a
+# `v0.21.0+<digest>` version would end up in image refs.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: kserve
+  namespace: flux-system
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/kserve/charts

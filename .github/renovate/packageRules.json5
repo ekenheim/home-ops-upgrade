@@ -173,6 +173,21 @@
       "automerge": false
     },
     {
+      // HOLD on PostGIS 3.5 for dawarich (2026-10-19). The 17-3.6-alpine image
+      // (PostGIS 3.6.4) has no upgrade path from our 3.5.7: it ships
+      // postgis--3.5.0..3.5.5--3.6.4 and ANY--3.6.4 but no 3.5.7--ANY, because
+      // 3.6.4 was built before 3.5.7 existed. ALTER EXTENSION and
+      // postgis_extensions_upgrade() both fail, so #7781 was reverted. Lift the
+      // hold once a 3.6 image has the script:
+      //   ls $(pg_config --sharedir)/extension | grep 'postgis--3.5.7--'
+      // With this regex versioning, 17-3.5-alpine reads as 17.3.5.
+      "description": ["Hold postgis on 3.5 until 3.6 ships an upgrade path from 3.5.7"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["docker.io/postgis/postgis"],
+      "matchFileNames": ["kubernetes/apps/default/dawarich/**"],
+      "allowedVersions": "<17.3.6"
+    },
+    {
       // gpu-jupyter tags look like v1.9_cuda-12.6_ubuntu-24.04_python-only and
       // did not parse at all (v1.10 and v1.11 were never offered). Release
       // number is major.minor, the CUDA version patch.build: one release has

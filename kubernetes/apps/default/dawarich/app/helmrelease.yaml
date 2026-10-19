@@ -73,7 +73,7 @@ spec:
               # Renovate majors are disabled for this sidecar (#7720,
               # .github/renovate/packageRules.json5); a major is a manual job.
               repository: docker.io/postgis/postgis
-              tag: 17-3.6-alpine@sha256:c851815c36530db942c5189929bb8a00536feed3843ab2538cadce15e845888b
+              tag: 17-3.5-alpine@sha256:894f570c0cf0664ed5576a8fd5d5bfb8fb1b19d592885b686c3a88c8bd90c41f
             restartPolicy: Always
             env:
               POSTGRES_USER: dawarich

@@ -311,7 +311,7 @@ spec:
   #   - the DRA claim is deviceClassName gpu.amd.com from the ROCm driver
   #   - q8_0 KV cache quantization (cacheTypeK/V) has to keep working
   #   - the mmproj vision path has to keep working
-  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-10.0@sha256:74f27119e21cce8bb99a27e7ac23a7e80fbfc01d950d21a03944008e2f093259
+  image: docker.io/kyuz0/amd-strix-halo-toolboxes:rocm-10.0@sha256:c90a51e64a0d5b818c2b98717abd223c66e5437aeef0c3fa3313df395d116cb7
   command:
     - llama-server
   # PARKED AT 0 -- 2026-10-04. Replaced by qwen38-flash-next and kept only as

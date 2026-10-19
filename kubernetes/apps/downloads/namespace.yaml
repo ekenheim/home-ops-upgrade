@@ -8,4 +8,5 @@ metadata:
   labels:
     goldilocks.fairwinds.com/enabled: "true"
     kustomize.toolkit.fluxcd.io/prune: disabled
+    pod-security.kubernetes.io/enforce: baseline
     routed-gateway: 'true'

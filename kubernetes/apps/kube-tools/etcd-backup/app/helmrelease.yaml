@@ -40,14 +40,15 @@ spec:
           failedJobsHistory: 2
         initContainers:
           # talosctl reads the ServiceAccount's talosconfig from
-          # /var/run/secrets/talos.dev on its own. With no nodes set, the call
-          # goes to the talos.default endpoint, i.e. a control plane node,
-          # which snapshots its own etcd member.
+          # /var/run/secrets/talos.dev on its own; its only endpoint is
+          # talos.default. It refuses to run without --nodes, so the target is
+          # the control-plane VIP: whichever control plane node holds it
+          # serves the snapshot from its own etcd member.
           talosctl:
             image:
               repository: ghcr.io/siderolabs/talosctl
               tag: v1.13.10@sha256:3116f64c97ddffb53bd3c5bf87c8614d99f04df4326177dbbb7702b5087f0e4d
-            args: ["etcd", "snapshot", "/snapshot/etcd.snapshot"]
+            args: ["--nodes", "192.168.50.10", "etcd", "snapshot", "/snapshot/etcd.snapshot"]
             resources:
               requests:
                 cpu: 10m

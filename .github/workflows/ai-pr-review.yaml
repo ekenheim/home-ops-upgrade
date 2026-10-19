@@ -42,10 +42,20 @@ jobs:
     name: AI PR Review
     # Never run a fork's PR on a self-hosted runner: the repo is public and the
     # runner sits inside the cluster network.
+    #
+    # Renovate's non-major PRs (patch, minor, digest; a major carries `!:` in
+    # its conventional-commit title) skip the review. Renovate waits for every
+    # check before it automerges, and this one runs on worker4's two LLM slots,
+    # so it held up each routine bump for minutes (2026-10-19). A skipped job
+    # counts as passing. Majors are still reviewed, and the `ai-review` label
+    # forces a review on any PR.
     if: >-
       ${{ (github.event_name == 'pull_request'
             && !github.event.pull_request.draft
-            && github.event.pull_request.head.repo.full_name == github.repository)
+            && github.event.pull_request.head.repo.full_name == github.repository
+            && (!contains(fromJSON('["renovate[bot]","mini-smurf-cluster[bot]"]'), github.event.pull_request.user.login)
+                || contains(github.event.pull_request.title, '!:')
+                || contains(github.event.pull_request.labels.*.name, 'ai-review')))
           || github.event_name == 'workflow_dispatch' }}
     runs-on: gha-runner-scale-set
     timeout-minutes: 35

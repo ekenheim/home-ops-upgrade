@@ -97,9 +97,10 @@ rules:
       - kubernetes.dask.org
       - kustomize.toolkit.fluxcd.io
       - litellm.home-operations.com
-      - machinelearning.seldon.io
+      # Seldon Core v1 and v2 are off since 2026-10-19; re-add with them.
+      #- machinelearning.seldon.io
       - metrics.k8s.io
-      - mlops.seldon.io
+      #- mlops.seldon.io
       - monitoring.coreos.com
       - networking.istio.io
       - networking.k8s.io

@@ -14,7 +14,13 @@ spec:
     - name: cert-manager
   interval: 30m
   path: ./kubernetes/apps/datasci/seldon-core/app
-  prune: false
+  # prune: true (was false until 2026-10-19), as for Dask in #7742. It does
+  # NOT apply to the 2026-10-19 disable: Flux deletes the Kustomization with
+  # the live spec (still false), so its four HelmReleases are deleted by hand
+  # after the disable, in order (servers, runtime, setup, crds), so the
+  # SeldonRuntime finalizer clears while the controller still runs. A bulk
+  # prune deletes all four at once and can strand that finalizer.
+  prune: true
   sourceRef:
     kind: GitRepository
     name: home-kubernetes

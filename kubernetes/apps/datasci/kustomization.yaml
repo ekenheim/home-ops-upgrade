@@ -25,4 +25,7 @@ resources:
   - ./label-studio/ks.yaml
   #- ./bandit-demo/ks.yaml
   #- ./banditweb/ks.yaml
-  - ./seldon-core/ks.yaml
+  # Off since 2026-10-19 (owner): only bandit used it. Its last Models and
+  # Experiments were bandit leftovers, not Ready for 223 days, while the
+  # mlserver-0 and triton-0 Servers held ~2.25Gi each on worker3.
+  #- ./seldon-core/ks.yaml

@@ -88,7 +88,7 @@ spec:
       web:
         image:
           repository: ghcr.io/langfuse/langfuse
-          tag: 4.65.0@sha256:4e4c8a8340dfcde6b4e7339d06fa7dc2a9f6748b38145dbe11637ba809e0234e
+          tag: 4.66.0@sha256:704cb67e75030a9979165ee8e9a9b33917b12dbf055a0490667fcc1e4de4a3ab
         pod:
           additionalEnv:
             # First boot creates the org and the `litellm` project with a

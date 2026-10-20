@@ -1,0 +1,45 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# Two gates on crowdsec.${SECRET_DOMAIN}, both required:
+#   - oidc: an Authentik session (application `crowdsec`, authentik Admins
+#     only, security/authentik/app/crowdsec-oidc.yaml). The UI has no login
+#     of its own and shows every client address that hit envoy-external.
+#   - authorization: private ranges only, as for victoria-logs.
+# One policy, not two: Envoy Gateway applies only the oldest SecurityPolicy
+# per HTTPRoute and marks the rest Conflicted.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: crowdsec-web-ui-oidc
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: crowdsec-web-ui
+  oidc:
+    provider:
+      issuer: https://sso.${SECRET_DOMAIN}/application/o/crowdsec/
+    clientID: crowdsec
+    clientSecret:
+      # Cross-namespace; allowed by the ReferenceGrant in security.
+      name: authentik-crowdsec-oidc
+      namespace: security
+    redirectURL: https://crowdsec.${SECRET_DOMAIN}/oauth2/callback
+    logoutPath: /oauth2/logout
+    scopes:
+      - openid
+      - email
+      - profile
+      - offline_access
+    # The UI polls LAPI data in the background; the refresh token keeps the
+    # session without a full redirect, which those fetches could not follow.
+    refreshToken: true
+  authorization:
+    defaultAction: Deny
+    rules:
+      - action: Allow
+        principal:
+          clientCIDRs:
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16

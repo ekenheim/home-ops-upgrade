@@ -20,4 +20,5 @@ resources:
   - ./homelable-oidc.yaml
   - ./kagent-oidc.yaml
   - ./victoria-logs-oidc.yaml
+  - ./crowdsec-oidc.yaml
   - ../../../../templates/gatus/infra

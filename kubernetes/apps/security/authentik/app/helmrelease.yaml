@@ -50,6 +50,7 @@ spec:
         - authentik-homelable-oidc  # homelable-oidc.yaml
         - authentik-kagent-oidc  # kagent-oidc.yaml
         - authentik-victoria-logs-oidc  # victoria-logs-oidc.yaml
+        - authentik-crowdsec-oidc  # crowdsec-oidc.yaml
     server:
       autoscaling:
         enabled: true

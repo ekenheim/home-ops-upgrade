@@ -22,3 +22,32 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app crowdsec-web-ui
+  namespace: flux-system
+spec:
+  targetNamespace: network
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    # Registers against LAPI with the chart's crowdsec-lapi-secrets token.
+    - name: crowdsec
+    - name: rook-ceph-cluster
+  path: ./kubernetes/apps/network/crowdsec/web-ui
+  postBuild:
+    substitute:
+      APP: *app
+      GATUS_SUBDOMAIN: crowdsec
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: home-kubernetes
+  wait: false # no flux ks dependents
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m

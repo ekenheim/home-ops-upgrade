@@ -54,9 +54,12 @@ spec:
       env:
         # plex is only an allowlist: it stops Plex's metadata/transcode
         # request bursts on the public plex route from tripping the crawl
-        # scenarios. whitelists drops RFC1918 sources (LAN, pods).
+        # scenarios.
         - name: COLLECTIONS
-          value: yanis-kouidri/envoy crowdsecurity/plex crowdsecurity/whitelists
+          value: yanis-kouidri/envoy crowdsecurity/plex
+        # A parser, not a collection: drops RFC1918 sources (LAN, pods).
+        - name: PARSERS
+          value: crowdsecurity/whitelists
       resources:
         requests:
           cpu: 50m

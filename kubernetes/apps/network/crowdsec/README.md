@@ -4,6 +4,16 @@ Reads the `envoy-external` access logs and flags scanners, probes and brute
 force against the public routes. Adapted from onedr0p/home-ops
 (commits 3d8c697, e0f42de).
 
+## Where to look
+
+- **`https://crowdsec.<domain>`** (envoy-internal, Authentik Admins, LAN only):
+  [CrowdSec Web UI](https://github.com/TheDuffman85/crowdsec-web-ui) in
+  `web-ui/`, read-only. Alerts with the requests behind them, decisions,
+  agent and LAPI metrics.
+- **Grafana, Network folder, CrowdSec Metrics** (grafana.com 21419): buckets,
+  parsers, whitelists, alerts, decisions. Its lines-read panels stay empty
+  (no kubernetes-source panel).
+
 ## Status: stage 1, observe only
 
 The agent and LAPI run, and LAPI records alerts and decisions, but **nothing

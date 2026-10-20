@@ -51,12 +51,14 @@ spec:
           - host: hempriser-pipeline.development.svc.cluster.local
             port: 4000
             name: hempriser-pipeline
-          - host: bandit-pipeline.development.svc.cluster.local
-            port: 4000
-            name: bandit-pipeline
-          - host: grid-reliance-pipeline.development.svc.cluster.local
-            port: 4000
-            name: grid-reliance-pipeline
+          # Off since 2026-10-15 / 2026-10-18 (owner): Bandit and grid-resilience are shelved,
+          # their pipeline Services are gone. Re-enable with the apps.
+          # - host: bandit-pipeline.development.svc.cluster.local
+          #   port: 4000
+          #   name: bandit-pipeline
+          # - host: grid-reliance-pipeline.development.svc.cluster.local
+          #   port: 4000
+          #   name: grid-reliance-pipeline
           - host: alphaos-pipeline.development.svc.cluster.local
             port: 4000
             name: alphaos-pipeline
@@ -122,74 +124,10 @@ spec:
                 - name: bandit-pg-patch
                   mountPath: /app/pipeline/jobs/conclude_experiments.py
                   subPath: conclude_experiments.py
-              env:
-                - name: BRONZE_AWS_ACCESS_KEY_ID
-                  valueFrom:
-                    secretKeyRef:
-                      name: grid-resilience-bronze
-                      key: AWS_ACCESS_KEY_ID
-                - name: BRONZE_AWS_SECRET_ACCESS_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: grid-resilience-bronze
-                      key: AWS_SECRET_ACCESS_KEY
-                - name: BRONZE_BUCKET_HOST
-                  valueFrom:
-                    configMapKeyRef:
-                      name: grid-resilience-bronze
-                      key: BUCKET_HOST
-                # RGW gateway is on 8080 (cluster helmrelease); OBC configmap may still say 80.
-                - name: BRONZE_BUCKET_PORT
-                  value: "8080"
-                - name: BRONZE_BUCKET_NAME
-                  valueFrom:
-                    configMapKeyRef:
-                      name: grid-resilience-bronze
-                      key: BUCKET_NAME
-                - name: SILVER_AWS_ACCESS_KEY_ID
-                  valueFrom:
-                    secretKeyRef:
-                      name: grid-resilience-silver
-                      key: AWS_ACCESS_KEY_ID
-                - name: SILVER_AWS_SECRET_ACCESS_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: grid-resilience-silver
-                      key: AWS_SECRET_ACCESS_KEY
-                - name: SILVER_BUCKET_HOST
-                  valueFrom:
-                    configMapKeyRef:
-                      name: grid-resilience-silver
-                      key: BUCKET_HOST
-                - name: SILVER_BUCKET_PORT
-                  value: "8080"
-                - name: SILVER_BUCKET_NAME
-                  valueFrom:
-                    configMapKeyRef:
-                      name: grid-resilience-silver
-                      key: BUCKET_NAME
-                - name: GOLD_AWS_ACCESS_KEY_ID
-                  valueFrom:
-                    secretKeyRef:
-                      name: grid-resilience-gold
-                      key: AWS_ACCESS_KEY_ID
-                - name: GOLD_AWS_SECRET_ACCESS_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: grid-resilience-gold
-                      key: AWS_SECRET_ACCESS_KEY
-                - name: GOLD_BUCKET_HOST
-                  valueFrom:
-                    configMapKeyRef:
-                      name: grid-resilience-gold
-                      key: BUCKET_HOST
-                - name: GOLD_BUCKET_PORT
-                  value: "8080"
-                - name: GOLD_BUCKET_NAME
-                  valueFrom:
-                    configMapKeyRef:
-                      name: grid-resilience-gold
-                      key: BUCKET_NAME
+              # Off since 2026-10-18 (owner): grid-resilience is shelved. The BRONZE_/SILVER_/GOLD_
+              # env (secretKeyRef/configMapKeyRef to the grid-resilience-* OBCs) went here; the OBCs
+              # were pruned with grid-reliance-infra, so the refs broke every run pod with
+              # CreateContainerConfigError. Restore from git history together with grid-reliance-infra.
     # User code: subchart disabled (no pods). Workspace still created via dagsterWebserver.workspace above.
     dagster-user-deployments:
       enabled: true

@@ -1,8 +1,8 @@
 # CrowdSec
 
-Reads the `envoy-external` access logs and flags scanners, probes and brute
-force against the public routes. Adapted from onedr0p/home-ops
-(commits 3d8c697, e0f42de).
+Reads the `envoy-external` access logs, flags scanners, probes and brute
+force against the public routes, and blocks the flagged addresses at Envoy.
+Adapted from onedr0p/home-ops (commits 3d8c697, e0f42de).
 
 ## Where to look
 
@@ -14,71 +14,78 @@ force against the public routes. Adapted from onedr0p/home-ops
   parsers, whitelists, alerts, decisions. Its lines-read panels stay empty
   (no kubernetes-source panel).
 
-## Status: stage 1, observe only
-
-The agent and LAPI run, and LAPI records alerts and decisions, but **nothing
-enforces them**: there is no bouncer and no SecurityPolicy yet. Leave it a
-week and read what it would have banned before going further.
-
 ```sh
-kubectl -n network exec deploy/crowdsec-lapi -- cscli metrics
 kubectl -n network exec deploy/crowdsec-lapi -- cscli alerts list
 kubectl -n network exec deploy/crowdsec-lapi -- cscli decisions list
+kubectl -n network exec deploy/crowdsec-lapi -- cscli bouncers list
+kubectl -n network exec deploy/crowdsec-agent -c crowdsec-agent -- cscli metrics
 ```
 
-What to check:
+## Status: enforcing (since 2026-10-20)
 
-- **Envoy is logging at all.** `kubectl -n network logs <an envoy-external
-  pod> -c envoy --tail=3` should show JSON lines with
-  `downstream_remote_address`. `envoy.yaml` sets no `telemetry.accessLog`, so
-  this relies on Envoy Gateway's default; if the lines aren't there, add an
-  explicit `telemetry.accessLog` block or this stage sees nothing.
-- **Lines are read and parsed.** In `cscli metrics`, the acquisition table
-  shows lines from `network/envoy-external-*` and the parser table shows
-  `yanis-kouidri/envoy-logs` parsing them. Some unparsed lines are expected:
-  the source follows every container in the pod, `shutdown-manager` included.
-- **The source address is the real client.** An all-quiet result is not proof:
-  `crowdsecurity/whitelists` covers `10.0.0.0/8`, so if the parser read the
-  cloudflared pod address instead of the client, nearly every line would be
-  *whitelisted* and nothing would ever alert. In `cscli metrics`, the
-  whitelist counters should be a small share of parsed lines, not almost all
-  of them. The definitive check is one real line:
-  `cscli explain --log '<access-log line>' --type envoy` and read the
-  `source_ip` it reports. (Envoy fills `downstream_remote_address` from the
-  X-Forwarded-For it trusts via the `ClientTrafficPolicy` in
-  `envoy-gateway/config/envoy.yaml`, so this should be the public address.)
-  If a bouncer ever acted on a pod address, every internet visitor would be
-  cut off.
-- **The decisions look like real abuse**, not Plex clients, family or monitors.
+A decision in LAPI (default: a 4h ban) now blocks that address on every
+`envoy-external` route with a 403. Decisions come from the scenarios below;
+nothing is pulled from CrowdSec's community blocklist.
+
+- **Unban someone**: `cscli decisions delete --ip <ip>` on the LAPI pod. The
+  bouncer picks it up within 10s.
+- **Emergency off**: delete the `crowdsec-bouncer` SecurityPolicy (or comment
+  `bouncer/securitypolicy.yaml` out of `bouncer/kustomization.yaml`). Envoy
+  stops asking the bouncer; detection keeps running.
+- **failOpen**: if the bouncer is down or slow, Envoy lets traffic through
+  instead of failing the public routes.
 
 ## How it's wired
 
 - **Logs**: the kubernetes acquisition source tails pods labelled
   `gateway.envoyproxy.io/owning-gateway-name=envoy-external` through the API
   (`rbac.yaml`). The chart's schema doesn't know that source, so the
-  HelmRelease disables schema validation.
+  HelmRelease disables schema validation. Envoy Gateway's default access log
+  is JSON; the parser reads `downstream_remote_address`, which Envoy fills
+  from the X-Forwarded-For it trusts via the `ClientTrafficPolicy` in
+  `envoy-gateway/config/envoy.yaml`, so it is the real client.
 - **Collections**: `yanis-kouidri/envoy` (parser + `crowdsecurity/base-http-scenarios`),
   `crowdsecurity/plex` (an allowlist only, so Plex's metadata and transcode
-  bursts don't trip the crawl scenarios), `crowdsecurity/whitelists` (RFC1918),
-  plus a local Tailscale `100.64.0.0/10` whitelist.
+  bursts don't trip the crawl scenarios), the `crowdsecurity/whitelists`
+  parser (RFC1918), plus a local Tailscale `100.64.0.0/10` whitelist.
+- **Bouncer** (`bouncer/`): kdwils/envoy-proxy-bouncer, attached to the
+  `envoy-external` Gateway as an ext_authz SecurityPolicy. Its client IP is
+  the rightmost X-Forwarded-For entry outside `${CLUSTER_CIDR}`: the real
+  client for Cloudflare traffic, the private address for LAN clients (never
+  banned, see whitelists). Its LAPI key is generated in-cluster
+  (`app/externalsecret.yaml`); LAPI registers it as bouncer `ENVOY` from
+  `BOUNCER_KEY_ENVOY`. If the key is ever regenerated, run
+  `cscli bouncers delete ENVOY` and restart LAPI, since the start script
+  skips a name that already exists.
+- **Route-level SecurityPolicies win**: in Envoy Gateway a SecurityPolicy on
+  an HTTPRoute replaces the Gateway one for that route unless it sets
+  `mergeType: StrategicMerge`. The ones on `envoy-external` today (kavita,
+  rybbit-main, strapi-ecom-cms) are private-CIDR allow-lists that 403 every
+  internet client anyway. **Any new route-level policy on `envoy-external`
+  that lets public traffic through (OIDC, API keys) needs `mergeType`**, or
+  CrowdSec silently stops covering that route.
 - **Local-only**: `DISABLE_ONLINE_API=true`. No alerts are sent to CrowdSec,
   which also means no community blocklist and no console. The agent still
   downloads hub content from CrowdSec's CDN at startup.
+- **LAN clients skip CrowdSec**: split DNS sends them to `envoy-external`
+  directly with a private source address. To test from home, go through
+  Cloudflare: `curl --resolve <host>:443:<cloudflare edge IP> ...`. The
+  built-in test scenario fires on `/crowdsec-test-NtktlJHV4TfBSK3wvlhiOBnl`
+  and creates an alert without a ban.
 - `envoy-internal` (LiteLLM, OpenClaw, everything LAN/Tailscale-only) is not
   watched.
 
-## Stage 2: enforce (not done)
+## Next
 
-1. Add the bouncer: `oci://ghcr.io/kdwils/charts/envoy-proxy-bouncer`,
-   `config.trustedProxies: ["10.42.0.0/16"]`, an API key for LAPI from
-   Bitwarden via external-secrets (`BOUNCER_KEY_ENVOY` in LAPI's env).
-2. Attach it with a `SecurityPolicy` `extAuth` (gRPC, port 8080,
-   `failOpen: true`) targeting the `envoy-external` Gateway.
-3. **Route-level policies win**: in Envoy Gateway a SecurityPolicy on an
-   HTTPRoute replaces the Gateway one for that route. Every route-level
-   policy on `envoy-external` (OIDC and private-CIDR ones) needs
-   `mergeType: StrategicMerge`, or CrowdSec silently skips those routes. The
-   bouncer's own docs say to attach per HTTPRoute instead; check which works
-   on our Envoy Gateway version before choosing.
-4. Decide on the online API (community blocklist in exchange for sharing
-   alerts) separately.
+- **AppSec / WAF** (planned, once the bouncer has run for a few weeks without
+  false positives): inline blocking of a malicious *first* request (virtual
+  patching for CVEs) on the public apps with admin panels: both Strapis,
+  MinIO, Medusa. Needs the chart's `appsec` component, the bouncer's
+  `config.waf`, and `extAuth.bodyToExtAuth` for POST bodies. Watch for false
+  positives on CMS uploads.
+- **App log parsers** (only if failed logins show up): `firix/authentik-logs`,
+  `crowdsecurity/home-assistant`, `LePresidente/grafana-logs`,
+  `LePresidente/overseerr-logs`. Each needs the app to log the real client
+  IP, not Envoy's.
+- Not planned: the community blocklist (it means sharing alerts with
+  CrowdSec) and the Cloudflare Worker bouncer (scanner load isn't a problem).

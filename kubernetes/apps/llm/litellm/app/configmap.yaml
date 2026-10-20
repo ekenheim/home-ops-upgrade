@@ -504,12 +504,15 @@ data:
           model: ollama_chat/*
           api_base: http://192.168.1.182:11434
           timeout: 600
-      # M3.1 Flash Preview replaces M2.7, which MiniMax retires on 2026-11-18;
-      # from 2026-10-19 plan requests for M2.5/M2.7 are routed to it anyway.
-      # Tool calls verified on the chat endpoint 2026-10-17 (no
-      # reasoning_content in the reply). It is not in /v1/models yet but
-      # answers by this name. The 204800 window is M2.7's, kept until a larger
-      # one is verified here.
+      # M3.1 Flash replaces M2.7, which MiniMax retires on 2026-11-18; from
+      # 2026-10-19 plan requests for M2.5/M2.7 are routed to it anyway. Tool
+      # calls verified on the chat endpoint 2026-10-17 (no reasoning_content
+      # in the reply). MiniMax dropped the -Preview suffix by 2026-10-20: only
+      # MiniMax-M3.1-Flash is in /v1/models, so upstream calls use that name.
+      # The old name still answered then, but nothing promises it will. This
+      # alias keeps the -Preview name so client configs and key allowlists
+      # stay put. The 204800 window is M2.7's, kept until a larger one is
+      # verified here.
       - model_name: MiniMax-M3.1-Flash-Preview
         model_info:
           mode: chat
@@ -520,7 +523,7 @@ data:
           input_cost_per_token: 3.0e-07
           output_cost_per_token: 1.2e-06
         litellm_params:
-          model: openai/MiniMax-M3.1-Flash-Preview
+          model: openai/MiniMax-M3.1-Flash
           api_base: https://api.minimax.io/v1
           api_key: os.environ/MINIMAX_API_KEY
 
@@ -589,14 +592,14 @@ data:
       # capacity we have (5-hour + weekly windows, metered by weighted usage,
       # not prompts -- see apps/observability/exporters/minimax-quota-exporter)
       # and a coder run is 50-200 calls. Window = 204800, M2.7's, kept for
-      # MiniMax-M3.1-Flash-Preview (see its alias entry above).
+      # MiniMax-M3.1-Flash (see the MiniMax-M3.1-Flash-Preview alias above).
       - model_name: implementation-pool
         model_info:
           mode: chat
           max_input_tokens: 204800
           supports_function_calling: true
         litellm_params:
-          model: openai/MiniMax-M3.1-Flash-Preview
+          model: openai/MiniMax-M3.1-Flash
           api_base: https://api.minimax.io/v1
           api_key: os.environ/MINIMAX_API_KEY
           order: 1
@@ -728,7 +731,7 @@ data:
           max_input_tokens: 204800
           supports_function_calling: true
         litellm_params:
-          model: openai/MiniMax-M3.1-Flash-Preview
+          model: openai/MiniMax-M3.1-Flash
           api_base: https://api.minimax.io/v1
           api_key: os.environ/MINIMAX_API_KEY
           order: 2

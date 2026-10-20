@@ -79,7 +79,7 @@ Keep only entries whose <updated> time is within the last 24 hours.
 For a commit you need detail on, web_fetch its <link> URL (https://github.com/<owner>/<repo>/commit/<sha>).
 web_fetch only accepts http(s) URLs; never pass it a file path.
 Ignore Renovate/dependency bumps and formatting-only changes.
-For each notable change give one line: what changed, and why it could matter for a Talos + Flux + Rook-Ceph + Cilium + envoy-gateway cluster running LiteLLM, llmkube, OpenClaw, Hermes and dispatch. Link the commit.
+For each notable change give one line: what changed, and why it could matter for a Talos + Flux + Rook-Ceph + Cilium + envoy-gateway cluster running LiteLLM, llmkube, OpenClaw and Hermes. Link the commit.
 If nothing is notable, reply with one line saying so."
 
 # Flux exports no metrics to Prometheus here, so Flux problems come from the

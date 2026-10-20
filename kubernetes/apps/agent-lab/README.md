@@ -90,8 +90,8 @@ Also outside this directory:
    Trackinizer, each with its own login, and Trackinizer is reached only by the orchestrator and,
    for the web UI, envoy-internal. No sandbox pod reaches either.
 10. GitHub tokens: agent-lab has its own Bitwarden item, `agent_factory_github`, never the shared
-    `github_token` PAT (that one is the human account's and can write to every repo dispatch and
-    courier use, this one included). `GITHUB_TOKEN` is a fine-grained PAT for the target repo only
+    `github_token` PAT (that one is the human account's and can write to every repo it is scoped
+    to, this one included). `GITHUB_TOKEN` is a fine-grained PAT for the target repo only
     (Contents, Issues, Pull requests read/write) and goes to `agent-control` and `agent-work`.
     `GITHUB_TOKEN_READONLY` (Contents read, same repo) is the only token in `agent-verify`, where
     everything downstream of the worker's branch runs. Protect the target repo's default branch so

@@ -86,7 +86,7 @@ spec:
           name: authentik-dawarich-oidc
 ---
 # A store that may read only the Secret above, usable only from `default`.
-# Same shape as llm/litellm/clustersecretstore/courier.yaml.
+# Same shape as llm/litellm/clustersecretstore/karakeep.yaml.
 #
 # Consumer: default/dawarich-oidc
 #   data: {remoteRef: {key: authentik-dawarich-oidc, property: client-secret}}

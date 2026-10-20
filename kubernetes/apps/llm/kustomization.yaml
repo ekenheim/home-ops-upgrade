@@ -64,25 +64,8 @@ resources:
   # Facebook Marketplace watcher; listings are rated by litellm's `fast`.
   # Web UI is loopback-only by design (port-forward), see its helmrelease.
   - ./ai-marketplace-monitor/ks.yaml
-  # Flux-Kustomizations | The agentic coding loop
-  #
-  # dispatch grooms GitHub issues into a queue; courier claims them and runs
-  # one CoderRun pod per issue that opens a PR (never merges). foreman and its
-  # dispatch bridge did this job until 2026-09-29.
-  #
-  # Bitwarden Secrets Manager items:
-  #   `github_token`  GITHUB_TOKEN -- the one agent PAT. Commits, PRs and issue
-  #                   labels all come from this identity, on EVERY repo the loop
-  #                   is pointed at, so scope it deliberately.
-  #   `dispatch`      DISPATCH_AGENT_TOKEN, DISPATCH_AUTH_USERNAME / _PASSWORD,
-  #                   LITELLM_API_KEY.
-  # courier's LiteLLM key is operator-minted (litellm/keys/courier.yaml); the
-  # old `foreman` item is unused since 2026-10-11.
-  #
-  # dispatch needs the `dispatch` Postgres user, declared in
-  # apps/database/crunchy-postgres/cluster/cluster.yaml.
-  - ./dispatch/ks.yaml
-  - ./courier/ks.yaml
+  # The agentic coding loop (dispatch + courier, foreman before them) was
+  # retired 2026-10-20 and removed from the tree; see git history.
   # Interactive coding assistant on the LiteLLM pools + MCP gateway.
   - ./opencode/ks.yaml
   # Flux-Kustomizations | Observability

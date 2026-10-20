@@ -74,7 +74,7 @@
 #   discussions/5   excessive CoT on simple tasks -- aimed at the `fast` alias,
 #                   where Lingarr runs with enable_thinking: false
 # None of that is fixable by a different quant or a different repacker; it is
-# the weights. If Hermes or the foreman agents get visibly worse at tool use,
+# the weights. If Hermes gets visibly worse at tool use,
 # the fix is to revert this file, not to chase quants.
 #
 # ROLLING BACK
@@ -156,7 +156,7 @@
 #
 # ALSO NOT verified, and the thing that actually matters: whether 1.5 is worse
 # at agentic coding than the 1.0 it replaced (see PROBATION above). Mechanical
-# checks passing says nothing about that. Watch Hermes and the foreman agents.
+# checks passing says nothing about that. Watch Hermes.
 #
 # ROLLOUT RESULT (2026-08-14, Ornith-1.0) -- the previous baseline, retained
 # for comparison:
@@ -180,8 +180,8 @@
 # templates with synthetic message sequences and trip both, so llama.cpp
 # under --jinja (which is what `jinja: true` sets) returned
 #   400 Unable to generate parser for this template
-# and tool calling was dead on arrival. That would take out Hermes and the
-# foreman agents, which are the whole point of this model.
+# and tool calling was dead on arrival. That would take out Hermes, the main
+# reason to run this model.
 #
 # 1.5's template still carries both assertions, at lines 79 and 85 of
 # chat_template.jinja, with the same messages. But rendering it against the

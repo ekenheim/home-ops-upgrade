@@ -191,7 +191,7 @@ spec:
   # 262144 / 2 = 131072 per slot (see WINDOW above). Every client of the
   # local aliases hardcodes the per-slot number, so they move together:
   # litellm max_input_tokens on every worker4 rung, hermes context_length,
-  # opencode/courier/openclaw limits, and the worker4-llm dashboard constant.
+  # opencode/openclaw limits, and the worker4-llm dashboard constant.
   #
   # 2 slots, not Ornith's 8. Those were sized for Lingarr batches fanning out
   # beside Hermes, and Lingarr is on MiniMax now. Generation here is

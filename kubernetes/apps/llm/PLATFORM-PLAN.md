@@ -17,7 +17,7 @@ Reference: <https://github.com/joryirving/home-ops/blob/main/docs/src/notes/llm-
 | 5 | Better memory recall | a reranker next to the embeddings, wired into memini |
 | 6 | Renovate runs on demand | self-hosted `renovate-operator` + `webhook` (replaces the Mend app) |
 | 7 | Always-on agents with scheduled jobs | `openclaw` with Discord bots, next to hermes |
-| 8 | Issues become PRs on their own | `courier` + `opencode` driven by dispatch (replaces foreman) |
+| 8 | Issues become PRs on their own | `courier` + `opencode` driven by dispatch (replaces foreman). **Retired 2026-10-20**, both removed |
 | 9 | A coding assistant of our own | `opencode` web + Zed on an `auto` classifier alias |
 
 ## The one difference from Jory: no 3090
@@ -62,7 +62,7 @@ yet ships with its `ks.yaml` commented out and is switched on in a follow-up.
 | **1c** | Reranker + memini wiring; extra toolhive MCP servers | UniFi, Grafana and arr API keys for their MCP servers |
 | **2** | `renovate-operator` + `webhook` | a GitHub App, then turning off the Mend app |
 | **3** | `openclaw` with one Discord bot and 3-4 read-only jobs | a Discord bot token |
-| **4** | `courier` + `opencode` (coordinator) replacing foreman | none beyond existing `github_token` / `dispatch` items |
+| **4** | `courier` + `opencode` (coordinator) replacing foreman. Retired 2026-10-20 | none beyond existing `github_token` / `dispatch` items |
 | **5** | `opencode` web + Zed on `auto` | nothing |
 
 ## What you need to do

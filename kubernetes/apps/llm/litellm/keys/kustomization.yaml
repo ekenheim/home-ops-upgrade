@@ -18,7 +18,6 @@ resources:
   # agent-egress gateway, is gone. Pruning the CR revokes the key in LiteLLM
   # (the operator's finalizer); a re-enable mints a new one.
   #- ./agent-lab.yaml
-  - ./courier.yaml
   - ./paperless-gpt.yaml
   - ./vane.yaml
   - ./karakeep.yaml

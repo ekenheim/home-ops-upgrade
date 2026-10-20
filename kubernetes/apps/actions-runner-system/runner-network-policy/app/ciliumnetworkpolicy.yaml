@@ -22,8 +22,8 @@ spec:
     egress: false
     ingress: false
   egressDeny:
-    # The llm namespace (memini, hindsight, openclaw, opencode, courier,
-    # dispatch, the mcp-gateway ...) -- except LiteLLM, which the AI PR
+    # The llm namespace (memini, hindsight, openclaw, opencode, the
+    # mcp-gateway ...) -- except LiteLLM, which the AI PR
     # review calls. Deny wins over allow in Cilium, so the exception has to
     # be written into the deny selector itself.
     - toEndpoints:

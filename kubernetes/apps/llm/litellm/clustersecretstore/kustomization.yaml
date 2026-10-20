@@ -8,6 +8,5 @@ resources:
   # Off since 2026-10-18 (owner), with apps/agent-lab: it serves only
   # agent-control, which is pruned. Back together with ../keys/agent-lab.yaml.
   #- ./agent-lab.yaml
-  - ./courier.yaml
   - ./paperless-gpt.yaml
   - ./karakeep.yaml

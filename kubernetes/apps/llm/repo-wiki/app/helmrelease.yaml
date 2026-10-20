@@ -139,7 +139,7 @@ spec:
                         values: ["mkdocs"]
                   topologyKey: kubernetes.io/hostname
         cronjob:
-          # Nightly: ornith is shared with hermes and dispatch during the day.
+          # Nightly: ornith is shared with hermes during the day.
           schedule: "0 3 * * *"
           timeZone: "${TIMEZONE}"
           concurrencyPolicy: Forbid
@@ -155,7 +155,8 @@ spec:
               TZ: "${TIMEZONE}"
               OPENAI_BASE_URL: http://litellm.llm:4000/v1
               # ornith-35b with thinking on. Writing a page from source files
-              # is the kind of work dispatch also gives this alias, not `fast`.
+              # is the kind of work dispatch's groomer also used this alias
+              # for (until 2026-10-20), not `fast`.
               WIKI_MODEL: self-hosted
               MAX_REPOS_PER_RUN: "1"
               MAX_PAGES_PER_REPO: "20"

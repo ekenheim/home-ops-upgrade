@@ -23,7 +23,6 @@ lives here.
 | `lemonade-tts`, `whisper` | GPU speech on worker4: OpenMOSS TTS and whisper.cpp (Vulkan). Web pages at `lemonade.<domain>` and `whisper.<domain>` (internal, no login); no API consumers yet; Home Assistant and Bazarr keep their CPU services. |
 | `sillytavern` | Character chat frontend. Internal ingress is its only access control. |
 | `ai-marketplace-monitor` | Facebook Marketplace watcher, listings rated by `fast`. UI at `marketplace.<domain>`, login = the Facebook credentials. No notifier wired yet. |
-| `dispatch`, `courier` | The agentic coding loop. |
 | `langfuse` | Traces of LiteLLM calls (prompt, response, tokens, latency). Only the `coding`, `research`, `media` and `platform` teams are traced; see `default_team_settings` in `litellm/app/configmap.yaml`. Sign-in via Authentik (admins only). |
 | `kagent` | **Test.** kagent.dev: agents as CRDs. Two read-only agents (Kubernetes, Prometheus/Grafana) on `kagent-chat` (MiniMax-M3 first, worker4 second), key `kagent` (team `platform`). Tool server `--read-only` behind a get/list/watch ClusterRole, no Secrets, plus the ToolHive kubectl/flux/grafana servers as RemoteMCPServers. UI at `kagent.<domain>` behind Authentik OIDC. |
 

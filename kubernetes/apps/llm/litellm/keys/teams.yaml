@@ -72,8 +72,7 @@ spec:
     - userID: default_user_id
       role: user
   # Public code only, so the cloud plans are allowed.
-  # Keys: pr-review, courier, opencode, zed (Git); dispatch, repo-wiki
-  # (Bitwarden). agent-lab's key is off with agent-lab since 2026-10-18.
+  # Keys: pr-review, opencode, zed (Git); repo-wiki (Bitwarden). agent-lab's key is off with agent-lab since 2026-10-18.
   models:
     - pc/*
     - auto

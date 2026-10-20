@@ -1,9 +1,16 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/tailscale.com/connector_v1alpha1.json
 apiVersion: tailscale.com/v1alpha1
 kind: Connector
 metadata:
   name: pitower
 spec:
-  hostname: pitower
+  # Two replicas advertising the same routes give HA subnet routing and exit
+  # node failover (https://tailscale.com/kb/1115/high-availability). hostname
+  # is not allowed above one replica; devices are pitower-0 and pitower-1.
+  replicas: 2
+  hostnamePrefix: pitower-
+  proxyClass: connector
   subnetRouter:
     advertiseRoutes:
       - ${CLUSTER_CIDR}    # 10.42.0.0/16 for Kubernetes pods

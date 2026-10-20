@@ -1,0 +1,27 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# Every request on envoy-external is checked against CrowdSec's decisions.
+# failOpen: if the bouncer is down, traffic passes rather than the public
+# routes going dark.
+#
+# A route-level SecurityPolicy REPLACES this one for its route unless it sets
+# `mergeType: StrategicMerge`. Today's route-level policies on envoy-external
+# (kavita, rybbit-main, strapi-ecom-cms) are private-CIDR allow-lists that
+# 403 every internet client anyway, so they go without. Any future one that
+# lets public traffic through (OIDC, API keys) needs mergeType, or CrowdSec
+# silently stops covering that route.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: crowdsec-bouncer
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: envoy-external
+  extAuth:
+    failOpen: true
+    grpc:
+      backendRefs:
+        - name: crowdsec-bouncer
+          port: 8080

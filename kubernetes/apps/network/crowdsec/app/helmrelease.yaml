@@ -28,14 +28,20 @@ spec:
       env:
         - name: USE_WAL
           value: "true"
-        # Observe-only and local-only: no signal sharing with CrowdSec's
-        # central API, so no community blocklist and no console. See README.
+        # Local-only: no signal sharing with CrowdSec's central API, so no
+        # community blocklist and no console. See README.
         - name: DISABLE_ONLINE_API
           value: "true"
+      # BOUNCER_KEY_ENVOY registers the envoy bouncer (externalsecret.yaml).
+      envFrom:
+        - secretRef:
+            name: crowdsec-bouncer-key
+      podAnnotations:
+        secret.reloader.stakater.com/reload: crowdsec-bouncer-key
       resources:
         requests:
           cpu: 25m
-          memory: 128Mi
+          memory: 64Mi
         limits:
           memory: 512Mi
       metrics:
@@ -63,7 +69,7 @@ spec:
       resources:
         requests:
           cpu: 50m
-          memory: 128Mi
+          memory: 64Mi
         limits:
           memory: 512Mi
       metrics:

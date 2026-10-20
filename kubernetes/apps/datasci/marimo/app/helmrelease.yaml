@@ -78,18 +78,25 @@ spec:
             args:
               - |
                 # The published image ships no `mcp` extra and marimo refuses to
-                # start with --mcp without it. site-packages is writable by uid
-                # 1000, so install at startup rather than maintaining a custom
-                # image for one dependency; UV_CACHE_DIR is on the PVC, so every
-                # start after the first is a cache hit.
+                # start with --mcp without it. The interpreter's site-packages
+                # is writable by uid 1000, so install at startup rather than
+                # maintaining a custom image for one dependency; UV_CACHE_DIR is
+                # on the PVC, so every start after the first is a cache hit.
                 #
-                # Pin to the image's own marimo version so the constraint
-                # (mcp>=1.0.0,<2) comes from marimo itself and cannot drift when
-                # the image tag is bumped. A bare `mcp` resolves to 2.x, which
-                # relocated mcp.server.fastmcp. marimo's DependencyManager.mcp
-                # declares no version bounds, so has() still returns True and the
-                # break only surfaces at boot as:
-                #   ModuleNotFoundError: No module named 'mcp.server.fastmcp'
+                # Target the interpreter marimo runs on, never --system. Since
+                # 0.25.2 the image runs marimo from /opt/venv (VIRTUAL_ENV, owned
+                # by uid 1000); --system resolves to the root-owned
+                # /usr/local/lib/python3.13 instead, the install dies with
+                # "Permission denied", and marimo exits with
+                #   Error: MCP dependencies not available.
+                #
+                # Pin to the image's own marimo version so the mcp constraint
+                # comes from marimo itself and cannot drift when the image tag is
+                # bumped. marimo's DependencyManager.mcp declares no version
+                # bounds, so a mismatched `mcp` still passes has() and the break
+                # only surfaces at boot (0.25.1 needed mcp<2 and failed on 2.x
+                # with "No module named 'mcp.server.fastmcp'"; 0.25.2 requires
+                # mcp>=2).
                 #
                 # `recommended` is here for the AI panel, not for convenience.
                 # It is the only extra that pulls pydantic-ai-slim[openai], and
@@ -98,7 +105,7 @@ spec:
                 # the base image, so without this EVERY model in [ai.models]
                 # fails at request time no matter how it is configured -- and it
                 # fails in the request, not at boot, so the pod stays Ready.
-                uv pip install --system --quiet \
+                uv pip install --quiet --python "$(command -v python3)" \
                   "marimo[mcp,recommended]==$(marimo --version)"
 
                 # --token-password-file replaces --no-token. The same value gates

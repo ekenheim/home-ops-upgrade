@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/tailscale.com/proxyclass_v1alpha1.json
+apiVersion: tailscale.com/v1alpha1
+kind: ProxyClass
+metadata:
+  name: connector
+spec:
+  metrics:
+    enable: true
+    serviceMonitor:
+      enable: true
+  statefulSet:
+    pod:
+      # One router per node, so a node loss leaves the other replica routing.
+      # ScheduleAnyway: two routers on one node beat a Pending replica while
+      # the control plane is down to master2.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels:
+              tailscale.com/parent-resource: pitower
+              tailscale.com/parent-resource-type: connector
+      tailscaleContainer:
+        # 14d p95: ~45Mi working set, under 30m CPU; peak 84Mi.
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            memory: 256Mi

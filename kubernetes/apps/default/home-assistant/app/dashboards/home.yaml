@@ -335,27 +335,20 @@ views:
           - type: heading
             heading: Now
             heading_style: title
-          - type: custom:bubble-card
-            card_type: media-player
-            entity: media_player.lg_tv
-            name: LG TV
-            grid_options: { columns: full }
-            visibility:
-              - condition: state
-                entity: media_player.lg_tv
-                state_not: "off"
-              - condition: state
-                entity: media_player.lg_tv
-                state_not: unavailable
+          # The TV is off the network; the Shield (reports on/off only)
+          # follows it over HDMI-CEC and stands in for it.
           - type: custom:bubble-card
             card_type: media-player
             entity: media_player.shield_android_tv
-            name: Shield
+            name: TV
             grid_options: { columns: full }
             visibility:
               - condition: state
                 entity: media_player.shield_android_tv
-                state: playing
+                state_not: "off"
+              - condition: state
+                entity: media_player.shield_android_tv
+                state_not: unavailable
           - type: custom:bubble-card
             card_type: media-player
             entity: media_player.kok
@@ -401,11 +394,8 @@ views:
             content: "*Nothing playing.*"
             visibility:
               - condition: state
-                entity: media_player.lg_tv
-                state: ["off", unavailable]
-              - condition: state
                 entity: media_player.shield_android_tv
-                state_not: playing
+                state: ["off", unavailable]
               - condition: state
                 entity: media_player.kok
                 state_not: playing
@@ -631,8 +621,8 @@ views:
                 icon: mdi:television-play
               - type: custom:bubble-card
                 card_type: media-player
-                entity: media_player.lg_tv
-                name: LG TV
+                entity: media_player.shield_android_tv
+                name: Shield
 
           # Kitchen
           - type: custom:bubble-card
@@ -2096,10 +2086,6 @@ views:
           - type: heading
             heading: TV
             heading_style: title
-          - type: custom:bubble-card
-            card_type: media-player
-            entity: media_player.lg_tv
-            name: LG TV
           - type: custom:bubble-card
             card_type: media-player
             entity: media_player.shield_android_tv

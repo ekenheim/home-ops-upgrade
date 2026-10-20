@@ -8,5 +8,9 @@ metadata:
   labels:
     goldilocks.fairwinds.com/enabled: "true"
     kustomize.toolkit.fluxcd.io/prune: disabled
-    pod-security.kubernetes.io/enforce: baseline
+    # privileged: pod-gateway injects NET_ADMIN containers into routed pods
+    # (SABnzbd, Prowlarr). warn/audit still report anything above baseline.
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: baseline
+    pod-security.kubernetes.io/audit: baseline
     routed-gateway: 'true'

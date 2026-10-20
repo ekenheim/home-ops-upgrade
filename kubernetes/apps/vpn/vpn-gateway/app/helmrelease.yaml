@@ -1,158 +1,169 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: vpn-gateway
-  namespace: &ns vpn-gateway
 spec:
-  interval: 5m
+  interval: 30m
   chart:
     spec:
-      reconcileStrategy: Revision
-      # renovate: registryUrl=https://angelnu.github.io/helm-charts/
       chart: pod-gateway
-      version: 6.5.1
-      interval: 15m
+      version: 7.1.1
       sourceRef:
         kind: HelmRepository
-        name: angelnu-charts
+        name: angelnu
         namespace: flux-system
-
   install:
     remediation:
-      retries: 5
+      retries: 3
   upgrade:
+    cleanupOnFail: true
     remediation:
-      retries: 5
-
+      strategy: rollback
+      retries: 3
+  # The chart's webhook only selects by namespace, so with failurePolicy Fail
+  # every pod CREATE in `downloads` would depend on it. Narrow it to the pods
+  # that opt in: an unlabelled pod never reaches the webhook, a labelled pod
+  # is refused (not started unrouted) while the webhook is down.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: MutatingWebhookConfiguration
+            patch: |
+              - op: add
+                path: /webhooks/0/objectSelector
+                value:
+                  matchLabels:
+                    setGateway: "true"
+              - op: add
+                path: /webhooks/0/failurePolicy
+                value: Fail
   values:
-    image:
-      repository: ghcr.io/angelnu/pod-gateway
-      tag: v1.13.0@sha256:a5b032e15f7570493977b330a5a86dcffebb807d35685ad803e47afb62d105f2
+    controllers:
+      main:
+        containers:
+          main:
+            image:
+              repository: ghcr.io/angelnu/pod-gateway
+              tag: v1.13.0@sha256:a5b032e15f7570493977b330a5a86dcffebb807d35685ad803e47afb62d105f2
+            resources:
+              requests:
+                cpu: 5m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+          gluetun:
+            enabled: true
+            image:
+              repository: ghcr.io/qdm12/gluetun
+              tag: v3.41.3@sha256:fa19cc76b2af13d57a8d3dc3066f2ada061b1c761b8aecf989b3877c0486e027
+            env:
+              TZ: ${TIMEZONE}
+              VPN_SERVICE_PROVIDER: mullvad
+              VPN_TYPE: wireguard
+              VPN_INTERFACE: wg0
+              WIREGUARD_ENDPOINT_PORT: &vpnPort 51820
+              SERVER_CITIES: Amsterdam
+              # pod-gateway's iptables (VPN_BLOCK_OTHER_TRAFFIC) is the kill
+              # switch. gluetun >= 3.39 ignores `FIREWALL=off`; this is the
+              # variable that actually turns its own firewall off.
+              FIREWALL_ENABLED_DISABLING_IT_SHOOTS_YOU_IN_YOUR_FOOT: "off"
+              # pod-gateway's dnsmasq already holds :53, so gluetun's DNS server
+              # stays off and it points resolv.conf at Mullvad's in-tunnel
+              # resolver instead of kube-dns (which forwards to the ISP).
+              DNS_SERVER: "off"
+              DNS_ADDRESS: 10.64.0.1
+            envFrom:
+              - secretRef:
+                  name: mullvad
+            securityContext:
+              capabilities:
+                add:
+                  - NET_ADMIN
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - /gluetun-entrypoint
+                      - healthcheck
+                  initialDelaySeconds: 30
+                  periodSeconds: 60
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness:
+                enabled: false
+              startup:
+                enabled: false
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+      webhook:
+        containers:
+          main:
+            image:
+              repository: ghcr.io/angelnu/gateway-admision-controller
+              tag: v3.12.0@sha256:6f6ab596afd5fef0ca4648eadfb21cd37ba86fa5afa8b85edcc072976a61fbed
+            resources:
+              requests:
+                cpu: 5m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
 
-    env:
-      TZ: "${TZ}"
-
-    routed_namespaces:
-      - downloads
-
-    publicPorts:
-      - hostname: qbittorrent # hostname assigned to the pod
-        IP: 10 # must be an integer between 2 and VXLAN_GATEWAY_FIRST_DYNAMIC_IP (20 by default)
-        ports:
-          - type: udp
-            port: ${VPN_FORWARDED_PORT_1}
-          - type: tcp
-            port: ${VPN_FORWARDED_PORT_1}
-          - type: udp
-            port: ${VPN_FORWARDED_PORT_2}
-          - type: tcp
-            port: ${VPN_FORWARDED_PORT_2}
-
-    # Default VPN_VXLAN DNS
-    DNS: 172.16.0.1
-
-    settings:
-      IPTABLES_NFT: "yes"
-      NOT_ROUTED_TO_GATEWAY_CIDRS: "${NETWORK_K8S_CLUSTER_CIDR} ${NETWORK_K8S_SERVICE_CIDR} ${NETWORK_MANAGEMENT_CIDR}"
-      # tun0 for openvpn, wg0 for wireguard
-      VPN_INTERFACE: wg0
-      VXLAN_IP_NETWORK: "172.16.0"
-      # Prevent non VPN traffic to leave the gateway
-      VPN_BLOCK_OTHER_TRAFFIC: false
-      # If VPN_BLOCK_OTHER_TRAFFIC is true, allow VPN traffic over this port
-      VPN_TRAFFIC_PORT: ${VPN_GATEWAY_VPN_PORT}
-      # Traffic to these IPs will be send through the K8S gateway
-      # change if your K8S cluster or home network uses a different CIDR
-      VPN_LOCAL_CIDRS: "${NETWORK_K8S_CLUSTER_CIDR} ${NETWORK_K8S_SERVICE_CIDR} ${NETWORK_MANAGEMENT_CIDR} ${LOCAL_CIDR_1} ${LOCAL_CIDR_2}"
-      DNS_LOCAL_CIDRS: "local ${DOMAIN_BIG_BLOOP} ${DOMAIN_BIG_BLOOP} ${DOMAIN_CORE_BLOOP}"
-
-    webhook:
-      image:
-        repository: ghcr.io/angelnu/gateway-admision-controller
-        tag: v3.12.0@sha256:6f6ab596afd5fef0ca4648eadfb21cd37ba86fa5afa8b85edcc072976a61fbed
-
-      gatewayDefault: true
-      gatewayLabel: setGateway
-      gatewayAnnotation: setGateway
-      namespaceSelector:
-        label: "routed-gateway"
-
-    livenessProbe:
-      exec:
-        command:
-          - sh
-          - -c
-          - if [ $(curl -s https://am.i.mullvad.net/country) = '${VPN_COUNTRY}' ]; then exit 0; else exit $?; fi
-      initialDelaySeconds: 30
-      periodSeconds: 60
-      failureThreshold: 1
-
-    addons:
-      netshoot:
+    networkpolicies:
+      main:
         enabled: true
-
-      vpn:
-        enabled: true
-        type: gluetun
-        gluetun:
-          image:
-            repository: docker.io/qmcgaw/gluetun
-            tag: v3.41.3@sha256:fa19cc76b2af13d57a8d3dc3066f2ada061b1c761b8aecf989b3877c0486e027
-
-        securityContext:
-          capabilities:
-            add: ["NET_ADMIN"]
-
-        env:
-          - name: VPN_SERVICE_PROVIDER
-            value: mullvad
-          - name: VPN_TYPE
-            value: wireguard
-          - name: VPN_INTERFACE
-            value: wg0
-          - name: FIREWALL
-            value: "off"
-          - name: DOT
-            value: "off"
-          - name: SERVER_CITIES
-            value: "Chicago IL"
-          - name: FIREWALL_VPN_INPUT_PORTS
-            value: "${VPN_FORWARDED_PORT_1},${VPN_FORWARDED_PORT_2}"
-          - name: VPN_ENDPOINT_PORT
-            value: ${VPN_GATEWAY_VPN_PORT}
-          - name: DNS_ADDRESS
-            value: ${SVC_KUBE_DNS_V4}
-
-        envFrom:
-          - secretRef:
-              name: mullvad
-
-        resources:
-          requests:
-            cpu: "0.001"
-            memory: 128Mi
-          limits:
-            memory: 2Gi
-
-        networkPolicy:
-          enabled: true
-
+        controller: main
+        policyTypes:
+          - Egress
+        rules:
           egress:
+            # Internet: only the WireGuard tunnel to Mullvad
             - to:
                 - ipBlock:
                     cidr: 0.0.0.0/0
               ports:
-                - port: ${VPN_GATEWAY_VPN_PORT}
+                - port: *vpnPort
                   protocol: UDP
-                - port: ${VPN_GATEWAY_VPN_PORT}
-                  protocol: TCP
-                - port: 53
-                  protocol: UDP
+            # In-cluster: routed pods (VXLAN) and kube-dns. Cilium does not
+            # match pod IPs with ipBlock, hence the namespace selector.
             - to:
-                # Allow traffic within K8S - change if your K8S cluster uses a different CIDR
-                - ipBlock:
-                    cidr: ${NETWORK_K8S_CLUSTER_CIDR}
-                - ipBlock:
-                    cidr: ${NETWORK_K8S_SERVICE_CIDR}
                 - namespaceSelector: {}
+
+    routed_namespaces:
+      - downloads
+
+    settings:
+      # Clients reach these directly over eth0, never via the gateway, so
+      # kubelet probes, Sonarr/Radarr callbacks and envoy-internal keep working.
+      NOT_ROUTED_TO_GATEWAY_CIDRS: "${CLUSTER_CIDR} ${SERVICE_CIDR} ${NODE_CIDR} ${DEFAULT_CIDR}"
+      # Cilium owns 8472 (the kernel default for dstport 0)
+      VXLAN_PORT: 4789
+      VXLAN_IP_NETWORK: "172.16.0"
+      VPN_INTERFACE: wg0
+      VPN_BLOCK_OTHER_TRAFFIC: true
+      VPN_TRAFFIC_PORT: *vpnPort
+      # Must not cover 10.64.0.0/10, or DNS to Mullvad's 10.64.0.1 leaves via eth0
+      VPN_LOCAL_CIDRS: "${CLUSTER_CIDR} ${SERVICE_CIDR} ${NODE_CIDR} ${DEFAULT_CIDR}"
+      # *.cluster.local resolves via kube-dns; everything else via the tunnel
+      DNS_LOCAL_CIDRS: "local"
+      DNS_LOCAL_SERVER: ${COREDNS_ADDR}
+      # The v1.13.0 image only ships the 2017 root trust anchor (angelnu/pod-gateway#98)
+      GATEWAY_ENABLE_DNSSEC: false
+
+    webhook:
+      # Only pods labelled setGateway: "true" are routed (SABnzbd, Prowlarr)
+      gatewayDefault: false
+      gatewayLabel: setGateway
+      gatewayAnnotation: setGateway
+      namespaceSelector:
+        type: label
+        label: routed-gateway

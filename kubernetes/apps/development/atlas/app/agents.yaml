@@ -63,7 +63,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.21
+              image: ghcr.io/ekenheim/atlas-agent:0.6.22
               args: ["scout"]
               env:
                 - name: ATLAS_MCP_URL
@@ -124,7 +124,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.21
+              image: ghcr.io/ekenheim/atlas-agent:0.6.22
               args: ["researcher"]
               env:
                 - name: ATLAS_MCP_URL
@@ -185,7 +185,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.21
+              image: ghcr.io/ekenheim/atlas-agent:0.6.22
               args: ["skeptic"]
               env:
                 - name: ATLAS_MCP_URL
@@ -246,7 +246,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.21
+              image: ghcr.io/ekenheim/atlas-agent:0.6.22
               command: ["/opt/atlas-agent/agent/scorecard-run.sh"]
               env:
                 - name: ATLAS_MCP_URL
@@ -308,7 +308,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.21
+              image: ghcr.io/ekenheim/atlas-agent:0.6.22
               args: ["watch"]
               env:
                 - name: ATLAS_MCP_URL
@@ -370,7 +370,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.21
+              image: ghcr.io/ekenheim/atlas-agent:0.6.22
               args: ["watch"]
               env:
                 - name: ATLAS_MCP_URL
@@ -432,7 +432,7 @@ spec:
             runAsGroup: 10001
           containers:
             - name: agent
-              image: ghcr.io/ekenheim/atlas-agent:0.6.21
+              image: ghcr.io/ekenheim/atlas-agent:0.6.22
               args: ["watch"]
               env:
                 - name: ATLAS_MCP_URL

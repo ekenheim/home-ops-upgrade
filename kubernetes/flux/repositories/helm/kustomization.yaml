@@ -6,6 +6,7 @@ resources:
   - ./actions-runner-controller.yaml
   - ./aquasecurity.yaml
   - ./airbyte.yaml
+  - ./angelnu.yaml
   - ./authentik-charts.yaml
   - ./bitnami.yaml
   - ./backube.yaml

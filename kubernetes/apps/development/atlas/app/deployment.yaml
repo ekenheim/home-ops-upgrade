@@ -58,6 +58,11 @@ spec:
             # and judged Beliefs still reach the conclusions bank. "on" restores it.
             - name: ATLAS_BULK_RETENTION
               value: "off"
+            # Frozen 2026-10-20 (Atlas ADR 0004): no daily mental-model refresh (Codex budget).
+            # Consolidation is already held by ATLAS_BULK_RETENTION=off and stays enabled, so its
+            # follow-ups can still cancel a running chain (see ATLAS_CONSOLIDATION_ENABLED below).
+            - name: ATLAS_MENTAL_MODEL_REFRESH_AT
+              value: ""
             - name: ATLAS_LITELLM_URL
               value: http://litellm.llm.svc.cluster.local:4000
             - name: ATLAS_LLM_EXTRACT_ALIAS

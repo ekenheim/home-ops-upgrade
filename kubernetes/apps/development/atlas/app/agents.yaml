@@ -37,6 +37,8 @@ metadata:
   name: atlas-agent-scout
   namespace: development
 spec:
+  # Frozen 2026-10-20 (Atlas ADR 0004): the claude.ai scheduled tasks research now.
+  suspend: true
   schedule: "0 5 * * 1"
   timeZone: UTC
   concurrencyPolicy: Forbid
@@ -96,6 +98,8 @@ metadata:
   name: atlas-agent-researcher
   namespace: development
 spec:
+  # Frozen 2026-10-20 (Atlas ADR 0004): the claude.ai scheduled tasks research now.
+  suspend: true
   schedule: "0 5 * * 2,4"
   timeZone: UTC
   concurrencyPolicy: Forbid
@@ -155,6 +159,8 @@ metadata:
   name: atlas-agent-skeptic
   namespace: development
 spec:
+  # Frozen 2026-10-20 (Atlas ADR 0004): the claude.ai scheduled tasks research now.
+  suspend: true
   schedule: "0 5 * * 5"
   timeZone: UTC
   concurrencyPolicy: Forbid
@@ -276,6 +282,8 @@ metadata:
   name: atlas-agent-watch-robotics
   namespace: development
 spec:
+  # Frozen 2026-10-20 (Atlas ADR 0004): the claude.ai scheduled tasks research now.
+  suspend: true
   schedule: "0 5 * * 6"
   timeZone: UTC
   concurrencyPolicy: Forbid
@@ -336,6 +344,8 @@ metadata:
   name: atlas-agent-watch-power-equipment
   namespace: development
 spec:
+  # Frozen 2026-10-20 (Atlas ADR 0004): the claude.ai scheduled tasks research now.
+  suspend: true
   schedule: "0 12 * * 6"
   timeZone: UTC
   concurrencyPolicy: Forbid
@@ -396,6 +406,8 @@ metadata:
   name: atlas-agent-watch-aerospace-defence
   namespace: development
 spec:
+  # Frozen 2026-10-20 (Atlas ADR 0004): the claude.ai scheduled tasks research now.
+  suspend: true
   schedule: "0 5 * * 0"
   timeZone: UTC
   concurrencyPolicy: Forbid

@@ -336,7 +336,18 @@ views:
             heading: Now
             heading_style: title
           # The TV is off the network; the Shield (reports on/off only)
-          # follows it over HDMI-CEC and stands in for it.
+          # follows it over HDMI-CEC and stands in for it. While Plex plays
+          # on the Shield, Plex's own player for it takes over: it carries
+          # the title, series / episode and artwork. Plex can re-register a
+          # client under a _2 suffix (see the plex_cast_chromecast_* ones).
+          - type: media-control
+            entity: media_player.plex_plex_for_android_tv_shield_android_tv
+            name: TV
+            grid_options: { columns: full }
+            visibility:
+              - condition: state
+                entity: media_player.plex_plex_for_android_tv_shield_android_tv
+                state: [playing, paused]
           - type: custom:bubble-card
             card_type: media-player
             entity: media_player.shield_android_tv
@@ -349,6 +360,9 @@ views:
               - condition: state
                 entity: media_player.shield_android_tv
                 state_not: unavailable
+              - condition: state
+                entity: media_player.plex_plex_for_android_tv_shield_android_tv
+                state_not: [playing, paused]
           - type: custom:bubble-card
             card_type: media-player
             entity: media_player.kok
@@ -396,6 +410,9 @@ views:
               - condition: state
                 entity: media_player.shield_android_tv
                 state: ["off", unavailable]
+              - condition: state
+                entity: media_player.plex_plex_for_android_tv_shield_android_tv
+                state_not: [playing, paused]
               - condition: state
                 entity: media_player.kok
                 state_not: playing
@@ -2090,6 +2107,14 @@ views:
             card_type: media-player
             entity: media_player.shield_android_tv
             name: Shield
+          # What Plex is playing on the Shield (see the Now section).
+          - type: media-control
+            entity: media_player.plex_plex_for_android_tv_shield_android_tv
+            name: Shield · Plex
+            visibility:
+              - condition: state
+                entity: media_player.plex_plex_for_android_tv_shield_android_tv
+                state: [playing, paused]
           - type: custom:bubble-card
             card_type: media-player
             entity: media_player.sc_lx901

@@ -32,15 +32,24 @@ The injected containers need `NET_ADMIN`/`NET_RAW` and run as root, which `basel
    - `PrivateKey` → `WIREGUARD_PRIVATE_KEY`
    - `Address`, IPv4 part only (e.g. `10.x.y.z/32`) → `WIREGUARD_ADDRESSES`
 2. Create a Bitwarden Secrets Manager secret named **`mullvad`** whose value is JSON: `{"WIREGUARD_PRIVATE_KEY": "…", "WIREGUARD_ADDRESSES": "10.x.y.z/32"}`.
-3. Merge the PR. Flux deploys the gateway, then SABnzbd and Prowlarr roll and get routed.
-4. Verify from inside each routed pod:
+3. Merge the PR. Flux deploys the gateway, then SABnzbd and Prowlarr roll and get routed. For the first few minutes they may sit in `Init` or be refused while cert-manager issues the webhook certificate and the tunnel comes up. That is the kill switch working, not a failure, so don't revert.
+4. Verify:
    ```sh
+   # Exit IP is Mullvad (repeat for deploy/prowlarr)
    kubectl -n downloads exec deploy/sabnzbd -c app -- curl -s https://am.i.mullvad.net/json
    # expect "mullvad_exit_ip": true
-   kubectl -n downloads exec deploy/sabnzbd -c app -- nslookup eweka.nl
-   # expect Server: 172.16.0.1
+
+   # The gateway forwards DNS to Mullvad, not CoreDNS
+   kubectl -n vpn exec deploy/vpn-gateway-pod-gateway-main -c gluetun -- cat /etc/resolv.conf
+   # expect nameserver 10.64.0.1
+
+   # Leak test: the TXT answer is the IP of the resolver that reached Google
+   kubectl -n downloads exec deploy/sabnzbd -c app -- nslookup -type=txt o-o.myaddr.l.google.com
+   # Mullvad-owned address = no leak; your home/ISP IP or 192.168.x = leak
    ```
    Then check an indexer's API/download history shows a Mullvad IP, and run a test download.
+
+If throughput is poor, try `VPN_INTERFACE_MTU: 1420` under `settings`: pod-gateway then sizes the VXLAN to fit inside WireGuard instead of fragmenting.
 
 Exit location is `SERVER_CITIES: Amsterdam` (close to Eweka). Change it in `app/helmrelease.yaml`, e.g. to `Stockholm` or `Malmö`.
 

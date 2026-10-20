@@ -1,0 +1,93 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# Vendor-neutral GPU render node for VAAPI video work: squat.ai/dri.
+#
+# Every node advertises its /dev/dri/renderD128 under the one resource name,
+# whatever the vendor: worker3's Radeon iGPU (Granite Ridge, radeonsi) and the
+# Intel iGPUs on the control planes (iHD). libva picks the driver from the
+# device, so a VAAPI app that asks for squat.ai/dri runs on any of them
+# unchanged, and the scheduler is free to place it on whichever node is up.
+# A node without the device advertises zero.
+#
+# Why not the vendor plugins:
+#   - gpu.intel.com/i915 (intel-device-plugins) covers Intel only. Plex stays on
+#     it: Plex on Linux has no AMD hardware transcoding.
+#   - AMD's k8s-device-plugin and the gpu.amd.com DRA driver are ROCm-oriented
+#     and allocate whole GPUs. The DRA driver's one DeviceClass would also offer
+#     worker3's iGPU to LLMKube's claim, which must stay on worker4.
+#
+# Not on worker4: no llm-workload toleration, so the taint keeps it off. Its
+# iGPU shares one memory controller with llama.cpp and stays LLM-only.
+#
+# The render node is crw-rw-rw- on Talos, so consumers need no extra groups.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app generic-device-plugin
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      generic-device-plugin:
+        type: daemonset
+        strategy: RollingUpdate
+        pod:
+          priorityClassName: system-node-critical
+          # Not `operator: Exists`: that would also tolerate worker4's
+          # llm-workload taint. Control planes carry no NoSchedule taint here
+          # (allowSchedulingOnMasters), and this covers cordoned/drained nodes.
+          tolerations:
+            - key: node.kubernetes.io/unschedulable
+              operator: Exists
+              effect: NoSchedule
+        containers:
+          app:
+            image:
+              repository: ghcr.io/squat/generic-device-plugin
+              tag: latest@sha256:5c48f7a16cfb37c4e07731bfa384b9dba6e12d2b0fb4350d8a321d49f12ac494
+            args:
+              - --log-level=info
+              # count is how many pods may share the one render node at once
+              # (Immich, Frigate, ErsatzTV, ...); it is not a hardware limit.
+              - --device
+              - |
+                name: dri
+                groups:
+                  - count: 10
+                    paths:
+                      - path: /dev/dri/renderD128
+            securityContext:
+              privileged: true
+            resources:
+              requests:
+                cpu: 10m
+                memory: 16Mi
+              limits:
+                memory: 64Mi
+    persistence:
+      device-plugins:
+        type: hostPath
+        hostPath: /var/lib/kubelet/device-plugins
+        globalMounts:
+          - path: /var/lib/kubelet/device-plugins
+      dev:
+        type: hostPath
+        hostPath: /dev
+        globalMounts:
+          - path: /dev

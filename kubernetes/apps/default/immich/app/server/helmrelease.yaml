@@ -42,6 +42,16 @@ spec:
             matchLabels:
               app.kubernetes.io/name: *app
       affinity:
+        # Any node with a render node (squat.ai/dri below) will do: VAAPI drives
+        # worker3's Radeon and the control planes' Intel iGPUs alike. Prefer
+        # non-control-plane so transcodes stay off the etcd node while worker3 is up.
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
@@ -116,6 +126,10 @@ spec:
                 memory: 1Gi
               limits:
                 memory: 2Gi
+                # GPU render node for VAAPI transcoding, from generic-device-plugin
+                # (kube-tools). Hardware acceleration itself is switched on in
+                # Admin > Video Transcoding: the config file here is not loaded.
+                squat.ai/dri: 1
             probes:
               liveness: &probes
                 enabled: true

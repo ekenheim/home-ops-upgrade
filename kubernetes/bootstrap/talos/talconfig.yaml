@@ -134,7 +134,11 @@ nodes:
     ipAddress: "192.168.50.37"
     installDisk: "/dev/nvme1n1"
     # Schematic encodes node-specific addons; for Talos upgrade use a 1.12.x schematic with same addons and set e.g. .../NEW_SCHEMATIC:v1.12.3
-    talosImageURL: factory.talos.dev/metal-installer/96f8c146a67c80daad900d3fc1a6976fe11062321eee9ab6ae2a6aea88b2d26e
+    # Schematic: siderolabs/amd-ucode + siderolabs/amdgpu, no extra kernel args.
+    # amdgpu drives the Granite Ridge Radeon iGPU for VAAPI video work (Immich,
+    # Frigate decode), exposed as squat.ai/dri by kube-tools/generic-device-plugin.
+    # Do not copy worker4's Strix Halo kernel args here. Was 96f8c146... (amd-ucode only).
+    talosImageURL: factory.talos.dev/metal-installer/9c1d1b442d73f96dcd04e81463eb20000ab014062d22e1b083e1773336bc1dd5
     controlPlane: false
     networkInterfaces:
       # 2x 10G bonded via LACP
@@ -164,8 +168,8 @@ nodes:
     installDiskSelector:
       serial: "S4EVNMFN814603N"
     # AMD Ryzen AI MAX+ 395 "Strix Halo" (Radeon 8060S iGPU, 128GB unified).
-    # Its own schematic, NOT worker3's amd-ucode-only one: adds siderolabs/amdgpu
-    # plus the Strix Halo kernel args ROCm needs. amd_iommu=off is required for
+    # Its own schematic, NOT worker3's (amd-ucode + plain amdgpu): adds
+    # the Strix Halo kernel args ROCm needs. amd_iommu=off is required for
     # the iGPU to work at all; the gttsize/ttm values size the GPU's share of
     # unified memory and assume a 128GB board. pcie_ports=native and
     # pcie_ecrc=on are in the schematic too (see the AER note under patches).

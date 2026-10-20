@@ -42,9 +42,12 @@ spec:
             matchLabels:
               app.kubernetes.io/name: *app
       affinity:
-        # Any node with a render node (squat.ai/dri below) will do: VAAPI drives
-        # worker3's Radeon and the control planes' Intel iGPUs alike. Prefer
-        # non-control-plane so transcodes stay off the etcd node while worker3 is up.
+        # Any node with a render node (squat.ai/dri below) will do: Immich is set
+        # to VAAPI, which drives worker3's Radeon and the Intel iGPUs alike. QSV
+        # would give slightly better H.264 on Intel, but would pin Immich to the
+        # Intel nodes, today only master2 (sole etcd member, Plex). For 720p
+        # previews that is not worth it. Prefer non-control-plane so transcodes
+        # stay off the etcd node while worker3 is up.
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100

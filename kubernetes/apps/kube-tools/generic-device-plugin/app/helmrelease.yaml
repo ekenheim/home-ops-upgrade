@@ -9,9 +9,23 @@
 # unchanged, and the scheduler is free to place it on whichever node is up.
 # A node without the device advertises zero.
 #
-# Why not the vendor plugins:
-#   - gpu.intel.com/i915 (intel-device-plugins) covers Intel only. Plex stays on
-#     it: Plex on Linux has no AMD hardware transcoding.
+# Which resource a GPU consumer should request:
+#   gpu.intel.com/i915  The app needs Intel specifically: QSV, OpenVINO, or a
+#                       setting that names the iHD driver. Plex (no AMD hardware
+#                       transcoding on Linux), ErsatzTV (its FFmpeg profile pins
+#                       the VAAPI driver), Frigate detection (OpenVINO).
+#   squat.ai/dri        Plain VAAPI, where either vendor gives an equivalent
+#                       result: Immich, Frigate decode. If Intel is better but
+#                       AMD still acceptable, keep squat.ai/dri and add a
+#                       *preferred* nodeAffinity on
+#                       intel.feature.node.kubernetes.io/gpu=true instead of
+#                       switching to i915, so the pod still runs when no Intel
+#                       node is free.
+# Choosing squat.ai/dri also means configuring the app for VAAPI rather than
+# QSV: QSV on worker3 fails (or falls back to software).
+#
+# Why not the vendor plugins for the generic case:
+#   - gpu.intel.com/i915 (intel-device-plugins) covers Intel only.
 #   - AMD's k8s-device-plugin and the gpu.amd.com DRA driver are ROCm-oriented
 #     and allocate whole GPUs. The DRA driver's one DeviceClass would also offer
 #     worker3's iGPU to LLMKube's claim, which must stay on worker4.

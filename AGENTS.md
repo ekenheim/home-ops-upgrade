@@ -88,7 +88,7 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - **`media`** — Plex, Overseerr, Tautulli, Wizarr, Kavita, Maintainerr, Dispatcharr (IPTV tuner for Plex; xTeve removed 2026-10-19).
 - **`downloads`** — Sonarr, Radarr (+ radarr4k), Prowlarr, Bazarr, Kapowarr, Lingarr, Recyclarr, SABnzbd, arr-mcp.
 - **`default`** — Home Assistant, Z-Wave JS UI, Music Assistant, Mosquitto, Wyoming (whisper / piper / kokoro), Immich, Paperless, Syncthing, Actual, Outline, FileBrowser, IT-Tools, Gatus endpoints.
-- **`network`** — Cloudflared, Envoy Gateway, external-dns, Tailscale, echo-server. Headscale is disabled.
+- **`network`** — Cloudflared, CrowdSec (observe-only on `envoy-external`: it detects but nothing blocks yet; see `network/crowdsec/README.md`), Envoy Gateway, external-dns, Tailscale, echo-server. Headscale is disabled.
 - **`security`** — Authentik.
 - **`storage`** — OpenEBS, MinIO (primary + secondary), snapshot-controller, VolSync.
 - **`observability`** — kube-prometheus-stack, Grafana (dashboards as ConfigMaps in Git), Thanos, Karma, Gatus, Kromgo, UnPoller, exporters, alertmanager-silencer.

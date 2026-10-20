@@ -1,0 +1,32 @@
+---
+# The agent's kubernetes acquisition source tails the envoy-external pods
+# through the API instead of hostPath /var/log, so it needs to read their logs.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: crowdsec-agent
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: crowdsec-agent
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: crowdsec-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: crowdsec-agent
+subjects:
+  - kind: ServiceAccount
+    name: crowdsec-agent
+    namespace: network

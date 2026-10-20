@@ -1,0 +1,79 @@
+---
+# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: crowdsec
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: crowdsec
+  install:
+    # The chart schema only knows the k8s-audit source, not kubernetes.
+    disableSchemaValidation: true
+    remediation:
+      retries: -1
+  upgrade:
+    disableSchemaValidation: true
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # The default (docker) mounts /var/lib/docker/containers into the agent.
+    container_runtime: containerd
+    image:
+      repository: mirror.gcr.io/crowdsecurity/crowdsec
+    lapi:
+      env:
+        - name: USE_WAL
+          value: "true"
+        # Observe-only and local-only: no signal sharing with CrowdSec's
+        # central API, so no community blocklist and no console. See README.
+        - name: DISABLE_ONLINE_API
+          value: "true"
+      resources:
+        requests:
+          cpu: 25m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+      metrics:
+        serviceMonitor:
+          enabled: true
+    agent:
+      isDeployment: true
+      hostVarLog: false
+      serviceAccountName: crowdsec-agent
+      additionalAcquisition:
+        - source: kubernetes
+          namespace: network
+          selector: gateway.envoyproxy.io/owning-gateway-name=envoy-external
+          labels:
+            type: envoy
+      env:
+        # plex is only an allowlist: it stops Plex's metadata/transcode
+        # request bursts on the public plex route from tripping the crawl
+        # scenarios. whitelists drops RFC1918 sources (LAN, pods).
+        - name: COLLECTIONS
+          value: yanis-kouidri/envoy crowdsecurity/plex crowdsecurity/whitelists
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+      metrics:
+        serviceMonitor:
+          enabled: true
+    config:
+      parsers:
+        s02-enrich:
+          # crowdsecurity/whitelists covers RFC1918 but not Tailscale.
+          tailscale-whitelist.yaml: |
+            name: home-ops/tailscale-whitelist
+            description: "Whitelist the Tailscale CGNAT range"
+            whitelist:
+              reason: "tailscale"
+              cidr:
+                - "100.64.0.0/10"

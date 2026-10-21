@@ -81,8 +81,8 @@ go2rtc:
   streams:
     hallway:
       - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.1.110:554/stream1
-    # Unverified: /stream2 is the usual low-resolution sub-stream on TP-Link
-    # Tapo cameras. If it does not play, point detect at hallway instead.
+    # Probed 2026-10-22: stream1 is H.264 1920x1080, stream2 H.264
+    # 1280x720, both 25 fps with PCM A-law audio.
     hallway_sub:
       - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.1.110:554/stream2
 
@@ -90,7 +90,9 @@ cameras:
   hallway:
     ffmpeg:
       output_args:
-        record: preset-record-generic-audio-copy
+        # A-law audio would be copied into MP4s browsers cannot play; AAC
+        # costs next to nothing at 8 kHz.
+        record: preset-record-generic-audio-aac
       inputs:
         - path: rtsp://127.0.0.1:8554/hallway
           input_args: preset-rtsp-restream

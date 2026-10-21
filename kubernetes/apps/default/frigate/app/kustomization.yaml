@@ -10,6 +10,7 @@ resources:
 configMapGenerator:
   # Only the first boot reads this (see the init container in
   # helmrelease.yaml); after that the Settings UI owns /config/config.yml.
+  # Reloader still restarts the pod when it changes, to no effect.
   - name: frigate-seed-config
     files:
       - config.yml=./config/config.yml

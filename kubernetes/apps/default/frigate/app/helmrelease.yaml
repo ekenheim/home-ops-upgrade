@@ -1,0 +1,199 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# Frigate NVR for the hallway camera (backlog item 10, unblocked 2026-10-21
+# when the DeskMini B760 nodes joined as master1 / master3 with Raptor Lake
+# iGPUs). OpenVINO detection and QSV decode on the iGPU; MQTT events to
+# Home Assistant through default/mosquitto.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app frigate
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: intel-device-plugin-gpu
+      namespace: kube-tools
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: volsync
+      namespace: storage
+  values:
+    controllers:
+      frigate:
+        labels:
+          nfsMount: "true"
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          # First boot only: never overwrite a config the Settings UI saved.
+          seed-config:
+            image: &image
+              repository: ghcr.io/blakeblackshear/frigate
+              tag: 0.18.2@sha256:fd60f99ffd4eb6c42360ed4e14953e270586f239309ab3983e55b2e97ffac09a
+            command:
+              - /bin/sh
+              - -c
+              - '[ -f /config/config.yml ] || cp /seed/config.yml /config/config.yml'
+        containers:
+          app:
+            image: *image
+            env:
+              TZ: ${TIMEZONE}
+            envFrom:
+              - secretRef:
+                  name: frigate
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/version
+                    port: &internalPort 5000
+                  # The first start builds the OpenVINO model for the GPU.
+                  initialDelaySeconds: 60
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness: *probe
+            resources:
+              requests:
+                cpu: 500m
+                memory: 1Gi
+              limits:
+                gpu.intel.com/i915: 1
+                # Includes the memory-backed /dev/shm and /tmp/cache below.
+                memory: 6Gi
+        pod:
+          # Evict fast on a dead node (default 300s); the RBD exclusive lock
+          # prevents two pods writing the config volume at once.
+          tolerations:
+            - key: node.kubernetes.io/not-ready
+              operator: Exists
+              effect: NoExecute
+              tolerationSeconds: 30
+            - key: node.kubernetes.io/unreachable
+              operator: Exists
+              effect: NoExecute
+              tolerationSeconds: 30
+          affinity:
+            nodeAffinity:
+              # Any Intel iGPU node. Prefer master1 (DeskMini, 16 threads):
+              # Plex prefers master3, and master2 is the old NUC.
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: intel.feature.node.kubernetes.io/gpu
+                        operator: In
+                        values: ["true"]
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values: ["master1"]
+                - weight: 50
+                  preference:
+                    matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values: ["master3"]
+    service:
+      app:
+        controller: *app
+        ports:
+          # Authenticated UI and API (Frigate's login); the route uses it.
+          http:
+            port: &port 8971
+          # Unauthenticated UI and API, for in-cluster clients only: Home
+          # Assistant's Frigate integration, Prometheus, Gatus.
+          internal:
+            port: *internalPort
+          # go2rtc restream, e.g. for Home Assistant's live view.
+          rtsp:
+            port: 8554
+    serviceMonitor:
+      app:
+        service:
+          identifier: app
+        endpoints:
+          - port: internal
+            scheme: http
+            path: /api/metrics
+            interval: 1m
+            scrapeTimeout: 10s
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: Home
+          gethomepage.dev/name: Frigate
+          gethomepage.dev/icon: frigate.png
+          gethomepage.dev/description: NVR
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      config:
+        existingClaim: *app
+        globalMounts:
+          - path: /config
+      seed:
+        type: configMap
+        name: frigate-seed-config
+        advancedMounts:
+          frigate:
+            seed-config:
+              - path: /seed
+                readOnly: true
+      media:
+        type: nfs
+        server: ${NAS_IP:=temp}
+        path: ${SECRET_NFS_DATA:=temp}
+        advancedMounts:
+          frigate:
+            app:
+              - path: /media/frigate
+                subPath: Media/frigate
+      # Decoded frames. One camera needs well under 128Mi; the rest is room
+      # for logs, the nginx cache and a second camera.
+      shm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 512Mi
+        advancedMounts:
+          frigate:
+            app:
+              - path: /dev/shm
+      # Recording segments before they are moved to the NAS.
+      cache:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 1Gi
+        advancedMounts:
+          frigate:
+            app:
+              - path: /tmp/cache

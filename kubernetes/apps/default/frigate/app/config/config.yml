@@ -1,0 +1,109 @@
+# Seed only. The init container copies this to /config/config.yml when that
+# file does not exist yet; from then on Frigate's Settings UI owns the file
+# (0.18 edits every section in place) and changes here reach nothing. To
+# re-seed, delete /config/config.yml and restart the pod.
+#
+# Credentials are FRIGATE_* env vars from the `frigate` Secret
+# (externalsecret.yaml), substituted by Frigate at start.
+mqtt:
+  enabled: true
+  host: mosquitto.default.svc.cluster.local
+  port: 1883
+  user: "{FRIGATE_MQTT_USER}"
+  password: "{FRIGATE_MQTT_PASSWORD}"
+
+# envoy-internal terminates TLS and proxies to 8971; Frigate's own login stays
+# on. Envoy reaches the pod from the pod network, so trust its X-Forwarded-For
+# for the login rate limit.
+tls:
+  enabled: false
+auth:
+  enabled: true
+  failed_login_rate_limit: "1/second;5/minute;20/hour"
+  trusted_proxies:
+    - ${CLUSTER_CIDR}
+
+# The DeskMini's Raptor Lake iGPU (gpu.intel.com/i915) for detection and
+# decode. SSDLite MobileNet v2 ships in the image; YOLOv9 is the better model
+# but has to be exported and dropped into /config/model_cache first.
+detectors:
+  ov:
+    type: openvino
+    device: GPU
+model:
+  width: 300
+  height: 300
+  input_tensor: nhwc
+  input_pixel_format: bgr
+  path: /openvino-model/ssdlite_mobilenet_v2.xml
+  labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+
+ffmpeg:
+  # gen13+ Intel: QSV is the recommended preset. The camera sends H.264.
+  hwaccel_args: preset-intel-qsv-h264
+
+# Events only (owner, 2026-10-22): no continuous footage, alert clips 30
+# days, detection clips 14 days. Everything under /media/frigate is on the NAS
+# (Media/frigate).
+record:
+  enabled: true
+  continuous:
+    days: 0
+  motion:
+    days: 0
+  alerts:
+    retain:
+      days: 30
+      mode: motion
+  detections:
+    retain:
+      days: 14
+      mode: motion
+snapshots:
+  enabled: true
+  retain:
+    default: 30
+
+objects:
+  track:
+    - person
+    - dog
+    - cat
+review:
+  alerts:
+    labels:
+      - person
+
+# Plain RTSP sources only. Frigate 0.18's FFmpeg 8 breaks go2rtc streams that
+# transcode with hardware acceleration (ffmpeg:...#hardware), and nothing here
+# needs a transcode.
+go2rtc:
+  streams:
+    hallway:
+      - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.1.110:554/stream1
+    # Unverified: /stream2 is the usual low-resolution sub-stream on TP-Link
+    # Tapo cameras. If it does not play, point detect at hallway instead.
+    hallway_sub:
+      - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@192.168.1.110:554/stream2
+
+cameras:
+  hallway:
+    ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-copy
+      inputs:
+        - path: rtsp://127.0.0.1:8554/hallway
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/hallway_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    detect:
+      enabled: true
+      fps: 5
+    live:
+      streams:
+        Main: hallway
+        Sub: hallway_sub

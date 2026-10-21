@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./externalsecret.yaml
+  - ./helmrelease.yaml
+  - ../../../../templates/volsync
+  - ./gatus.yaml
+configMapGenerator:
+  # Only the first boot reads this (see the init container in
+  # helmrelease.yaml); after that the Settings UI owns /config/config.yml.
+  - name: frigate-seed-config
+    files:
+      - config.yml=./config/config.yml
+generatorOptions:
+  disableNameSuffixHash: true

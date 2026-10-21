@@ -28,15 +28,32 @@ spec:
       timeout: 10m
     - apiVersion: ceph.rook.io/v1
       kind: CephCluster
-      # Must NOT require HEALTH_OK here: tuppr runs these checks *after* draining
-      # the node, and draining an OSD host always yields HEALTH_WARN (osd down,
-      # degraded PGs). Demanding HEALTH_OK deadlocks -- the drain is the reason
-      # the check fails, and tuppr never reboots or uncordons. Gating on "not
-      # HEALTH_ERR" still blocks on the case that matters (scrub errors /
-      # inconsistent PGs / data damage) while tolerating drain-induced warnings.
+      # tuppr runs these checks before draining each node, and retries every
+      # minute while they fail. So this holds the next drain until the previous
+      # node's OSD is back and its PGs have recovered. "Not HEALTH_ERR" alone
+      # was not enough: on 2026-10-22 master3's OSD took ~3 min to rejoin after
+      # the node went Ready, tuppr drained master1 meanwhile, and with two hosts
+      # down 24% of PGs went inactive. HEALTH_OK is too strict: the muted
+      # auth-key warnings and the noout flag Rook leaves on drained hosts stay.
       expr: |-
-        status.ceph.health != 'HEALTH_ERR'
-      timeout: 10m
+        status.ceph.health != 'HEALTH_ERR' && (!has(status.ceph.details) || !(
+          'OSD_DOWN' in status.ceph.details ||
+          'OSD_HOST_DOWN' in status.ceph.details ||
+          'PG_AVAILABILITY' in status.ceph.details ||
+          'PG_DEGRADED' in status.ceph.details
+        ))
+      timeout: 30m
+    # Belt and braces for the check above: Rook refreshes the CephCluster
+    # status only every minute, so also require every OSD pod to be back.
+    - apiVersion: apps/v1
+      kind: Deployment
+      namespace: rook-ceph
+      labelSelector:
+        matchLabels:
+          app: rook-ceph-osd
+      expr: |-
+        has(status.readyReplicas) && status.readyReplicas == spec.replicas
+      timeout: 30m
     - apiVersion: volsync.backube/v1alpha1
       kind: ReplicationSource
       expr: |-

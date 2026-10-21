@@ -24,32 +24,39 @@ cniConfig:
 nodes:
   - hostname: "master1"
     ipAddress: "192.168.50.31"
-    # Intel DC S3710 200GB (HPE MK0200GEYKC, serial BTHV713504TX200MGN), installed
-    # 2026-09-22 replacing the worn Kingston A400. Pinned by WWID, not serial:
-    # the HPE firmware leaves the Disk resource's serial field empty, so a
-    # serial selector would never match. The 980 PRO on nvme0n1 is osd.2.
-    # master1's board died 2026-09-30 and this S3710 now boots master2; give
-    # master1 a new disk and WWID before re-adding it.
+    # ASRock DeskMini B760 (B760M-STX, i5-14400, 64GB), installed 2026-10-22
+    # replacing the dead NUC. Installs to a 200GB PLP SSD (HPE MK0200GCTYV, an
+    # Intel OEM drive by its WWID prefix), pinned by WWID, not serial: the HPE
+    # firmware leaves the Disk resource's serial field empty, so a serial
+    # selector would never match. The 980 PRO with Heatsink on nvme0n1
+    # (S6WSNS0W543068N, old master3's) is this node's OSD.
     installDiskSelector:
-      wwid: "naa.55cd2e414db5ee67"
+      wwid: "naa.55cd2e404c10726b"
     talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de
     controlPlane: true
     patches:
-      # openebs local-hostpath keeps its PVs under /var/mnt/local-hostpath. On
-      # the older nodes that directory was hand-made when /var/mnt was still
-      # writable; since Talos 1.10 /var/mnt is read-only and only user volumes
-      # may live there, so a fresh install needs it declared. A directory volume
-      # is just a directory on EPHEMERAL bind-mounted at /var/mnt/<name>.
-      # Add the same block to each master as it is reinstalled.
+      # openebs local-hostpath keeps its PVs under /var/mnt/local-hostpath.
+      # Since Talos 1.10 /var/mnt is read-only and only user volumes may live
+      # there, so a fresh install needs it declared. Here it gets the Kingston
+      # A400 120GB (sdb) to itself, like master3, so the Crunchy replica's
+      # fsyncs stay off the etcd disk.
       - |-
         apiVersion: v1alpha1
         kind: UserVolumeConfig
         name: local-hostpath
-        volumeType: directory
+        provisioning:
+          diskSelector:
+            match: disk.wwid == "naa.50026b778355e654"
+          minSize: 100GB
+          grow: true
     networkInterfaces:
+      # Single onboard Realtek RTL8125 2.5G (enp2s0). Static for the same
+      # reason as master3.
       - deviceSelector:
-          hardwareAddr: 48:21:0b:36:2d:6a
-        dhcp: true
+          hardwareAddr: "9c:6b:00:ab:79:c5"
+        dhcp: false
+        addresses:
+          - "192.168.50.31/24"
         mtu: 1500
         routes:
           - network: 0.0.0.0/0
@@ -66,8 +73,9 @@ nodes:
     talosImageURL: factory.talos.dev/metal-installer/a30c16a32db3c99cb35f22401fad96807f80896dfc86aa4ec716ed6b4aff09de
     controlPlane: true
     patches:
-      # See master1: /var/mnt is read-only on Talos 1.13, openebs local-hostpath
-      # needs this directory volume on every reinstalled node.
+      # /var/mnt is read-only on Talos 1.13, so openebs local-hostpath needs a
+      # user volume. A directory volume is just a directory on EPHEMERAL
+      # bind-mounted at /var/mnt/<name>.
       - |-
         apiVersion: v1alpha1
         kind: UserVolumeConfig

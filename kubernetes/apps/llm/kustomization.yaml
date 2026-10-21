@@ -34,7 +34,9 @@ resources:
   # node). They share the iGPU and its unreclaimable GTT with ornith-35b and
   # gemma3-27b; see the warning at the top of comfyui/app/helmrelease.yaml
   # before running image generation next to the LLMs.
-  - ./comfyui/ks.yaml
+  # comfyui off since 2026-10-22 (owner): never used. Its hostPath PV is Retain, so
+  # /var/openebs/local/comfyui on worker4 (venv, models) stays on disk.
+  #- ./comfyui/ks.yaml
   - ./lemonade-tts/ks.yaml
   - ./whisper/ks.yaml
   # Flux-Kustomizations | Tooling & memory
@@ -53,7 +55,8 @@ resources:
   - ./vane/ks.yaml
   # Gallery over ComfyUI's output on the NAS, and LLM-written wikis of my
   # repos (a CronJob on `self-hosted`). Both after joryirving/home-ops.
-  - ./miso-gallery/ks.yaml
+  # miso-gallery off since 2026-10-22 (owner): never used, as with comfyui.
+  #- ./miso-gallery/ks.yaml
   - ./repo-wiki/ks.yaml
   # Flux-Kustomizations | Frontends
   - ./hermes/ks.yaml

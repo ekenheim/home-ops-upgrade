@@ -45,6 +45,7 @@ spec:
       timeout: 30m
     # Belt and braces for the check above: Rook refreshes the CephCluster
     # status only every minute, so also require every OSD pod to be back.
+    # tuppr's CEL environment declares only `status`, not `spec`.
     - apiVersion: apps/v1
       kind: Deployment
       namespace: rook-ceph
@@ -52,7 +53,7 @@ spec:
         matchLabels:
           app: rook-ceph-osd
       expr: |-
-        has(status.readyReplicas) && status.readyReplicas == spec.replicas
+        has(status.readyReplicas) && status.readyReplicas == status.replicas
       timeout: 30m
     - apiVersion: volsync.backube/v1alpha1
       kind: ReplicationSource

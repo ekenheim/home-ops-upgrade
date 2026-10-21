@@ -87,6 +87,7 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - **`database`** — Crunchy Postgres, Dragonfly. MariaDB is disabled.
 - **`media`** — Plex, Overseerr, Tautulli, Wizarr, Kavita, Maintainerr, Dispatcharr (IPTV tuner for Plex; xTeve removed 2026-10-19).
 - **`downloads`** — Sonarr, Radarr (+ radarr4k), Prowlarr, Bazarr, Kapowarr, Lingarr, Recyclarr, SABnzbd, arr-mcp.
+- **`vpn`** — vpn-gateway (pod-gateway + gluetun, Mullvad WireGuard). Routes only pods labelled `setGateway: "true"` in `downloads` (SABnzbd, Prowlarr) through the tunnel, fail-closed, DNS via Mullvad. `downloads` enforces PSA `privileged` (warn/audit `baseline`) for the injected NET_ADMIN containers. See `vpn/vpn-gateway/README.md`.
 - **`default`** — Home Assistant, Z-Wave JS UI, Music Assistant, Mosquitto, Wyoming (whisper / piper / kokoro), Immich, Paperless, Syncthing, Actual, Outline, FileBrowser, IT-Tools, Gatus endpoints.
 - **`network`** — Cloudflared, CrowdSec (detects on `envoy-external` and blocks via an ext_authz bouncer SecurityPolicy on that Gateway, failOpen; read-only Web UI at `crowdsec.<domain>`; see `network/crowdsec/README.md`), Envoy Gateway, external-dns, Tailscale, echo-server. Headscale is disabled.
 - **`security`** — Authentik.
@@ -97,7 +98,7 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - **`development`** — Harbor, Redpanda, Strapi (×2), Rybbit, Atlas, side projects (alphaos, hempriser, marketing-agency). Metabase, Meilisearch, Airbyte, Umami, GrowthBook and Medusa (off since 2026-10-18) are disabled.
 - **`rook-ceph`** — distributed storage operator + cluster.
 - **`istio-system`** (Istio base / istiod / gateway, Gateway API CRDs; the Seldon Core v1 operator is disabled), **`cert-manager`**, **`external-secrets`**, **`flux-system`**, **`actions-runner-system`** (ARC controller + 5 scale sets: general, atlas, bandit, banditweb, nordic-housing; ecom and grid-reliance off since 2026-10-18), **`blog`**.
-- Disabled namespaces still present in the tree: **`argocd`** (deployKF experiment, off), **`vpn`**.
+- Disabled namespaces still present in the tree: **`argocd`** (deployKF experiment, off).
 
 ## Conventions
 

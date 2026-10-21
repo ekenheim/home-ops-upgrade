@@ -29,6 +29,10 @@ spec:
       prowlarr:
         annotations:
           reloader.stakater.com/auto: "true"
+        pod:
+          labels:
+            # Route through the Mullvad pod-gateway (kubernetes/apps/vpn/vpn-gateway)
+            setGateway: "true"
         containers:
           app:
             image:

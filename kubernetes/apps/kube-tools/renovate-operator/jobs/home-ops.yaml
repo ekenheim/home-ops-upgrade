@@ -8,7 +8,7 @@ spec:
   # Only this repo, which is what the Mend app covered. Its config is the
   # repo's own .github/renovate.json5 -- unchanged by the move.
   discoveryFilters: ["ekenheim/home-ops-upgrade"]
-  image: ghcr.io/renovatebot/renovate:44.175.3@sha256:2f69ea2f98db7d7ebb116fda2bc4252244f337ec66e63f8f45cf69c64f13a8f6
+  image: ghcr.io/renovatebot/renovate:44.175.5@sha256:8af47680e016b008c6d259ac633386eeef73ef4a6694c692f3b5f15d98523214
   parallelism: 1
   provider:
     name: github

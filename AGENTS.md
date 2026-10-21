@@ -28,13 +28,13 @@ home-ops-upgrade/
 
 Single cluster: **`home-kubernetes`**
 
-- **Control plane**: `master1` (192.168.50.31), `master2` (192.168.50.33), `master3` (192.168.50.34) — Intel NUC12WSHi5
+- **Control plane**: `master1` (192.168.50.31), `master2` (192.168.50.33), `master3` (192.168.50.34) — `master2` is an Intel NUC12WSHi5; `master1` and `master3` are ASRock DeskMini B760 (Raptor Lake iGPU). All three carry an Intel iGPU (`gpu.intel.com/i915`) for Plex and Frigate.
 - **Workers**: `worker3` (192.168.50.37, Minisforum MS-A2, general workloads), `worker4` (192.168.50.38, Minisforum MS-S1 MAX, AMD Strix Halo iGPU, 128GB)
 - **worker4 is a dedicated LLM node**: tainted `llm-workload=true:NoSchedule`, labelled `node-role.kubernetes.io/rocm-worker`, with its own Talos schematic (`amdgpu` + ROCm kernel args). Only LLM / ROCm workloads and Rook tolerate the taint.
 - **Control-plane VIP**: `192.168.50.10:6443`
 - **Talos Linux** `v1.13.x`, **Kubernetes** `v1.35.x`, **Flux** `v2.9.x` — the pinned values live in `kubernetes/bootstrap/talos/talconfig.yaml` and `kubernetes/flux/config/flux.yaml`; read those rather than trusting a version written here.
 - **Semi-hyper-converged**: compute + Rook/Ceph block storage (one NVMe OSD per node) on cluster nodes; a separate NAS provides NFS/SMB bulk storage and off-cluster backup targets.
-- **Hardware state as of 2026-10-12**: `master1` and `master3` are dead and being replaced with ASRock DeskMini B760 nodes; `master2` is the sole etcd member. Check `kubectl get nodes` before assuming three control-plane nodes.
+- **Hardware state as of 2026-10-21**: the dead NUCs `master1` and `master3` were replaced with DeskMini B760 nodes, which rejoined the control plane on 2026-10-21. Check `kubectl get nodes` before assuming three control-plane nodes.
 
 ## Key Technologies
 
@@ -87,7 +87,7 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - **`database`** — Crunchy Postgres, Dragonfly. MariaDB is disabled.
 - **`media`** — Plex, Overseerr, Tautulli, Wizarr, Kavita, Maintainerr, Dispatcharr (IPTV tuner for Plex; xTeve removed 2026-10-19).
 - **`downloads`** — Sonarr, Radarr (+ radarr4k), Prowlarr, Bazarr, Kapowarr, Lingarr, Recyclarr, SABnzbd, arr-mcp.
-- **`default`** — Home Assistant, Z-Wave JS UI, Music Assistant, Mosquitto, Wyoming (whisper / piper / kokoro), Immich, Paperless, Syncthing, Actual, Outline, FileBrowser, IT-Tools, Gatus endpoints.
+- **`default`** — Home Assistant, Z-Wave JS UI, Music Assistant, Mosquitto, Frigate (NVR, OpenVINO on a DeskMini iGPU), Wyoming (whisper / piper / kokoro), Immich, Paperless, Syncthing, Actual, Outline, FileBrowser, IT-Tools, Gatus endpoints.
 - **`network`** — Cloudflared, CrowdSec (detects on `envoy-external` and blocks via an ext_authz bouncer SecurityPolicy on that Gateway, failOpen; read-only Web UI at `crowdsec.<domain>`; see `network/crowdsec/README.md`), Envoy Gateway, external-dns, Tailscale, echo-server. Headscale is disabled.
 - **`security`** — Authentik.
 - **`storage`** — OpenEBS, MinIO (primary + secondary), snapshot-controller, VolSync.

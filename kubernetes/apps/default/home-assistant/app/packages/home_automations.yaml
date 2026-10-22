@@ -206,7 +206,11 @@ automation:
   # Computer-room purifier control lives in computer_room_climate.yaml.
 
   # ------------------------------------------------------- Leaving home --
-  # Asks instead of acting: lights off and/or start the vacuum.
+  # The dog isn't here every day. If Frigate hasn't seen it for 15 h, turn
+  # the lights off and say so; otherwise ask: lights off and/or start the
+  # vacuum. It also asks until Frigate has seen the dog once, and while the
+  # hallway camera is down, since "not seen" means nothing then. The dog
+  # sensors are in frigate.yaml.
   - id: leaving_home_prompt
     alias: "Presence: leaving home prompt"
     mode: single
@@ -216,33 +220,52 @@ automation:
         from: home
         for: { minutes: 5 }
     variables:
-      lights_on: >-
+      lights: >-
         {{ ['living_room', 'kitchen', 'computer_room', 'bedroom', 'bathroom', 'hallway']
            | map('area_entities') | sum(start=[])
            | select('match', 'light\.')
            | reject('is_state_attr', 'is_hue_group', true)
            | reject('search', 'chamber_light')
-           | select('is_state', 'on') | list | count }}
+           | select('is_state', 'on') | list }}
+      lights_on: "{{ lights | count }}"
       vacuum_docked: "{{ is_state('vacuum.dreamebot_l10s_ultra', 'docked') }}"
+      # -1 until Frigate has seen the dog once.
+      dog_hours: >-
+        {% set t = as_datetime(states('sensor.dog_last_seen'), none) %}
+        {{ ((now() - t).total_seconds() / 3600) | round(1) if t is not none else -1 }}
+      lights_auto_off: >-
+        {{ lights_on | int > 0 and dog_hours | float > 15
+           and states('sensor.frigate_hallway_camera_fps') | float(0) > 0 }}
     conditions:
       - condition: template
         value_template: "{{ lights_on | int > 0 or vacuum_docked }}"
     actions:
+      - if:
+          - condition: template
+            value_template: "{{ lights_auto_off }}"
+        then:
+          - action: light.turn_off
+            target: { entity_id: "{{ lights }}" }
       - action: notify.mobile_app_robins_iphone
         data:
           title: "🏠 You left home"
           message: >-
-            {{ lights_on }} light{{ '' if lights_on | int == 1 else 's' }} still on.
-            {{ 'Vacuum is docked.' if vacuum_docked else '' }}
+            {%- set n = lights_on | int -%}
+            {%- if lights_auto_off -%}
+              Turned off {{ n }} light{{ '' if n == 1 else 's' }}; no dog seen for {{ dog_hours | round(0) | int }} h.
+            {%- else -%}
+              {{ n }} light{{ '' if n == 1 else 's' }} still on.{{ ' 🐕 Dog seen ' ~ dog_hours ~ ' h ago.' if dog_hours | float >= 0 else '' }}
+            {%- endif -%}
+            {{ ' Vacuum is docked.' if vacuum_docked else '' }}
           data:
             tag: leaving-home
-            actions:
-              - action: LEAVE_LIGHTS_OFF
-                title: Turn off lights
-              - action: LEAVE_START_VACUUM
-                title: Start vacuum
-              - action: LEAVE_BOTH
-                title: Both
+            # After an auto-off only the vacuum is left to offer.
+            actions: >-
+              {{ ([{'action': 'LEAVE_START_VACUUM', 'title': 'Start vacuum'}] if vacuum_docked else [])
+                 if lights_auto_off else
+                 [{'action': 'LEAVE_LIGHTS_OFF', 'title': 'Turn off lights'},
+                  {'action': 'LEAVE_START_VACUUM', 'title': 'Start vacuum'},
+                  {'action': 'LEAVE_BOTH', 'title': 'Both'}] }}
 
   - id: leaving_home_actions
     alias: "Presence: leaving home actions"

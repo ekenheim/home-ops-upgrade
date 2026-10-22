@@ -2,10 +2,11 @@
 
 The image mounts no sign-in provider, so a browser never gets the
 ``trackinizer_session`` cookie that workspaces, chats and presets require
-(``require_browser`` refuses API keys). Envoy signs the browser in against
-Authentik and injects the gateway's ``browser`` key on one path only:
-``/api/addons/gatewaylogin/login``. This route trades that key for a session
-cookie and redirects back, so every other request runs on the session.
+(``require_browser`` refuses API keys). Envoy injects the gateway's
+``browser`` key on one path only: ``/api/addons/gatewaylogin/login`` (after an
+Authentik sign-in when securitypolicy.yaml is on; it is off, so the whole LAN
+gets in). This route trades that key for a session cookie and redirects back,
+so every other request runs on the session.
 
 Only the key named ``browser`` is accepted. A session acts with the user's
 role, not the key's, so letting any key in (the factory's writer key, say)

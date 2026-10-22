@@ -104,6 +104,8 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 9001
+      # On envoy-external for its LAN address, which every in-cluster S3 client
+      # already resolves; private-CIDR only (securitypolicy.yaml), no internet.
       api:
         hostnames: ["s3.${SECRET_DOMAIN}"]
         parentRefs:

@@ -1,5 +1,6 @@
 ---
-# Strapi CMS (admin + API). Exposed via Ingress at strapi.${SECRET_DOMAIN}.
+# Strapi CMS (admin + API) at strapi.${SECRET_DOMAIN}. /uploads/ is public; the rest is
+# LAN/Tailscale only (httproute.yaml, securitypolicy.yaml).
 #
 # Bootstrap phase: uses a minimal custom bootstrap image (node:22-alpine + create-strapi-app).
 # On first run it creates a vanilla Strapi v5 project in /srv/app using the Postgres

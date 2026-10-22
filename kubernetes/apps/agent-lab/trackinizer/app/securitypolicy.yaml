@@ -1,12 +1,15 @@
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# OFF since 2026-10-22 (owner): commented out in kustomization.yaml so
+# Trackinizer is open to the LAN. Kept for turning Authentik back on.
+#
 # Browser sign-in for trackinizer.${SECRET_DOMAIN}, done by envoy-internal
 # because the Trackinizer image mounts no sign-in provider of its own. Every
 # request through the route, /api included, must carry an Authentik session
 # (application `trackinizer`, authentik Admins only, defined in
 # security/authentik/app/trackinizer-oidc.yaml). Only then does the
 # HTTPRouteFilter in httproutefilter.yaml add the Trackinizer key; without this
-# policy that filter would open the API to the whole LAN.
+# policy that filter opens the web app, as the admin user, to the whole LAN.
 #
 # The orchestrator does not come through here: it calls the Service directly
 # with its own key.

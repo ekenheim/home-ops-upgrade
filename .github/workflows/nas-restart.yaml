@@ -1,71 +1,55 @@
 ---
-  # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-  name: "Deployment Restart"
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: "Deployment Restart"
 
-  on:
-    workflow_dispatch:
-    repository_dispatch:
-      types: [nas-restart]
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [nas-restart]
 
-  concurrency:
-    group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
-    cancel-in-progress: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
 
-  jobs:
-    sync:
-      name: Deployment Restart
-      runs-on: ["gha-runner-scale-set"]
-      timeout-minutes: 30
-      strategy:
-        matrix:
-          cluster: ["main"]
-      steps:
-        - name: Get Secrets
-          uses: bitwarden/sm-action@v3.0.1
-          with:
-            access_token: ${{ secrets.BW_ACCESS_TOKEN }}
-            secrets: |
-              d7abec51-f77a-49fd-be89-b13400f196e8 > KUBECONFIG
-              d3349f37-6ff4-406b-861a-b16101048306 > BOT_APP_ID
-              12826224-0a9e-45f2-b8bb-b1610104f8c4 > BOT_APP_PRIVATE_KEY
+permissions:
+  contents: read
 
-        - name: Generate Token
-          uses: actions/create-github-app-token@v3
-          id: app-token
-          with:
-            app-id: "${{ env.BOT_APP_ID }}"
-            private-key: "${{ env.BOT_APP_PRIVATE_KEY }}"
+jobs:
+  sync:
+    name: Deployment Restart
+    runs-on: ["gha-runner-scale-set"]
+    timeout-minutes: 30
+    steps:
+      # The secret holds the kubeconfig as plain YAML (as schemas and
+      # volsync-drill read it), so it is written as-is, not base64-decoded.
+      - name: Get Secrets
+        uses: bitwarden/sm-action@1238aae8fc64b212641190a9227c8a734ab1a793 # v3.0.1
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            d7abec51-f77a-49fd-be89-b13400f196e8 > KUBECONFIG_CONTENT
 
-        - name: Checkout
-          uses: actions/checkout@v7
-          with:
-            token: "${{ steps.app-token.outputs.token }}"
+      - name: Install kubectl
+        run: |
+          curl -fsSLo kubectl "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
 
-        - name: Setup Homebrew
-          uses: Homebrew/actions/setup-homebrew@v4
+      - name: Write kubeconfig
+        run: |
+          printf '%s' "$KUBECONFIG_CONTENT" > "$RUNNER_TEMP/kubeconfig"
+          chmod 600 "$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
 
-        - name: Setup Workflow Tools
-          shell: bash
-          run: brew install kubernetes-cli
-
-        - name: Write kubeconfig
-          id: kubeconfig
-          uses: timheuer/base64-to-file@v2
-          with:
-            encodedString: "${{ env.KUBECONFIG }}"
-            fileName: kubeconfig
-
-        - name: Restart NFS Deployments
-          env:
-            KUBECONFIG: "${{ steps.kubeconfig.outputs.filePath }}"
-          shell: bash
-          run: |
-            kubectl \
-                --context "${{ matrix.cluster }}" \
-                get deployments \
-                --all-namespaces \
-                -l nfsMount=true \
-                -o custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name" \
-                --no-headers | \
-                awk '{print "kubectl --context ${{ matrix.cluster }} rollout restart deployment/"$2" -n "$1}' | \
-                sh
+      - name: Restart NFS Deployments
+        shell: bash
+        run: |
+          set -euo pipefail
+          kubectl get deployments \
+              --all-namespaces \
+              -l nfsMount=true \
+              -o custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name" \
+              --no-headers |
+            while read -r namespace name; do
+              kubectl -n "$namespace" rollout restart "deployment/$name"
+            done

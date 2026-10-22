@@ -331,6 +331,17 @@
       "pinDigests": false
     },
     {
+      // Workflow actions run next to the admin kubeconfig and the GitHub App
+      // key, and the shared autoMerge preset merges their minor/patch/digest
+      // updates to main without status checks (:skipStatusChecks). A hijacked
+      // action release (tj-actions, March 2025) is usually caught and pulled
+      // within a day or two, so updates wait three days before they are
+      // proposed. helpers:pinGitHubActionDigests keeps them pinned to SHAs.
+      "description": ["Hold GitHub Actions updates for three days"],
+      "matchManagers": ["github-actions"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
       // Kavita runs one-way DB migrations on start in nearly every release
       // (0.8.0 rewrote chapters and exported progress; 0.8.4 dropped people
       // metadata until a forced scan; 0.9.1 reworked scrobbling and OAuth).

@@ -1,6 +1,8 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 # Vendor-neutral GPU render node for VAAPI video work: devic.es/dri.
+# devic.es is the plugin's built-in resource domain (defaultDomain in its
+# config.go), not squat.ai: pods asking for squat.ai/dri never schedule.
 #
 # Every node advertises its /dev/dri/renderD128 under the one resource name,
 # whatever the vendor: worker3's Radeon iGPU (Granite Ridge, radeonsi) and the

@@ -1,0 +1,165 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# The ToolHive MCP servers have no auth of their own, and several hold
+# credentials (ha-mcp: the Home Assistant token, unifi-mcp: the UniFi login,
+# seerr-mcp: the Seerr key). Without a policy any pod in the cluster, or a
+# tailnet device routed into the pod CIDR, could call their tools. Each pod
+# here admits only the callers in config (ingress default-deny; kubelet
+# probes from the node are allowed by Cilium regardless; egress stays open):
+#
+#   vMCP gateway :4483  <- openclaw, opencode (their configmaps)
+#   every proxy  :8080  <- the vMCP gateway (MCPGroup mcp-tools)
+#     context7, platform-mcp, wiki-mcp  also <- hermes (its configmap)
+#     kubectl-mcp, flux-mcp             also <- kagent controller + agents
+#                                               (RemoteMCPServers)
+#     tradingview-mcp                   also <- development/atlas
+#   every server pod    <- the ToolHive proxies (streamable-http servers
+#                          listen on 3000/8000/8080/8081; stdio servers are
+#                          attached through the API server and listen on
+#                          nothing)
+#
+# A 10-minute Hubble capture on 2026-10-22 saw only those callers (plus the
+# kubelet). arr (downloads) and grafana-mcp (observability) carry their own
+# policies next to their MCPServers. Proxies are the Deployment pods
+# (app.kubernetes.io/name: mcpserver); server pods are the StatefulSet pods
+# (toolhive-basename). toolhive-name is on both, so it is not used here.
+# A new MCP server is covered from its first pod: a new direct caller (not
+# through the gateway) needs a rule below.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mcp-gateway
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: virtualmcpserver
+      app.kubernetes.io/instance: mcp-gateway
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: openclaw
+        - matchLabels:
+            app.kubernetes.io/name: opencode
+      toPorts:
+        - ports:
+            - port: "4483"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mcp-proxies
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: mcpserver
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: virtualmcpserver
+            app.kubernetes.io/instance: mcp-gateway
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mcp-proxies-hermes
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: mcpserver
+    matchExpressions:
+      - key: app.kubernetes.io/instance
+        operator: In
+        values: ["context7", "platform-mcp", "wiki-mcp"]
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: hermes
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mcp-proxies-kagent
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: mcpserver
+    matchExpressions:
+      - key: app.kubernetes.io/instance
+        operator: In
+        values: ["kubectl-mcp", "flux-mcp"]
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: kagent
+            app.kubernetes.io/component: controller
+        - matchLabels:
+            app: kagent
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mcp-proxies-atlas
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: mcpserver
+      app.kubernetes.io/instance: tradingview-mcp
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: development
+            app.kubernetes.io/name: atlas
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mcp-servers
+spec:
+  endpointSelector:
+    matchExpressions:
+      - key: toolhive-basename
+        operator: Exists
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: mcpserver

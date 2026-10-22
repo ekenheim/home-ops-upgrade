@@ -196,8 +196,10 @@ that changed between runs and an empty wiki whenever a run timed out. Now:
 `manifest.json` on `repo-wiki.llm:8001` (in-cluster only; the volume is RWO and
 mkdocs only serves HTML). `toolhive/wiki-mcp` reads that and exposes
 `wiki_list`, `wiki_read`, `wiki_search` at
-`http://mcp-wiki-mcp-proxy.llm:8080/mcp`; hermes has it as `wiki`. Any other
-agent can use the same URL.
+`http://mcp-wiki-mcp-proxy.llm:8080/mcp`; hermes has it as `wiki`. Another
+agent can use the same URL once it is admitted in
+`toolhive/app/ciliumnetworkpolicy.yaml` (the ToolHive proxies only accept the
+vMCP gateway and the callers listed there), or through the vMCP gateway.
 
 llama.cpp keeps generating after a client gives up, so if ornith's `/slots`
 fill with dead work after a run, suspend this first:

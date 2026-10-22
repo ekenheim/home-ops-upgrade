@@ -82,6 +82,38 @@ views:
                   tap_action:
                     action: navigate
                     navigation_path: "#kitchen"
+              # Frigate's last dog sighting (packages/frigate.yaml); hidden
+              # until the first one.
+              - type: conditional
+                conditions:
+                  - condition: state
+                    entity: sensor.dog_last_seen
+                    state_not: unknown
+                  - condition: state
+                    entity: sensor.dog_last_seen
+                    state_not: unavailable
+                chip:
+                  type: template
+                  entity: sensor.dog_last_seen
+                  icon: mdi:dog
+                  icon_color: brown
+                  content: >-
+                    {{ relative_time(states('sensor.dog_last_seen') | as_datetime) }} ago
+              # Only shows when something in the cluster needs a look
+              # (packages/cluster.yaml); taps through to the Homelab view.
+              - type: conditional
+                conditions:
+                  - condition: state
+                    entity: binary_sensor.cluster_needs_attention
+                    state: "on"
+                chip:
+                  type: template
+                  icon: mdi:server-network-off
+                  icon_color: red
+                  content: Cluster
+                  tap_action:
+                    action: navigate
+                    navigation_path: /dashboard-home/homelab
 
       # Room tiles: tap the card for the room pop-up, tap the icon to toggle
       # the room's Hue group.
@@ -2004,11 +2036,58 @@ views:
           - type: heading
             heading: Cluster
             heading_style: title
-          - type: tile
-            entity: binary_sensor.default_cluster_health
-            name: Cluster health
-            icon: mdi:kubernetes
+          # Alerts, nodes, pods and Ceph come from Prometheus
+          # (packages/cluster.yaml). Trivy CVE reports aren't counted.
+          - type: custom:mushroom-template-card
+            entity: sensor.cluster_alerts
+            icon: >-
+              {{ 'mdi:check-circle' if states('sensor.cluster_alerts') == '0'
+                 else 'mdi:alert' }}
+            icon_color: >-
+              {% set a = states('sensor.cluster_alerts') %}
+              {{ 'grey' if a in ['unknown', 'unavailable']
+                 else 'red' if states('sensor.cluster_critical_alerts') | int(0) > 0
+                 else 'orange' if a | int(0) > 0 else 'green' }}
+            primary: >-
+              {% set a = states('sensor.cluster_alerts') %}
+              {% if a in ['unknown', 'unavailable'] %}Prometheus unreachable
+              {% elif a == '0' %}No alerts
+              {% else %}{{ a }} alert{{ '' if a == '1' else 's' }} firing{% endif %}
+            secondary: >-
+              {{ states('sensor.cluster_alert_names')
+                 if states('sensor.cluster_alerts') | int(0) > 0 else '' }}
+            multiline_secondary: true
+            tap_action: { action: more-info }
             grid_options: { columns: full }
+          - type: custom:mushroom-template-card
+            entity: sensor.cluster_nodes_ready
+            icon: mdi:server
+            icon_color: >-
+              {{ 'green' if states('sensor.cluster_nodes_not_ready') == 'none'
+                 else 'red' }}
+            primary: >-
+              {{ states('sensor.cluster_nodes_ready') }}/{{ states('sensor.cluster_nodes_total') }}
+              nodes ready
+            secondary: >-
+              {% set n = states('sensor.cluster_nodes_not_ready') %}
+              {{ 'Down: ' ~ n if n != 'none' else '' }}
+            tap_action: { action: more-info }
+            grid_options: { columns: 6 }
+          - type: custom:mushroom-template-card
+            entity: sensor.ceph_health
+            icon: mdi:database
+            icon_color: >-
+              {% set c = states('sensor.ceph_health') %}
+              {{ 'green' if c == 'OK' else 'orange' if c == 'WARN'
+                 else 'red' if c == 'ERR' else 'grey' }}
+            primary: Ceph {{ states('sensor.ceph_health') }}
+            tap_action: { action: more-info }
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.computer_room_default_master1
+            name: master1
+            icon: mdi:server
+            grid_options: { columns: 6 }
           - type: tile
             entity: sensor.default_master2
             name: master2
@@ -2030,12 +2109,34 @@ views:
             icon: mdi:expansion-card
             grid_options: { columns: 6 }
           - type: tile
-            entity: sensor.default_pods_count
-            name: Pods
+            entity: sensor.cluster_pods_running
+            name: Pods running
             grid_options: { columns: 6 }
           - type: tile
             entity: sensor.default_deployments_count
             name: Deployments
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: binary_sensor.default_cluster_health
+            name: Cluster health
+            icon: mdi:kubernetes
+            grid_options: { columns: 6 }
+      - type: grid
+        cards:
+          - type: heading
+            heading: Frigate
+            heading_style: title
+          # fps goes unavailable when Frigate stops publishing stats, so a
+          # stale "dog last seen" can't hide a dead NVR.
+          - type: tile
+            entity: sensor.frigate_hallway_camera_fps
+            name: Hallway camera
+            icon: mdi:cctv
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.dog_last_seen
+            name: Dog last seen
+            icon: mdi:dog
             grid_options: { columns: 6 }
       - type: grid
         cards:

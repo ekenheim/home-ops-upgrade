@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# Browser sign-in for kuberay.${SECRET_DOMAIN}, done by envoy-internal. The Ray
+# dashboard is also Ray's job API, unauthenticated by design.
+# Every request through the route must carry an Authentik session
+# (application `kuberay`, authentik Admins only, defined in
+# security/authentik/app/kuberay-oidc.yaml). Same shape as vane's.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: kuberay-oidc
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: ray-dashboard
+  oidc:
+    provider:
+      issuer: https://sso.${SECRET_DOMAIN}/application/o/kuberay/
+    clientID: kuberay
+    clientSecret:
+      # Cross-namespace; allowed by the ReferenceGrant in security.
+      name: authentik-kuberay-oidc
+      namespace: security
+    redirectURL: https://kuberay.${SECRET_DOMAIN}/oauth2/callback
+    logoutPath: /oauth2/logout
+    scopes:
+      - openid
+      - email
+      - profile
+      - offline_access
+    # The UI keeps XHR and websocket traffic going in the background; the
+    # refresh token renews the session without a redirect those can't follow.
+    refreshToken: true

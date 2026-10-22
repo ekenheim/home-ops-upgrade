@@ -19,5 +19,5 @@ spec:
       sectionName: https
   rules:
     - backendRefs:
-        - name: ray-external
+        - name: ray-dashboard
           port: 8265

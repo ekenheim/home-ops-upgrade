@@ -21,4 +21,9 @@ resources:
   - ./kagent-oidc.yaml
   - ./victoria-logs-oidc.yaml
   - ./crowdsec-oidc.yaml
+  - ./jupyter-oidc.yaml
+  - ./langflow-oidc.yaml
+  - ./hermes-code-oidc.yaml
+  - ./sillytavern-oidc.yaml
+  - ./kuberay-oidc.yaml
   - ../../../../templates/gatus/infra

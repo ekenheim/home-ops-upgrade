@@ -340,3 +340,23 @@ spec:
       #   duplicate entries for key [topologyKey="kubernetes.io/hostname",
       #   whenUnsatisfiable="ScheduleAnyway"]
       # which fails every PostgresCluster reconcile.
+      #
+      # PGO's injected spread does nothing here, though: it also carries a
+      # topology.kubernetes.io/zone constraint, and no node has that label.
+      # The scheduler's spread scoring skips every node missing one of the
+      # keys, so all four replicas land on the least-loaded node (all on
+      # master1 after the Talos 1.14 roll, then all on worker3 after a
+      # restart). A preferred anti-affinity is scored by InterPodAffinity,
+      # which the missing zone label does not affect, and it never blocks a
+      # rollout. The descheduler's pgbouncer profile re-spreads them after a
+      # node roll.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    postgres-operator.crunchydata.com/cluster: postgres
+                    postgres-operator.crunchydata.com/role: pgbouncer

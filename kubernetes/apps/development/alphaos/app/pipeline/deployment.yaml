@@ -57,11 +57,11 @@ spec:
             - name: DAGSTER_HOME
               value: "/tmp/dagster"
             # Run pods inherit this image (K8sRunLauncher uses DAGSTER_CURRENT_IMAGE).
-            # KEEP IN SYNC WITH THE image: ABOVE BY HAND. Renovate does not bump this line --
-            # it is a quoted env value, not an `image:` key, and none of the customManagers in
-            # .github/renovate/ match it. #6534 bumped the other four references in this app and
-            # left this one behind, which would have run the code server on one version and its
-            # run pods on another.
+            # Must match the image: above. Renovate bumps it in the same PR through the
+            # "Dagster DAGSTER_CURRENT_IMAGE" customManager in .github/renovate/; keep the
+            # name/value pair on adjacent lines or that regex stops matching. #6534 predates
+            # it and left this line behind, which would have run the code server on one
+            # version and its run pods on another.
             - name: DAGSTER_CURRENT_IMAGE
               value: "ghcr.io/ekenheim/alphaos:0.9.1"
           resources:

@@ -42,6 +42,23 @@
       "datasourceTemplate": "docker"
     },
     {
+      // Dagster code servers hand their own image to the run pods they
+      // launch (K8sRunLauncher) through DAGSTER_CURRENT_IMAGE, an env value
+      // the kubernetes manager does not read. Without this, Renovate bumps
+      // the `image:` lines and leaves the run pods on the old release (#6534
+      // did that to alphaos). Same depName as the `image:` lines, so both
+      // land in one PR:
+      //   - name: DAGSTER_CURRENT_IMAGE
+      //     value: "ghcr.io/ekenheim/alphaos:0.9.1"
+      "customType": "regex",
+      "description": ["Dagster DAGSTER_CURRENT_IMAGE env values"],
+      "fileMatch": ["(^|/)kubernetes/.+\\.ya?ml$"],
+      "matchStrings": [
+        "name:\\s*DAGSTER_CURRENT_IMAGE\\s*\\n\\s*value:\\s*[\"']?(?<depName>[^\\s:@\"']+):(?<currentValue>[^\\s@\"']+)(@(?<currentDigest>sha256:[a-f0-9]{64}))?"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
       // Grafana plugins pinned as "<plugin-id>@<version>" in the grafana
       // chart's `plugins:` list (Grafana's preinstall_sync format). The
       // annotated manager above cannot read it (no ":" or "=" before the

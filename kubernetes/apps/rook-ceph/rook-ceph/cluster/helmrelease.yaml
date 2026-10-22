@@ -43,6 +43,12 @@ spec:
     monitoring:
       enabled: true
       createPrometheusRules: true
+      prometheusRuleOverrides:
+        # The 10GbE nodes (worker3, worker4) run MTU 9000 and the 1GbE
+        # masters run 1500 by design, so this always flags whichever side is
+        # the minority. TCP (Ceph included) negotiates the smaller MSS.
+        CephNodeInconsistentMTU:
+          disabled: true
     # Dashboard is exposed by an HTTPRoute on envoy-gateway (httproute-internal.yaml).
     toolbox:
       enabled: true

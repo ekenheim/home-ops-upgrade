@@ -75,6 +75,33 @@ spec:
       metrics:
         serviceMonitor:
           enabled: true
+    # WAF: the bouncer sends each request on the hosts in its config.waf.routes
+    # here before letting it through, and a matching rule blocks it inline,
+    # on the first request rather than after a pattern builds up in the logs.
+    # appsec-default = crowdsecurity/base-config + the virtual-patching
+    # (vpatch-*, one rule per known CVE) and generic rules, all in-band. No
+    # OWASP CRS: it is broad and false-positive prone on CMS traffic.
+    appsec:
+      enabled: true
+      acquisitions:
+        - source: appsec
+          listen_addr: "0.0.0.0:7422"
+          path: /
+          appsec_config: crowdsecurity/appsec-default
+          labels:
+            type: appsec
+      env:
+        - name: COLLECTIONS
+          value: crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+      metrics:
+        serviceMonitor:
+          enabled: true
     config:
       parsers:
         s02-enrich:

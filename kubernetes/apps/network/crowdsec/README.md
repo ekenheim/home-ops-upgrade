@@ -57,6 +57,16 @@ nothing is pulled from CrowdSec's community blocklist.
   `BOUNCER_KEY_ENVOY`. If the key is ever regenerated, run
   `cscli bouncers delete ENVOY` and restart LAPI, since the start script
   skips a name that already exists.
+- **WAF (AppSec)**: the bouncer also sends requests for the hosts in its
+  `config.waf.routes` (Strapi, Authentik, Grafana, Home Assistant, Overseerr,
+  Wizarr, the marketing site, Hempriser, the blog) to the `crowdsec-appsec`
+  pod, which blocks a request matching a virtual-patching (one rule per known
+  CVE) or generic rule with a 403, on the first try. Other hosts are not
+  inspected: Plex for its streaming volume, S3 for pgBackRest. Headers, URI
+  and query only, no bodies. failOpen: a WAF error lets the request through,
+  and LAPI bans still apply. To unblock a false positive, find the rule in
+  the alert (`cscli alerts inspect <id> -d`) and add it to
+  `DISABLE_APPSEC_RULES` in the appsec env.
 - **Route-level SecurityPolicies win**: in Envoy Gateway a SecurityPolicy on
   an HTTPRoute replaces the Gateway one for that route unless it sets
   `mergeType: StrategicMerge`. The ones on `envoy-external` today (kavita,
@@ -77,12 +87,11 @@ nothing is pulled from CrowdSec's community blocklist.
 
 ## Next
 
-- **AppSec / WAF** (planned, once the bouncer has run for a few weeks without
-  false positives): inline blocking of a malicious *first* request (virtual
-  patching for CVEs) on the public apps with admin panels: both Strapis,
-  MinIO, Medusa. Needs the chart's `appsec` component, the bouncer's
-  `config.waf`, and `extAuth.bodyToExtAuth` for POST bodies. Watch for false
-  positives on CMS uploads.
+- **WAF body inspection** (per route, if ever): the AppSec WAF (see below)
+  sees headers, URI and query only. Envoy Gateway 1.9.2's
+  `extAuth.bodyToExtAuth` answers 413 to any body over its buffer, failOpen
+  or not, so it can only go on routes with small bodies (login endpoints),
+  via a route-level SecurityPolicy with `mergeType: StrategicMerge`.
 - **App log parsers** (only if failed logins show up): `firix/authentik-logs`,
   `crowdsecurity/home-assistant`, `LePresidente/grafana-logs`,
   `LePresidente/overseerr-logs`. Each needs the app to log the real client

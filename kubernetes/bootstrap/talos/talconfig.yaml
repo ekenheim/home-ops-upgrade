@@ -139,7 +139,7 @@ nodes:
     # Schematic encodes node-specific addons; for Talos upgrade use a 1.12.x schematic with same addons and set e.g. .../NEW_SCHEMATIC:v1.12.3
     # Schematic: siderolabs/amd-ucode + siderolabs/amdgpu, no extra kernel args.
     # amdgpu drives the Granite Ridge Radeon iGPU for VAAPI video work (Immich,
-    # Frigate decode), exposed as squat.ai/dri by kube-tools/generic-device-plugin.
+    # Frigate decode), exposed as devic.es/dri by kube-tools/generic-device-plugin.
     # Do not copy worker4's Strix Halo kernel args here. Was 96f8c146... (amd-ucode only).
     talosImageURL: factory.talos.dev/metal-installer/9c1d1b442d73f96dcd04e81463eb20000ab014062d22e1b083e1773336bc1dd5
     controlPlane: false

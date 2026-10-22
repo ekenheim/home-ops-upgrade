@@ -21,6 +21,7 @@ configMapGenerator:
       - home_automations.yaml=./packages/home_automations.yaml
       - ceiling_fan.yaml=./packages/ceiling_fan.yaml
       - computer_room_climate.yaml=./packages/computer_room_climate.yaml
+      - frigate.yaml=./packages/frigate.yaml
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

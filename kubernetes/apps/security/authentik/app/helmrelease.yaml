@@ -51,6 +51,11 @@ spec:
         - authentik-kagent-oidc  # kagent-oidc.yaml
         - authentik-victoria-logs-oidc  # victoria-logs-oidc.yaml
         - authentik-crowdsec-oidc  # crowdsec-oidc.yaml
+        - authentik-jupyter-oidc  # jupyter-oidc.yaml
+        - authentik-langflow-oidc  # langflow-oidc.yaml
+        - authentik-hermes-code-oidc  # hermes-code-oidc.yaml
+        - authentik-sillytavern-oidc  # sillytavern-oidc.yaml
+        - authentik-kuberay-oidc  # kuberay-oidc.yaml
     server:
       autoscaling:
         enabled: true

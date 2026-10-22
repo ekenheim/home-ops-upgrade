@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# Browser sign-in for langflow.${SECRET_DOMAIN}, done by envoy-internal. Langflow
+# runs with LANGFLOW_AUTO_LOGIN, so it has no login of its own.
+# Every request through the route must carry an Authentik session
+# (application `langflow`, authentik Admins only, defined in
+# security/authentik/app/langflow-oidc.yaml). Same shape as vane's.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: langflow-oidc
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: langflow
+  oidc:
+    provider:
+      issuer: https://sso.${SECRET_DOMAIN}/application/o/langflow/
+    clientID: langflow
+    clientSecret:
+      # Cross-namespace; allowed by the ReferenceGrant in security.
+      name: authentik-langflow-oidc
+      namespace: security
+    redirectURL: https://langflow.${SECRET_DOMAIN}/oauth2/callback
+    logoutPath: /oauth2/logout
+    scopes:
+      - openid
+      - email
+      - profile
+      - offline_access
+    # The UI keeps XHR and websocket traffic going in the background; the
+    # refresh token renews the session without a redirect those can't follow.
+    refreshToken: true

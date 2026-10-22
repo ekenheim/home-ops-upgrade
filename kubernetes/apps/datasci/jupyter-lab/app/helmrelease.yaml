@@ -42,7 +42,6 @@ spec:
               SHUTDOWN_INACTIVE_KERNELS: "true"
               GRANT_SUDO: "yes"
               JUPYTER_ENABLE_LAB: "yes"
-              PASSWORD: "test"
               #NVIDIA_VISIBLE_DEVICES: "1"
     service:
       main:

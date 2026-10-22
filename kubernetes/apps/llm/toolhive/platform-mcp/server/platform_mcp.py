@@ -108,7 +108,7 @@ SERVICES = {
             "serve": "http://ray-kuberay-head-svc.datasci.svc.cluster.local:8000",
         },
         "browser": f"https://kuberay.{DOMAIN}",
-        "lan_loadbalancer": "192.168.50.182 (Service ray-external: 10001/8265/8000/8080/6379)",
+        "lan_loadbalancer": "192.168.50.182 (Service ray-external: 10001 client, 8000 serve; the dashboard is https://kuberay.<domain> behind Authentik)",
         "ray_version": "2.59.0",
         "python_version": "3.12",
         "head_image": "rayproject/ray:2.59.0-py312-cpu",

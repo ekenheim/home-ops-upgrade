@@ -37,7 +37,7 @@ spec:
   noUpper: false
   allowRepeat: true
 ---
-# yaml-language-server: $schema=https://lds-schemas.pages.dev/external-secrets.io/externalsecret_v1beta1.json
+# yaml-language-server: $schema=https://lds-schemas-5hg.pages.dev/external-secrets.io/externalsecret_v1.json
 # `token` is read by register-web-key; `credential` is shaped for
 # credentialInjection (the WHOLE header value, scheme included) and read only
 # by the Envoy proxy. `trax_` is the prefix Trackinizer's own keys carry.

@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://lds-schemas.pages.dev/source.toolkit.fluxcd.io/helmrepository_v1beta2.json
+# yaml-language-server: $schema=https://lds-schemas-5hg.pages.dev/source.toolkit.fluxcd.io/helmrepository_v1.json
 # KServe's charts (apps/datasci/kserve): kserve-crd, kserve-resources and
 # kserve-runtime-configs, all released together under one version. A
 # HelmRepository, not an OCIRepository + chartRef: helm-controller appends the

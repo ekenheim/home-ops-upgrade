@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://lds-schemas-5hg.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 # Envoy ext_authz bouncer (kdwils/envoy-proxy-bouncer): envoy-external asks it
 # about every request (securitypolicy.yaml) and it answers from LAPI's
 # decisions, pulled every 10s. Client IP: the rightmost X-Forwarded-For entry

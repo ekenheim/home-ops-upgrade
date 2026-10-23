@@ -12,8 +12,6 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 # system-upgrade-controller plans use YAML merge-key anchors
 # (<<: *prepare) which Go YAML flags as duplicate keys — runtime
 # fine, strict parser not, so exclude.
-# tuppr's TalosUpgrade/KubernetesUpgrade are skipped: the datree
-# catalog schema lags the deployed CRD (no spec.drain).
 files=$(grep -rlE '^kind:[[:space:]]+[A-Z]' kubernetes \
   --include='*.yaml' --include='*.yml' \
   | grep -vE '\.sops\.|^kubernetes/bootstrap/|^kubernetes/flux/vars/|^kubernetes/templates/|system-upgrade-controller/plans/|/chart/.*/templates/' \
@@ -34,12 +32,18 @@ echo "$files" | xargs sed -i -E \
   -e 's#\$\{[A-Z0-9_]*CIDR[A-Z0-9_]*\}#10.0.0.0/8#g' \
   -e 's/\$\{[A-Z0-9_]*_(ADDR|IP)\}/10.0.0.1/g'
 
+# CRD schemas come from this cluster first: schemas.yaml extracts the
+# installed CRDs every night and publishes them to lds-schemas-5hg.pages.dev
+# (the same host the `$schema` headers use). A CRD upgrade reaches it the
+# night after it lands; run the Schemas workflow by hand to refresh sooner.
+# The datree catalog covers anything not installed here.
 echo "Validating $(echo "$files" | wc -l) files"
 echo "$files" | xargs kubeconform \
   -strict \
   -ignore-missing-schemas \
   -schema-location default \
+  -schema-location 'https://lds-schemas-5hg.pages.dev/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
   -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-  -skip 'HelmRelease,Kustomization,GitRepository,HelmRepository,OCIRepository,Bucket,Receiver,Alert,Provider,ImagePolicy,ImageRepository,ImageUpdateAutomation,Plan,TalosUpgrade,KubernetesUpgrade' \
+  -skip 'Plan' \
   -summary \
   -output pretty

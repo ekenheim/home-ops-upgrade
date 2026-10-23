@@ -44,11 +44,12 @@ jobs:
     # runner sits inside the cluster network.
     #
     # Renovate's non-major PRs (patch, minor, digest; a major carries `!:` in
-    # its conventional-commit title) skip the review. Renovate waits for every
-    # check before it automerges, and this one runs on worker4's two LLM slots,
-    # so it held up each routine bump for minutes (2026-10-19). A skipped job
+    # its conventional-commit title) skip the review: it runs on worker4's two
+    # LLM slots and took minutes per routine bump (2026-10-19). A skipped job
     # counts as passing. Majors are still reviewed, and the `ai-review` label
-    # forces a review on any PR.
+    # forces a review on any PR. Renovate rebases majors only on conflict
+    # (.github/renovate/packageRules.json5), so a major is not re-reviewed
+    # every time main moves.
     if: >-
       ${{ (github.event_name == 'pull_request'
             && !github.event.pull_request.draft
@@ -58,7 +59,9 @@ jobs:
                 || contains(github.event.pull_request.labels.*.name, 'ai-review')))
           || github.event_name == 'workflow_dispatch' }}
     runs-on: gha-runner-scale-set
-    timeout-minutes: 35
+    # 35 cut off reviews that had fallen back to implementation-pool after
+    # local-pool timeouts (4 of 13 on 2026-10-22). See ai-request-timeout-sec.
+    timeout-minutes: 50
     steps:
       - name: Resolve PR head for re-review
         id: prctx
@@ -94,6 +97,11 @@ jobs:
           # Ornith thinks before it answers; the default budget can be spent
           # entirely on reasoning, leaving no JSON verdict.
           ai-max-tokens: "16000"
+          # worker4 writes ~45 tokens/s (12,314 in 273 s on 2026-10-22), so a
+          # full 16000-token answer needs ~355 s. The default 300 s cut those
+          # off mid-answer and sent the review down its retry and fallback
+          # path. LiteLLM allows local-pool 1800 s (request_timeout).
+          ai-request-timeout-sec: "420"
           ai-primary-retries: "2"
           ai-primary-retry-delay-sec: "15"
           review-routing-mode: auto

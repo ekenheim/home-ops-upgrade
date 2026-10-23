@@ -3,12 +3,11 @@
 name: SOPS Guard
 
 on:
+  # No `paths:` filter: "Reject unencrypted secrets" is a required check on
+  # main (see flux-local.yaml). The scan below only looks at changed
+  # kubernetes/ and terraform/ files, so other PRs pass at once.
   pull_request:
     branches: ["main"]
-    paths:
-      - "kubernetes/**/*.yaml"
-      - "kubernetes/**/*.yml"
-      - "terraform/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}

@@ -17,6 +17,20 @@
       "enabled": false
     },
     {
+      // A major waits for a hand merge, and main does not require PRs to be
+      // up to date, so rebasing one on every main commit buys nothing. Each
+      // rebase re-runs CI and a ~30-minute AI review on worker4: #7981
+      // (kubectl-mcp-server 2.0) was reviewed six times on 2026-10-22, each
+      // time with the same verdict. The excluded images and the Grafana
+      // dashboards (another datasource) automerge their majors, so they keep
+      // the repo-wide rebaseWhen.
+      "description": ["Rebase major update PRs only on conflict"],
+      "matchDatasources": ["docker", "helm", "github-releases", "github-tags", "terraform-provider"],
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": ["!ghcr.io/ekenheim/agency", "!ghcr.io/ekenheim/bloghugo", "!/nordic-housing/"],
+      "rebaseWhen": "conflicted"
+    },
+    {
       "description": ["Semver versioning for nordic-housing images"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["/ghcr.io\\/ekenheim\\/nordic-housing/"],
@@ -45,11 +59,12 @@
       "matchPackageNames": ["/mylar3/"]
     },
     {
+      // `hashicorp` is Renovate's Terraform versioning; "terraform" is not a
+      // scheme, and renovate-config-validator rejected this rule for it.
       "description": ["Process terraform files"],
       "matchManagers": ["terraform"],
       "matchDatasources": ["terraform-provider"],
-      "versioning": "terraform",
-      "matchPackagePatterns": [".*"]
+      "versioning": "hashicorp"
     },
     {
       // These upstreams re-push the SAME release tag on every rebuild, so

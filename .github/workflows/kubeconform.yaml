@@ -3,9 +3,10 @@
 name: Kubeconform
 
 on:
+  # No `paths:` filter: "Kubeconform" is a required check on main (see
+  # flux-local.yaml).
   pull_request:
     branches: ["main"]
-    paths: ["kubernetes/**", ".github/workflows/kubeconform.yaml", ".taskfiles/Kubernetes/scripts/kubeconform.sh"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
@@ -19,11 +20,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # The checksum is from the release's CHECKSUMS file; bump both together.
       - name: Install kubeconform
         run: |
           set -euo pipefail
-          curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
-            | tar -xz -C /usr/local/bin kubeconform
+          curl -fsSLo kubeconform.tar.gz https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          echo "95f14e87aa28c09d5941f11bd024c1d02fdc0303ccaa23f61cef67bc92619d73  kubeconform.tar.gz" | sha256sum --check
+          tar -xzf kubeconform.tar.gz -C /usr/local/bin kubeconform
+          rm kubeconform.tar.gz
 
       - name: Run kubeconform
         run: bash .taskfiles/Kubernetes/scripts/kubeconform.sh

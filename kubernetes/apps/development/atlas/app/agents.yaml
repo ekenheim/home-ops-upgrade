@@ -7,7 +7,7 @@
 #
 # The token: `claude setup-token` (the owner), stored in Bitwarden Secrets Manager as the
 # secret `atlas-agent-claude` whose value is {"CLAUDE_CODE_OAUTH_TOKEN": "<token>"}.
-# yaml-language-server: $schema=https://lds-schemas.pages.dev/external-secrets.io/externalsecret_v1beta1.json
+# yaml-language-server: $schema=https://lds-schemas-5hg.pages.dev/external-secrets.io/externalsecret_v1.json
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:

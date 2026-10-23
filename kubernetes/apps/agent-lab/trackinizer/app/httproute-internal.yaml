@@ -1,8 +1,9 @@
 ---
 # yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
-# The web UI and API on the LAN, through envoy-internal. securitypolicy.yaml
-# signs the browser in with Authentik first, on every path. After that the
-# browser runs on Trackinizer's own session cookie:
+# The web UI and API on the LAN, through envoy-internal. Open to anyone who
+# reaches the gateway since 2026-10-22 (securitypolicy.yaml, which put
+# Authentik in front of every path, is off). The browser runs on Trackinizer's
+# own session cookie:
 #
 #   1. Signed out, Trackinizer sends the browser to /auth/login_page?next=...
 #      Its page offers only a Google button this image cannot serve, so that

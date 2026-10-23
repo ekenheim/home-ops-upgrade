@@ -14,6 +14,11 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # kubectl at the cluster's version (see schemas.yaml).
+  # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
+  KUBECTL_VERSION: v1.35.9
+
 jobs:
   sync:
     name: Deployment Restart
@@ -31,7 +36,9 @@ jobs:
 
       - name: Install kubectl
         run: |
-          curl -fsSLo kubectl "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          set -euo pipefail
+          curl -fsSLo kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          echo "$(curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl.sha256")  kubectl" | sha256sum --check
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/kubectl
 

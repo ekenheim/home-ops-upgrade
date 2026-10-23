@@ -11,6 +11,8 @@ resources:
   # forgotten, not reversed), and its identifiers match them, so it adopts
   # them and writes the newly generated client secret. Pairs with the
   # blueprints.secrets entry in helmrelease.yaml: drop or restore both.
+  # Unused since 2026-10-22: Trackinizer's SecurityPolicy is off, so it is
+  # open to the LAN. Kept so Authentik can go back in front.
   - ./trackinizer-oidc.yaml
   - ./paperless-gpt-oidc.yaml
   - ./vane-oidc.yaml

@@ -14,6 +14,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  # kubectl at the cluster's version. Same depName as tuppr's
+  # KubernetesUpgrade, so Renovate moves them in one PR.
+  # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
+  KUBECTL_VERSION: v1.35.9
+
 jobs:
   publish:
     name: Schemas
@@ -46,21 +52,17 @@ jobs:
         with:
           token: "${{ steps.app-token.outputs.token }}"
 
-      - name: Setup Homebrew
+      # Not Homebrew: its installer ran from HEAD with the admin kubeconfig,
+      # the Cloudflare token and the App key in the environment, and it
+      # installed kubectl 1.37 against a 1.35 cluster.
+      - name: Install kubectl
         shell: bash
         run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          echo "HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew" >> $GITHUB_ENV
-          echo "HOMEBREW_CELLAR=/home/linuxbrew/.linuxbrew/Cellar" >> $GITHUB_ENV
-          echo "HOMEBREW_REPOSITORY=/home/linuxbrew/.linuxbrew/Homebrew" >> $GITHUB_ENV
-          echo "PATH=/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH" >> $GITHUB_ENV
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-
-      - name: Setup Workflow Tools
-        shell: bash
-        run: |
-          brew update
-          brew install kubernetes-cli
+          set -euo pipefail
+          curl -fsSLo kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          echo "$(curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl.sha256")  kubectl" | sha256sum --check
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
 
       - name: Setup Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
@@ -92,14 +94,22 @@ jobs:
         shell: bash
         run: kubectl get crd --request-timeout=30s > /dev/null
 
+      # The pinned extractor still downloads openapi2jsonschema.py from
+      # kubeconform's master and runs it with the secrets above in the
+      # environment. Point it at the commit that last changed that script.
       - name: Download and run crd-extractor
         shell: bash
         run: |
           curl -fsSL -o $GITHUB_WORKSPACE/crd-extractor.sh \
               https://raw.githubusercontent.com/datreeio/CRDs-catalog/43e4407642d4c37683c88711f37caa6c9c20ca40/Utilities/crd-extractor.sh
+          sed -i 's#yannh/kubeconform/master/#yannh/kubeconform/6ae8c45bc156ceeb1d421e9b217cfc0c7ba5828d/#' $GITHUB_WORKSPACE/crd-extractor.sh
+          grep -q 'yannh/kubeconform/6ae8c45bc156ceeb1d421e9b217cfc0c7ba5828d/' $GITHUB_WORKSPACE/crd-extractor.sh
           chmod +x $GITHUB_WORKSPACE/crd-extractor.sh
           bash $GITHUB_WORKSPACE/crd-extractor.sh
 
+      # Serves https://lds-schemas-5hg.pages.dev/ (Cloudflare suffixed the
+      # project's subdomain; lds-schemas.pages.dev belongs to someone else).
+      # The `$schema` headers and kubeconform read from it.
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
         with:

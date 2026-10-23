@@ -22,6 +22,7 @@ configMapGenerator:
       - ceiling_fan.yaml=./packages/ceiling_fan.yaml
       - computer_room_climate.yaml=./packages/computer_room_climate.yaml
       - frigate.yaml=./packages/frigate.yaml
+      - cluster.yaml=./packages/cluster.yaml
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

@@ -47,12 +47,14 @@ jobs:
         with:
           token: "${{ steps.app-token.outputs.token }}"
 
+      # mosquitto.org answers "Network unreachable" from GitHub's runners; it
+      # failed 4 of 6 runs on 2026-10-22.
       - name: Scan for broken links
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         id: lychee
         with:
           token: "${{ steps.app-token.outputs.token }}"
-          args: --verbose --no-progress --accept '200,203,204,206,403,429' --exclude '^https://developer\.hashicorp\.com/terraform/?$' --exclude 'gatus\.dev' './**/*.md'
+          args: --verbose --no-progress --accept '200,203,204,206,403,429' --exclude '^https://developer\.hashicorp\.com/terraform/?$' --exclude 'gatus\.dev' --exclude 'mosquitto\.org' './**/*.md'
           output: "${{ env.LYCHEE_OUTPUT }}"
           debug: true
 

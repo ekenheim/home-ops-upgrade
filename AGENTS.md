@@ -110,7 +110,8 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - `Taskfile.yaml` is the operator entry point — `task -l` lists commands, with includes from `.taskfiles/{Ansible,Bitwarden,ExternalSecrets,Flux,Kubernetes,Postgresql,Rook,Sops,Talos,VolSync}/`.
 - CI workflows in `.github/workflows/`: `lint`, `kubeconform`, `flux-local`, `schemas`, `sops-guard`, `ai-pr-review`, `renovate-trigger`, `volsync-drill`, `publish-terraform`, `strapi-bootstrap`, `release`, `tag`, `labels`, `pr-title`, `lychee`, `nas-restart`.
 - Required checks on `main` (branch protection, not in Git): `actionlint`, `yamllint`, `Conventional Commits`, `Flux Local - Success`, `Kubeconform`, `Reject unencrypted secrets`. Renovate merges through GitHub auto-merge (`platformAutomerge`), which waits for these checks only, so a required check's workflow must run on every PR (no `paths:` filter). AI PR Review is advisory.
-- YAML is linted with `yamllint` (`.yamllint.yaml`); Kubernetes manifests validated with `kubeconform` against its built-in schemas and the datree CRDs-catalog, skipping Flux kinds (`.taskfiles/Kubernetes/scripts/kubeconform.sh`).
+- YAML is linted with `yamllint` (`.yamllint.yaml`); Kubernetes manifests validated with `kubeconform` (`.taskfiles/Kubernetes/scripts/kubeconform.sh`) against its built-in schemas, then this cluster's CRD schemas, then the datree CRDs-catalog.
+- CRD schemas: the nightly `schemas` workflow publishes the installed CRDs to `https://lds-schemas-5hg.pages.dev/<group>/<kind>_<version>.json`. `$schema` headers use that host with the manifest's own apiVersion. `lds-schemas.pages.dev` is someone else's site.
 
 ## Common Operations
 

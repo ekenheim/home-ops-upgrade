@@ -31,3 +31,5 @@ jobs:
 
       - name: Run kubeconform
         run: bash .taskfiles/Kubernetes/scripts/kubeconform.sh
+        env:
+          KUBECONFORM_DEBUG: "1"

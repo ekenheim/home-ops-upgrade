@@ -357,6 +357,17 @@
       "minimumReleaseAge": "3 days"
     },
     {
+      // Renovate releases several times a day, and both Renovate instances
+      // (the Mend app and renovate-operator) open a PR for each release: 19
+      // of the 110 Renovate PRs from 2026-10-21 to 10-23 bumped this image.
+      // Take one a week, in the same window as the weekly digest merges.
+      // autoMergeApps.json5 still merges it.
+      "description": ["Update the self-hosted Renovate image weekly"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/renovatebot/renovate"],
+      "schedule": ["* 0-5 * * 1"]
+    },
+    {
       // Kavita runs one-way DB migrations on start in nearly every release
       // (0.8.0 rewrote chapters and exported progress; 0.8.4 dropped people
       // metadata until a forced scan; 0.9.1 reworked scrobbling and OAuth).

@@ -1,0 +1,127 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app etcd-defrag
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 5.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  # The response to etcdDatabaseHighFragmentationRatio (kube-prometheus-stack):
+  # every 30 minutes, defragment the members that alert is firing for. Talos
+  # never defragments etcd on its own, and a member's file only grows (deleted
+  # revisions leave free pages behind), so without this the alert stays up
+  # until someone runs `talosctl etcd defrag` by hand.
+  #
+  # Defrag blocks reads and writes on that one member while it rewrites the
+  # file (seconds at this size), so: only when all members have a leader, one
+  # member at a time, followers first and the leader last, with a status check
+  # and a pause after each. Any failure stops the run (KubeJobFailed); the
+  # next run starts over from the alert.
+  values:
+    controllers:
+      etcd-defrag:
+        type: cronjob
+        cronjob:
+          # Off :15, so a run never overlaps etcd-backup's 03:15 snapshot.
+          schedule: "5,35 * * * *"
+          concurrencyPolicy: Forbid
+          backoffLimit: 0
+          successfulJobsHistory: 1
+          failedJobsHistory: 2
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+        containers:
+          app:
+            image:
+              repository: ghcr.io/home-operations/busybox
+              tag: 1.38.0@sha256:ff88728f0d5fe50a9984f6cc04d7d1185590b628f29ef4e6a3ec8cae7169e0c8
+            env:
+              PROM_URL: http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090
+              # The control-plane count: refuse to defragment while any
+              # member is missing, since a blocked member out of two left is
+              # a lost quorum.
+              MEMBERS: "3"
+              HOME: /tmp
+            # Only bare $var (never dollar-brace): Flux postBuild substitution
+            # would eat the braced form. busybox wget cannot URL-encode, so the
+            # queries go as a form POST and must not contain & + or %.
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -eu
+                talosctl=/talos/talosctl
+                prom=$PROM_URL/api/v1/query
+                q() { wget -qO- --post-data "query=$1" "$prom"; }
+                ips() { grep -o '"instance":"[0-9.]*:2381"' | sed 's/.*"\([0-9.]*\):2381"/\1/' | sort -u; }
+                targets=$(q 'ALERTS{alertname="etcdDatabaseHighFragmentationRatio",alertstate="firing"}' | ips)
+                [ -n "$targets" ] || { echo "no member is fragmented"; exit 0; }
+                healthy=$(q 'count(etcd_server_has_leader{job="kube-etcd"} == 1)' | sed -n 's/.*"value":\[[^,]*,"\([0-9]*\)"\].*/\1/p')
+                [ "$healthy" = "$MEMBERS" ] || { echo "$healthy of $MEMBERS members have a leader, not defragmenting"; exit 0; }
+                leader=$(q 'etcd_server_is_leader{job="kube-etcd"} == 1' | ips)
+                order=""
+                for ip in $targets; do [ "$ip" = "$leader" ] || order="$order $ip"; done
+                for ip in $targets; do [ "$ip" != "$leader" ] || order="$order $ip"; done
+                echo "fragmented: $(echo $targets); leader: $leader; order:$order"
+                for ip in $order; do
+                  echo "== defragmenting $ip"
+                  $talosctl --nodes "$ip" etcd defrag
+                  $talosctl --nodes "$ip" etcd status
+                  sleep 30
+                done
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 128Mi
+    persistence:
+      # talosctl is a static binary in a scratch image, so it is mounted
+      # into the busybox container as an image volume rather than run as
+      # its own container: the script needs a shell around it.
+      talosctl:
+        type: custom
+        volumeSpec:
+          image:
+            reference: ghcr.io/siderolabs/talosctl:v1.14.4@sha256:b3233234327350f20ed194f3fad83d90a64344c1940f839c7b0c0abef50c8c33
+            pullPolicy: IfNotPresent
+        globalMounts:
+          - path: /talos
+            readOnly: true
+      # talosctl reads the ServiceAccount's talosconfig from
+      # /var/run/secrets/talos.dev on its own; its only endpoint is
+      # talos.default, which proxies to each --nodes target.
+      talos:
+        type: secret
+        name: etcd-defrag
+        globalMounts:
+          - path: /var/run/secrets/talos.dev
+            readOnly: true
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

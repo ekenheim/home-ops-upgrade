@@ -1,9 +1,9 @@
 ---
-# A store of its own for the agent-lab key, so agent-control and development
-# never share a Role: this SA may `get` only litellm-key-agent-lab in `llm`,
-# and only agent-control may use the store. Same shape as ./rbac.yaml and
-# ./secretstore.yaml (the Atlas store); see there for why there is no
-# list/watch.
+# A store of its own for the agent-lab key, so agent-control never shares a
+# Role with another consumer: this SA may `get` only litellm-key-agent-lab in
+# `llm`, and only agent-control may use the store. Same shape as
+# ./paperless-gpt.yaml. No list/watch: the kubernetes provider fetches single
+# keys with a plain Get (list is only for dataFrom.find).
 #
 # Consumer: agent-control/agent-egress-litellm-credential
 #   remoteRef: {key: litellm-key-agent-lab, property: api-key}

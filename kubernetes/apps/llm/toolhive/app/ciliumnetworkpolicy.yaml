@@ -12,7 +12,6 @@
 #     context7, platform-mcp, wiki-mcp  also <- hermes (its configmap)
 #     kubectl-mcp, flux-mcp             also <- kagent controller + agents
 #                                               (RemoteMCPServers)
-#     tradingview-mcp                   also <- development/atlas
 #   every server pod    <- the ToolHive proxies (streamable-http servers
 #                          listen on 3000/8000/8080/8081; stdio servers are
 #                          attached through the API server and listen on
@@ -118,29 +117,6 @@ spec:
             app.kubernetes.io/component: controller
         - matchLabels:
             app: kagent
-      toPorts:
-        - ports:
-            - port: "8080"
-              protocol: TCP
----
-# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: mcp-proxies-atlas
-spec:
-  endpointSelector:
-    matchLabels:
-      app.kubernetes.io/name: mcpserver
-      app.kubernetes.io/instance: tradingview-mcp
-  enableDefaultDeny:
-    ingress: true
-    egress: false
-  ingress:
-    - fromEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: development
-            app.kubernetes.io/name: atlas
       toPorts:
         - ports:
             - port: "8080"

@@ -28,4 +28,7 @@ resources:
   - ./hermes-code-oidc.yaml
   - ./sillytavern-oidc.yaml
   - ./kuberay-oidc.yaml
+  # Pairs with blueprints.configMaps in helmrelease.yaml: a missing ConfigMap
+  # holds the worker pod.
+  - ./lan-autologin.yaml
   - ../../../../templates/gatus/infra

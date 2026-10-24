@@ -56,6 +56,9 @@ spec:
         - authentik-hermes-code-oidc  # hermes-code-oidc.yaml
         - authentik-sillytavern-oidc  # sillytavern-oidc.yaml
         - authentik-kuberay-oidc  # kuberay-oidc.yaml
+      # Mounted at /blueprints/mounted/cm-<name>.
+      configMaps:
+        - authentik-lan-autologin  # lan-autologin.yaml
     server:
       autoscaling:
         enabled: true
@@ -84,6 +87,18 @@ spec:
             - name: envoy-external
               namespace: network
               sectionName: https
+          filters:
+            # Authentik takes the first X-Forwarded-For entry as the client
+            # address, and a client can write that entry: through Cloudflare a
+            # forged 192.168.1.x arrived first in the list. Replace the header
+            # with the address envoy-external detected (it walks the list from
+            # the right and trusts only pod hops), so Authentik's events,
+            # reputation and lan-autologin.yaml see the real client.
+            - type: RequestHeaderModifier
+              requestHeaderModifier:
+                set:
+                  - name: X-Forwarded-For
+                    value: "%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%"
       ingress:
         enabled: false  # moved to an HTTPRoute on envoy-gateway
         ingressClassName: external

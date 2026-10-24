@@ -1,0 +1,157 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/configmap-v1.json
+# Home-network browsers skip sign-in (owner, 2026-10-24): on the way to an
+# application the `lan` user may open, the default authentication flow signs
+# them in as `lan` without asking. Everywhere else, and for every other
+# address, sign-in is unchanged. Admin-only applications (Jupyter, code-server,
+# Ray, Langflow, kagent, ...) deny `lan`, so they keep the normal sign-in.
+#
+# Authentik takes the first X-Forwarded-For entry as the client address, and a
+# client can write that entry: a forged 192.168.1.x sent through Cloudflare
+# arrived first in the list on 2026-10-24, and Authentik keeps only that first
+# entry. So the policy trusts an address only when two things hold:
+#   - no CF-Connecting-IP header, which Cloudflare sets on every request
+#     through the tunnel, so the browser reached envoy-external directly;
+#   - the address envoy-external detected, which it writes into
+#     X-Forwarded-For on the sso route (route.main.filters in helmrelease.yaml),
+#     is on the LAN or node network.
+# Like the private-CIDR SecurityPolicies, this assumes the internet reaches
+# the gateways only through the tunnel (no router port forward to them).
+#
+# A dropped blueprint is forgotten, not reversed. To turn this off, delete the
+# `lan-autologin` policy in the admin UI (or set its entries to state: absent)
+# rather than only removing this file.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-lan-autologin
+data:
+  lan-autologin.yaml: |
+    version: 1
+    metadata:
+      name: lan-autologin
+    entries:
+      # No password: the policy below is the only way to become this user.
+      - model: authentik_core.user
+        id: user
+        identifiers:
+          username: lan
+        attrs:
+          name: LAN visitor
+          email: lan@${SECRET_DOMAIN}
+          type: internal
+          is_active: true
+      - model: authentik_policies_expression.expressionpolicy
+        id: policy
+        identifiers:
+          name: lan-autologin
+        attrs:
+          expression: |
+            # Bound to the identification, password and MFA stages of the
+            # default authentication flow. True keeps the stage, False skips
+            # it. A home-network browser headed for an application `lan` may
+            # open is signed in as `lan`, so all three are skipped and the
+            # login stage signs that user in.
+            from authentik.policies.engine import PolicyEngine
+
+            plan = context.get("flow_plan")
+            if plan is None:
+                return True
+            # Someone who typed a username keeps their own sign-in.
+            pending = plan.context.get("pending_user")
+            if pending is not None and pending.username != "lan":
+                return True
+            # Set when an application sent the browser here to sign in.
+            app = plan.context.get("application")
+            if app is None:
+                return True
+
+            # Everything from the internet comes through the Cloudflare tunnel,
+            # and Cloudflare sets CF-Connecting-IP on every request it
+            # forwards (a client cannot remove it). Its absence means the
+            # browser reached envoy-external's LAN address directly.
+            if http_request.META.get("HTTP_CF_CONNECTING_IP"):
+                return True
+            # ak_client_ip is the first X-Forwarded-For entry, which
+            # envoy-external sets to the address it detected (helmrelease.yaml).
+            # The LAN, and the node network: Cilium SNATs most LAN
+            # connections to the announcing node's address. Pods and the
+            # tailnet (which arrives from the Tailscale pod) are not on it.
+            home = [ip_network("${DEFAULT_CIDR}"), ip_network("${NODE_CIDR}")]
+            if not any(ak_client_ip in net for net in home):
+                return True
+
+            lan = ak_user_by(username="lan")
+            if lan is None or not lan.is_active:
+                return True
+            # The application's own bindings decide, as they would after a
+            # normal sign-in.
+            access = PolicyEngine(app, lan, http_request)
+            access.build()
+            if not access.passing:
+                return True
+            plan.context["pending_user"] = lan
+            return False
+      # Evaluated per request, not when the plan is built: Authentik caches
+      # plans for signed-out visitors, so a decision made at planning time
+      # would be reused for the next visitor from anywhere. "all": the
+      # password and MFA bindings also carry the default flow's own policies,
+      # and the default "any" would let those overrule this one.
+      - model: authentik_flows.flowstagebinding
+        id: identification
+        identifiers:
+          target: &flow !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          stage: !Find [authentik_stages_identification.identificationstage, [name, default-authentication-identification]]
+          order: 10
+        attrs: &binding
+          evaluate_on_plan: false
+          re_evaluate_policies: true
+          policy_engine_mode: all
+      - model: authentik_flows.flowstagebinding
+        id: password
+        identifiers:
+          target: *flow
+          stage: !Find [authentik_stages_password.passwordstage, [name, default-authentication-password]]
+          order: 20
+        attrs: *binding
+      - model: authentik_flows.flowstagebinding
+        id: mfa
+        identifiers:
+          target: *flow
+          stage: !Find [authentik_stages_authenticator_validate.authenticatorvalidatestage, [name, default-authentication-mfa-validation]]
+          order: 30
+        attrs: *binding
+      # failure_result: an error in the policy keeps the stage, so a bug
+      # means the normal sign-in, not a skipped one.
+      - model: authentik_policies.policybinding
+        identifiers:
+          order: 100
+          target: !KeyOf identification
+          policy: !KeyOf policy
+        attrs: &policy
+          failure_result: true
+          timeout: 30
+      - model: authentik_policies.policybinding
+        identifiers:
+          order: 100
+          target: !KeyOf password
+          policy: !KeyOf policy
+        attrs: *policy
+      - model: authentik_policies.policybinding
+        identifiers:
+          order: 100
+          target: !KeyOf mfa
+          policy: !KeyOf policy
+        attrs: *policy
+      # Read-only views `lan` may open besides the applications that have no
+      # bindings. Both are otherwise authentik Admins only.
+      - model: authentik_policies.policybinding
+        identifiers:
+          order: 10
+          target: !Find [authentik_core.application, [slug, crowdsec]]
+          user: !KeyOf user
+      - model: authentik_policies.policybinding
+        identifiers:
+          order: 10
+          target: !Find [authentik_core.application, [slug, victoria-logs]]
+          user: !KeyOf user

@@ -89,7 +89,7 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - **`downloads`** — Sonarr, Radarr (+ radarr4k), Prowlarr, Bazarr, Kapowarr, Lingarr, Recyclarr, SABnzbd, arr-mcp.
 - **`default`** — Home Assistant, Z-Wave JS UI, Music Assistant, Mosquitto, Frigate (NVR, OpenVINO on a DeskMini iGPU), Wyoming (whisper / piper / kokoro), Immich, Paperless, Syncthing, Actual, Outline, FileBrowser, IT-Tools, Gatus endpoints.
 - **`network`** — Cloudflared, CrowdSec (detects on `envoy-external` and blocks via an ext_authz bouncer SecurityPolicy on that Gateway, failOpen; read-only Web UI at `crowdsec.<domain>`; see `network/crowdsec/README.md`), Envoy Gateway, external-dns, Tailscale, echo-server. Headscale is disabled.
-- **`security`** — Authentik.
+- **`security`** — Authentik. Since 2026-10-24, browsers on the LAN or node network are signed in as the limited `lan` user, without a prompt, for any application `lan` may open; admin-only applications keep the normal sign-in (`security/authentik/app/lan-autologin.yaml`). This depends on envoy-external rewriting X-Forwarded-For on the sso route, because Authentik trusts that header's first entry.
 - **`storage`** — OpenEBS, MinIO (primary + secondary), snapshot-controller, VolSync.
 - **`observability`** — kube-prometheus-stack, Grafana (dashboards as ConfigMaps in Git), Thanos, Karma, Gatus, Kromgo, UnPoller, exporters, alertmanager-silencer.
 - **`kube-system`** — Cilium, CoreDNS, Spegel, metrics-server, Kubelet CSR approver, k8s-gpu-dra-driver.

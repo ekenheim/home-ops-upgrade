@@ -10,6 +10,9 @@ resources:
   - ./agents.yaml
   - ./service.yaml
   - ./servicemonitor.yaml
-  - ./prometheusrule.yaml
-  - ../../../../templates/gatus/guarded
+  # Off since 2026-10-24 (owner): Atlas is archived (ADR 0005); a stopped app should page no one.
+  # Keep ./pvc.yaml and this Kustomization: with prune on, removing either deletes the source
+  # archive, which has no other copy.
+  #- ./prometheusrule.yaml
+  #- ../../../../templates/gatus/guarded
   - ./httproute-internal.yaml

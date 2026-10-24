@@ -18,7 +18,10 @@ metadata:
     # Env comes from ESO-managed Secrets; restart the pod when they rotate.
     reloader.stakater.com/auto: "true"
 spec:
-  replicas: 1
+  # Off since 2026-10-24 (owner): Atlas is archived (github.com/ekenheim/atlas, ADR 0005).
+  # The api and worker share this pod, so 0 stops the worker's daily schedules too. Set 1 to
+  # revive it; the database and the atlas-archive PVC are kept.
+  replicas: 0
   strategy:
     type: Recreate
   selector:

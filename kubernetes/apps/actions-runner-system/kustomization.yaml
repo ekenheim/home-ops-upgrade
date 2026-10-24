@@ -19,4 +19,5 @@ resources:
   #- ./gha-runner-scale-set-ecom/ks.yaml
   #- ./gha-runner-scale-set-banditweb/ks.yaml
   #- ./gha-runner-scale-set-grid-reliance/ks.yaml
-  - ./gha-runner-scale-set-atlas/ks.yaml
+  # Off since 2026-10-24 (owner): Atlas is archived (github.com/ekenheim/atlas is read-only).
+  #- ./gha-runner-scale-set-atlas/ks.yaml

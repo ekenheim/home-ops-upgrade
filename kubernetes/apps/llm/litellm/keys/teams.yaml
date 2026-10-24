@@ -152,8 +152,7 @@ spec:
   members:
     - userID: default_user_id
       role: admin
-  # Public filings and notebooks. Keys: atlas (Git); atlas-dev, marimo
-  # (Bitwarden / UI). atlas carries its own $20/day on top of this.
+  # Notebooks. Keys: marimo, vane (Bitwarden / UI).
   models:
     - pc/*
     - MiniMax-M3
@@ -165,9 +164,6 @@ spec:
     - fast
     - local-pool-chat
     - chatgpt
-    # frontier-pool for the atlas-eval key (atlas pilot-review ticket 25): the lead's
-    # frontier-model measurements. The key's own list and this team's cap still bind.
-    - frontier-pool
   maxBudget: "25"
   budgetDuration: 1d
 ---

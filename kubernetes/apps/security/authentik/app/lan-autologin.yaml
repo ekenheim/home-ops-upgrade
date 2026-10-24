@@ -1,10 +1,14 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.26.1-standalone-strict/configmap-v1.json
 # Home-network browsers skip sign-in (owner, 2026-10-24): on the way to an
-# application the `lan` user may open, the default authentication flow signs
-# them in as `lan` without asking. Everywhere else, and for every other
-# address, sign-in is unchanged. Admin-only applications (Jupyter, code-server,
-# Ray, Langflow, kagent, ...) deny `lan`, so they keep the normal sign-in.
+# application that binds the `lan` user (Grafana, CrowdSec, VictoriaLogs,
+# below), the default authentication flow signs them in as `lan` without
+# asking. Every other application, and every other address, keeps the normal
+# sign-in. To open another application to the LAN, bind `lan` to it.
+#
+# A browser holding a `lan` session that then opens an admin-only application
+# gets Authentik's access-denied page: sign out there, then sign in as
+# yourself.
 #
 # Authentik takes the first X-Forwarded-For entry as the client address, and a
 # client can write that entry: a forged 192.168.1.x sent through Cloudflare
@@ -53,6 +57,7 @@ data:
             # open is signed in as `lan`, so all three are skipped and the
             # login stage signs that user in.
             from authentik.policies.engine import PolicyEngine
+            from authentik.policies.models import PolicyBinding
 
             plan = context.get("flow_plan")
             if plan is None:
@@ -84,8 +89,13 @@ data:
             lan = ak_user_by(username="lan")
             if lan is None or not lan.is_active:
                 return True
-            # The application's own bindings decide, as they would after a
-            # normal sign-in.
+            # Opt-in: only applications that bind `lan` by name (below, or in
+            # the admin UI). One with no bindings is open to every user, but
+            # that is not a reason to open it to every device on the LAN.
+            if not PolicyBinding.objects.filter(target=app, user=lan, enabled=True).exists():
+                return True
+            # The application's own bindings still decide, as they would
+            # after a normal sign-in.
             access = PolicyEngine(app, lan, http_request)
             access.build()
             if not access.passing:
@@ -143,8 +153,15 @@ data:
           target: !KeyOf mfa
           policy: !KeyOf policy
         attrs: *policy
-      # Read-only views `lan` may open besides the applications that have no
-      # bindings. Both are otherwise authentik Admins only.
+      # The applications a LAN browser opens without signing in: read-only
+      # views. CrowdSec and VictoriaLogs are otherwise authentik Admins only;
+      # Grafana gives a user outside its groups the Viewer role
+      # (role_attribute_path in observability/grafana).
+      - model: authentik_policies.policybinding
+        identifiers:
+          order: 10
+          target: !Find [authentik_core.application, [slug, grafana]]
+          user: !KeyOf user
       - model: authentik_policies.policybinding
         identifiers:
           order: 10

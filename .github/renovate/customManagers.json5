@@ -76,6 +76,21 @@
       "extractVersionTemplate": "^v(?<version>.*)$"
     },
     {
+      // Image volumes (a pod volume's image.reference) pin an image as one
+      // "<repo>:<tag>@sha256:<digest>" string, which the kubernetes and
+      // helm-values managers do not read and the annotated manager above
+      // cannot split. kube-tools/etcd-defrag mounts talosctl this way; the
+      // depName puts it in the Talos group (groups.json5) with etcd-backup:
+      //   reference: ghcr.io/siderolabs/talosctl:v1.14.4@sha256:<64 hex>
+      "customType": "regex",
+      "description": ["Image volume references"],
+      "fileMatch": ["(^|/)kubernetes/.+\\.ya?ml$"],
+      "matchStrings": [
+        "\\breference:\\s*[\"']?(?<depName>[^\\s:@\"']+):(?<currentValue>[^\\s@\"']+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
       "customType": "regex",
       "description": ["Bump README shields.io static badges annotated with renovate comments"],
       "fileMatch": ["(^|/)README\\.md$"],

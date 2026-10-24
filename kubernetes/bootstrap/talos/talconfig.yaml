@@ -489,6 +489,8 @@ controlPlane:
               - os:admin
               # kube-tools/etcd-backup: etcd snapshots only.
               - os:etcd:backup
+              # kube-tools/etcd-defrag: EtcdDefragment needs operator or admin.
+              - os:operator
             allowedKubernetesNamespaces:
               - kube-tools
 

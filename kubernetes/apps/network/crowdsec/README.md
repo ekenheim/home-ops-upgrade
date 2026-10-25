@@ -52,11 +52,14 @@ nothing is pulled from CrowdSec's community blocklist.
   `envoy-external` Gateway as an ext_authz SecurityPolicy. Its client IP is
   the rightmost X-Forwarded-For entry outside `${CLUSTER_CIDR}`: the real
   client for Cloudflare traffic, the private address for LAN clients (never
-  banned, see whitelists). Its LAPI key is generated in-cluster
-  (`app/externalsecret.yaml`); LAPI registers it as bouncer `ENVOY` from
-  `BOUNCER_KEY_ENVOY`. If the key is ever regenerated, run
-  `cscli bouncers delete ENVOY` and restart LAPI, since the start script
-  skips a name that already exists.
+  banned, see whitelists). Its LAPI key is generated once in-cluster
+  (`app/externalsecret.yaml`, `CreatedOnce`); LAPI registers it as bouncer
+  `ENVOY` from `BOUNCER_KEY_ENVOY`. If the key is ever regenerated (by
+  deleting the Secret), restart LAPI so it reads the new value, then run
+  `cscli bouncers delete ENVOY` and restart it again, since the start script
+  skips a name that already exists. A bouncer stuck on an old key shows as
+  403s on `/v1/decisions/stream` in the LAPI log and a NOT_SERVING readiness
+  probe.
 - **WAF (AppSec)**: the bouncer also sends requests for the hosts in its
   `config.waf.routes` (Strapi, Authentik, Grafana, Home Assistant, Overseerr,
   Wizarr, the marketing site, Hempriser, the blog) to the `crowdsec-appsec`

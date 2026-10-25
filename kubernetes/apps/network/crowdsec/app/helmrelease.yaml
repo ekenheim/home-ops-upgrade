@@ -33,11 +33,13 @@ spec:
         - name: DISABLE_ONLINE_API
           value: "true"
       # BOUNCER_KEY_ENVOY registers the envoy bouncer (externalsecret.yaml).
+      # No Reloader annotation. A restart never changes an existing bouncer's
+      # key, and the start script registers every env var matching
+      # BOUNCER_KEY, so Reloader's STAKATER_CROWDSEC_BOUNCER_KEY_SECRET became
+      # a bouncer of its own.
       envFrom:
         - secretRef:
             name: crowdsec-bouncer-key
-      podAnnotations:
-        secret.reloader.stakater.com/reload: crowdsec-bouncer-key
       resources:
         requests:
           cpu: 25m

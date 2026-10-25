@@ -12,8 +12,6 @@ resources:
   - ./openclaw.yaml
   - ./toolhive.yaml
   - ./opencode.yaml
-  - ./atlas.yaml
-  - ./atlas-eval.yaml
   # Off since 2026-10-18 (owner), with apps/agent-lab: its only reader, the
   # agent-egress gateway, is gone. Pruning the CR revokes the key in LiteLLM
   # (the operator's finalizer); a re-enable mints a new one.

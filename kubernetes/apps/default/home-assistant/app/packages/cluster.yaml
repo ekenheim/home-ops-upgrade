@@ -1,0 +1,89 @@
+# Cluster status for the Homelab view and the Home chip, read straight from
+# Prometheus. The Kubernetes integration has pods/services collection turned
+# off (pod names churn on every rollout), so pod counts and alerts come from
+# here instead.
+#
+# The alert sensors leave out Trivy (image CVE reports), Watchdog and
+# InfoInhibitor: those always fire and would drown the real ones.
+
+rest:
+  - resource: &prometheus http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090/api/v1/query
+    params:
+      query: kube_node_status_condition{condition="Ready",status="true"}
+    scan_interval: 60
+    sensor:
+      - name: Cluster nodes ready
+        unique_id: cluster_nodes_ready
+        icon: mdi:server
+        value_template: >-
+          {{ value_json.data.result | map(attribute='value') | map('last')
+             | map('int') | sum }}
+      - name: Cluster nodes total
+        unique_id: cluster_nodes_total
+        icon: mdi:server
+        value_template: "{{ value_json.data.result | count }}"
+      - name: Cluster nodes not ready
+        unique_id: cluster_nodes_not_ready
+        icon: mdi:server-off
+        value_template: >-
+          {{ value_json.data.result | selectattr('value.1', 'eq', '0')
+             | map(attribute='metric.node') | sort | join(', ') or 'none' }}
+
+  - resource: *prometheus
+    params:
+      query: sum(kube_pod_status_phase{phase="Running"})
+    scan_interval: 60
+    sensor:
+      - name: Cluster pods running
+        unique_id: cluster_pods_running
+        icon: mdi:cube-outline
+        value_template: "{{ value_json.data.result[0].value[1] | int if value_json.data.result else 0 }}"
+
+  - resource: *prometheus
+    params:
+      query: max(ceph_health_status)
+    scan_interval: 60
+    sensor:
+      - name: Ceph health
+        unique_id: ceph_health
+        icon: mdi:database
+        value_template: >-
+          {% set r = value_json.data.result %}
+          {{ ['OK', 'WARN', 'ERR'][r[0].value[1] | int] if r else 'no data' }}
+
+  - resource: *prometheus
+    params:
+      query: >-
+        count by (alertname, severity) (ALERTS{alertstate="firing",
+        severity=~"warning|critical", alertname!~"Trivy.*|Watchdog|InfoInhibitor"})
+    scan_interval: 60
+    sensor:
+      - name: Cluster alerts
+        unique_id: cluster_alerts
+        icon: mdi:alert-outline
+        value_template: "{{ value_json.data.result | map(attribute='metric.alertname') | unique | list | count }}"
+      - name: Cluster critical alerts
+        unique_id: cluster_critical_alerts
+        icon: mdi:alert-octagon
+        value_template: >-
+          {{ value_json.data.result | selectattr('metric.severity', 'eq', 'critical') | list | count }}
+      # Names as the state (capped at 255 chars) so the card can list them
+      # without a big attribute that the recorder would write every minute.
+      - name: Cluster alert names
+        unique_id: cluster_alert_names
+        icon: mdi:format-list-bulleted
+        value_template: >-
+          {{ (value_json.data.result | map(attribute='metric.alertname') | unique | sort
+              | join(', ') or 'none') | truncate(255, true, '…', 0) }}
+
+template:
+  # Drives the red "Cluster" chip on the Home view. An unreachable Prometheus
+  # leaves this off: the Homelab view shows that case on its own.
+  - binary_sensor:
+      - name: Cluster needs attention
+        unique_id: cluster_needs_attention
+        device_class: problem
+        state: >-
+          {{ states('sensor.cluster_critical_alerts') | int(0) > 0
+             or states('sensor.cluster_nodes_not_ready') not in ['none', 'unknown', 'unavailable']
+             or states('sensor.ceph_health') in ['WARN', 'ERR'] }}

@@ -22,7 +22,7 @@ RUN git config --global user.email "build@docker.local" && \
 # The version is pinned so Renovate can see it: a bump here rebuilds the image,
 # and strapi-sync.sh then upgrades the project on each PVC to match.
 # renovate: datasource=npm depName=@strapi/strapi
-ARG STRAPI_VERSION=5.58.0
+ARG STRAPI_VERSION=5.59.0
 RUN yes "" | npx --yes create-strapi-app@${STRAPI_VERSION} template --no-run --skip-cloud
 
 # Install deps and pre-build the admin panel as separate layers.
@@ -68,7 +68,7 @@ RUN apk upgrade --no-cache && apk add --no-cache build-base vips-dev bash
 # 11.21.1 bundles 5.0.12, 6.29.0 and 4.3.0. Stay on npm 11 (the line Node 24
 # ships); npm 12 is a major and Renovate will not auto-merge it.
 # renovate: datasource=npm depName=npm
-ARG NPM_VERSION=12.2.0
+ARG NPM_VERSION=12.2.1
 RUN npm install --global --no-audit --no-fund npm@${NPM_VERSION} && npm cache clean --force
 
 # Bake the complete project (including node_modules) into the image.

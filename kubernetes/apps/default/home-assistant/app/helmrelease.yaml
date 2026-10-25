@@ -36,7 +36,7 @@ spec:
           app:
             image:
               repository: ghcr.io/joryirving/home-assistant
-              tag: 2026.10.2@sha256:3cb830264c5b5b7395a7d1470bd870c32015bae44b7ffce456852fb84e202f1a
+              tag: 2026.10.4@sha256:f94b0d0825f66573097e87da95c2555b65f993dbd616ea21cb1fcec404387d27
             env:
               TZ: ${TIMEZONE}
               # Recorder connection string (crunchy-postgres primary).
@@ -63,7 +63,7 @@ spec:
           codeserver:
             image:
               repository: ghcr.io/coder/code-server
-              tag: 4.141.0
+              tag: 4.143.1
             env:
               TZ: ${TIMEZONE}
             # PASSWORD (read by --auth password) comes from the secret. envFrom,

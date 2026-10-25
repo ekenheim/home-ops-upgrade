@@ -18,13 +18,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Install and run actionlint
-        run: |
-          set -euo pipefail
-          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
-          # Skip shellcheck integration: info-level style nits (SC2086/SC2129)
-          # in upstream-inherited workflows, not worth chasing.
-          ./actionlint -color -shellcheck= .github/workflows/*.yaml
+      # Pinned image rather than the upstream download script from `main`.
+      # With no file arguments actionlint checks .github/workflows. Skip
+      # shellcheck integration: info-level style nits (SC2086/SC2129) in
+      # upstream-inherited workflows, not worth chasing.
+      - name: Run actionlint
+        uses: docker://rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+        with:
+          args: -color -shellcheck=
 
   yamllint:
     name: yamllint

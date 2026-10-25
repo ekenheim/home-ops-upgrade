@@ -48,3 +48,7 @@
   color: "ee0701"
 - name: lint/lychee
   color: "201e39"
+# Forces a run of .github/workflows/ai-pr-review.yaml on any PR. Label Sync
+# deletes labels not listed here.
+- name: ai-review
+  color: "5319e7"

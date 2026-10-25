@@ -1,11 +1,13 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
-# Vendor-neutral GPU render node for VAAPI video work: squat.ai/dri.
+# Vendor-neutral GPU render node for VAAPI video work: devic.es/dri.
+# devic.es is the plugin's built-in resource domain (defaultDomain in its
+# config.go), not squat.ai: pods asking for squat.ai/dri never schedule.
 #
 # Every node advertises its /dev/dri/renderD128 under the one resource name,
 # whatever the vendor: worker3's Radeon iGPU (Granite Ridge, radeonsi) and the
 # Intel iGPUs on the control planes (iHD). libva picks the driver from the
-# device, so a VAAPI app that asks for squat.ai/dri runs on any of them
+# device, so a VAAPI app that asks for devic.es/dri runs on any of them
 # unchanged, and the scheduler is free to place it on whichever node is up.
 # A node without the device advertises zero.
 #
@@ -14,14 +16,14 @@
 #                       setting that names the iHD driver. Plex (no AMD hardware
 #                       transcoding on Linux), ErsatzTV (its FFmpeg profile pins
 #                       the VAAPI driver), Frigate detection (OpenVINO).
-#   squat.ai/dri        Plain VAAPI, where either vendor gives an equivalent
+#   devic.es/dri        Plain VAAPI, where either vendor gives an equivalent
 #                       result: Immich, Frigate decode. If Intel is better but
-#                       AMD still acceptable, keep squat.ai/dri and add a
+#                       AMD still acceptable, keep devic.es/dri and add a
 #                       *preferred* nodeAffinity on
 #                       intel.feature.node.kubernetes.io/gpu=true instead of
 #                       switching to i915, so the pod still runs when no Intel
 #                       node is free.
-# Choosing squat.ai/dri also means configuring the app for VAAPI rather than
+# Choosing devic.es/dri also means configuring the app for VAAPI rather than
 # QSV: QSV on worker3 fails (or falls back to software).
 #
 # Why not the vendor plugins for the generic case:

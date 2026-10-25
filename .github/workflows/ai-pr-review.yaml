@@ -44,11 +44,12 @@ jobs:
     # runner sits inside the cluster network.
     #
     # Renovate's non-major PRs (patch, minor, digest; a major carries `!:` in
-    # its conventional-commit title) skip the review. Renovate waits for every
-    # check before it automerges, and this one runs on worker4's two LLM slots,
-    # so it held up each routine bump for minutes (2026-10-19). A skipped job
+    # its conventional-commit title) skip the review: it runs on worker4's two
+    # LLM slots and took minutes per routine bump (2026-10-19). A skipped job
     # counts as passing. Majors are still reviewed, and the `ai-review` label
-    # forces a review on any PR.
+    # forces a review on any PR. Renovate rebases majors only on conflict
+    # (.github/renovate/packageRules.json5), so a major is not re-reviewed
+    # every time main moves.
     if: >-
       ${{ (github.event_name == 'pull_request'
             && !github.event.pull_request.draft
@@ -58,7 +59,9 @@ jobs:
                 || contains(github.event.pull_request.labels.*.name, 'ai-review')))
           || github.event_name == 'workflow_dispatch' }}
     runs-on: gha-runner-scale-set
-    timeout-minutes: 35
+    # A review takes ~10 min (specialists on worker4, one MiniMax call). The
+    # rest is headroom for implementation-pool falling through to worker4.
+    timeout-minutes: 50
     steps:
       - name: Resolve PR head for re-review
         id: prctx
@@ -77,23 +80,37 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || steps.prctx.outputs.head_sha }}
 
       - name: Review
-        uses: misospace/pr-reviewer-action@e207a7d11d2ee41f77493b2314e30e7ca694da50 # v3.6.0
+        uses: misospace/pr-reviewer-action@5b1839535748f3afd1bd3ef04e8009302cba9aa6 # v3.7.0
         with:
           github-token: ${{ github.token }}
           pr-number: ${{ github.event.pull_request.number || inputs.pr_number }}
           force-review: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
-          # Primary: Ornith on worker4 (thinking), MiniMax floor when it is
-          # down. Smart: reasoning-pool, which boring PRs never reach
-          # (review-routing-mode: auto escalates by risk class). The action
-          # does not stream, so the ChatGPT rungs are skipped -- see the
-          # pools' comment in litellm's configmap.
+          # Primary (the verdict): implementation-pool, which LiteLLM walks
+          # MiniMax Flash -> ChatGPT -> worker4. Specialists: worker4. Smart:
+          # reasoning-pool, which boring PRs never reach (review-routing-mode:
+          # auto escalates only when the verdict asks for it).
+          #
+          # Until 2026-10-23 worker4 (local-pool) was the primary. Its tool
+          # loop spent 10-15 min and produced no verdict in 10 of 12 reviews,
+          # its verdict call timed out about half the time, and reviews ran
+          # 25-50 min. In 3 days the loop sent local-pool 9.3M input tokens
+          # in 372 requests. The loop is off: on MiniMax it would move those
+          # tokens onto the Token Plan. Without it the reviewer cannot open
+          # files on its own; it still gets the diff, AGENTS.md, the CI
+          # results and the specialists' leads.
           ai-base-url: http://litellm.llm.svc.cluster.local:4000/v1
           ai-api-key: ${{ secrets.LITELLM_PR_REVIEW_API_KEY }}
-          ai-model: local-pool
+          ai-model: implementation-pool
+          ai-specialist-model: local-pool
+          tool-mode: "off"
           ai-response-format: json_object
-          # Ornith thinks before it answers; the default budget can be spent
-          # entirely on reasoning, leaving no JSON verdict.
+          # Both models think before they answer; the default budget can be
+          # spent entirely on reasoning, leaving no JSON verdict.
           ai-max-tokens: "16000"
+          # Sized for the specialists, which inherit it: worker4 writes ~45
+          # tokens/s, so a full answer needs ~355 s, and the default 300 s cut
+          # them off. MiniMax answers in seconds.
+          ai-request-timeout-sec: "420"
           ai-primary-retries: "2"
           ai-primary-retry-delay-sec: "15"
           review-routing-mode: auto
@@ -102,7 +119,9 @@ jobs:
           ai-smart-model: reasoning-pool
           ai-fallback-base-url: http://litellm.llm.svc.cluster.local:4000/v1
           ai-fallback-api-key: ${{ secrets.LITELLM_PR_REVIEW_API_KEY }}
-          ai-fallback-model: implementation-pool
+          # A different MiniMax model, for a Flash-specific failure; the
+          # primary already falls through to ChatGPT and worker4 in LiteLLM.
+          ai-fallback-model: MiniMax-M3-chat
           standards-file-candidates: "AGENTS.md"
           context-limit-mode: normal
           ci-status-check: "true"

@@ -16,10 +16,10 @@ lives here.
 | `hindsight` | **New.** Memory service to consolidate on: banks per consumer, MCP per bank, LLM on the ChatGPT subscription. Nothing wired yet. |
 | `searxng` | Search backend for litellm and vane. |
 | `vane` | Answer engine (Perplexica renamed): cited answers over searxng + `fast`. Authentik OIDC in front; settings seeded into `config.json` by an init container. |
-| `miso-gallery` | Web gallery over ComfyUI's output (NAS, `Media/comfyui/output`). Local password auth; can delete from the NAS. |
+| `miso-gallery` | **Off since 2026-10-22** (never used). Web gallery over ComfyUI's output (NAS, `Media/comfyui/output`). Local password auth; can delete from the NAS. |
 | `repo-wiki` | mkdocs site of LLM-written repo wikis; a nightly CronJob on `self-hosted` writes them. Agents read it through `wiki-mcp`. |
 | `hermes`, `langflow` | Frontends. `open-webui` was retired 2026-09-18 (unused). |
-| `comfyui` | Image generation (ROCm) on worker4. Output on the NAS under `Media/comfyui`. |
+| `comfyui` | **Off since 2026-10-22** (never used). Image generation (ROCm) on worker4. Output on the NAS under `Media/comfyui`. |
 | `lemonade-tts`, `whisper` | GPU speech on worker4: OpenMOSS TTS and whisper.cpp (Vulkan). Web pages at `lemonade.<domain>` and `whisper.<domain>` (internal, no login); no API consumers yet; Home Assistant and Bazarr keep their CPU services. |
 | `sillytavern` | Character chat frontend. Internal ingress is its only access control. |
 | `ai-marketplace-monitor` | Facebook Marketplace watcher, listings rated by `fast`. UI at `marketplace.<domain>`, login = the Facebook credentials. No notifier wired yet. |
@@ -196,8 +196,10 @@ that changed between runs and an empty wiki whenever a run timed out. Now:
 `manifest.json` on `repo-wiki.llm:8001` (in-cluster only; the volume is RWO and
 mkdocs only serves HTML). `toolhive/wiki-mcp` reads that and exposes
 `wiki_list`, `wiki_read`, `wiki_search` at
-`http://mcp-wiki-mcp-proxy.llm:8080/mcp`; hermes has it as `wiki`. Any other
-agent can use the same URL.
+`http://mcp-wiki-mcp-proxy.llm:8080/mcp`; hermes has it as `wiki`. Another
+agent can use the same URL once it is admitted in
+`toolhive/app/ciliumnetworkpolicy.yaml` (the ToolHive proxies only accept the
+vMCP gateway and the callers listed there), or through the vMCP gateway.
 
 llama.cpp keeps generating after a client gives up, so if ornith's `/slots`
 fill with dead work after a run, suspend this first:

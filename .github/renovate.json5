@@ -11,6 +11,7 @@
   // see kubernetes/apps/kube-tools/renovate-operator/jobs/home-ops.yaml.
   extends: [
     ':skipStatusChecks',
+    'helpers:pinGitHubActionDigests',
     'github>ekenheim/renovate-config',
     'github>ekenheim/renovate-config:autoMerge',
     'github>ekenheim/home-ops-upgrade//.github/renovate/autoMergeDocker.json5',

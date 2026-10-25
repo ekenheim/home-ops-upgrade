@@ -56,7 +56,7 @@ The setup is semi-hyper-converged: workloads and Rook/Ceph block storage share t
 
 ### Core Components
 
-- [actions-runner-controller](https://github.com/actions/actions-runner-controller): self-hosted GitHub Actions runners inside the cluster (eight runner scale sets for this repo and other projects)
+- [actions-runner-controller](https://github.com/actions/actions-runner-controller): self-hosted GitHub Actions runners inside the cluster (three runner scale sets for this repo and other projects)
 - [cilium](https://github.com/cilium/cilium): CNI for internal Kubernetes networking, replacing kube-proxy entirely; also L2 announcements for LoadBalancer VIPs and network policy
 - [cert-manager](https://cert-manager.io/docs/): handles SSL certificate issuance and renewal for all cluster services
 - [cloudflared](https://github.com/cloudflare/cloudflared): Cloudflare Tunnel for exposing services without opening inbound firewall ports

@@ -28,13 +28,13 @@ home-ops-upgrade/
 
 Single cluster: **`home-kubernetes`**
 
-- **Control plane**: `master1` (192.168.50.31), `master2` (192.168.50.33), `master3` (192.168.50.34) — Intel NUC12WSHi5
+- **Control plane**: `master1` (192.168.50.31), `master2` (192.168.50.33), `master3` (192.168.50.34) — `master2` is an Intel NUC12WSHi5; `master1` and `master3` are ASRock DeskMini B760 (Raptor Lake iGPU). All three carry an Intel iGPU (`gpu.intel.com/i915`) for Plex and Frigate.
 - **Workers**: `worker3` (192.168.50.37, Minisforum MS-A2, general workloads), `worker4` (192.168.50.38, Minisforum MS-S1 MAX, AMD Strix Halo iGPU, 128GB)
 - **worker4 is a dedicated LLM node**: tainted `llm-workload=true:NoSchedule`, labelled `node-role.kubernetes.io/rocm-worker`, with its own Talos schematic (`amdgpu` + ROCm kernel args). Only LLM / ROCm workloads and Rook tolerate the taint.
 - **Control-plane VIP**: `192.168.50.10:6443`
 - **Talos Linux** `v1.13.x`, **Kubernetes** `v1.35.x`, **Flux** `v2.9.x` — the pinned values live in `kubernetes/bootstrap/talos/talconfig.yaml` and `kubernetes/flux/config/flux.yaml`; read those rather than trusting a version written here.
 - **Semi-hyper-converged**: compute + Rook/Ceph block storage (one NVMe OSD per node) on cluster nodes; a separate NAS provides NFS/SMB bulk storage and off-cluster backup targets.
-- **Hardware state as of 2026-10-12**: `master1` and `master3` are dead and being replaced with ASRock DeskMini B760 nodes; `master2` is the sole etcd member. Check `kubectl get nodes` before assuming three control-plane nodes.
+- **Hardware state as of 2026-10-21**: the dead NUCs `master1` and `master3` were replaced with DeskMini B760 nodes, which rejoined the control plane on 2026-10-21. Check `kubectl get nodes` before assuming three control-plane nodes.
 
 ## Key Technologies
 
@@ -45,7 +45,7 @@ Single cluster: **`home-kubernetes`**
 | GitOps       | Flux                              | Reconciles `kubernetes/` → cluster            |
 | CI           | Renovate + GitHub Actions         | Dependency updates, lint, validation          |
 | CI           | renovate-operator                 | Self-hosted Renovate running in-cluster       |
-| CI runners   | actions-runner-controller         | 5 self-hosted scale sets inside the cluster   |
+| CI runners   | actions-runner-controller         | 2 self-hosted scale sets inside the cluster   |
 | Networking   | Cilium (eBPF, kube-proxy replacement) | CNI, L2 announcements, network policy     |
 | Ingress      | Envoy Gateway + Gateway API       | Primary L7 ingress (`envoy-internal` / `envoy-external` Gateways), OIDC |
 | Ingress      | Istio                             | Service mesh; legacy gateway for Ray / Dask   |
@@ -81,22 +81,22 @@ Git push → Flux GitRepository sync → cluster-apps Kustomization
 
 Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 
-- **`llm`** — LLM platform (split out of `datasci` 2026-08-29): LiteLLM gateway + litellm-operator (virtual keys), LLMKube llama.cpp InferenceServices on worker4, CPU embeddings, ComfyUI, whisper.cpp, Lemonade TTS, ToolHive (MCP servers), memini / hindsight (memory), SearXNG, Hermes, OpenClaw (Discord agent gateway with scheduled jobs; its config and workspace `AGENTS.md` are in `openclaw/app/configmap.yaml`, and its cron jobs live on the PVC, so `openclaw/jobs.sh` is re-run by hand after a change, not applied by Flux), Langflow, SillyTavern, OpenCode, repo-wiki, alert-triage. The dispatch / courier coding loop was retired 2026-10-20. See `kubernetes/apps/llm/README.md` and `PLATFORM-PLAN.md`.
-- **`agent-lab`** — **off since 2026-10-18 except Trackinizer.** Trackinizer (the analysis ledger, `trackinizer` namespace, `https://trackinizer.<domain>` behind Authentik, Crunchy database `trackinizer`) is ON: the owner keeps using it. Everything else is off: the sandbox namespaces `agent-control` / `agent-work` / `agent-verify`, egress-gateway, ledger, factory, the agent-lab LiteLLM key and store, and the `tetragon-policies` Kustomization. The `agent-lab-network-policy` Kustomization runs with only Trackinizer's policy. The manifests stay for a re-enable (agent-factory sandboxes with default-deny Cilium policies, quotas, an Envoy egress gateway that injects the LiteLLM key, a Postgres ledger); the `agentlab` Crunchy database is kept. See "Status" in `kubernetes/apps/agent-lab/README.md` before describing or re-enabling it.
+- **`llm`** — LLM platform (split out of `datasci` 2026-08-29): LiteLLM gateway + litellm-operator (virtual keys), LLMKube llama.cpp InferenceServices on worker4, CPU embeddings, whisper.cpp, Lemonade TTS, ToolHive (MCP servers), memini / hindsight (memory), SearXNG, Hermes, OpenClaw (Discord agent gateway with scheduled jobs; its config and workspace `AGENTS.md` are in `openclaw/app/configmap.yaml`, and its cron jobs live on the PVC, so `openclaw/jobs.sh` is re-run by hand after a change, not applied by Flux), Langflow, SillyTavern, OpenCode, repo-wiki, alert-triage. The dispatch / courier coding loop was retired 2026-10-20; ComfyUI and miso-gallery are off since 2026-10-22. See `kubernetes/apps/llm/README.md` and `PLATFORM-PLAN.md`.
+- **`agent-lab`** — **off since 2026-10-18 except Trackinizer.** Trackinizer (the analysis ledger, `trackinizer` namespace, `https://trackinizer.<domain>`, open to the LAN without Authentik since 2026-10-22, Crunchy database `trackinizer`) is ON: the owner keeps using it. Everything else is off: the sandbox namespaces `agent-control` / `agent-work` / `agent-verify`, egress-gateway, ledger, factory, the agent-lab LiteLLM key and store, and the `tetragon-policies` Kustomization. The `agent-lab-network-policy` Kustomization runs with only Trackinizer's policy. The manifests stay for a re-enable (agent-factory sandboxes with default-deny Cilium policies, quotas, an Envoy egress gateway that injects the LiteLLM key, a Postgres ledger); the `agentlab` Crunchy database is kept. See "Status" in `kubernetes/apps/agent-lab/README.md` before describing or re-enabling it.
 - **`datasci`** — ML / data platform: Ray, Spark, Dagster, MLflow, KServe (model serving since 2026-10-19: InferenceServices in Standard mode, routed on envoy-internal; see `datasci/kserve/README.md`), Label Studio, Jupyter Lab, Marimo, Qdrant, FalkorDB, Docat. Dask, Prefect, Flyte, Bandit (bandit-demo, banditweb; off since 2026-10-15), grid-reliance-infra (off since 2026-10-18) and Seldon Core v2 (off since 2026-10-19; only bandit used it; KServe replaces it) are disabled.
 - **`database`** — Crunchy Postgres, Dragonfly. MariaDB is disabled.
 - **`media`** — Plex, Overseerr, Tautulli, Wizarr, Kavita, Maintainerr, Dispatcharr (IPTV tuner for Plex; xTeve removed 2026-10-19).
 - **`downloads`** — Sonarr, Radarr (+ radarr4k), Prowlarr, Bazarr, Kapowarr, Lingarr, Recyclarr, SABnzbd, arr-mcp.
-- **`default`** — Home Assistant, Z-Wave JS UI, Music Assistant, Mosquitto, Wyoming (whisper / piper / kokoro), Immich, Paperless, Syncthing, Actual, Outline, FileBrowser, IT-Tools, Gatus endpoints.
+- **`default`** — Home Assistant, Z-Wave JS UI, Music Assistant, Mosquitto, Frigate (NVR, OpenVINO on a DeskMini iGPU), Wyoming (whisper / piper / kokoro), Immich, Paperless, Syncthing, Actual, Outline, FileBrowser, IT-Tools, Gatus endpoints.
 - **`network`** — Cloudflared, CrowdSec (detects on `envoy-external` and blocks via an ext_authz bouncer SecurityPolicy on that Gateway, failOpen; read-only Web UI at `crowdsec.<domain>`; see `network/crowdsec/README.md`), Envoy Gateway, external-dns, Tailscale, echo-server. Headscale is disabled.
-- **`security`** — Authentik.
+- **`security`** — Authentik. Since 2026-10-24, browsers on the LAN or node network are signed in as the limited `lan` user, without a prompt, for applications that bind `lan` (Grafana, CrowdSec, VictoriaLogs); everything else keeps the normal sign-in (`security/authentik/app/lan-autologin.yaml`). This depends on envoy-external rewriting X-Forwarded-For on the sso route, because Authentik trusts that header's first entry.
 - **`storage`** — OpenEBS, MinIO (primary + secondary), snapshot-controller, VolSync.
 - **`observability`** — kube-prometheus-stack, Grafana (dashboards as ConfigMaps in Git), Thanos, Karma, Gatus, Kromgo, UnPoller, exporters, alertmanager-silencer.
 - **`kube-system`** — Cilium, CoreDNS, Spegel, metrics-server, Kubelet CSR approver, k8s-gpu-dra-driver.
 - **`kube-tools`** — descheduler, node-feature-discovery, device plugins (Intel + Nvidia), Reloader, tuppr, renovate-operator, fstrim, nfs-stale-watchdog.
-- **`development`** — Harbor, Redpanda, Strapi (×2), Rybbit, Atlas, side projects (alphaos, hempriser, marketing-agency). Metabase, Meilisearch, Airbyte, Umami, GrowthBook and Medusa (off since 2026-10-18) are disabled.
+- **`development`** — Harbor, Redpanda, Strapi (×2), Rybbit, side projects (alphaos, hempriser, marketing-agency). Metabase, Meilisearch, Airbyte, Umami, GrowthBook and Medusa (off since 2026-10-18) are disabled; Atlas was removed 2026-10-24 (project archived).
 - **`rook-ceph`** — distributed storage operator + cluster.
-- **`istio-system`** (Istio base / istiod / gateway, Gateway API CRDs; the Seldon Core v1 operator is disabled), **`cert-manager`**, **`external-secrets`**, **`flux-system`**, **`actions-runner-system`** (ARC controller + 5 scale sets: general, atlas, bandit, banditweb, nordic-housing; ecom and grid-reliance off since 2026-10-18), **`blog`**.
+- **`istio-system`** (Istio base / istiod / gateway, Gateway API CRDs; the Seldon Core v1 operator is disabled), **`cert-manager`**, **`external-secrets`**, **`flux-system`**, **`actions-runner-system`** (ARC controller + 2 scale sets: general, nordic-housing; atlas removed 2026-10-24; bandit, banditweb, ecom and grid-reliance off since 2026-10-18), **`blog`**.
 - Disabled namespaces still present in the tree: **`argocd`** (deployKF experiment, off), **`vpn`**.
 
 ## Conventions
@@ -108,8 +108,10 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - Apps use `HelmRelease` via Flux; raw manifests are the exception.
 - Per-app README files live next to the app when needed.
 - `Taskfile.yaml` is the operator entry point — `task -l` lists commands, with includes from `.taskfiles/{Ansible,Bitwarden,ExternalSecrets,Flux,Kubernetes,Postgresql,Rook,Sops,Talos,VolSync}/`.
-- CI workflows in `.github/workflows/`: `lint`, `kubeconform`, `flux-local`, `schemas`, `sops-guard`, `ai-pr-review`, `renovate-trigger`, `volsync-drill`, `publish-terraform`, `strapi-bootstrap`, `release`, `tag`, `labels`, `pr-title`, `lychee`, `nas-restart`, `update-pr-branches`.
-- YAML is linted with `yamllint` (`.yamllint.yaml`); Kubernetes manifests validated with `kubeconform` using `lds-schemas.pages.dev` for Flux / Crunchy / External-Secrets CRDs.
+- CI workflows in `.github/workflows/`: `lint`, `kubeconform`, `flux-local`, `schemas`, `sops-guard`, `ai-pr-review`, `renovate-trigger`, `volsync-drill`, `publish-terraform`, `strapi-bootstrap`, `release`, `tag`, `labels`, `pr-title`, `lychee`, `nas-restart`.
+- Required checks on `main` (branch protection, not in Git): `actionlint`, `yamllint`, `Conventional Commits`, `Flux Local - Success`, `Kubeconform`, `Reject unencrypted secrets`. Renovate merges through GitHub auto-merge (`platformAutomerge`), which waits for these checks only, so a required check's workflow must run on every PR (no `paths:` filter). AI PR Review is advisory.
+- YAML is linted with `yamllint` (`.yamllint.yaml`); Kubernetes manifests validated with `kubeconform` (`.taskfiles/Kubernetes/scripts/kubeconform.sh`) against its built-in schemas, then this cluster's CRD schemas, then the datree CRDs-catalog.
+- CRD schemas: the nightly `schemas` workflow publishes the installed CRDs to `https://lds-schemas-5hg.pages.dev/<group>/<kind>_<version>.json`. `$schema` headers use that host with the manifest's own apiVersion. `lds-schemas.pages.dev` is someone else's site.
 
 ## Common Operations
 

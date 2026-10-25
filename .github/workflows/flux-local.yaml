@@ -3,11 +3,11 @@
 name: Flux Local
 
 on:
+  # No `paths:` filter: "Flux Local - Success" is a required check on main,
+  # and a path-filtered workflow never reports on a PR outside its paths,
+  # which would leave that PR waiting forever.
   pull_request:
     branches: ["main"]
-    paths:
-      - "kubernetes/**"
-      - ".github/workflows/flux-local.yaml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
@@ -21,8 +21,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Every past failure of this job was an upstream fetch (`helm repo
+      # update` against a chart repo, a ghcr.io blob reset), not the PR, so
+      # one retry before the required check goes red.
       - name: Run flux-local test
-        uses: docker://ghcr.io/allenporter/flux-local:v8.4.0
+        id: test
+        continue-on-error: true
+        uses: docker://ghcr.io/allenporter/flux-local:v8.4.0@sha256:c0be852e30f299ce6a220cc992b0c21a2a0b0684cc17713b9d718e18d9c8beff
+        with:
+          args: test --enable-helm --all-namespaces --path /github/workspace/kubernetes/flux/config -v
+
+      - name: Retry flux-local test
+        if: steps.test.outcome == 'failure'
+        uses: docker://ghcr.io/allenporter/flux-local:v8.4.0@sha256:c0be852e30f299ce6a220cc992b0c21a2a0b0684cc17713b9d718e18d9c8beff
         with:
           args: test --enable-helm --all-namespaces --path /github/workspace/kubernetes/flux/config -v
 
@@ -49,7 +60,7 @@ jobs:
           path: default
 
       - name: Run flux-local diff
-        uses: docker://ghcr.io/allenporter/flux-local:v8.4.0
+        uses: docker://ghcr.io/allenporter/flux-local:v8.4.0@sha256:c0be852e30f299ce6a220cc992b0c21a2a0b0684cc17713b9d718e18d9c8beff
         with:
           args: >-
             diff ${{ matrix.resources }}

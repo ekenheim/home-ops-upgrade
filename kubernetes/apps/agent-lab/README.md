@@ -23,6 +23,8 @@ its own, through the web UI. What runs for it:
   `agent-control`, which is off);
 - `trackinizer-oidc.yaml` in `../security/authentik/app/kustomization.yaml` and
   `authentik-trackinizer-oidc` under `blueprints.secrets` in `../security/authentik/app/helmrelease.yaml`.
+  Unused since 2026-10-22, when `trackinizer/app/securitypolicy.yaml` went off to open Trackinizer to
+  the LAN (see "Analysis ledger (Trackinizer)"); kept so Authentik can go back in front.
 
 What is still off, and what to uncomment to bring it back, in this order:
 
@@ -196,10 +198,15 @@ policy admits only the orchestrator's pods and the envoy-internal proxies on 876
 only DNS and the Postgres primary.
 
 The web UI is at `https://trackinizer.${SECRET_DOMAIN}` (LAN only, via `envoy-internal`). The image mounts
-no browser sign-in provider (its Google button stays off), so Envoy signs the browser in instead:
+no browser sign-in provider (its Google button stays off), so Envoy signs the browser in instead.
 
-- `trackinizer/app/securitypolicy.yaml` sends every request on the route, `/api` included, through
-  Authentik OIDC (application `trackinizer`, **authentik Admins only**).
+**Open to the LAN since 2026-10-22 (owner).** `trackinizer/app/securitypolicy.yaml` is commented out
+in `trackinizer/app/kustomization.yaml`, so no Authentik sign-in comes first: anyone who reaches
+`envoy-internal` (the LAN, and the tailnet through the Tailscale subnet router; nothing public) is
+signed in as the admin user, with admin rights. Uncomment it to put Authentik back in front.
+
+- `trackinizer/app/securitypolicy.yaml` (off, see above) sends every request on the route, `/api`
+  included, through Authentik OIDC (application `trackinizer`, **authentik Admins only**).
 - Workspaces, chats and presets refuse API keys (`require_browser`), so the web app needs Trackinizer's
   own session cookie. `trackinizer/app/addons/gatewaylogin.py`, an addon mounted from a ConfigMap
   (`TRACKINIZER_ADDONS`), issues it. When signed out, Trackinizer sends the browser to
@@ -214,8 +221,9 @@ no browser sign-in provider (its Google button stays off), so Envoy signs the br
   `security/authentik/app/trackinizer-oidc.yaml`. Its client secret is generated in-cluster and shared
   with Envoy through a ReferenceGrant.
 
-Sign out at `/oauth2/logout`. Scripts and tests cannot use the URL, since it now needs a browser
-session; they go through the Service or a port-forward with their own key.
+With the SecurityPolicy on, sign out at `/oauth2/logout`, and scripts and tests cannot use the URL,
+since it needs a browser session; they go through the Service or a port-forward with their own key.
+With it off (now), scripts on the LAN can call the URL with their own `Authorization: Bearer` key.
 The orchestrator's key, `FACTORY_TRACKINIZER_TOKEN`, comes from the Bitwarden item
 `agent_factory_trackinizer` and is read with `optional: true`. Every ledger failure is logged and
 ignored, so a missing or broken Trackinizer never stops a run.

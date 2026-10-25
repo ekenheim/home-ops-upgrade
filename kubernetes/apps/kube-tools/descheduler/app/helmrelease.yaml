@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://lds-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://lds-schemas-5hg.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -102,6 +102,33 @@ spec:
                 - RemovePodsViolatingInterPodAntiAffinity
                 - RemovePodsViolatingNodeAffinity
                 - RemovePodsViolatingNodeTaints
+        # pgbouncer's only hostname spread is PGO's ScheduleAnyway one, which
+        # Default skips (DoNotSchedule only) and LowNodeUtilization excludes
+        # (database). After a Talos roll the replicas stay stacked on whichever
+        # node was up, so this profile re-spreads them, and their preferred
+        # anti-affinity places each evicted pod on an empty node. Scoped to
+        # pgbouncer so ScheduleAnyway is not enforced cluster-wide.
+        - name: pgbouncer-spread
+          pluginConfig:
+            - name: DefaultEvictor
+              args:
+                # pgbouncer mounts an emptyDir (tmp).
+                evictLocalStoragePods: true
+                nodeFit: true
+            - name: RemovePodsViolatingTopologySpreadConstraint
+              args:
+                namespaces:
+                  include:
+                    - database
+                labelSelector:
+                  matchLabels:
+                    postgres-operator.crunchydata.com/role: pgbouncer
+                constraints:
+                  - ScheduleAnyway
+          plugins:
+            balance:
+              enabled:
+                - RemovePodsViolatingTopologySpreadConstraint
     service:
       enabled: true
     serviceMonitor:

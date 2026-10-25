@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://lds-schemas.pages.dev/source.toolkit.fluxcd.io/helmrepository_v1.json
+# yaml-language-server: $schema=https://lds-schemas-5hg.pages.dev/source.toolkit.fluxcd.io/helmrepository_v1.json
 # Grafana's own chart repo (grafana.github.io/helm-charts) stopped publishing
 # the grafana chart in January 2026 at 10.5.15 (app 12.3.1); the chart moved
 # to the grafana-community org, which publishes it here and over HTTP at

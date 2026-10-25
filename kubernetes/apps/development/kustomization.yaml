@@ -11,7 +11,9 @@ resources:
   #- ./meilisearch/ks.yaml
   #- ./airbyte/ks.yaml
   #- ./metabase/ks.yaml
-  - ./redpanda/ks.yaml
+  # Off since 2026-10-25 (owner): unused. Its only topics were Seldon v2's
+  # (off since 2026-10-19), with no consumer groups.
+  #- ./redpanda/ks.yaml
   - ./harbor/ks.yaml
   - ./hempriser/ks.yaml
   #- ./grid-reliance/ks.yaml

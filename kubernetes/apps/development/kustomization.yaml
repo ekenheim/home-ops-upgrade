@@ -19,6 +19,8 @@ resources:
   # Off since 2026-10-18 (owner): the ecom Medusa backend is shelved.
   #- ./medusa/ks.yaml
   - ./strapi/ks.yaml
-  - ./strapi-ecom/ks.yaml
+  # Off since 2026-10-25 (owner): ecom is shelved and nothing reads this CMS.
+  # Re-enabling restores the PVC from VolSync; the Crunchy database is kept.
+  #- ./strapi-ecom/ks.yaml
   - ./marketing-agency/ks.yaml
   - ./rybbit/ks.yaml

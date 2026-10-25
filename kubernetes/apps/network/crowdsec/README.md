@@ -74,7 +74,7 @@ in `cscli decisions list`; see "Central API" below).
 - **Route-level SecurityPolicies win**: in Envoy Gateway a SecurityPolicy on
   an HTTPRoute replaces the Gateway one for that route unless it sets
   `mergeType: StrategicMerge`. The ones on `envoy-external` today (kavita,
-  rybbit-main, strapi-ecom-cms) are private-CIDR allow-lists that 403 every
+  rybbit-main) are private-CIDR allow-lists that 403 every
   internet client anyway. **Any new route-level policy on `envoy-external`
   that lets public traffic through (OIDC, API keys) needs `mergeType`**, or
   CrowdSec silently stops covering that route.

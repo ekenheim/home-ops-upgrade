@@ -50,7 +50,7 @@ spec:
       # allowed without inspection, so this is the WAF's scope: public apps
       # with logins, admin panels or dynamic backends. Left out: plex
       # (streaming volume), s3 (pgBackRest), flux-webhook, status/kromgo, and
-      # the private-CIDR-only routes (comics, rybbit-main, strapi-ecom).
+      # the private-CIDR-only routes (comics, rybbit-main).
       # Headers, URI and query only: Envoy Gateway 1.9.2 can forward bodies
       # (extAuth.bodyToExtAuth) but answers 413 to anything over the buffer,
       # failOpen or not, which would break uploads. Body inspection is a

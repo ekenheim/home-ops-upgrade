@@ -1540,6 +1540,47 @@ views:
       - type: grid
         cards:
           - type: heading
+            heading: Server rack cost
+            heading_style: title
+          # packages/rack_cost.yaml: priced per kWh step at Tibber's price plus
+          # the grid fee helper below.
+          - type: tile
+            entity: sensor.server_rack_cost_rate
+            name: Now
+            icon: mdi:cash-clock
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.server_rack_cost_daily
+            name: Today
+            icon: mdi:cash
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.server_rack_cost_monthly
+            name: This month
+            icon: mdi:cash-multiple
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.server_rack_energy_monthly
+            name: kWh this month
+            icon: mdi:lightning-bolt
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: input_number.electricity_grid_fee
+            name: Grid fee + energy tax
+            grid_options: { columns: full }
+          - type: statistics-graph
+            title: Daily cost
+            entities:
+              - entity: sensor.server_rack_cost
+                name: Server rack
+            stat_types: [change]
+            chart_type: bar
+            period: day
+            days_to_show: 30
+            grid_options: { columns: full, rows: 4 }
+      - type: grid
+        cards:
+          - type: heading
             heading: UniFi UPS 2U
             heading_style: title
           - type: gauge

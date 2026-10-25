@@ -28,10 +28,13 @@ spec:
       env:
         - name: USE_WAL
           value: "true"
-        # Local-only: no signal sharing with CrowdSec's central API, so no
-        # community blocklist and no console. See README.
+        # Central API on: LAPI shares its alerts (attacker IP, scenario,
+        # time) and pulls the community blocklist. The start script registers
+        # once and keeps the login on the config PVC. No console enrollment,
+        # and share_context stays false in console.yaml, so hostnames, URIs
+        # and user agents stay here. See README.
         - name: DISABLE_ONLINE_API
-          value: "true"
+          value: "false"
       # BOUNCER_KEY_ENVOY registers the envoy bouncer (externalsecret.yaml).
       # No Reloader annotation. A restart never changes an existing bouncer's
       # key, and the start script registers every env var matching

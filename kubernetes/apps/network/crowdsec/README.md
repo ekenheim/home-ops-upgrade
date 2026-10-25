@@ -24,8 +24,9 @@ kubectl -n network exec deploy/crowdsec-agent -c crowdsec-agent -- cscli metrics
 ## Status: enforcing (since 2026-10-20)
 
 A decision in LAPI (default: a 4h ban) now blocks that address on every
-`envoy-external` route with a 403. Decisions come from the scenarios below;
-nothing is pulled from CrowdSec's community blocklist.
+`envoy-external` route with a 403. Decisions come from the scenarios below
+and, since 2026-10-25, from CrowdSec's community blocklist (origin `CAPI`
+in `cscli decisions list`; see "Central API" below).
 
 - **Unban someone**: `cscli decisions delete --ip <ip>` on the LAPI pod. The
   bouncer picks it up within 10s.
@@ -77,9 +78,26 @@ nothing is pulled from CrowdSec's community blocklist.
   internet client anyway. **Any new route-level policy on `envoy-external`
   that lets public traffic through (OIDC, API keys) needs `mergeType`**, or
   CrowdSec silently stops covering that route.
-- **Local-only**: `DISABLE_ONLINE_API=true`. No alerts are sent to CrowdSec,
-  which also means no community blocklist and no console. The agent still
-  downloads hub content from CrowdSec's CDN at startup.
+- **Central API (community blocklist)**: `DISABLE_ONLINE_API=false`. On its
+  first start the LAPI start script runs `cscli capi register` and keeps the
+  login in `online_api_credentials.yaml` on the config PVC, so it registers
+  once. If that PVC is lost, it registers again as a new machine.
+  - **Sent to CrowdSec**: for each alert, the attacker IP (with geo), the
+    scenario name, hash and version, the time, and our machine id; at login,
+    the list of enabled scenarios and component versions. CrowdSec also sees
+    the home WAN address, since LAPI connects from it.
+  - **Not sent**: hostnames, URIs, user agents (`share_context: false`) and
+    manual `cscli` decisions (`share_manual_decisions: false`). These flags
+    live in `/etc/crowdsec/console.yaml` on the config PVC, not in Git;
+    check them with `cat` after any rebuild. No console enrollment
+    (`ENROLL_KEY` unset).
+  - **Received**: the community blocklist, about 15k IPs for an install that
+    keeps sharing, as decisions with origin `CAPI`. The bouncer enforces
+    them like local bans. `cscli capi status` shows the link.
+  - A test from home through Cloudflare (see below) creates an alert for
+    the home WAN address, which is then reported to CrowdSec. Keep such
+    tests rare.
+  - The agent still downloads hub content from CrowdSec's CDN at startup.
 - **LAN clients skip CrowdSec**: split DNS sends them to `envoy-external`
   directly with a private source address. To test from home, go through
   Cloudflare: `curl --resolve <host>:443:<cloudflare edge IP> ...`. The
@@ -99,5 +117,4 @@ nothing is pulled from CrowdSec's community blocklist.
   `crowdsecurity/home-assistant`, `LePresidente/grafana-logs`,
   `LePresidente/overseerr-logs`. Each needs the app to log the real client
   IP, not Envoy's.
-- Not planned: the community blocklist (it means sharing alerts with
-  CrowdSec) and the Cloudflare Worker bouncer (scanner load isn't a problem).
+- Not planned: the Cloudflare Worker bouncer (scanner load isn't a problem).

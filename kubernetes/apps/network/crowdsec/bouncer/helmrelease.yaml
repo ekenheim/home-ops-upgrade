@@ -45,6 +45,38 @@ spec:
         apiKeySecretRef:
           name: crowdsec-bouncer-key
           key: BOUNCER_KEY_ENVOY
+      # CrowdSec AppSec (app/helmrelease.yaml `appsec`), authenticated with
+      # the same LAPI key. With routes set, a host matching none of them is
+      # allowed without inspection, so this is the WAF's scope: public apps
+      # with logins, admin panels or dynamic backends. Left out: plex
+      # (streaming volume), s3 (pgBackRest), flux-webhook, status/kromgo, and
+      # the private-CIDR-only routes (comics, rybbit-main, strapi-ecom).
+      # Headers, URI and query only: Envoy Gateway 1.9.2 can forward bodies
+      # (extAuth.bodyToExtAuth) but answers 413 to anything over the buffer,
+      # failOpen or not, which would break uploads. Body inspection is a
+      # per-route decision for later.
+      waf:
+        enabled: true
+        appSecURL: http://crowdsec-appsec-service.network.svc.cluster.local:7422
+        apiKeySecretRef:
+          name: crowdsec-bouncer-key
+          key: BOUNCER_KEY_ENVOY
+        httpTimeout: 2s
+        # On a WAF error or timeout the request passes; LAPI bans still apply.
+        failOpen: true
+        routes:
+          - hosts:
+              - strapi.${SECRET_DOMAIN}
+              - sso.${SECRET_DOMAIN}
+              - grafana.${SECRET_DOMAIN}
+              - hass.${SECRET_DOMAIN}
+              - requests.${SECRET_DOMAIN}
+              - join.${SECRET_DOMAIN}
+              - hempriser.${SECRET_DOMAIN}
+              - blog.${SECRET_DOMAIN}
+              - ${SECRET_SECONDARY_DOMAIN}
+              - www.${SECRET_SECONDARY_DOMAIN}
+            path: /
       prometheus:
         enabled: true
         serviceMonitor:

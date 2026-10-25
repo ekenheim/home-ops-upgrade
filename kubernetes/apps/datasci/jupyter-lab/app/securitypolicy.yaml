@@ -17,6 +17,12 @@ spec:
   oidc:
     provider:
       issuer: https://sso.${SECRET_DOMAIN}/application/o/jupyter/
+      # Explicit endpoints, so Envoy Gateway skips OIDC discovery. It refetches
+      # discovery through envoy-external on every translation, and one failed
+      # fetch leaves this route on a 500 until the next (2026-10-25).
+      authorizationEndpoint: https://sso.${SECRET_DOMAIN}/application/o/authorize/
+      tokenEndpoint: https://sso.${SECRET_DOMAIN}/application/o/token/
+      endSessionEndpoint: https://sso.${SECRET_DOMAIN}/application/o/jupyter/end-session/
     clientID: jupyter
     clientSecret:
       # Cross-namespace; allowed by the ReferenceGrant in security.

@@ -22,6 +22,12 @@ spec:
   oidc:
     provider:
       issuer: https://sso.${SECRET_DOMAIN}/application/o/victoria-logs/
+      # Explicit endpoints, so Envoy Gateway skips OIDC discovery. It refetches
+      # discovery through envoy-external on every translation, and one failed
+      # fetch leaves this route on a 500 until the next (2026-10-25).
+      authorizationEndpoint: https://sso.${SECRET_DOMAIN}/application/o/authorize/
+      tokenEndpoint: https://sso.${SECRET_DOMAIN}/application/o/token/
+      endSessionEndpoint: https://sso.${SECRET_DOMAIN}/application/o/victoria-logs/end-session/
     clientID: victoria-logs
     clientSecret:
       # Cross-namespace; allowed by the ReferenceGrant in security.

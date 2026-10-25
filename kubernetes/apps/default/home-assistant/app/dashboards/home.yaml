@@ -2204,17 +2204,17 @@ views:
             icon: mdi:cash-clock
             grid_options: { columns: 6 }
           - type: tile
-            entity: sensor.server_rack_cost_daily
+            entity: sensor.server_rack_cost_today
             name: Today
             icon: mdi:cash
             grid_options: { columns: 6 }
           - type: tile
-            entity: sensor.server_rack_cost_monthly
+            entity: sensor.server_rack_cost_this_month
             name: This month
             icon: mdi:cash-multiple
             grid_options: { columns: 6 }
           - type: tile
-            entity: sensor.server_rack_energy_monthly
+            entity: sensor.server_rack_energy_this_month
             name: kWh this month
             icon: mdi:lightning-bolt
             grid_options: { columns: 6 }

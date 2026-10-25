@@ -2,11 +2,12 @@
 # Strapi CMS (admin + API) at strapi.${SECRET_DOMAIN}. /uploads/ is public; the rest is
 # LAN/Tailscale only (httproute.yaml, securitypolicy.yaml).
 #
-# Bootstrap phase: uses a minimal custom bootstrap image (node:22-alpine + create-strapi-app).
-# On first run it creates a vanilla Strapi v5 project in /srv/app using the Postgres
-# credentials from strapi-postgres secret. NODE_ENV=development enables Content-Type Builder
-# so you can define your schema. Once your custom image is ready, replace the image and
-# set NODE_ENV=production.
+# Bootstrap image (node + create-strapi-app). On first run it creates a vanilla Strapi v5
+# project in /srv/app using the Postgres credentials from strapi-postgres secret.
+# Runs in production mode since 2026-10-25: a built admin panel and no Vite dev server
+# (which serves the project's files) and no Content-Type Builder. The content types live
+# on the PVC (src/api), so to change one, set NODE_ENV=development, edit it in the admin,
+# then set production again. Content editing and uploads work in production.
 #
 # naskio/strapi is NOT used: it is a v4 image and breaks on v5 admin panel builds.
 # Strapi publishes NO official images: https://docs.strapi.io/dev-docs/installation/docker
@@ -83,6 +84,14 @@ spec:
             - |
               set -e
               cd /srv/app
+              if [ "$NODE_ENV" = "production" ]; then
+                # Build on every start (about 30 s): the content types are on
+                # the PVC, and strapi-sync.sh deletes dist/ when it upgrades.
+                echo "Building Strapi..."
+                npm run build
+                echo "Starting Strapi in production mode..."
+                exec npm run start
+              fi
               echo "Starting Strapi in development mode..."
               exec npm run develop
           ports:
@@ -90,8 +99,9 @@ spec:
               containerPort: 1337
               protocol: TCP
           env:
+            # development only while changing a content type (see the top).
             - name: NODE_ENV
-              value: development
+              value: production
             - name: NODE_OPTIONS
               value: "--max-old-space-size=3072"
             - name: HOST

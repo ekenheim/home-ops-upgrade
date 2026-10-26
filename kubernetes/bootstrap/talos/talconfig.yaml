@@ -4,7 +4,7 @@
 # stops at v1.13.11 and Talos 1.14 publishes only installer-base. Nodes still
 # install from the factory images below; this only tracks the version.
 # renovate: datasource=docker depName=ghcr.io/siderolabs/installer-base
-talosVersion: v1.14.4
+talosVersion: v1.14.5
 # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
 kubernetesVersion: v1.35.9
 

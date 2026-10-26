@@ -15,8 +15,13 @@ spec:
   proxyPort: 8080
   mcpPort: 8000
   serviceAccount: kubectl-mcp
-  toolConfigRef:
-    name: kubectl-mcp
+  # No toolConfigRef here while stacklok/toolhive#6684 is open: the proxy's
+  # tool-filter middleware rebuilds tools/list without the 2026-07-28
+  # resultType, which 2.0.0 speaks, so the mcp-gateway rejected every health
+  # check ("Legacy-shaped body (no resultType)") from 2026-10-23. The gateway
+  # applies ./mcptoolconfig.yaml instead (aggregation.tools in
+  # ../gateway/virtualmcpserver.yaml). Direct callers of the proxy (kagent)
+  # see every --read-only tool and pick theirs by name.
   audit:
     enabled: true
   resources:

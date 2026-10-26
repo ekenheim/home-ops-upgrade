@@ -2,8 +2,10 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/kagent.dev/remotemcpserver_v1alpha2.json
 # ToolHive's MCP servers (apps/llm/toolhive), reached through each server's
 # toolhive proxy, the same URLs the vMCP gateway's entries use. The proxy is
-# where an MCPToolConfig filter applies (kubectl-mcp's 13 of 209 tools), so
-# never point these at the bare mcp-<name>:8000 Service. Every backend is
+# where an MCPToolConfig filter applies, so never point these at the bare
+# mcp-<name>:8000 Service. kubectl-mcp's filter is on the gateway instead
+# while stacklok/toolhive#6684 is open, so its proxy lists every --read-only
+# tool. Every backend is
 # read-only on its own: kubectl-mcp and flux-mcp run --read-only on
 # ServiceAccounts that cannot read Secrets (toolhive/kubectl-mcp/rbac.yaml),
 # grafana-mcp runs --disable-write on a Viewer token. The agents in
@@ -30,7 +32,7 @@ kind: RemoteMCPServer
 metadata:
   name: toolhive-kubectl
 spec:
-  description: kubectl-mcp-server via ToolHive (read-only, 13 filtered tools); pod diagnostics.
+  description: kubectl-mcp-server via ToolHive (read-only); pod diagnostics.
   url: http://mcp-kubectl-mcp-proxy.llm.svc.cluster.local:8080/mcp
   protocol: STREAMABLE_HTTP
   timeout: 60s

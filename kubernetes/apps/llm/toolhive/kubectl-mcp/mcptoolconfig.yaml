@@ -13,6 +13,9 @@
 # rollout_status_tool are gone. kubectl_generic (any kubectl command) stays
 # out. Each name below is in a toolset that mcpserver.yaml's --toolsets
 # loads (core, diagnostics, certs, cilium).
+#
+# Referenced by the mcp-gateway VirtualMCPServer (aggregation.tools), not by
+# the MCPServer, while stacklok/toolhive#6684 is open; see mcpserver.yaml.
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPToolConfig
 metadata:

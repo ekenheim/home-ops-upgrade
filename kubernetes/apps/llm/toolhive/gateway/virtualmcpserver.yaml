@@ -24,6 +24,13 @@ spec:
       conflictResolution: prefix
       conflictResolutionConfig:
         prefixFormat: "{workload}_"
+      # kubectl-mcp's filter lives here rather than on its MCPServer, whose
+      # proxy filter breaks a 2026-07-28 backend (stacklok/toolhive#6684, see
+      # ../kubectl-mcp/mcpserver.yaml). Move it back when that ships.
+      tools:
+        - workload: kubectl-mcp
+          toolConfigRef:
+            name: kubectl-mcp
     optimizer:
       embeddingProvider: openai
       embeddingService: http://litellm.llm.svc.cluster.local:4000/v1

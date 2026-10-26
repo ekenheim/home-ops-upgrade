@@ -1,7 +1,7 @@
 # Stage 1: scaffold a vanilla Strapi v5 project and install its dependencies.
 # This runs during CI/Docker build where there is no TTY — create-strapi-app
 # handles non-interactive environments with CI=true.
-FROM node:24-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS builder
+FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f AS builder
 
 RUN apk add --no-cache build-base gcc autoconf automake zlib-dev libpng-dev vips-dev git bash
 
@@ -56,7 +56,7 @@ RUN npm run build
 RUN rm -rf node_modules/@strapi/sdk-plugin node_modules/@strapi/pack-up
 
 # Stage 2: lean runtime image that ships the pre-built project as a seed template.
-FROM node:24-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
+FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
 
 # `apk upgrade` takes Alpine's security fixes at build time instead of waiting
 # for the next node:24-alpine digest (the 5.58.0 image of 2026-10-14 still had

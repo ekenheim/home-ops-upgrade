@@ -23,7 +23,7 @@ spec:
   chart:
     spec:
       chart: victoria-metrics-alert
-      version: 0.51.0
+      version: 0.51.1
       sourceRef:
         kind: HelmRepository
         name: victoria-metrics

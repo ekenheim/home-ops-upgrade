@@ -161,16 +161,16 @@
       "versioning": "regex:^cpu-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
     },
     {
-      // Same <date>-<sha> scheme as searxng above (2024.10.22-7ca5933): docker
-      // versioning reads the sha as a compatibility suffix and offers nothing
-      // with a different sha, so it-tools sat on 2023.12.21 for ten months.
-      // A separate rule because upstream releases a few times a year, so it
-      // needs no monthly cadence. A new year is a major and waits for a hand
-      // merge; within a year it automerges.
-      "description": ["Date-plus-sha versioning for it-tools"],
+      // sharevb/it-tools tags releases <year>.<month>.<day> and also pushes
+      // -baseurl-it-tools variants and nightly; the anchors keep only the
+      // plain release tags. (The CorentinTh image used <date>-<sha>, which
+      // docker versioning read as a suffix and never offered past.) A new
+      // year is a major and waits for a hand merge; within a year it
+      // automerges.
+      "description": ["Date versioning for it-tools"],
       "matchDatasources": ["docker"],
-      "matchPackageNames": ["ghcr.io/corentinth/it-tools"],
-      "versioning": "regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})-(?<build>[0-9a-f]+)$"
+      "matchPackageNames": ["ghcr.io/sharevb/it-tools"],
+      "versioning": "regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})$"
     },
     {
       // postgis tags are <PG major>-<PostGIS x.y>[-alpine]. Docker versioning

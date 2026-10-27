@@ -86,31 +86,48 @@ If nothing is notable, reply with one line saying so."
 # read-only flux MCP. Its Warning events, not get_kubernetes_resources: that
 # one only stays small with a `fields` list, and M3 sent the list as
 # {"item": [...]} on most mornings (83 failed calls in 14 days), then retried
-# without it and read the full YAML of every Kustomization. A resource that
-# stays broken re-emits its warning every retry interval, so 24 h of events
-# covers anything still failing.
+# without it and read the full YAML of every Kustomization. The apiserver
+# keeps events for its default one hour (no event-ttl in talconfig), so
+# "since 24h" covers the last hour only; a resource that stays broken
+# re-emits its warning every retry interval, so it still shows.
+#
+# Alerts come as minutes since first and last seen firing in 24h, so each
+# gets a disposition (firing now / recovered) and alerts can be grouped into
+# one incident with the node reboots. The 2026-10-27 digest listed the
+# Talos v1.14.5 rollout's Ceph alerts one by one, without saying whether any
+# had cleared, and ranked the Trivy criticals as info because that is their
+# alert severity (notification urgency, not the CVEs' severity).
 HEALTH=$(cat <<'EOF'
 Daily health digest for the home-kubernetes cluster.
 Do NOT use find_tool or tool_search.
 Every tool below lives behind the toolhive gateway, so no tool_name is a tool id you can call directly. Each call is OpenClaw's tool_call with id "mcp:toolhive:toolhive__call_tool" and args {"tool_name": <name>, "parameters": {...}}.
 
-1. In parallel, seven calls with tool_name "grafana_query_prometheus", each with parameters {"datasourceUid": "prometheus", "queryType": "instant", "startTime": "now", "endTime": "now", "expr": <one of these>}:
-   - firing alerts: ALERTS{alertstate="firing", alertname!="Watchdog"}
+1. In parallel, ten calls with tool_name "grafana_query_prometheus", each with parameters {"datasourceUid": "prometheus", "queryType": "instant", "startTime": "now", "endTime": "now", "expr": <one of these>}:
+   - A, minutes since each alert was LAST seen firing: round((time() - max by (alertname, namespace, severity) (max_over_time(timestamp(ALERTS{alertstate="firing", alertname!~"Watchdog|InfoInhibitor|Trivy.*"})[24h:1m]))) / 60)
+   - B, minutes since each alert was FIRST seen firing: round((time() - min by (alertname, namespace, severity) (min_over_time(timestamp(ALERTS{alertstate="firing", alertname!~"Watchdog|InfoInhibitor|Trivy.*"})[24h:1m]))) / 60)
+   - R, node reboots, minutes ago: round((time() - max by (kubernetes_node) (node_boot_time_seconds)) / 60) < 1440
+   - V, newly flagged images, critical CVE count: max by (namespace, image_repository, image_tag) (trivy_image_vulnerabilities{severity="Critical"}) > 0 and on (namespace, image_repository) ALERTS{alertname="TrivyNewCriticalVulnerabilities", alertstate="firing"}
+   - W, images with any critical CVE: count(max by (image_registry, image_repository, image_tag) (trivy_image_vulnerabilities{severity="Critical"}) > 0)
    - Jobs failed in the last 24h: (kube_job_status_failed > 0) and on (namespace, job_name) (kube_job_status_start_time > time() - 86400)
    - Ceph health (0 = OK, 1 = WARN, 2 = ERR): ceph_health_status
    - nodes not Ready: kube_node_status_condition{condition="Ready",status="true"} == 0
    - pods with more than 5 restarts in 24h: sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total[24h])) > 5
    - PVCs more than 85 percent full: max by (namespace, persistentvolumeclaim) (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) > 0.85
-   - OSDs down: ceph_osd_up == 0
 2. Then two calls with tool_name "flux-mcp_get_kubernetes_events":
    - parameters {"kind": "Kustomization", "type": "Warning", "since": "24h", "limit": 40}
    - parameters {"kind": "HelmRelease", "type": "Warning", "since": "24h", "limit": 40}
    Every parameter is a plain string or number; send them exactly like this.
+   The cluster keeps events for about one hour, so these show what is failing now, not the last 24 hours. Say "in the last hour", never "in 24 hours". If a call returns 40 events, say the list was cut off.
    Group the events by object (Kind/namespace/name) and report each object once with its latest message, shortened to the cause.
-   An object whose newest event is more than 2 hours old has probably recovered; mention it only if it failed repeatedly.
 
-An empty query result means no problem for that check.
-Report only problems, each as namespace/name plus a one-line likely cause. If everything is healthy, reply with one line saying so.
+Give times as hours and minutes ago (for example "9h40m ago"), not clock times. B = 1439 means the alert was already firing 24 hours ago.
+
+Write three sections, skipping any that is empty:
+Incidents: match A and B by (alertname, namespace, severity). An alert with A 2 or less is FIRING NOW; otherwise it RECOVERED at the A time. Only its own A value decides that; a healthy result in another check (PVCs, Ceph health) never clears an alert. Alerts whose first-seen times fall within 30 minutes of each other, or within 15 minutes after a reboot in R, are one incident: one line with the time window (first to last seen), the likely cause (several nodes rebooted in sequence = a rolling Talos upgrade), and the alerts in it, each with its disposition. Put FIRING NOW first.
+Current problems: the other checks and Flux, each as namespace/name plus a one-line likely cause.
+Vulnerabilities: these are CRITICAL CVEs whatever severity label their alert carries, and stay critical however old they are. One line per V image (namespace, image:tag, count), then one line with the W total. Do not propose retagging or rebuilding an image; these metrics do not say whether a fixed version exists.
+
+If nothing is firing now and the current checks are clean, start with one line saying so before any recovered incidents.
 EOF
 )
 

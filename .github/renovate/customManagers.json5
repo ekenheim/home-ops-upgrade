@@ -26,6 +26,18 @@
       "datasourceTemplate": "{{#if datasource}}{{{datasource}}}{{else}}github-releases{{/if}}"
     },
     {
+      // The kserve chart takes kube-rbac-proxy as one image string
+      // (kserve.controller.rbacProxyImage), which the helm-values manager does
+      // not read and the annotated matcher above would take whole.
+      "customType": "regex",
+      "description": ["kserve rbacProxyImage"],
+      "fileMatch": ["(^|/)kubernetes/apps/datasci/kserve/.+\\.ya?ml$"],
+      "matchStrings": [
+        "rbacProxyImage:\\s*(?<depName>[^\\s:]+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
       // agent-factory passes its sandbox images to the orchestrator as env
       // values, which the kubernetes manager does not read (it only reads
       // `image:`). A `# renovate:` annotation would not do either: the

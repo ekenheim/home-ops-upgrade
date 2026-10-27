@@ -256,14 +256,7 @@ spec:
           gnetId: 20842
           revision: 3
           datasource: Prometheus
-        crowdsec:
-          # Lines-read and AppSec panels stay empty: it predates the kubernetes
-          # acquisition source and we run no WAF. Alerts, decisions, buckets,
-          # parsers, whitelists and LAPI work.
-          # renovate: depName="CrowdSec Metrics"
-          gnetId: 21419
-          revision: 6
-          datasource: Prometheus
+        # crowdsec: vendored in network/crowdsec/app/dashboard (single view).
         unifi-insights:
           # renovate: depName="UniFi-Poller: Client Insights - Prometheus"
           gnetId: 11315

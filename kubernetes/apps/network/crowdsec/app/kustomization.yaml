@@ -7,3 +7,4 @@ resources:
   - ./ocirepository.yaml
   - ./rbac.yaml
   - ./helmrelease.yaml
+  - ./dashboard

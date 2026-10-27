@@ -10,9 +10,10 @@ Adapted from onedr0p/home-ops (commits 3d8c697, e0f42de).
   [CrowdSec Web UI](https://github.com/TheDuffman85/crowdsec-web-ui) in
   `web-ui/`, read-only. Alerts with the requests behind them, decisions,
   agent and LAPI metrics.
-- **Grafana, Network folder, CrowdSec Metrics** (grafana.com 21419): buckets,
-  parsers, whitelists, alerts, decisions. Its lines-read panels stay empty
-  (no kubernetes-source panel).
+- **Grafana, Network folder, CrowdSec Metrics** (grafana.com 21419 rev 6,
+  vendored in `app/dashboard/`): lines read, buckets, parsers, whitelists,
+  AppSec, alerts, decisions. One view over agent, LAPI and AppSec; there is no
+  instance picker, because each pod exports a different part of the metrics.
 
 ```sh
 kubectl -n network exec deploy/crowdsec-lapi -- cscli alerts list

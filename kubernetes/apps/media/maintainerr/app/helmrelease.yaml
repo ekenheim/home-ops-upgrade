@@ -34,9 +34,14 @@ spec:
           reloader.stakater.com/auto: "true"
         containers:
           app:
+            # The project moved to the maintainerr org; ghcr.io/jorenn92 stopped
+            # at 2.19.0, so Renovate offered nothing newer. 3.0 migrates the DB
+            # for multiple media servers and 2.x cannot open it afterwards: roll
+            # back with a VolSync restore, not a tag. start.sh stages the UI
+            # under /opt/data, so uid 568 needs nothing outside the PVC.
             image:
-              repository: ghcr.io/jorenn92/maintainerr
-              tag: 2.19.0@sha256:bee84707edaf589cda3d18b6813cbfe3a137b52786210c3a28190e10910c1240
+              repository: ghcr.io/maintainerr/maintainerr
+              tag: 3.31.0@sha256:33d86e5f03ed25204788b1e9cd9a2b3f0299cf49fae968220484b57008962399
             env:
               TZ: ${TIMEZONE}
             probes:

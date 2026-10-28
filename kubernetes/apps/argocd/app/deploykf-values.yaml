@@ -172,7 +172,7 @@ data:
     repoServer:
       initContainers:
         - name: deploykf-plugin-setup--kubectl
-          image: docker.io/bitnami/kubectl:latest@sha256:eaf442416e6f6b37ea76cc03dbdacc1d85f4c061670df7974dd1387288a11e50
+          image: docker.io/bitnami/kubectl:latest@sha256:599e67d36ff511e071ffe9a002347e58cf395e9fbd5f4992c233fd5e089e333e
           command:
             - "/bin/sh"
             - "-c"
@@ -209,7 +209,7 @@ data:
               mountPath: /tools
       extraContainers:
         - name: deploykf-plugin
-          image: docker.io/buildpack-deps:bookworm-curl@sha256:a74523d7cca2436f4e3b6f5e47049d1830efbf473c33ebdf5a666f6f77425ebf
+          image: docker.io/buildpack-deps:bookworm-curl@sha256:039c298a66998b9c38abfd1969678eab89bca11ef84d59098d602842e179ea66
           securityContext:
             runAsNonRoot: true
             runAsUser: 999

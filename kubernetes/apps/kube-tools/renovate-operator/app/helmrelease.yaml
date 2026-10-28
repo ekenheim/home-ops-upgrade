@@ -30,7 +30,7 @@ spec:
     image:
       registry: ghcr.io
       repository: mogenius/renovate-operator
-      tag: 6.6.0@sha256:4726c8a0968498de6dfb555e9ce1bc059400284a4dd24c296ff40417f72e1dd2
+      tag: 6.7.0@sha256:38ef72e3ccd99bf2aa8788e07362efa1b06fe793e401b86405da53c18939e471
     route:
       enabled: true
       hostnames: ["renovate.${SECRET_DOMAIN}"]

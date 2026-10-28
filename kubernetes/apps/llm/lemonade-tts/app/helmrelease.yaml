@@ -74,7 +74,7 @@ spec:
             image: &image
               repository: ghcr.io/lemonade-sdk/lemonade-server
               # Upstream publishes no version tags, hence latest + digest.
-              tag: latest@sha256:bd4b89738ca57a90ce3276ddf9270c317d369dc4bc4eded94568d37b88c2bc0d
+              tag: latest@sha256:3bc1c8a39a571949593862e5c5319c07b53e0e23a8cb3c7c24396e115c5da365
             securityContext:
               runAsUser: 0
               runAsGroup: 0

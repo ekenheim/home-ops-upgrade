@@ -69,7 +69,7 @@ spec:
               readOnly: true
       containers:
         - name: dev
-          image: node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+          image: node:26-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797
           workingDir: /workspace/repo
           # Vite rejects Host headers it does not know, so the ingress hostname
           # is allow-listed. astro dev only daemonises when it detects an agent

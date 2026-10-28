@@ -18,7 +18,7 @@ env:
   TIMEOUT_SECONDS: "900"
   # kubectl at the cluster's version (see schemas.yaml).
   # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-  KUBECTL_VERSION: v1.35.9
+  KUBECTL_VERSION: v1.35.10
 
 jobs:
   drill:

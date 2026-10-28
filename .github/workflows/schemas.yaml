@@ -18,7 +18,7 @@ env:
   # kubectl at the cluster's version. Same depName as tuppr's
   # KubernetesUpgrade, so Renovate moves them in one PR.
   # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-  KUBECTL_VERSION: v1.35.9
+  KUBECTL_VERSION: v1.35.10
 
 jobs:
   publish:

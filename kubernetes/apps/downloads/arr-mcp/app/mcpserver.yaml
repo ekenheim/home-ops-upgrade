@@ -5,7 +5,7 @@ kind: MCPServer
 metadata:
   name: arr
 spec:
-  image: docker.io/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+  image: docker.io/node:26-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797
   transport: stdio
   proxyMode: streamable-http
   proxyPort: 8080
@@ -50,7 +50,7 @@ spec:
     spec:
       containers:
         - name: mcp
-          image: docker.io/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+          image: docker.io/node:26-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797
           command:
             - npx
           args:

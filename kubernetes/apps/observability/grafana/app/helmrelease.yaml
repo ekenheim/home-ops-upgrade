@@ -283,8 +283,10 @@ spec:
           # renovate: depName="Speedtest Exporter"
           gnetId: 13665
           revision: 4
+          # Its panels and variables use ${DS_PROMETHEUS}; mapping `datasource`
+          # matched nothing, so every panel had no datasource and showed empty.
           datasource:
-            - { name: datasource, value: Prometheus }
+            - { name: DS_PROMETHEUS, value: Prometheus }
         unifi-network-sites:
           # renovate: depName="UniFi-Poller: Network Sites - Prometheus"
           gnetId: 11311

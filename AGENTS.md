@@ -108,28 +108,9 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - Apps use `HelmRelease` via Flux; raw manifests are the exception.
 - Per-app README files live next to the app when needed.
 - `Taskfile.yaml` is the operator entry point — `task -l` lists commands, with includes from `.taskfiles/{Ansible,Bitwarden,ExternalSecrets,Flux,Kubernetes,Postgresql,Rook,Sops,Talos,VolSync}/`.
-- CI workflows in `.github/workflows/`: `lint`, `kubeconform`, `flux-local`, `schemas`, `sops-guard`, `ai-pr-review`, `renovate-trigger`, `volsync-drill`, `publish-terraform`, `strapi-bootstrap`, `release`, `tag`, `labels`, `pr-title`, `lychee`, `nas-restart`.
 - Required checks on `main` (branch protection, not in Git): `actionlint`, `yamllint`, `Conventional Commits`, `Flux Local - Success`, `Kubeconform`, `Reject unencrypted secrets`. Renovate merges through GitHub auto-merge (`platformAutomerge`), which waits for these checks only, so a required check's workflow must run on every PR (no `paths:` filter). AI PR Review is advisory.
 - YAML is linted with `yamllint` (`.yamllint.yaml`); Kubernetes manifests validated with `kubeconform` (`.taskfiles/Kubernetes/scripts/kubeconform.sh`) against its built-in schemas, then this cluster's CRD schemas, then the datree CRDs-catalog.
 - CRD schemas: the nightly `schemas` workflow publishes the installed CRDs to `https://lds-schemas-5hg.pages.dev/<group>/<kind>_<version>.json`. `$schema` headers use that host with the manifest's own apiVersion. `lds-schemas.pages.dev` is someone else's site.
-
-## Common Operations
-
-- **List tasks**: `task -l`
-- **Add app**: create `kubernetes/apps/<namespace>/<app>/` with `ks.yaml`, `kustomization.yaml`, and a `HelmRelease` (or raw manifests if unavoidable). Register it in the namespace's parent `kustomization.yaml`.
-- **Update app**: merge a Renovate PR, or edit the chart version / image tag and push.
-- **Troubleshoot**: `flux get all -A`, `flux get all -n <namespace>`, `kubectl get events -A --sort-by=.lastTimestamp`, `task flux:reconcile`.
-- **Talos**: `task talos:<subtask>` (apply config, upgrade, reboot, reset).
-- **Secrets**: `task bitwarden:unlock`, then standard `task external-secrets:*` commands.
-- **Rook/Ceph**: `task rook:<subtask>` (dashboard, check, cleanup).
-- **VolSync**: `task volsync:<subtask>` and the `volsync-drill.yaml` workflow validates restore paths.
-
-## Documentation
-
-- Repo overview: `README.md`
-- Project-specific deep dives: `docs/` — currently focused on the Bandit ML platform (`bandit-system.md`, `bandit-deployment-lessons.md`, `bandit-sdk-context.md`, `bandit-insights.md`).
-- Component documentation: co-located READMEs next to the component.
-- Operational how-tos: `.taskfiles/` tasks and the workflow definitions in `.github/workflows/`.
 
 ## PR Review Standards
 

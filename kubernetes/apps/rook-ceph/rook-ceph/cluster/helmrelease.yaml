@@ -49,6 +49,16 @@ spec:
         # the minority. TCP (Ceph included) negotiates the smaller MSS.
         CephNodeInconsistentMTU:
           disabled: true
+        # predict_linear over 2d with no `for:` and no free-space floor. When
+        # node-exporter rolls, the old pod's series stops (its pod label
+        # changes), and as the window slides past it only its last few samples
+        # remain; a small dip among them extrapolates to "full in 5 days" on
+        # every node (2026-10-28, two days after the 10-26 roll). node-mixin's
+        # NodeFilesystemSpaceFillingUp / AlmostOutOfSpace cover the same
+        # filesystems with `for:` and a <15% free guard, and
+        # CephNodeRootFilesystemFull stays.
+        CephNodeDiskspaceWarning:
+          disabled: true
     # Dashboard is exposed by an HTTPRoute on envoy-gateway (httproute-internal.yaml).
     toolbox:
       enabled: true

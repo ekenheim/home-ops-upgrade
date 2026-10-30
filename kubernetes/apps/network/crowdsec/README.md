@@ -35,7 +35,9 @@ in `cscli decisions list`; see "Central API" below).
   `bouncer/securitypolicy.yaml` out of `bouncer/kustomization.yaml`). Envoy
   stops asking the bouncer; detection keeps running.
 - **failOpen**: if the bouncer is down or slow, Envoy lets traffic through
-  instead of failing the public routes.
+  instead of failing the public routes. Nothing else would show that, so
+  `bouncer/prometheusrule.yaml` alerts when it stops syncing with LAPI, when
+  its metrics disappear, and when the WAF starts erroring.
 
 ## How it's wired
 

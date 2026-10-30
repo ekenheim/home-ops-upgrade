@@ -22,8 +22,11 @@ spec:
   values:
     # The default (docker) mounts /var/lib/docker/containers into the agent.
     container_runtime: containerd
+    # Pinned here because the chart's appVersion lags CrowdSec releases, and
+    # without a tag Renovate could only bump the web UI's init container.
     image:
       repository: mirror.gcr.io/crowdsecurity/crowdsec
+      tag: v1.8.2@sha256:65b74942f7e7ed5c60fde4ac15fc4ba715904c398c8b16dd451f4907d90347d4
     lapi:
       env:
         - name: USE_WAL

@@ -118,3 +118,35 @@ spec:
               reason: "tailscale"
               cidr:
                 - "100.64.0.0/10"
+          # Some home clients reach the public routes through Cloudflare from
+          # the WAN address, and Gatus probes them from it. The default is
+          # only there so the agent still starts if Flux renders this before
+          # cluster-secrets has the variable.
+          home-wan-whitelist.yaml: |
+            name: home-ops/home-wan-whitelist
+            description: "Whitelist the home WAN address"
+            whitelist:
+              reason: "home WAN"
+              ip:
+                - "${SECRET_HOME_WAN_IP:=192.0.2.1}"
+          # Overseerr's web app calls one API path per item in a list, which
+          # http-crawl-non_statics counts as a crawl.
+          overseerr-allowlist.yaml: |
+            name: home-ops/overseerr-allowlist
+            description: "Allow the API calls of Overseerr's web app"
+            filter: "evt.Meta.service == 'http' && evt.Meta.log_type in ['http_access-log', 'http_error-log']"
+            whitelist:
+              reason: "Overseerr API"
+              expression:
+                - evt.Meta.target_fqdn == 'requests.${SECRET_DOMAIN}' && evt.Meta.http_verb == 'GET' && evt.Meta.http_status in ['200', '304'] && evt.Meta.http_path startsWith '/api/v1/'
+          # A banned client that keeps POSTing gets the bouncer's 403s, and
+          # http-generic-403-bf turns those into a new ban. POSTs only: the
+          # WAF's 403s are also ext_authz_denied, and GET ones are how the
+          # log scenarios ban scanners. See README.
+          bouncer-denied-post.yaml: |
+            name: home-ops/bouncer-denied-post
+            description: "Ignore POSTs the bouncer already refused"
+            whitelist:
+              reason: "denied by the bouncer"
+              expression:
+                - evt.Meta.http_verb == 'POST' && evt.Unmarshaled.envoy?.response_code_details == 'ext_authz_denied'

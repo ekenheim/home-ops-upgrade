@@ -50,6 +50,21 @@ in `cscli decisions list`; see "Central API" below).
   `crowdsecurity/plex` (an allowlist only, so Plex's metadata and transcode
   bursts don't trip the crawl scenarios), the `crowdsecurity/whitelists`
   parser (RFC1918), plus a local Tailscale `100.64.0.0/10` whitelist.
+- **False-positive filters** (`config.parsers.s02-enrich` in
+  `app/helmrelease.yaml`): on 2026-10-25 normal use banned the home WAN
+  address for 4h13m, through two separate causes. Filtered events never reach
+  a scenario.
+  - `home-wan-whitelist`: `SECRET_HOME_WAN_IP` in `cluster-secrets`. There is
+    no DDNS name for it, so if the ISP changes the address, update the secret.
+    The first sign is Gatus's probe of the secondary domain failing with 403s.
+  - `overseerr-allowlist`: successful GETs on Overseerr's `/api/v1/`. Its web
+    app calls one path per item in a list, which `http-crawl-non_statics`
+    reads as a crawl.
+  - `bouncer-denied-post`: POSTs the bouncer refused. Without it, a banned
+    client that keeps retrying earns a new ban through `http-generic-403-bf`.
+    Keep this to POSTs: WAF blocks are also `ext_authz_denied`, and replaying
+    a week of traffic with every such line dropped lost 5 of 36 banned
+    addresses.
 - **Bouncer** (`bouncer/`): kdwils/envoy-proxy-bouncer, attached to the
   `envoy-external` Gateway as an ext_authz SecurityPolicy. Its client IP is
   the rightmost X-Forwarded-For entry outside `${CLUSTER_CIDR}`: the real
@@ -63,10 +78,11 @@ in `cscli decisions list`; see "Central API" below).
   403s on `/v1/decisions/stream` in the LAPI log and a NOT_SERVING readiness
   probe.
 - **WAF (AppSec)**: the bouncer also sends requests for the hosts in its
-  `config.waf.routes` (Strapi, Authentik, Grafana, Home Assistant, Overseerr,
-  Wizarr, the marketing site, Hempriser, the blog) to the `crowdsec-appsec`
-  pod, which blocks a request matching a virtual-patching (one rule per known
-  CVE) or generic rule with a 403, on the first try. Other hosts are not
+  `config.waf.routes` (Strapi's public `/uploads`, Authentik, Grafana, Home
+  Assistant, Overseerr, Wizarr, the marketing site, Hempriser, the blog) to the
+  `crowdsec-appsec` pod, which blocks a request matching a virtual-patching
+  (one rule per known CVE) or generic rule with a 403, on the first try. Other
+  hosts are not
   inspected: Plex for its streaming volume, S3 for pgBackRest. Headers, URI
   and query only, no bodies. failOpen: a WAF error lets the request through,
   and LAPI bans still apply. To unblock a false positive, find the rule in
@@ -75,8 +91,9 @@ in `cscli decisions list`; see "Central API" below).
 - **Route-level SecurityPolicies win**: in Envoy Gateway a SecurityPolicy on
   an HTTPRoute replaces the Gateway one for that route unless it sets
   `mergeType: StrategicMerge`. The ones on `envoy-external` today (kavita,
-  rybbit-main) are private-CIDR allow-lists that 403 every
-  internet client anyway. **Any new route-level policy on `envoy-external`
+  rybbit-main, strapi-cms, minio-api) are private-CIDR allow-lists that 403
+  every internet client anyway, which is why the `crowdsec-bouncer` policy
+  reports `Overridden=True`. **Any new route-level policy on `envoy-external`
   that lets public traffic through (OIDC, API keys) needs `mergeType`**, or
   CrowdSec silently stops covering that route.
 - **Central API (community blocklist)**: `DISABLE_ONLINE_API=false`. On its
@@ -95,15 +112,18 @@ in `cscli decisions list`; see "Central API" below).
   - **Received**: the community blocklist, about 15k IPs for an install that
     keeps sharing, as decisions with origin `CAPI`. The bouncer enforces
     them like local bans. `cscli capi status` shows the link.
-  - A test from home through Cloudflare (see below) creates an alert for
+  - A WAF test from home through Cloudflare (see below) creates an alert for
     the home WAN address, which is then reported to CrowdSec. Keep such
     tests rare.
   - The agent still downloads hub content from CrowdSec's CDN at startup.
-- **LAN clients skip CrowdSec**: split DNS sends them to `envoy-external`
-  directly with a private source address. To test from home, go through
-  Cloudflare: `curl --resolve <host>:443:<cloudflare edge IP> ...`. The
-  built-in test scenario fires on `/crowdsec-test-NtktlJHV4TfBSK3wvlhiOBnl`
-  and creates an alert without a ban.
+- **Most LAN clients skip CrowdSec**: split DNS sends them to `envoy-external`
+  directly with a private source address. Not all do: a phone browser and the
+  Home Assistant app have arrived through Cloudflare from the home WAN
+  address, which `home-wan-whitelist` covers. That whitelist also means the
+  log scenarios can't be tested from home, including the built-in test
+  scenario on `/crowdsec-test-NtktlJHV4TfBSK3wvlhiOBnl`; use another network
+  for those. The WAF still applies, so test it through Cloudflare:
+  `curl --resolve <host>:443:<cloudflare edge IP> ...`.
 - `envoy-internal` (LiteLLM, OpenClaw, everything LAN/Tailscale-only) is not
   watched.
 

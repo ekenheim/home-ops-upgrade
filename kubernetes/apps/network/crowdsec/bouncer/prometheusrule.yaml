@@ -1,0 +1,48 @@
+---
+# yaml-language-server: $schema=https://lds-schemas-5hg.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+# The bouncer and the WAF both fail open, so when they break the public routes
+# keep working and nothing else looks wrong. The sync timestamp is the signal,
+# not bouncer_lapi_stream_connected: that only drops when the stream closes, and
+# a rejected LAPI key leaves it at 1.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: crowdsec-bouncer
+spec:
+  groups:
+    - name: crowdsec-bouncer
+      rules:
+        - alert: CrowdSecBouncerNotSyncing
+          expr: time() - bouncer_lapi_last_sync_timestamp_seconds > 300
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: The CrowdSec bouncer has stopped pulling decisions
+            description: >-
+              The bouncer last synced with LAPI {{ $value | humanizeDuration }}
+              ago, so new bans and unbans aren't being applied. 403s on
+              /v1/decisions/stream in the LAPI log mean its key was rejected;
+              see the README in kubernetes/apps/network/crowdsec.
+        - alert: CrowdSecBouncerAbsent
+          expr: absent(bouncer_lapi_last_sync_timestamp_seconds)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: The CrowdSec bouncer's metrics have disappeared
+            description: >-
+              Prometheus has no sync metric from the bouncer. Envoy fails open,
+              so nothing on envoy-external is being blocked if the bouncer is
+              down.
+        - alert: CrowdSecWafErrors
+          expr: increase(bouncer_waf_errors_total[15m]) > 20
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: The CrowdSec WAF is failing requests
+            description: >-
+              The bouncer had {{ $value | humanize }} errors calling AppSec in
+              15 minutes. Those requests passed uninspected; LAPI bans still
+              apply. Check the crowdsec-appsec pod.

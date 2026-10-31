@@ -22,7 +22,7 @@ spec:
       # start and renames the old tables to *_legacy, so going back to 12.x
       # means restoring the pre-upgrade pg_dump of the grafana database, not
       # just reverting this file.
-      version: 14.2.0
+      version: 14.3.0
       sourceRef:
         kind: HelmRepository
         name: grafana-community

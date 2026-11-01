@@ -25,6 +25,7 @@ configMapGenerator:
       - frigate.yaml=./packages/frigate.yaml
       - cluster.yaml=./packages/cluster.yaml
       - rack_cost.yaml=./packages/rack_cost.yaml
+      - light_groups.yaml=./packages/light_groups.yaml
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

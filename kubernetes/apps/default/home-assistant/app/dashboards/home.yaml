@@ -307,6 +307,7 @@ views:
                     - light.randa_pc
                     - light.hue_play_left
                     - light.hue_play_right
+                    - light.hue_essential_spot_1
                     - light.extended_color_light_1
                     - light.192_168_1_222
                     - light.192_168_1_231
@@ -325,7 +326,6 @@ views:
                     - light.bedroom
                     - light.bedroom_lamp
                     - light.hue_go_1
-                    - light.hue_essential_spot_1
                     # Bathroom
                     - light.bathroom
                     - light.hue_essential_lamp_1
@@ -547,6 +547,11 @@ views:
                     card_type: button
                     button_type: slider
                     entity: light.randa_pc
+                  - type: custom:bubble-card
+                    card_type: button
+                    button_type: slider
+                    entity: light.hue_essential_spot_1
+                    name: Spot
                   - type: custom:bubble-card
                     card_type: button
                     button_type: slider
@@ -1004,11 +1009,6 @@ views:
                     button_type: slider
                     entity: light.hue_go_1
                     name: Hue Go
-                  - type: custom:bubble-card
-                    card_type: button
-                    button_type: slider
-                    entity: light.hue_essential_spot_1
-                    name: Spot
               - type: custom:bubble-card
                 card_type: separator
                 name: Scenes

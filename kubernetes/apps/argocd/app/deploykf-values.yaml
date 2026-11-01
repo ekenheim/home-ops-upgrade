@@ -209,7 +209,7 @@ data:
               mountPath: /tools
       extraContainers:
         - name: deploykf-plugin
-          image: docker.io/buildpack-deps:bookworm-curl@sha256:f5c5d07ea24ee91272739fe451c280aa4b7fa5120b9278815db5fcd713d83772
+          image: docker.io/buildpack-deps:bookworm-curl@sha256:a74523d7cca2436f4e3b6f5e47049d1830efbf473c33ebdf5a666f6f77425ebf
           securityContext:
             runAsNonRoot: true
             runAsUser: 999

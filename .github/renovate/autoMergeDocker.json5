@@ -10,23 +10,30 @@
       // pinDigest is the first pin that packageRules.json5 asks for.
       // This rule is first on purpose. The rules below repeat
       // `schedule: at any time` for images that must deploy immediately.
+      // A PR, not branch automerge: main's required checks only run on PRs, so
+      // an automerge branch waits for them forever, and Release Soak needs a
+      // PR to hold.
       "description": ["Auto-merge all container digest updates, weekly"],
       "matchDatasources": ["docker"],
       "matchUpdateTypes": ["digest", "pinDigest"],
       "schedule": ["* 0-5 * * 1"],
       "automerge": true,
-      "automergeType": "branch",
-      "ignoreTests": true
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "platformAutomerge": true,
+      "ignoreTests": false
     },
     {
       "description": ["Auto-merge container digests updates"],
       "schedule": ["at any time"],
       "matchDatasources": ["docker"],
       "automerge": true,
-      "automergeType": "branch",
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "platformAutomerge": true,
       "matchUpdateTypes": ["digest"],
       "matchPackageNames": ["/bjw-s/", "/bjw-s-labs/", "/home-operations/", "/joryirving/", "buroa", "/ekenheim/"],
-      "ignoreTests": true
+      "ignoreTests": false
     },
     {
       "description": "Auto-merge OCI Charts",

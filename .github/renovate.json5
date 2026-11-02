@@ -1,6 +1,10 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   rebaseWhen: 'behind-base-branch',
+  // The only way past rebaseWhen: never. A rebase request (checkbox or `rebase`
+  // label) is ignored there. .github/scripts/release-soak.sh adds this label to
+  // a frozen PR that conflicts or whose image was withdrawn, then removes it.
+  keepUpdatedLabel: 'soak-rebase',
   // Flag dependencies whose upstream has stopped releasing (on the Dependency
   // Dashboard). Renovate can't update an image nobody publishes any more
   // (k8s-at-home/xteve, onedr0p/kubanetics, Grafana's old chart repo), and

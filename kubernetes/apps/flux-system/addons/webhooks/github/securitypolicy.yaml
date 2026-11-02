@@ -1,0 +1,33 @@
+---
+# Only GitHub may post to the Flux receiver. These are the `hooks` ranges from
+# `gh api meta --jq .hooks` on 2026-11-02; all 2730 deliveries in the 14 days
+# before came from them, and nothing else reached /hook/. A range GitHub adds
+# later costs only the webhook: Flux still polls Git every 30m, so a sync runs
+# late rather than not at all. Internet visitors come through cloudflared, whose
+# X-Forwarded-For is trusted, so they keep their public address and get a 403.
+# Other paths match no route, so Gatus keeps its expected 404.
+# yaml-language-server: $schema=https://lds-schemas-5hg.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: flux-webhook-allow-github
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: flux-webhook
+  authorization:
+    defaultAction: Deny
+    rules:
+      - action: Allow
+        principal:
+          clientCIDRs:
+            - 9.234.98.160/28
+            - 9.234.98.176/28
+            - 9.234.106.48/28
+            - 140.82.112.0/20
+            - 143.55.64.0/20
+            - 185.199.108.0/22
+            - 192.30.252.0/22
+            - 2606:50c0::/32
+            - 2a0a:a440::/29

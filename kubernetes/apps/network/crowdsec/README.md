@@ -80,8 +80,8 @@ in `cscli decisions list`; see "Central API" below).
   403s on `/v1/decisions/stream` in the LAPI log and a NOT_SERVING readiness
   probe.
 - **WAF (AppSec)**: the bouncer also sends requests for the hosts in its
-  `config.waf.routes` (Strapi's public `/uploads`, Authentik, Grafana, Home
-  Assistant, Overseerr, Wizarr, the marketing site, Hempriser, the blog) to the
+  `config.waf.routes` (Strapi's public `/uploads`, Authentik, Home Assistant,
+  Overseerr, the marketing site, Hempriser, the blog) to the
   `crowdsec-appsec` pod, which blocks a request matching a virtual-patching
   (one rule per known CVE) or generic rule with a 403, on the first try. Other
   hosts are not

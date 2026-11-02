@@ -68,8 +68,8 @@ spec:
       # Add security section to allow embedding
       security:
         allow_embedding: true
-      # Public on envoy-external, so every browser session goes through
-      # Authentik (which only admits the Grafana Admins / Monitoring groups).
+      # Every browser session goes through Authentik (which only admits the
+      # Grafana Admins / Monitoring groups, plus `lan` on the LAN).
       # Break-glass if Authentik is down: /login?disableAutoLogin shows the
       # local form for the admin user. Basic auth stays on: ESO's Grafana
       # generator (apps/llm/toolhive/grafana-mcp) mints tokens with it.
@@ -431,10 +431,12 @@ spec:
           gethomepage.dev/description: Monitoring Dashboards
         hostnames:
           - "{{ .Release.Name }}.${SECRET_DOMAIN}"
-        # Public again since 2026-09-30, now that anonymous access is off and
-        # login is forced through Authentik (see grafana.ini above).
+        # LAN and Tailscale only since 2026-11-02 (owner). On envoy-internal
+        # rather than a private-CIDR SecurityPolicy on envoy-external: that
+        # keeps Cloudflare's AAAA records in UniFi's answers, and a Tailscale
+        # client on IPv6 follows them out through Cloudflare and gets a 403.
         parentRefs:
-          - name: envoy-external
+          - name: envoy-internal
             namespace: network
             sectionName: https
     ingress:

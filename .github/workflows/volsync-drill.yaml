@@ -13,8 +13,8 @@ concurrency:
 
 env:
   NAMESPACE: media
-  APP: wizarr
-  DRILL_NAME: wizarr-restore-drill
+  APP: overseerr
+  DRILL_NAME: overseerr-restore-drill
   TIMEOUT_SECONDS: "900"
   # kubectl at the cluster's version (see schemas.yaml).
   # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
@@ -22,7 +22,7 @@ env:
 
 jobs:
   drill:
-    name: Restore wizarr from backup
+    name: Restore overseerr from backup
     runs-on: gha-runner-scale-set
     steps:
       - name: Checkout

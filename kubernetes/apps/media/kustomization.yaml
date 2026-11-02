@@ -11,6 +11,9 @@ resources:
   - ./plex/ks.yaml
   - ./tautulli/ks.yaml
   - ./maintainerr/ks.yaml
-  - ./wizarr/ks.yaml
+  # Off since 2026-11-02 (owner): nobody outside the house opened it in 14 days,
+  # and it was public on envoy-external. Its backups stay in MinIO and R2, so
+  # re-enabling restores it. The restore drill and R2 sample moved to overseerr.
+  #- ./wizarr/ks.yaml
   - ./dispatcharr/ks.yaml
   #- ./ersatztv/ks.yaml

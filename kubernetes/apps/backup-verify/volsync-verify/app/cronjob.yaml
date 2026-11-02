@@ -11,7 +11,7 @@ spec:
   #
   # Manual run of specific apps:
   #   kubectl -n backup-verify create job verify-manual --from=cronjob/volsync-verify --dry-run=client -o json \
-  #     | jq '.spec.template.spec.containers[0].env += [{"name":"VERIFY_TARGETS","value":"wizarr:r2"}]' \
+  #     | jq '.spec.template.spec.containers[0].env += [{"name":"VERIFY_TARGETS","value":"overseerr:r2"}]' \
   #     | kubectl apply -f -
   schedule: "30 4 * * *"
   concurrencyPolicy: Forbid
@@ -47,9 +47,9 @@ spec:
                 - name: HOME
                   value: /tmp
                 # Sampled from R2 monthly, in turn; each needs an r2 block in
-                # ../ks.yaml. The two smallest SQLite apps keep R2 requests low.
+                # ../ks.yaml. Two small SQLite apps keep R2 requests low.
                 - name: R2_APPS
-                  value: wizarr actual
+                  value: overseerr actual
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true

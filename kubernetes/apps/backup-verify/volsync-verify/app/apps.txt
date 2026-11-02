@@ -8,7 +8,6 @@ zwave-js-ui 5Gi 568 568
 actual 1Gi 568 568
 overseerr 2Gi 568 568
 tautulli 2Gi 568 568
-wizarr 2Gi 568 568
 bazarr 5Gi 568 568
 kavita 2Gi 568 568
 sabnzbd 2Gi 568 568

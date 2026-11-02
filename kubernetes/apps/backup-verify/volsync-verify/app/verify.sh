@@ -11,7 +11,7 @@
 # "VERIFY OK app=<app> backend=<backend>". Everything is deleted afterwards,
 # pass or fail.
 #
-# VERIFY_TARGETS="wizarr:r2 kavita:minio" overrides the rotation for a
+# VERIFY_TARGETS="overseerr:r2 kavita:minio" overrides the rotation for a
 # manual run.
 #
 # Runs in alpine/kubectl, whose date is busybox: only `date +%s` style
@@ -21,7 +21,7 @@ set -euo pipefail
 
 NS=backup-verify
 CONFIG=/config
-R2_APPS=${R2_APPS:-wizarr actual}
+R2_APPS=${R2_APPS:-overseerr actual}
 RESTORE_TIMEOUT=${RESTORE_TIMEOUT:-2400}
 CHECK_TIMEOUT=${CHECK_TIMEOUT:-960}
 RUN_ID=$(date -u +%Y%m%d%H%M%S)

@@ -118,8 +118,12 @@ spec:
                 port: 8080
       app:
         hostnames: ["hass.${SECRET_DOMAIN}"]
+        # LAN and Tailscale only since 2026-11-02 (owner). Phones reach it over
+        # the tailnet: split DNS sends ekenhome.se to UniFi, which answers with
+        # this gateway's address. Only phones called /api/webhook/ in the 14
+        # days before, so no outside service needs a public path.
         parentRefs:
-          - name: envoy-external
+          - name: envoy-internal
             namespace: network
             sectionName: https
         rules:

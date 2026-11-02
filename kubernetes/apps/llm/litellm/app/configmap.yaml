@@ -6,6 +6,9 @@ metadata:
 data:
   config.yaml: |
     model_list:
+      # A new api_base host needs a rule in ciliumnetworkpolicy.yaml: egress is
+      # default-deny, and an unlisted upstream times out.
+      #
       # --- Chat: LLMKube on worker4's Strix Halo iGPU ---
       # Qwen3.8-Flash-Next (MoE, 6B of 125B active, plus a 51B n-gram table
       # that stays in page cache), served by llama.cpp/ROCm. Replaced Ornith

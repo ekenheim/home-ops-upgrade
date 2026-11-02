@@ -1,0 +1,106 @@
+---
+# yaml-language-server: $schema=https://lds-schemas-5hg.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# The gateway holds the provider keys, the master key and the database login,
+# and it runs a third-party image that releases every few days. Egress is
+# limited to the upstreams it is configured for, so a bad image has nowhere to
+# send them. Ingress stays open: every app in the cluster calls it.
+#
+# A new api_base in configmap.yaml needs a rule here, or its calls time out.
+#
+# Nothing below is needed to boot beyond the database. The image runs Prisma
+# offline (PRISMA_OFFLINE_MODE), and the cost-map fetch from
+# raw.githubusercontent.com is blocked on purpose: when it fails, LiteLLM keeps
+# the map bundled in the image.
+#
+# DNS allows any name. musl gives up on a name when a search-domain lookup is
+# REFUSED, so filtering here would have to list every search-domain variant of
+# every upstream, and a miss takes the gateway down. Tunnelling secrets over
+# DNS stays possible as a result.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: litellm-egress
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: litellm
+      app.kubernetes.io/controller: litellm
+  enableDefaultDeny:
+    egress: true
+    ingress: false
+  egress:
+    # Through Cilium's DNS proxy, which toFQDNs needs to learn the IPs.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    # Crunchy: instances and pgbouncer, so a failover or a move to pgbouncer
+    # needs no change here.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: database
+            postgres-operator.crunchydata.com/cluster: postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: database
+            app: dragonfly
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    # Every LLMKube llama.cpp server: chat on worker4 and the embed pool.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: llm
+            inference.llmkube.dev/runtime: llamacpp
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: llm
+            app.kubernetes.io/instance: hindsight
+            app.kubernetes.io/component: tei-reranker
+      toPorts:
+        - ports:
+            - port: "8090"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: llm
+            app.kubernetes.io/instance: langfuse
+            app.kubernetes.io/component: web
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+    # MiniMax, and the ChatGPT subscription route with its token refresh.
+    - toFQDNs:
+        - matchName: api.minimax.io
+        - matchName: chatgpt.com
+        - matchName: auth.openai.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    # The desktop's Ollama, the last fallback for several aliases.
+    - toCIDR:
+        - 192.168.1.182/32
+      toPorts:
+        - ports:
+            - port: "11434"
+              protocol: TCP

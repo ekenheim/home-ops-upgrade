@@ -17,6 +17,20 @@
       "enabled": false
     },
     {
+      // A major waits for a hand merge, and main does not require PRs to be
+      // up to date, so rebasing one on every main commit buys nothing. Each
+      // rebase re-runs CI and a ~30-minute AI review on worker4: #7981
+      // (kubectl-mcp-server 2.0) was reviewed six times on 2026-10-22, each
+      // time with the same verdict. The excluded images and the Grafana
+      // dashboards (another datasource) automerge their majors, so they keep
+      // the repo-wide rebaseWhen.
+      "description": ["Rebase major update PRs only on conflict"],
+      "matchDatasources": ["docker", "helm", "github-releases", "github-tags", "terraform-provider"],
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": ["!ghcr.io/ekenheim/agency", "!ghcr.io/ekenheim/bloghugo", "!/nordic-housing/"],
+      "rebaseWhen": "conflicted"
+    },
+    {
       "description": ["Semver versioning for nordic-housing images"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["/ghcr.io\\/ekenheim\\/nordic-housing/"],
@@ -45,11 +59,12 @@
       "matchPackageNames": ["/mylar3/"]
     },
     {
+      // `hashicorp` is Renovate's Terraform versioning; "terraform" is not a
+      // scheme, and renovate-config-validator rejected this rule for it.
       "description": ["Process terraform files"],
       "matchManagers": ["terraform"],
       "matchDatasources": ["terraform-provider"],
-      "versioning": "terraform",
-      "matchPackagePatterns": [".*"]
+      "versioning": "hashicorp"
     },
     {
       // These upstreams re-push the SAME release tag on every rebuild, so
@@ -146,16 +161,16 @@
       "versioning": "regex:^cpu-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
     },
     {
-      // Same <date>-<sha> scheme as searxng above (2024.10.22-7ca5933): docker
-      // versioning reads the sha as a compatibility suffix and offers nothing
-      // with a different sha, so it-tools sat on 2023.12.21 for ten months.
-      // A separate rule because upstream releases a few times a year, so it
-      // needs no monthly cadence. A new year is a major and waits for a hand
-      // merge; within a year it automerges.
-      "description": ["Date-plus-sha versioning for it-tools"],
+      // sharevb/it-tools tags releases <year>.<month>.<day> and also pushes
+      // -baseurl-it-tools variants and nightly; the anchors keep only the
+      // plain release tags. (The CorentinTh image used <date>-<sha>, which
+      // docker versioning read as a suffix and never offered past.) A new
+      // year is a major and waits for a hand merge; within a year it
+      // automerges.
+      "description": ["Date versioning for it-tools"],
       "matchDatasources": ["docker"],
-      "matchPackageNames": ["ghcr.io/corentinth/it-tools"],
-      "versioning": "regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})-(?<build>[0-9a-f]+)$"
+      "matchPackageNames": ["ghcr.io/sharevb/it-tools"],
+      "versioning": "regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})$"
     },
     {
       // postgis tags are <PG major>-<PostGIS x.y>[-alpine]. Docker versioning
@@ -331,6 +346,28 @@
       "pinDigests": false
     },
     {
+      // Workflow actions run next to the admin kubeconfig and the GitHub App
+      // key, and the shared autoMerge preset merges their minor/patch/digest
+      // updates to main without status checks (:skipStatusChecks). A hijacked
+      // action release (tj-actions, March 2025) is usually caught and pulled
+      // within a day or two, so updates wait three days before they are
+      // proposed. helpers:pinGitHubActionDigests keeps them pinned to SHAs.
+      "description": ["Hold GitHub Actions updates for three days"],
+      "matchManagers": ["github-actions"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      // Renovate releases several times a day, and both Renovate instances
+      // (the Mend app and renovate-operator) open a PR for each release: 19
+      // of the 110 Renovate PRs from 2026-10-21 to 10-23 bumped this image.
+      // Take one a week, in the same window as the weekly digest merges.
+      // autoMergeApps.json5 still merges it.
+      "description": ["Update the self-hosted Renovate image weekly"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/renovatebot/renovate"],
+      "schedule": ["* 0-5 * * 1"]
+    },
+    {
       // Kavita runs one-way DB migrations on start in nearly every release
       // (0.8.0 rewrote chapters and exported progress; 0.8.4 dropped people
       // metadata until a forced scan; 0.9.1 reworked scrobbling and OAuth).
@@ -340,31 +377,6 @@
       "description": ["Never automerge Kavita (one-way DB migrations)"],
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/kareadita/kavita"],
-      "automerge": false
-    },
-    // The dispatch hold at <0.5.41 was removed here on 2026-08-29. It existed
-    // because 0.5.41 tightened the CSP to `script-src 'self'` without a nonce,
-    // which blocked Next.js's inline RSC bootstrap and left the UI unhydrated.
-    // misospace/dispatch#845 added a per-request nonce and shipped in v0.5.42;
-    // kubernetes/apps/llm/dispatch/app/ocirepository.yaml now tracks 0.5.48.
-    // Renovate is free to move this package again.
-    {
-      // Atlas (github.com/ekenheim/atlas). Every Atlas release is a deploy the
-      // owner merges by hand, never automatically. This covers every update
-      // type in that directory, digests included: autoMergeDocker.json5's
-      // weekly and "/ekenheim/" digest merges and autoMergeApps.json5's
-      // minor/patch merge all come earlier and are overridden here. Keep these
-      // two rules LAST, so nothing later re-enables automerge.
-      "description": ["Never automerge anything under kubernetes/apps/development/atlas (Atlas)"],
-      "matchFileNames": ["kubernetes/apps/development/atlas/**"],
-      "automerge": false
-    },
-    {
-      // The Atlas image anywhere else it might be referenced (a Job, a
-      // second release). The path rule above already covers development/atlas.
-      "description": ["Never automerge ghcr.io/ekenheim/atlas"],
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["ghcr.io/ekenheim/atlas"],
       "automerge": false
     }
   ]

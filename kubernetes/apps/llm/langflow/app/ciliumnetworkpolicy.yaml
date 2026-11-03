@@ -1,0 +1,31 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# /api/v1/auto_login hands an admin token to any caller, and custom
+# components run arbitrary Python.
+# The OIDC SecurityPolicy only guards the HTTPRoute; without this any pod, or
+# any tailnet device (the Tailscale connector advertises the pod CIDR), could
+# call the pod directly and skip the sign-in. Ingress: envoy-internal only
+# (kubelet probes from the node are allowed by Cilium regardless). Egress
+# stays open.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: langflow-ingress
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: langflow
+      app.kubernetes.io/controller: langflow
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    # With kube-proxy replacement the policy sees the backend port.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.envoyproxy.io/owning-gateway-name: envoy-internal
+      toPorts:
+        - ports:
+            - port: "7860"
+              protocol: TCP

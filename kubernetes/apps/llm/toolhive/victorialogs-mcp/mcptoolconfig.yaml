@@ -6,8 +6,8 @@
 # covers it). If the mcp-gateway starts rejecting this server's health checks
 # after an image bump (stacklok/toolhive#6684, a modern-revision server behind
 # the tool filter), drop toolConfigRef as context7 did. v1.9.0 is built on
-# mcp-go v0.47, which predates that revision, like kubectl-mcp, whose filter
-# works.
+# mcp-go v0.47, which predates that revision. kubectl-mcp 2.0.0 hit it; its
+# filter moved to the gateway (toolhive/gateway/virtualmcpserver.yaml).
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPToolConfig
 metadata:

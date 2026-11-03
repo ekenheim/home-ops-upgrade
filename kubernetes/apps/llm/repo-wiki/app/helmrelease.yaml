@@ -62,7 +62,7 @@ spec:
           docs-dir:
             image: &mkdocs
               repository: docker.io/squidfunk/mkdocs-material
-              tag: 9.7.7@sha256:51b87149d227691486b5f08993d28c65ca7e4990010664b697265b8e6fcd5287
+              tag: 9.8.0@sha256:dc3b5de76c6e30d18dc0922d4c4a7bed817e5e155f9ff0e594a53eb56e537e64
             command:
               - sh
               - -c
@@ -76,7 +76,7 @@ spec:
           app:
             image:
               repository: docker.io/squidfunk/mkdocs-material
-              tag: 9.7.7@sha256:51b87149d227691486b5f08993d28c65ca7e4990010664b697265b8e6fcd5287
+              tag: 9.8.0@sha256:dc3b5de76c6e30d18dc0922d4c4a7bed817e5e155f9ff0e594a53eb56e537e64
             command: ["mkdocs"]
             # --dirty rebuilds only changed pages when the CronJob commits.
             args: ["serve", "--dirty", "-f", "/config/mkdocs.yml", "-a", "0.0.0.0:8000"]
@@ -139,7 +139,7 @@ spec:
                         values: ["mkdocs"]
                   topologyKey: kubernetes.io/hostname
         cronjob:
-          # Nightly: ornith is shared with hermes and dispatch during the day.
+          # Nightly: ornith is shared with hermes during the day.
           schedule: "0 3 * * *"
           timeZone: "${TIMEZONE}"
           concurrencyPolicy: Forbid
@@ -155,7 +155,8 @@ spec:
               TZ: "${TIMEZONE}"
               OPENAI_BASE_URL: http://litellm.llm:4000/v1
               # ornith-35b with thinking on. Writing a page from source files
-              # is the kind of work dispatch also gives this alias, not `fast`.
+              # is the kind of work dispatch's groomer also used this alias
+              # for (until 2026-10-20), not `fast`.
               WIKI_MODEL: self-hosted
               MAX_REPOS_PER_RUN: "1"
               MAX_PAGES_PER_REPO: "20"

@@ -6,3 +6,4 @@ resources:
   - ./generator.yaml
   - ./externalsecret.yaml
   - ./mcpserver.yaml
+  - ./ciliumnetworkpolicy.yaml

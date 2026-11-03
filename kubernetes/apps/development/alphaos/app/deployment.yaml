@@ -32,6 +32,10 @@ spec:
         runAsUser: 10001
         runAsGroup: 10001
         fsGroup: 10001
+      # The image's package can then be made private (the repo is): the
+      # pipeline Deployment and the Dagster run pods already pull with it.
+      imagePullSecrets:
+        - name: ghcr-pull
       initContainers:
         # Migrate the Postgres schema before the app starts (alembic; currently up to 0012 —
         # transactions.account + cash_flows.account (nullable, indexed), the new cash_events table

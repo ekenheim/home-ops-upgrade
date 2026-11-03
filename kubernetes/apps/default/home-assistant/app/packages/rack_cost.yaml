@@ -1,0 +1,102 @@
+# Server rack electricity cost. The rack's Z-Wave plug (Server Rack) feeds
+# the whole computer room: the five cluster nodes, the NAS, the UniFi gear,
+# both UPSes, the 3D printer and the main PC with its monitor and speakers.
+#
+# The Energy dashboard prices only the grid source, not individual devices,
+# so the rack's cost is accumulated here. Each step of the plug's kWh meter
+# (0.1 kWh, about every 7 min at ~800 W) is priced at the price in force at
+# that moment, so evening-heavy use costs what it actually costs rather than
+# the day's average.
+#
+# Price per kWh = sensor.tibber_electricity_price (Tibber's bill: spot +
+# markup) + input_number.electricity_grid_fee, the per-kWh part of Ellevio's
+# bill (transfer fee + energy tax, incl. VAT), which Tibber's price leaves
+# out. The helper starts at 0 (Tibber only); set it from an Ellevio invoice.
+#
+# The total starts at 0 when this package first loads; earlier use is not
+# backfilled. Trigger-based template sensors restore their state and
+# attributes across restarts.
+
+input_number:
+  electricity_grid_fee:
+    name: Grid fee and energy tax
+    icon: mdi:transmission-tower
+    min: 0
+    max: 3
+    step: 0.01
+    unit_of_measurement: SEK/kWh
+    mode: box
+
+template:
+  - sensor:
+      - name: Server rack cost rate
+        unique_id: server_rack_cost_rate
+        icon: mdi:cash-clock
+        unit_of_measurement: SEK/h
+        state_class: measurement
+        state: >-
+          {% set w = states('sensor.server_rack_power') %}
+          {% set p = states('sensor.tibber_electricity_price') %}
+          {% if is_number(w) and is_number(p) %}
+            {{ (w | float / 1000 * (p | float + states('input_number.electricity_grid_fee') | float(0))) | round(2) }}
+          {% else %}
+            {{ this.state }}
+          {% endif %}
+
+  # Adds (kWh now - kWh at the last step) x price. last_kwh is kept as an
+  # attribute so a step that arrives after the plug was unavailable is still
+  # counted; a meter that went backwards (reset, replaced plug) is rebased
+  # without adding anything. A Tibber outage (504s happen) falls back to the
+  # last known price instead of adding zero.
+  - triggers:
+      - trigger: state
+        entity_id: sensor.server_rack_electric_consumption_kwh
+    sensor:
+      - name: Server rack cost
+        unique_id: server_rack_cost
+        icon: mdi:cash
+        device_class: monetary
+        unit_of_measurement: SEK
+        state_class: total
+        state: >-
+          {% set total = this.state | float(0) %}
+          {% set last = this.attributes.get('last_kwh') %}
+          {% set now_kwh = trigger.to_state.state if trigger.to_state else none %}
+          {% set p = states('sensor.tibber_electricity_price') %}
+          {% set price = p | float if is_number(p) else this.attributes.get('last_price') %}
+          {% if is_number(now_kwh) and is_number(last) and price is not none
+                and now_kwh | float > last | float %}
+            {{ (total + (now_kwh | float - last | float)
+                * (price | float + states('input_number.electricity_grid_fee') | float(0))) | round(4) }}
+          {% else %}
+            {{ total | round(4) }}
+          {% endif %}
+        attributes:
+          last_kwh: >-
+            {% set now_kwh = trigger.to_state.state if trigger.to_state else none %}
+            {{ now_kwh | float if is_number(now_kwh) else this.attributes.get('last_kwh') }}
+          last_price: >-
+            {% set p = states('sensor.tibber_electricity_price') %}
+            {{ p | float if is_number(p) else this.attributes.get('last_price') }}
+
+utility_meter:
+  server_rack_cost_daily:
+    name: Server rack cost today
+    unique_id: server_rack_cost_daily
+    source: sensor.server_rack_cost
+    cycle: daily
+  server_rack_cost_monthly:
+    name: Server rack cost this month
+    unique_id: server_rack_cost_monthly
+    source: sensor.server_rack_cost
+    cycle: monthly
+  server_rack_energy_daily:
+    name: Server rack energy today
+    unique_id: server_rack_energy_daily
+    source: sensor.server_rack_electric_consumption_kwh
+    cycle: daily
+  server_rack_energy_monthly:
+    name: Server rack energy this month
+    unique_id: server_rack_energy_monthly
+    source: sensor.server_rack_electric_consumption_kwh
+    cycle: monthly

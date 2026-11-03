@@ -1,7 +1,7 @@
 # Stage 1: scaffold a vanilla Strapi v5 project and install its dependencies.
 # This runs during CI/Docker build where there is no TTY — create-strapi-app
 # handles non-interactive environments with CI=true.
-FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f AS builder
+FROM node:26-alpine@sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3baa2a7d4c8de6d94 AS builder
 
 RUN apk add --no-cache build-base gcc autoconf automake zlib-dev libpng-dev vips-dev git bash
 
@@ -22,7 +22,7 @@ RUN git config --global user.email "build@docker.local" && \
 # The version is pinned so Renovate can see it: a bump here rebuilds the image,
 # and strapi-sync.sh then upgrades the project on each PVC to match.
 # renovate: datasource=npm depName=@strapi/strapi
-ARG STRAPI_VERSION=5.58.0
+ARG STRAPI_VERSION=5.60.0
 RUN yes "" | npx --yes create-strapi-app@${STRAPI_VERSION} template --no-run --skip-cloud
 
 # Install deps and pre-build the admin panel as separate layers.
@@ -56,7 +56,7 @@ RUN npm run build
 RUN rm -rf node_modules/@strapi/sdk-plugin node_modules/@strapi/pack-up
 
 # Stage 2: lean runtime image that ships the pre-built project as a seed template.
-FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+FROM node:26-alpine@sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3baa2a7d4c8de6d94
 
 # `apk upgrade` takes Alpine's security fixes at build time instead of waiting
 # for the next node:24-alpine digest (the 5.58.0 image of 2026-10-14 still had
@@ -68,7 +68,7 @@ RUN apk upgrade --no-cache && apk add --no-cache build-base vips-dev bash
 # 11.21.1 bundles 5.0.12, 6.29.0 and 4.3.0. Stay on npm 11 (the line Node 24
 # ships); npm 12 is a major and Renovate will not auto-merge it.
 # renovate: datasource=npm depName=npm
-ARG NPM_VERSION=12.2.0
+ARG NPM_VERSION=12.2.1
 RUN npm install --global --no-audit --no-fund npm@${NPM_VERSION} && npm cache clean --force
 
 # Bake the complete project (including node_modules) into the image.

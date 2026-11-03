@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: qdrant
-      version: 1.19.2
+      version: 1.20.0
       sourceRef:
         kind: HelmRepository
         name: qdrant
@@ -28,7 +28,7 @@ spec:
 
     image:
       repository: qdrant/qdrant
-      tag: v1.19.2
+      tag: v1.20.0
       pullPolicy: IfNotPresent
 
     service:

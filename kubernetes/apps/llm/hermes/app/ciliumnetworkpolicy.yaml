@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# The code-server sidecar (12321) runs --auth none; the dashboard (9119)
+# has its own password. The gateway API (8642) is only used over localhost.
+# The OIDC SecurityPolicy only guards the HTTPRoute; without this any pod, or
+# any tailnet device (the Tailscale connector advertises the pod CIDR), could
+# call the pod directly and skip the sign-in. Ingress: envoy-internal only
+# (kubelet probes from the node are allowed by Cilium regardless). Egress
+# stays open.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hermes-ingress
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: hermes
+      app.kubernetes.io/controller: hermes
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    # With kube-proxy replacement the policy sees the backend port.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.envoyproxy.io/owning-gateway-name: envoy-internal
+      toPorts:
+        - ports:
+            - port: "9119"
+              protocol: TCP
+            - port: "12321"
+              protocol: TCP

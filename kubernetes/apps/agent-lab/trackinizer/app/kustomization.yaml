@@ -14,7 +14,11 @@ resources:
   - ./service.yaml
   - ./httproute-internal.yaml
   - ./httproutefilter.yaml
-  - ./securitypolicy.yaml
+  # Off since 2026-10-22 (owner): Trackinizer is open to anyone who reaches
+  # envoy-internal (the LAN, and the tailnet through the Tailscale subnet
+  # router), and every visitor is signed in as the admin user. Uncomment to put
+  # Authentik back in front; its application (trackinizer-oidc.yaml) stays.
+  #- ./securitypolicy.yaml
 configMapGenerator:
   # Hashed name: an edit to the addon rolls the pod.
   - name: trackinizer-addons

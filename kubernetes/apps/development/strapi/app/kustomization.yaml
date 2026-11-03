@@ -6,4 +6,5 @@ resources:
   - ./externalsecret.yaml
   - ./cms
   - ../../../../templates/volsync
-  - ../../../../templates/gatus/external
+  # Only /uploads/ is public now, so Gatus checks the app from inside (LAN DNS).
+  - ../../../../templates/gatus/internal

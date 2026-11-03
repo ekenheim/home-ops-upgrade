@@ -1,0 +1,63 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# grafana-mcp holds a Grafana service-account token and has no auth of its
+# own, so each pod admits only its callers in config (ingress default-deny;
+# kubelet probes from the node are allowed by Cilium regardless; egress
+# stays open):
+#
+#   proxy  :8080 <- llm/mcp-gateway (gateway/entries.yaml), the kagent
+#                   controller and kagent agent pods (RemoteMCPServer)
+#   server :8000 <- the proxy
+#
+# The ToolHive policies in llm/toolhive/app explain the labels.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: grafana-mcp-proxy
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: mcpserver
+      app.kubernetes.io/instance: grafana-mcp
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: llm
+            app.kubernetes.io/name: virtualmcpserver
+            app.kubernetes.io/instance: mcp-gateway
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: llm
+            app.kubernetes.io/name: kagent
+            app.kubernetes.io/component: controller
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: llm
+            app: kagent
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: grafana-mcp-server
+spec:
+  endpointSelector:
+    matchLabels:
+      toolhive-basename: grafana-mcp
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: mcpserver
+            app.kubernetes.io/instance: grafana-mcp
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP

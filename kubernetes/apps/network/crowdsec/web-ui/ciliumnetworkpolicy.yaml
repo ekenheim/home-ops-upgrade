@@ -1,0 +1,30 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# The Web UI has its own login turned off; the OIDC SecurityPolicy only guards
+# the HTTPRoute, so without this any pod in the cluster could call the Service
+# directly and read every alert. Ingress: envoy-internal only (kubelet probes
+# from the node are allowed by Cilium regardless). Egress stays open: LAPI and
+# the two metrics endpoints.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: crowdsec-web-ui-ingress
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: crowdsec-web-ui
+      app.kubernetes.io/controller: crowdsec-web-ui
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    # With kube-proxy replacement the policy sees the backend port, which is
+    # also the Service port.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.envoyproxy.io/owning-gateway-name: envoy-internal
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP

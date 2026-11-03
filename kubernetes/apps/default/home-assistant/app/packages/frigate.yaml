@@ -1,0 +1,38 @@
+# Frigate (kubernetes/apps/default/frigate), read straight from MQTT. Needs
+# the MQTT integration in HA (Settings -> Devices & services -> MQTT, broker
+# mosquitto.default.svc.cluster.local:1883); the Frigate HACS integration is
+# not required for these.
+#
+# The dog isn't here every day. "Presence: leaving home prompt" in
+# home_automations.yaml only turns lights off by itself when Frigate hasn't
+# seen the dog for a while.
+
+mqtt:
+  sensor:
+    # Frigate publishes stats every minute; expire_after makes this
+    # unavailable when it stops, so "dog not seen" can't come from a dead NVR.
+    - name: Frigate hallway camera fps
+      unique_id: frigate_hallway_camera_fps
+      state_topic: frigate/stats
+      value_template: "{{ value_json.cameras.hallway.camera_fps }}"
+      unit_of_measurement: fps
+      state_class: measurement
+      expire_after: 300
+      icon: mdi:cctv
+
+template:
+  # Frigate sends frigate/events only for tracked objects it no longer
+  # considers false positives. Trigger-based, so the value survives restarts.
+  - triggers:
+      - trigger: mqtt
+        topic: frigate/events
+        value_template: "{{ value_json.after.label }}"
+        payload: dog
+    sensor:
+      - name: Dog last seen
+        unique_id: dog_last_seen
+        device_class: timestamp
+        icon: mdi:dog
+        state: "{{ now().isoformat() }}"
+        attributes:
+          camera: "{{ trigger.payload_json.after.camera }}"

@@ -1,0 +1,155 @@
+---
+# yaml-language-server: $schema=https://lds-schemas-5hg.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: crowdsec
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: crowdsec
+  install:
+    # The chart schema only knows the k8s-audit source, not kubernetes.
+    disableSchemaValidation: true
+    remediation:
+      retries: -1
+  upgrade:
+    disableSchemaValidation: true
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # The default (docker) mounts /var/lib/docker/containers into the agent.
+    container_runtime: containerd
+    # Pinned here because the chart's appVersion lags CrowdSec releases, and
+    # without a tag Renovate could only bump the web UI's init container.
+    image:
+      repository: mirror.gcr.io/crowdsecurity/crowdsec
+      tag: v1.8.2@sha256:65b74942f7e7ed5c60fde4ac15fc4ba715904c398c8b16dd451f4907d90347d4
+    lapi:
+      env:
+        - name: USE_WAL
+          value: "true"
+        # Central API on: LAPI shares its alerts (attacker IP, scenario,
+        # time) and pulls the community blocklist. The start script registers
+        # once and keeps the login on the config PVC. No console enrollment,
+        # and share_context stays false in console.yaml, so hostnames, URIs
+        # and user agents stay here. See README.
+        - name: DISABLE_ONLINE_API
+          value: "false"
+      # BOUNCER_KEY_ENVOY registers the envoy bouncer (externalsecret.yaml).
+      # No Reloader annotation. A restart never changes an existing bouncer's
+      # key, and the start script registers every env var matching
+      # BOUNCER_KEY, so Reloader's STAKATER_CROWDSEC_BOUNCER_KEY_SECRET became
+      # a bouncer of its own.
+      envFrom:
+        - secretRef:
+            name: crowdsec-bouncer-key
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          memory: 512Mi
+      metrics:
+        serviceMonitor:
+          enabled: true
+    agent:
+      isDeployment: true
+      hostVarLog: false
+      serviceAccountName: crowdsec-agent
+      additionalAcquisition:
+        - source: kubernetes
+          namespace: network
+          selector: gateway.envoyproxy.io/owning-gateway-name=envoy-external
+          labels:
+            type: envoy
+      env:
+        # plex is only an allowlist: it stops Plex's metadata/transcode
+        # request bursts on the public plex route from tripping the crawl
+        # scenarios.
+        - name: COLLECTIONS
+          value: yanis-kouidri/envoy crowdsecurity/plex
+        # A parser, not a collection: drops RFC1918 sources (LAN, pods).
+        - name: PARSERS
+          value: crowdsecurity/whitelists
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 512Mi
+      metrics:
+        serviceMonitor:
+          enabled: true
+    # WAF: the bouncer sends each request on the hosts in its config.waf.routes
+    # here before letting it through, and a matching rule blocks it inline,
+    # on the first request rather than after a pattern builds up in the logs.
+    # appsec-default = crowdsecurity/base-config + the virtual-patching
+    # (vpatch-*, one rule per known CVE) and generic rules, all in-band. No
+    # OWASP CRS: it is broad and false-positive prone on CMS traffic.
+    appsec:
+      enabled: true
+      acquisitions:
+        - source: appsec
+          listen_addr: "0.0.0.0:7422"
+          path: /
+          appsec_config: crowdsecurity/appsec-default
+          labels:
+            type: appsec
+      env:
+        - name: COLLECTIONS
+          value: crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+      metrics:
+        serviceMonitor:
+          enabled: true
+    config:
+      parsers:
+        s02-enrich:
+          # crowdsecurity/whitelists covers RFC1918 but not Tailscale.
+          tailscale-whitelist.yaml: |
+            name: home-ops/tailscale-whitelist
+            description: "Whitelist the Tailscale CGNAT range"
+            whitelist:
+              reason: "tailscale"
+              cidr:
+                - "100.64.0.0/10"
+          # Some home clients reach the public routes through Cloudflare from
+          # the WAN address, and Gatus probes them from it. The default is
+          # only there so the agent still starts if Flux renders this before
+          # cluster-secrets has the variable.
+          home-wan-whitelist.yaml: |
+            name: home-ops/home-wan-whitelist
+            description: "Whitelist the home WAN address"
+            whitelist:
+              reason: "home WAN"
+              ip:
+                - "${SECRET_HOME_WAN_IP:=192.0.2.1}"
+          # Overseerr's web app calls one API path per item in a list, which
+          # http-crawl-non_statics counts as a crawl.
+          overseerr-allowlist.yaml: |
+            name: home-ops/overseerr-allowlist
+            description: "Allow the API calls of Overseerr's web app"
+            filter: "evt.Meta.service == 'http' && evt.Meta.log_type in ['http_access-log', 'http_error-log']"
+            whitelist:
+              reason: "Overseerr API"
+              expression:
+                - evt.Meta.target_fqdn == 'requests.${SECRET_DOMAIN}' && evt.Meta.http_verb == 'GET' && evt.Meta.http_status in ['200', '304'] && evt.Meta.http_path startsWith '/api/v1/'
+          # A banned client that keeps POSTing gets the bouncer's 403s, and
+          # http-generic-403-bf turns those into a new ban. POSTs only: the
+          # WAF's 403s are also ext_authz_denied, and GET ones are how the
+          # log scenarios ban scanners. See README.
+          bouncer-denied-post.yaml: |
+            name: home-ops/bouncer-denied-post
+            description: "Ignore POSTs the bouncer already refused"
+            whitelist:
+              reason: "denied by the bouncer"
+              expression:
+                - evt.Meta.http_verb == 'POST' && evt.Unmarshaled.envoy?.response_code_details == 'ext_authz_denied'

@@ -82,6 +82,38 @@ views:
                   tap_action:
                     action: navigate
                     navigation_path: "#kitchen"
+              # Frigate's last dog sighting (packages/frigate.yaml); hidden
+              # until the first one.
+              - type: conditional
+                conditions:
+                  - condition: state
+                    entity: sensor.dog_last_seen
+                    state_not: unknown
+                  - condition: state
+                    entity: sensor.dog_last_seen
+                    state_not: unavailable
+                chip:
+                  type: template
+                  entity: sensor.dog_last_seen
+                  icon: mdi:dog
+                  icon_color: brown
+                  content: >-
+                    {{ relative_time(states('sensor.dog_last_seen') | as_datetime) }} ago
+              # Only shows when something in the cluster needs a look
+              # (packages/cluster.yaml); taps through to the Homelab view.
+              - type: conditional
+                conditions:
+                  - condition: state
+                    entity: binary_sensor.cluster_needs_attention
+                    state: "on"
+                chip:
+                  type: template
+                  icon: mdi:server-network-off
+                  icon_color: red
+                  content: Cluster
+                  tap_action:
+                    action: navigate
+                    navigation_path: /dashboard-home/homelab
 
       # Room tiles: tap the card for the room pop-up, tap the icon to toggle
       # the room's Hue group.
@@ -208,8 +240,8 @@ views:
             card_type: button
             button_type: name
             card_layout: large
-            # No Hue group for the hallway; the ceiling panel stands in.
-            entity: light.floalt_panel_ws_60x60
+            # No Hue group for the hallway; see packages/light_groups.yaml.
+            entity: light.hallway_panels
             name: Hallway
             icon: mdi:door
             grid_options: { columns: 6, rows: 2 }
@@ -335,27 +367,34 @@ views:
           - type: heading
             heading: Now
             heading_style: title
-          - type: custom:bubble-card
-            card_type: media-player
-            entity: media_player.lg_tv
-            name: LG TV
+          # The TV is off the network; the Shield (reports on/off only)
+          # follows it over HDMI-CEC and stands in for it. While Plex plays
+          # on the Shield, Plex's own player for it takes over: it carries
+          # the title, series / episode and artwork. Plex can re-register a
+          # client under a _2 suffix (see the plex_cast_chromecast_* ones).
+          - type: media-control
+            entity: media_player.plex_plex_for_android_tv_shield_android_tv
+            name: TV
             grid_options: { columns: full }
             visibility:
               - condition: state
-                entity: media_player.lg_tv
-                state_not: "off"
-              - condition: state
-                entity: media_player.lg_tv
-                state_not: unavailable
+                entity: media_player.plex_plex_for_android_tv_shield_android_tv
+                state: [playing, paused]
           - type: custom:bubble-card
             card_type: media-player
             entity: media_player.shield_android_tv
-            name: Shield
+            name: TV
             grid_options: { columns: full }
             visibility:
               - condition: state
                 entity: media_player.shield_android_tv
-                state: playing
+                state_not: "off"
+              - condition: state
+                entity: media_player.shield_android_tv
+                state_not: unavailable
+              - condition: state
+                entity: media_player.plex_plex_for_android_tv_shield_android_tv
+                state_not: [playing, paused]
           - type: custom:bubble-card
             card_type: media-player
             entity: media_player.kok
@@ -401,11 +440,11 @@ views:
             content: "*Nothing playing.*"
             visibility:
               - condition: state
-                entity: media_player.lg_tv
+                entity: media_player.shield_android_tv
                 state: ["off", unavailable]
               - condition: state
-                entity: media_player.shield_android_tv
-                state_not: playing
+                entity: media_player.plex_plex_for_android_tv_shield_android_tv
+                state_not: [playing, paused]
               - condition: state
                 entity: media_player.kok
                 state_not: playing
@@ -478,7 +517,7 @@ views:
             6_name: Hallway
             6_icon: mdi:door
             6_link: "#hallway"
-            6_entity: light.floalt_panel_ws_60x60
+            6_entity: light.hallway_panels
           # Living room
           - type: custom:bubble-card
             card_type: pop-up
@@ -508,16 +547,6 @@ views:
                     card_type: button
                     button_type: slider
                     entity: light.randa_pc
-                  - type: custom:bubble-card
-                    card_type: button
-                    button_type: slider
-                    entity: light.hue_play_left
-                    name: Play left
-                  - type: custom:bubble-card
-                    card_type: button
-                    button_type: slider
-                    entity: light.hue_play_right
-                    name: Play right
                   - type: custom:bubble-card
                     card_type: button
                     button_type: slider
@@ -631,8 +660,8 @@ views:
                 icon: mdi:television-play
               - type: custom:bubble-card
                 card_type: media-player
-                entity: media_player.lg_tv
-                name: LG TV
+                entity: media_player.shield_android_tv
+                name: Shield
 
           # Kitchen
           - type: custom:bubble-card
@@ -1179,14 +1208,8 @@ views:
                   - type: custom:bubble-card
                     card_type: button
                     button_type: slider
-                    entity: light.floalt_panel_ws_60x60
-                    name: Ceiling panel
-                    icon: mdi:ceiling-light
-                  - type: custom:bubble-card
-                    card_type: button
-                    button_type: slider
-                    entity: light.tradfri_panel_3
-                    name: Panel
+                    entity: light.hallway_panels
+                    name: Panels
                     icon: mdi:ceiling-light
                   - type: custom:bubble-card
                     card_type: button
@@ -1566,10 +1589,11 @@ views:
             grid_options: { columns: 6 }
 
   # -------------------------------------------------------------- Health ----
-  # Withings (Body Cardio scale + Health Mate activity). Long-term statistics
-  # start 2026-09, so trend charts fill in from there. The *_today sensors are
-  # state_class total and reset at midnight: daily charts use the day's last
-  # `state`, not sum/change, so the reset doesn't read as a negative day.
+  # Withings (Body Cardio scale, BPM Vision cuff + Health Mate activity).
+  # Long-term statistics start 2026-09, so trend charts fill in from there. The
+  # *_today sensors are state_class total and reset at midnight: daily charts
+  # use the day's last `state`, not sum/change, so the reset doesn't read as a
+  # negative day.
   - title: Health
     path: health
     icon: mdi:heart-pulse
@@ -1785,15 +1809,113 @@ views:
             entities:
               - calendar.bathroom_withings_workouts
 
+      # The cuff and the scale both report into heart_pulse, so that chart mixes
+      # seated and standing readings. Blood pressure and pulse wave velocity
+      # hold their last value between sporadic readings: a daily `mean` would
+      # blend two days, so like the sleep charts they take each day's last
+      # hourly mean. Colours follow the ESC 2024 home limits (elevated from
+      # 120/70, hypertension from 135/85). Those are meant for averages, so one
+      # reading is only a hint. Pulse wave velocity has no limit line: the
+      # published ones are carotid-femoral and the scale measures to the foot.
       - type: grid
         column_span: 2
         cards:
           - type: heading
             heading: Heart
             heading_style: title
+          - type: custom:mushroom-template-card
+            entity: sensor.bathroom_withings_systolic_blood_pressure
+            icon: mdi:gauge
+            icon_color: >-
+              {%- set s = states('sensor.bathroom_withings_systolic_blood_pressure') | float(-1) -%}
+              {%- set d = states('sensor.bathroom_withings_diastolic_blood_pressure') | float(-1) -%}
+              {%- if s < 0 or d < 0 -%}grey
+              {%- elif s >= 135 or d >= 85 -%}red
+              {%- elif s >= 120 or d >= 70 -%}amber
+              {%- else -%}green{%- endif -%}
+            primary: >-
+              {%- set s = states('sensor.bathroom_withings_systolic_blood_pressure') | int(-1) -%}
+              {%- set d = states('sensor.bathroom_withings_diastolic_blood_pressure') | int(-1) -%}
+              {{ s ~ '/' ~ d ~ ' mmHg' if s >= 0 and d >= 0 else 'Blood pressure' }}
+            secondary: >-
+              {%- set s = states('sensor.bathroom_withings_systolic_blood_pressure') | float(-1) -%}
+              {%- set d = states('sensor.bathroom_withings_diastolic_blood_pressure') | float(-1) -%}
+              {%- if s < 0 or d < 0 -%}No recent reading
+              {%- elif s >= 135 or d >= 85 -%}At or above the 135/85 home limit
+              {%- elif s >= 120 or d >= 70 -%}Elevated range, under 135/85
+              {%- else -%}Under 120/70{%- endif -%}
+            tap_action: { action: more-info }
+            grid_options: { columns: 12 }
+          - type: custom:mushroom-template-card
+            entity: sensor.bathroom_withings_pulse_wave_velocity
+            icon: mdi:pulse
+            icon_color: deep-purple
+            primary: >-
+              {%- set v = states('sensor.bathroom_withings_pulse_wave_velocity') | float(-1) -%}
+              {{ (v | round(1)) ~ ' m/s pulse wave' if v >= 0 else 'Pulse wave velocity' }}
+            secondary: >-
+              {%- set a = states('sensor.bathroom_withings_vascular_age') | float(-1) -%}
+              {{ 'Vascular age ' ~ (a | round(0) | int) if a >= 0 else 'Vascular age: not reported yet' }}
+            tap_action: { action: more-info }
+            grid_options: { columns: 12 }
           - type: custom:apexcharts-card
             grid_options: { columns: full }
-            header: { show: true, title: Standing pulse (scale), show_states: true, colorize_states: true }
+            header: { show: true, title: Blood pressure, show_states: true, colorize_states: true }
+            graph_span: 90d
+            span: { end: day }
+            # Soft bounds keep both limit lines in view when readings sit below them.
+            yaxis:
+              - min: "~50"
+                max: "~150"
+                decimals: 0
+            all_series_config:
+              type: line
+              float_precision: 0
+              statistics: { type: mean, period: hour, align: start }
+              group_by: { func: last, duration: 1d, fill: "null" }
+            series:
+              - entity: sensor.bathroom_withings_systolic_blood_pressure
+                name: Systolic
+                color: "#e91e63"
+                stroke_width: 3
+              - entity: sensor.bathroom_withings_diastolic_blood_pressure
+                name: Diastolic
+                color: "#3f51b5"
+                stroke_width: 3
+            apex_config:
+              annotations:
+                yaxis:
+                  - y: 135
+                    borderColor: "#e91e63"
+                    strokeDashArray: 6
+                    label:
+                      text: Systolic limit
+                      style: { color: "#fff", background: "#e91e63" }
+                  - y: 85
+                    borderColor: "#3f51b5"
+                    strokeDashArray: 6
+                    label:
+                      text: Diastolic limit
+                      style: { color: "#fff", background: "#3f51b5" }
+          - type: custom:apexcharts-card
+            grid_options: { columns: full }
+            header: { show: true, title: Pulse wave velocity, show_states: true, colorize_states: true }
+            graph_span: 90d
+            span: { end: day }
+            yaxis:
+              - decimals: 1
+            series:
+              - entity: sensor.bathroom_withings_pulse_wave_velocity
+                name: Velocity
+                type: line
+                stroke_width: 3
+                color: "#7e57c2"
+                float_precision: 1
+                statistics: { type: mean, period: hour, align: start }
+                group_by: { func: last, duration: 1d, fill: "null" }
+          - type: custom:apexcharts-card
+            grid_options: { columns: full }
+            header: { show: true, title: Pulse (scale and cuff), show_states: true, colorize_states: true }
             graph_span: 90d
             span: { end: day }
             series:
@@ -1803,6 +1925,14 @@ views:
                 stroke_width: 3
                 color: "#e91e63"
                 statistics: { type: mean, period: day }
+          - type: tile
+            entity: sensor.bpm_vision_battery
+            name: Cuff battery
+            grid_options: { columns: 12 }
+          - type: tile
+            entity: sensor.body_cardio_battery
+            name: Scale battery
+            grid_options: { columns: 12 }
 
       # Withings Sleep Analyzer (under the mattress). The sleep sensors are
       # `measurement` and only change once a day, around 07:00, when the night's
@@ -1997,11 +2127,58 @@ views:
           - type: heading
             heading: Cluster
             heading_style: title
-          - type: tile
-            entity: binary_sensor.default_cluster_health
-            name: Cluster health
-            icon: mdi:kubernetes
+          # Alerts, nodes, pods and Ceph come from Prometheus
+          # (packages/cluster.yaml). Trivy CVE reports aren't counted.
+          - type: custom:mushroom-template-card
+            entity: sensor.cluster_alerts
+            icon: >-
+              {{ 'mdi:check-circle' if states('sensor.cluster_alerts') == '0'
+                 else 'mdi:alert' }}
+            icon_color: >-
+              {% set a = states('sensor.cluster_alerts') %}
+              {{ 'grey' if a in ['unknown', 'unavailable']
+                 else 'red' if states('sensor.cluster_critical_alerts') | int(0) > 0
+                 else 'orange' if a | int(0) > 0 else 'green' }}
+            primary: >-
+              {% set a = states('sensor.cluster_alerts') %}
+              {% if a in ['unknown', 'unavailable'] %}Prometheus unreachable
+              {% elif a == '0' %}No alerts
+              {% else %}{{ a }} alert{{ '' if a == '1' else 's' }} firing{% endif %}
+            secondary: >-
+              {{ states('sensor.cluster_alert_names')
+                 if states('sensor.cluster_alerts') | int(0) > 0 else '' }}
+            multiline_secondary: true
+            tap_action: { action: more-info }
             grid_options: { columns: full }
+          - type: custom:mushroom-template-card
+            entity: sensor.cluster_nodes_ready
+            icon: mdi:server
+            icon_color: >-
+              {{ 'green' if states('sensor.cluster_nodes_not_ready') == 'none'
+                 else 'red' }}
+            primary: >-
+              {{ states('sensor.cluster_nodes_ready') }}/{{ states('sensor.cluster_nodes_total') }}
+              nodes ready
+            secondary: >-
+              {% set n = states('sensor.cluster_nodes_not_ready') %}
+              {{ 'Down: ' ~ n if n != 'none' else '' }}
+            tap_action: { action: more-info }
+            grid_options: { columns: 6 }
+          - type: custom:mushroom-template-card
+            entity: sensor.ceph_health
+            icon: mdi:database
+            icon_color: >-
+              {% set c = states('sensor.ceph_health') %}
+              {{ 'green' if c == 'OK' else 'orange' if c == 'WARN'
+                 else 'red' if c == 'ERR' else 'grey' }}
+            primary: Ceph {{ states('sensor.ceph_health') }}
+            tap_action: { action: more-info }
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.computer_room_default_master1
+            name: master1
+            icon: mdi:server
+            grid_options: { columns: 6 }
           - type: tile
             entity: sensor.default_master2
             name: master2
@@ -2023,12 +2200,34 @@ views:
             icon: mdi:expansion-card
             grid_options: { columns: 6 }
           - type: tile
-            entity: sensor.default_pods_count
-            name: Pods
+            entity: sensor.cluster_pods_running
+            name: Pods running
             grid_options: { columns: 6 }
           - type: tile
             entity: sensor.default_deployments_count
             name: Deployments
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: binary_sensor.default_cluster_health
+            name: Cluster health
+            icon: mdi:kubernetes
+            grid_options: { columns: 6 }
+      - type: grid
+        cards:
+          - type: heading
+            heading: Frigate
+            heading_style: title
+          # fps goes unavailable when Frigate stops publishing stats, so a
+          # stale "dog last seen" can't hide a dead NVR.
+          - type: tile
+            entity: sensor.frigate_hallway_camera_fps
+            name: Hallway camera
+            icon: mdi:cctv
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.dog_last_seen
+            name: Dog last seen
+            icon: mdi:dog
             grid_options: { columns: 6 }
       - type: grid
         cards:
@@ -2083,6 +2282,47 @@ views:
                 stroke_width: 2
                 color: "#26a69a"
                 group_by: { func: avg, duration: 15min }
+      - type: grid
+        cards:
+          - type: heading
+            heading: Server rack cost
+            heading_style: title
+          # packages/rack_cost.yaml: priced per kWh step at Tibber's price plus
+          # the grid fee helper below.
+          - type: tile
+            entity: sensor.server_rack_cost_rate
+            name: Now
+            icon: mdi:cash-clock
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.server_rack_cost_today
+            name: Today
+            icon: mdi:cash
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.server_rack_cost_this_month
+            name: This month
+            icon: mdi:cash-multiple
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: sensor.server_rack_energy_this_month
+            name: kWh this month
+            icon: mdi:lightning-bolt
+            grid_options: { columns: 6 }
+          - type: tile
+            entity: input_number.electricity_grid_fee
+            name: Grid fee + energy tax
+            grid_options: { columns: full }
+          - type: statistics-graph
+            title: Daily cost
+            entities:
+              - entity: sensor.server_rack_cost
+                name: Server rack
+            stat_types: [change]
+            chart_type: bar
+            period: day
+            days_to_show: 30
+            grid_options: { columns: full, rows: 4 }
 
   # --------------------------------------------------------------- Media ----
   - title: Media
@@ -2098,12 +2338,16 @@ views:
             heading_style: title
           - type: custom:bubble-card
             card_type: media-player
-            entity: media_player.lg_tv
-            name: LG TV
-          - type: custom:bubble-card
-            card_type: media-player
             entity: media_player.shield_android_tv
             name: Shield
+          # What Plex is playing on the Shield (see the Now section).
+          - type: media-control
+            entity: media_player.plex_plex_for_android_tv_shield_android_tv
+            name: Shield · Plex
+            visibility:
+              - condition: state
+                entity: media_player.plex_plex_for_android_tv_shield_android_tv
+                state: [playing, paused]
           - type: custom:bubble-card
             card_type: media-player
             entity: media_player.sc_lx901

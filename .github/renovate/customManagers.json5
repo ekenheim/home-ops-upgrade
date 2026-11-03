@@ -26,6 +26,18 @@
       "datasourceTemplate": "{{#if datasource}}{{{datasource}}}{{else}}github-releases{{/if}}"
     },
     {
+      // The kserve chart takes kube-rbac-proxy as one image string
+      // (kserve.controller.rbacProxyImage), which the helm-values manager does
+      // not read and the annotated matcher above would take whole.
+      "customType": "regex",
+      "description": ["kserve rbacProxyImage"],
+      "fileMatch": ["(^|/)kubernetes/apps/datasci/kserve/.+\\.ya?ml$"],
+      "matchStrings": [
+        "rbacProxyImage:\\s*(?<depName>[^\\s:]+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
       // agent-factory passes its sandbox images to the orchestrator as env
       // values, which the kubernetes manager does not read (it only reads
       // `image:`). A `# renovate:` annotation would not do either: the
@@ -38,6 +50,23 @@
       "fileMatch": ["(^|/)kubernetes/apps/agent-lab/.+\\.ya?ml$"],
       "matchStrings": [
         "value:\\s*[\"']?(?<depName>ghcr\\.io/ekenheim/agent-factory-[a-z]+):(?<currentValue>[^\\s@\"']+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      // Dagster code servers hand their own image to the run pods they
+      // launch (K8sRunLauncher) through DAGSTER_CURRENT_IMAGE, an env value
+      // the kubernetes manager does not read. Without this, Renovate bumps
+      // the `image:` lines and leaves the run pods on the old release (#6534
+      // did that to alphaos). Same depName as the `image:` lines, so both
+      // land in one PR:
+      //   - name: DAGSTER_CURRENT_IMAGE
+      //     value: "ghcr.io/ekenheim/alphaos:0.9.1"
+      "customType": "regex",
+      "description": ["Dagster DAGSTER_CURRENT_IMAGE env values"],
+      "fileMatch": ["(^|/)kubernetes/.+\\.ya?ml$"],
+      "matchStrings": [
+        "name:\\s*DAGSTER_CURRENT_IMAGE\\s*\\n\\s*value:\\s*[\"']?(?<depName>[^\\s:@\"']+):(?<currentValue>[^\\s@\"']+)(@(?<currentDigest>sha256:[a-f0-9]{64}))?"
       ],
       "datasourceTemplate": "docker"
     },
@@ -57,6 +86,21 @@
       "depNameTemplate": "VictoriaMetrics/victorialogs-datasource",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      // Image volumes (a pod volume's image.reference) pin an image as one
+      // "<repo>:<tag>@sha256:<digest>" string, which the kubernetes and
+      // helm-values managers do not read and the annotated manager above
+      // cannot split. kube-tools/etcd-defrag mounts talosctl this way; the
+      // depName puts it in the Talos group (groups.json5) with etcd-backup:
+      //   reference: ghcr.io/siderolabs/talosctl:v1.14.4@sha256:<64 hex>
+      "customType": "regex",
+      "description": ["Image volume references"],
+      "fileMatch": ["(^|/)kubernetes/.+\\.ya?ml$"],
+      "matchStrings": [
+        "\\breference:\\s*[\"']?(?<depName>[^\\s:@\"']+):(?<currentValue>[^\\s@\"']+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
     },
     {
       "customType": "regex",

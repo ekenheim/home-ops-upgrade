@@ -11,11 +11,13 @@ resources:
   - ./node-feature-discovery/ks.yaml
   - ./nvidia-device-plugin/ks.yaml
   - ./intel-device-plugins/ks.yaml
+  - ./generic-device-plugin/ks.yaml
   - ./reloader/ks.yaml
   - ./fstrim/ks.yaml
   - ./nfs-stale-watchdog/ks.yaml
   - ./kepler/ks.yaml
   - ./tuppr/ks.yaml
   - ./etcd-backup/ks.yaml
+  - ./etcd-defrag/ks.yaml
   # Self-hosted Renovate (replaces the Mend app), after joryirving.
   - ./renovate-operator/ks.yaml

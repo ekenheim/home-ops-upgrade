@@ -23,3 +23,34 @@ spec:
     - backendRefs:
         - name: strapi-cms
           port: 1337
+---
+# Public on purpose: digitomara.com's visitors load its images from here (media
+# URLs are /uploads/... on this hostname). Read-only static files: GET and HEAD
+# under /uploads/ beat strapi-cms's catch-all, which is private
+# (securitypolicy.yaml); anything else, uploads through /api/upload included,
+# falls through to it. No route-level policy, so CrowdSec's gateway policy applies.
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: strapi-cms-uploads
+  namespace: development
+  labels:
+    app.kubernetes.io/name: strapi
+    app.kubernetes.io/component: cms
+spec:
+  hostnames:
+    - "strapi.${SECRET_DOMAIN}"
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  rules:
+    - matches:
+        - path: {type: PathPrefix, value: /uploads/}
+          method: GET
+        - path: {type: PathPrefix, value: /uploads/}
+          method: HEAD
+      backendRefs:
+        - name: strapi-cms
+          port: 1337

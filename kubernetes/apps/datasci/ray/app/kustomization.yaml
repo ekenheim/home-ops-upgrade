@@ -14,3 +14,4 @@ resources:
   - ../../../../templates/volsync
   - ../../../../templates/gatus/guarded
   - ./httproute-internal.yaml
+  - ./securitypolicy.yaml

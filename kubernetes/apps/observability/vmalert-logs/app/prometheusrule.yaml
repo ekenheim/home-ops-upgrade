@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+# yaml-language-server: $schema=https://lds-schemas-5hg.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
 # Prometheus watching vmalert, so a log rule that silently stops evaluating
 # (LogsQL error, VictoriaLogs down) or cannot deliver is itself an alert.
 # Metric names checked against vmalert v1.154.0's /metrics on 2026-10-18.
@@ -12,16 +12,25 @@ spec:
     - name: vmalert-logs
       rules:
         - alert: LogAlertRuleFailing
+          # vmalert's own alertname label is renamed to log_alert: keeping it
+          # clashes with this rule's alertname, and evaluation fails with
+          # "same labelset after applying alert labels" once two log rules
+          # in a group error at once (VictoriaLogs down).
           expr: >-
-            sum by (alertname, group) (increase(vmalert_alerting_rules_errors_total{job="vmalert-logs"}[30m])) > 0
+            sum by (log_alert, group) (
+              label_replace(
+                increase(vmalert_alerting_rules_errors_total{job="vmalert-logs"}[30m]),
+                "log_alert", "$1", "alertname", "(.*)"
+              )
+            ) > 0
           for: 15m
           labels:
             severity: warning
           annotations:
             summary: >-
-              Log alert {{ $labels.alertname }} cannot be evaluated
+              Log alert {{ $labels.log_alert }} cannot be evaluated
             description: >-
-              vmalert-logs failed to evaluate {{ $labels.alertname }} ({{ $labels.group }})
+              vmalert-logs failed to evaluate {{ $labels.log_alert }} ({{ $labels.group }})
               against VictoriaLogs for 15 minutes, so that log alert is blind. Check
               the vmalert-logs pod's logs and whether victoria-logs is up.
         - alert: LogAlertNotifyFailing

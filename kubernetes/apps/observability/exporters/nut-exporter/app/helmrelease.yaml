@@ -54,9 +54,13 @@ spec:
                 enabled: true
               startup:
                 enabled: true
+            # No CPU limit: it uses about 1m, but the 50m limit throttled each
+            # scrape's short burst, so CPUThrottlingHigh fired.
             resources:
+              requests:
+                cpu: 5m
+                memory: 32Mi
               limits:
-                cpu: 50m
                 memory: 100Mi
     service:
       app:

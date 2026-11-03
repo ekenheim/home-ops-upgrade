@@ -43,7 +43,7 @@ spec:
           config:
             image:
               repository: docker.io/library/alpine
-              tag: 3.24@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+              tag: 3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
             # Git is the source of truth: replace the config on every start and
             # make it read-only, so a Control UI edit cannot drift from git.
             command:
@@ -63,7 +63,7 @@ spec:
           app:
             image:
               repository: ghcr.io/openclaw/openclaw
-              tag: 2026.10.5@sha256:f40d1e66fd14d8c5b49c832f4100f83b53fdc01f5108f7db11de38fd0ee6dbe5
+              tag: 2026.10.10@sha256:1e5ee6c7d02d5b5f64f9cf26a30c7ef7d4ec292f0d25fa590f4b7e103e8bf799
             command:
               - /bin/sh
               - -c

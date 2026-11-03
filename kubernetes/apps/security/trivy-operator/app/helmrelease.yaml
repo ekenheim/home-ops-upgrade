@@ -32,7 +32,7 @@ spec:
   chart:
     spec:
       chart: trivy-operator
-      version: 0.37.0
+      version: 0.38.1
       sourceRef:
         kind: HelmRepository
         name: aquasecurity
@@ -56,7 +56,7 @@ spec:
       # already serves Envoy Gateway here.
       registry: mirror.gcr.io
       repository: aquasec/trivy-operator
-      tag: 0.35.0@sha256:4cdb11af98ff409cfa7af980098203a841a5fe957cc6a0bbb0df7668065eb5fa
+      tag: 0.36.1@sha256:05191a514247ae644dd5cc71306a94f44faff0a6a3fa817235911b911ecebcb9
     # Every namespace. Churn is cut by label below rather than by namespace,
     # so the long-lived workloads in actions-runner-system and datasci are
     # still scanned.
@@ -166,7 +166,7 @@ spec:
         repository: aquasecurity/trivy
         # The digest suffix is safe here: the operator's version checks fall
         # back to current flags when the tag does not parse as semver.
-        tag: 0.76.0@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222
+        tag: 0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c
       command: image
       # ghcr.io rate-limits trivy-db pulls and scans then fail quietly; these
       # are Google's mirror of the same OCI artifacts (also the chart default,

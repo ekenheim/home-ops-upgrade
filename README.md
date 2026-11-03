@@ -12,7 +12,7 @@ _... automated via [Flux](https://fluxcd.io), [Renovate](https://github.com/reno
 [![Talos](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.ekenhome.se%2Fquery%3Fformat%3Dendpoint%26metric%3Dtalos_version&style=for-the-badge&logo=talos&logoColor=white&color=blue&label=%20)](https://www.talos.dev/)&nbsp;&nbsp;
 [![Kubernetes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.ekenhome.se%2Fkubernetes_version&style=for-the-badge&logo=kubernetes&logoColor=white&color=blue&label=%20)](https://www.talos.dev/)&nbsp;&nbsp;
 <!-- renovate: datasource=github-releases depName=fluxcd/flux2 -->
-[![Flux](https://img.shields.io/badge/Flux-v2.9.6-blue?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io/)&nbsp;&nbsp;
+[![Flux](https://img.shields.io/badge/Flux-v2.10.0-blue?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io/)&nbsp;&nbsp;
 
 </div>
 
@@ -56,7 +56,7 @@ The setup is semi-hyper-converged: workloads and Rook/Ceph block storage share t
 
 ### Core Components
 
-- [actions-runner-controller](https://github.com/actions/actions-runner-controller): self-hosted GitHub Actions runners inside the cluster (eight runner scale sets for this repo and other projects)
+- [actions-runner-controller](https://github.com/actions/actions-runner-controller): self-hosted GitHub Actions runners inside the cluster (three runner scale sets for this repo and other projects)
 - [cilium](https://github.com/cilium/cilium): CNI for internal Kubernetes networking, replacing kube-proxy entirely; also L2 announcements for LoadBalancer VIPs and network policy
 - [cert-manager](https://cert-manager.io/docs/): handles SSL certificate issuance and renewal for all cluster services
 - [cloudflared](https://github.com/cloudflare/cloudflared): Cloudflare Tunnel for exposing services without opening inbound firewall ports
@@ -142,7 +142,7 @@ Everything that serves, proxies or drives an LLM lives in the `llm` namespace. [
 [Home Assistant](https://www.home-assistant.io/) is the hub, with [Z-Wave JS UI](https://github.com/zwave-js/zwave-js-ui) handling Z-Wave devices and [Music Assistant](https://music-assistant.io/) for multi-room audio, all backed by a local [Mosquitto](https://mosquitto.org/) MQTT broker. Local voice runs on [Wyoming](https://github.com/rhasspy/wyoming) services: Whisper for speech-to-text, Piper and Kokoro for text-to-speech.
 
 ### Media
-[Plex](https://www.plex.tv/) for media streaming, with [Kavita](https://www.kavitareader.com/) for books and comics and [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) for IPTV. [Overseerr](https://overseerr.dev/) handles requests, [Wizarr](https://github.com/wizarrrr/wizarr) invites, [Tautulli](https://tautulli.com/) stats, and [Maintainerr](https://github.com/jorenn92/Maintainerr) library cleanup. The *arr stack ([Sonarr](https://sonarr.tv/), [Radarr](https://radarr.video/) ×2, [Prowlarr](https://github.com/Prowlarr/Prowlarr), [Bazarr](https://www.bazarr.media/), [Kapowarr](https://github.com/Casvt/Kapowarr), [Lingarr](https://github.com/lingarr-translate/lingarr), [Recyclarr](https://recyclarr.dev/), [SABnzbd](https://sabnzbd.org/)) manages downloads.
+[Plex](https://www.plex.tv/) for media streaming, with [Kavita](https://www.kavitareader.com/) for books and comics and [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr) for IPTV. [Overseerr](https://overseerr.dev/) handles requests, [Tautulli](https://tautulli.com/) stats, and [Maintainerr](https://github.com/jorenn92/Maintainerr) library cleanup. The *arr stack ([Sonarr](https://sonarr.tv/), [Radarr](https://radarr.video/) ×2, [Prowlarr](https://github.com/Prowlarr/Prowlarr), [Bazarr](https://www.bazarr.media/), [Kapowarr](https://github.com/Casvt/Kapowarr), [Lingarr](https://github.com/lingarr-translate/lingarr), [Recyclarr](https://recyclarr.dev/), [SABnzbd](https://sabnzbd.org/)) manages downloads.
 
 ### Personal / Productivity
 [Immich](https://immich.app/) for photo management, [Paperless-ngx](https://docs.paperless-ngx.com/) for documents, [Syncthing](https://syncthing.net/) for file sync, [Actual Budget](https://actualbudget.org/) for personal finance, [Outline](https://www.getoutline.com/) as a wiki, plus [FileBrowser](https://filebrowser.org/) and [IT-Tools](https://it-tools.tech/).

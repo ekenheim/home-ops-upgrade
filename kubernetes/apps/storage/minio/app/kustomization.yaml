@@ -7,4 +7,5 @@ resources:
   - ./pv.yaml
   - ./helmrelease.yaml
   - ./service-lan.yaml
+  - ./securitypolicy.yaml
   #- ../../../../templates/gatus/external

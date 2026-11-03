@@ -54,7 +54,7 @@ spec:
             # ~230 MB more).
             image: &image
               repository: docker.io/nousresearch/hermes-agent
-              tag: v0.22.2@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
+              tag: v0.22.6@sha256:d27689bc6e8581ec884a7227c9101fdaebf6c853cff8859020dac14f21452b4d
             command:
               - sh
               - -c
@@ -246,7 +246,7 @@ spec:
           codeserver:
             image:
               repository: ghcr.io/coder/code-server
-              tag: 4.141.0@sha256:72ab24b5680ee597dd647b30d82625752f40109b5f61bef90ffbf1ea1f02dbb8
+              tag: 4.144.0@sha256:b9e8056bb74bd0c4f90284c7559eddeccd38400cfedc28e64c9d3ca50fef1f83
             args:
               - --auth
               - none

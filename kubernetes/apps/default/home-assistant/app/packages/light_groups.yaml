@@ -1,0 +1,16 @@
+# Light groups for what the Hue bridge can't group. The two hallway panels
+# are on the TRADFRI gateway, so no Hue room covers them.
+#
+# No area on these. The dashboard's light count and the leaving-home
+# automation walk area_entities and reject only Hue groups, so a group with
+# an area counts as one more light.
+#
+# Adding the first group needs a restart: group.reload only exists once the
+# group integration is loaded. After that, Developer tools -> YAML -> Groups.
+light:
+  - platform: group
+    name: Hallway panels
+    unique_id: hallway_panels
+    entities:
+      - light.floalt_panel_ws_60x60
+      - light.tradfri_panel_3

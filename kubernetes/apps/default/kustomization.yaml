@@ -25,6 +25,7 @@ resources:
   # and upstream hasn't released since 2025-02 (5 Critical / 43 High in Trivy).
   #- ./pairdrop/ks.yaml
   - ./filebrowser/ks.yaml
+  - ./frigate/ks.yaml
   #- ./zigbee2mqtt/ks.yaml
   - ./zwave-js-ui/ks.yaml
   - ./immich/ks.yaml

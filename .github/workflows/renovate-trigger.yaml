@@ -27,11 +27,15 @@ jobs:
   trigger:
     name: Trigger Renovate
     # Human edits only (Renovate's own dashboard rewrites are bot edits), on
-    # the dashboard issue or a same-repo renovate/* PR.
+    # the dashboard issue or a same-repo renovate/* PR. The repo is public, so
+    # anyone can open an issue titled "Renovate Dashboard": the issue path
+    # also requires the dashboard the Renovate app wrote, edited by the owner.
     if: >-
       ${{ github.event.sender.type != 'Bot'
           && ((github.event_name == 'issues'
-                && contains(github.event.issue.title, 'Renovate Dashboard'))
+                && contains(github.event.issue.title, 'Renovate Dashboard')
+                && github.event.issue.user.login == 'mini-smurf-cluster[bot]'
+                && github.event.sender.login == github.repository_owner)
               || (github.event_name == 'pull_request'
                 && startsWith(github.event.pull_request.head.ref, 'renovate/')
                 && github.event.pull_request.head.repo.full_name == github.repository)) }}

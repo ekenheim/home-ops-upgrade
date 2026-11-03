@@ -6,6 +6,8 @@ resources:
   - ./configmap.yaml
   - ./externalsecret.yaml
   - ./marimo-token.sops.yaml
+  - ./ciliumnetworkpolicy.yaml
   - ./helmrelease.yaml
+  - ./securitypolicy.yaml
   - ../../../../templates/gatus/guarded
   - ../../../../templates/volsync

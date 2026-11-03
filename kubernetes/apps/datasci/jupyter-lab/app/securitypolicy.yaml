@@ -1,0 +1,40 @@
+---
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# Browser sign-in for jupyter.${SECRET_DOMAIN}, done by envoy-internal. Jupyter's
+# own login is gpu-jupyter's baked-in default password, which is public.
+# Every request through the route must carry an Authentik session
+# (application `jupyter`, authentik Admins only, defined in
+# security/authentik/app/jupyter-oidc.yaml). Same shape as vane's.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: jupyter-oidc
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: jupyter-notebook
+  oidc:
+    provider:
+      issuer: https://sso.${SECRET_DOMAIN}/application/o/jupyter/
+      # Explicit endpoints, so Envoy Gateway skips OIDC discovery. It refetches
+      # discovery through envoy-external on every translation, and one failed
+      # fetch leaves this route on a 500 until the next (2026-10-25).
+      authorizationEndpoint: https://sso.${SECRET_DOMAIN}/application/o/authorize/
+      tokenEndpoint: https://sso.${SECRET_DOMAIN}/application/o/token/
+      endSessionEndpoint: https://sso.${SECRET_DOMAIN}/application/o/jupyter/end-session/
+    clientID: jupyter
+    clientSecret:
+      # Cross-namespace; allowed by the ReferenceGrant in security.
+      name: authentik-jupyter-oidc
+      namespace: security
+    redirectURL: https://jupyter.${SECRET_DOMAIN}/oauth2/callback
+    logoutPath: /oauth2/logout
+    scopes:
+      - openid
+      - email
+      - profile
+      - offline_access
+    # The UI keeps XHR and websocket traffic going in the background; the
+    # refresh token renews the session without a redirect those can't follow.
+    refreshToken: true

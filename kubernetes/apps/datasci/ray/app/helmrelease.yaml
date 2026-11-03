@@ -170,6 +170,13 @@ spec:
   dependsOn:
     - name: kuberay-operator
 ---
+# LAN entry for Ray clients (ray://192.168.50.182:10001) and Serve apps.
+# The dashboard (8265, which is also the unauthenticated job-submission API),
+# GCS (6379) and the runtime-env agent (8080) are not published here: any LAN
+# device could run code through them. In-cluster clients use
+# ray-kuberay-head-svc; the dashboard is behind Authentik at kuberay.<domain>
+# via the ray-dashboard Service below. Ray client on 10001 is still code
+# execution for whoever reaches it.
 apiVersion: v1
 kind: Service
 metadata:
@@ -183,18 +190,26 @@ spec:
     - name: client
       port: 10001
       targetPort: 10001
-    - name: dashboard
-      port: 8265
-      targetPort: 8265
     - name: serve
       port: 8000
       targetPort: 8000
-    - name: runtime-env-agent
-      port: 8080
-      targetPort: 8080
-    - name: gcs-server
-      port: 6379
-      targetPort: 6379
+  selector:
+    ray.io/node-type: head
+    ray.io/cluster: ray-kuberay
+---
+# The dashboard for the kuberay.<domain> HTTPRoute (httproute-internal.yaml),
+# which carries the Authentik SecurityPolicy kuberay-oidc.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ray-dashboard
+  namespace: datasci
+spec:
+  type: ClusterIP
+  ports:
+    - name: dashboard
+      port: 8265
+      targetPort: 8265
   selector:
     ray.io/node-type: head
     ray.io/cluster: ray-kuberay

@@ -7,12 +7,13 @@ resources:
   - ./namespace.yaml
   # Flux-Kustomizations
   - ./alphaos/ks.yaml
-  - ./atlas/ks.yaml
   #- ./umami/ks.yaml
   #- ./meilisearch/ks.yaml
   #- ./airbyte/ks.yaml
   #- ./metabase/ks.yaml
-  - ./redpanda/ks.yaml
+  # Off since 2026-10-25 (owner): unused. Its only topics were Seldon v2's
+  # (off since 2026-10-19), with no consumer groups.
+  #- ./redpanda/ks.yaml
   - ./harbor/ks.yaml
   - ./hempriser/ks.yaml
   #- ./grid-reliance/ks.yaml
@@ -20,6 +21,8 @@ resources:
   # Off since 2026-10-18 (owner): the ecom Medusa backend is shelved.
   #- ./medusa/ks.yaml
   - ./strapi/ks.yaml
-  - ./strapi-ecom/ks.yaml
+  # Off since 2026-10-25 (owner): ecom is shelved and nothing reads this CMS.
+  # Re-enabling restores the PVC from VolSync; the Crunchy database is kept.
+  #- ./strapi-ecom/ks.yaml
   - ./marketing-agency/ks.yaml
   - ./rybbit/ks.yaml

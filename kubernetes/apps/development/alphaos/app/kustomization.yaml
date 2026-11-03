@@ -3,10 +3,16 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  # The pipeline needs alphaos-dagster-db. The other secrets are the website's
+  # and stay, so it can come back without new Bitwarden items.
   - ./externalsecret.yaml
-  - ./deployment.yaml
-  - ./service.yaml
-  - ./gatus-data.yaml
   - ./pipeline
-  - ../../../../templates/gatus/guarded
-  - ./httproute-internal.yaml
+  # Website off since 2026-10-25 (owner); the Dagster pipeline keeps running.
+  # Its data is in the Crunchy alphaos database, which stays. Re-enable these
+  # five together: gatus-data's freshness check polls the website, and the
+  # guarded DNS check fails once the route and its DNS record are gone.
+  #- ./deployment.yaml
+  #- ./service.yaml
+  #- ./gatus-data.yaml
+  #- ../../../../templates/gatus/guarded
+  #- ./httproute-internal.yaml

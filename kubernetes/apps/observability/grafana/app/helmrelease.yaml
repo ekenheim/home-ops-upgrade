@@ -22,7 +22,7 @@ spec:
       # start and renames the old tables to *_legacy, so going back to 12.x
       # means restoring the pre-upgrade pg_dump of the grafana database, not
       # just reverting this file.
-      version: 14.0.1
+      version: 14.3.1
       sourceRef:
         kind: HelmRepository
         name: grafana-community
@@ -68,8 +68,8 @@ spec:
       # Add security section to allow embedding
       security:
         allow_embedding: true
-      # Public on envoy-external, so every browser session goes through
-      # Authentik (which only admits the Grafana Admins / Monitoring groups).
+      # Every browser session goes through Authentik (which only admits the
+      # Grafana Admins / Monitoring groups, plus `lan` on the LAN).
       # Break-glass if Authentik is down: /login?disableAutoLogin shows the
       # local form for the admin user. Basic auth stays on: ESO's Grafana
       # generator (apps/llm/toolhive/grafana-mcp) mints tokens with it.
@@ -256,6 +256,7 @@ spec:
           gnetId: 20842
           revision: 3
           datasource: Prometheus
+        # crowdsec: vendored in network/crowdsec/app/dashboard (single view).
         unifi-insights:
           # renovate: depName="UniFi-Poller: Client Insights - Prometheus"
           gnetId: 11315
@@ -282,8 +283,10 @@ spec:
           # renovate: depName="Speedtest Exporter"
           gnetId: 13665
           revision: 4
+          # Its panels and variables use ${DS_PROMETHEUS}; mapping `datasource`
+          # matched nothing, so every panel had no datasource and showed empty.
           datasource:
-            - { name: datasource, value: Prometheus }
+            - { name: DS_PROMETHEUS, value: Prometheus }
         unifi-network-sites:
           # renovate: depName="UniFi-Poller: Network Sites - Prometheus"
           gnetId: 11311
@@ -354,7 +357,7 @@ spec:
         node-exporter-full:
           # renovate: depName="Node Exporter Full"
           gnetId: 1860
-          revision: 45
+          revision: 46
           datasource: Prometheus
         smartctl-exporter:
           # renovate: depName="SMARTctl Exporter Dashboard"
@@ -376,7 +379,7 @@ spec:
       image:
         registry: ghcr.io
         repository: home-operations/k8s-sidecar
-        tag: 2.14.1@sha256:6daa733e73ffb67be9f33ca6fd4b46aad2b0c937ed8085cf51e2709f9848a923
+        tag: 2.14.3@sha256:cc81b13164b15474260b8721bb6a63da2212a704fb92b5496091aabae3038487
       dashboards:
         enabled: true
         searchNamespace: ALL
@@ -428,10 +431,12 @@ spec:
           gethomepage.dev/description: Monitoring Dashboards
         hostnames:
           - "{{ .Release.Name }}.${SECRET_DOMAIN}"
-        # Public again since 2026-09-30, now that anonymous access is off and
-        # login is forced through Authentik (see grafana.ini above).
+        # LAN and Tailscale only since 2026-11-02 (owner). On envoy-internal
+        # rather than a private-CIDR SecurityPolicy on envoy-external: that
+        # keeps Cloudflare's AAAA records in UniFi's answers, and a Tailscale
+        # client on IPv6 follows them out through Cloudflare and gets a 403.
         parentRefs:
-          - name: envoy-external
+          - name: envoy-internal
             namespace: network
             sectionName: https
     ingress:

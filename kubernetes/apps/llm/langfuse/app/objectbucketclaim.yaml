@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://lds-schemas.pages.dev/objectbucket.io/objectbucketclaim_v1alpha1.json
+# yaml-language-server: $schema=https://lds-schemas-5hg.pages.dev/objectbucket.io/objectbucketclaim_v1alpha1.json
 # Langfuse writes every ingested event to S3 before the worker moves it into
 # ClickHouse. An RGW bucket rather than MinIO: MinIO buckets and users are
 # created by terraform/minio, which nothing applies on merge, while an OBC

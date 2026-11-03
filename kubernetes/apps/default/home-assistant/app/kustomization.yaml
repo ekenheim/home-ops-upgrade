@@ -4,9 +4,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./rbac.yaml
+  - ./rbac-hpa.yaml
   - ./externalsecret.yaml
   - ./helmrelease.yaml
-  - ../../../../templates/gatus/external
+  - ../../../../templates/gatus/internal
   - ../../../../templates/volsync
 configMapGenerator:
   - name: home-assistant-dashboards
@@ -21,6 +22,10 @@ configMapGenerator:
       - home_automations.yaml=./packages/home_automations.yaml
       - ceiling_fan.yaml=./packages/ceiling_fan.yaml
       - computer_room_climate.yaml=./packages/computer_room_climate.yaml
+      - frigate.yaml=./packages/frigate.yaml
+      - cluster.yaml=./packages/cluster.yaml
+      - rack_cost.yaml=./packages/rack_cost.yaml
+      - light_groups.yaml=./packages/light_groups.yaml
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

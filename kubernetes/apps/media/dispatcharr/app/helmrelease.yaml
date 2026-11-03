@@ -74,7 +74,7 @@ spec:
               # on a 17 data directory (#7713 did exactly that). Renovate no
               # longer offers majors here (.github/renovate/packageRules.json5).
               repository: docker.io/library/postgres
-              tag: 17.11-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+              tag: 17.11-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
             restartPolicy: Always
             env:
               POSTGRES_USER: dispatcharr
@@ -121,7 +121,7 @@ spec:
           redis:
             image:
               repository: docker.io/library/redis
-              tag: 8.10.2-alpine@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0
+              tag: 8.10.3-alpine@sha256:21090af93f8324db2f0f0f4f38a7c60369d47d917e000c3423d89d2ae2883537
             restartPolicy: Always
             # A cache and a Celery broker: no persistence, 127.0.0.1 only.
             # volatile-lru evicts only keys with a TTL (stream chunks, locks),
@@ -166,7 +166,7 @@ spec:
           app:
             image: &image
               repository: ghcr.io/dispatcharr/dispatcharr
-              tag: 0.32.0@sha256:b7d695c5cc98b9abd64c74a94539c1ebffc23d965021613c820c67e25dea41a3
+              tag: 0.33.0@sha256:96bc548978c68e684677da7895692eeeefb7f0b2edfa38311dac2b702c61d236
             env:
               TZ: ${TIMEZONE}
               DISPATCHARR_ENV: modular

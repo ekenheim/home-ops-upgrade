@@ -1,0 +1,30 @@
+---
+# The S3 API (s3.${SECRET_DOMAIN}) has no consumer outside the LAN, so all of it is
+# private. Its users are in the cluster (pgBackRest, CNPG, tofu-controller, VolSync,
+# the Prometheus probe) or on the LAN (Langfuse's presigned URLs go to LAN and
+# Tailscale browsers). They reach envoy-external's LAN address through UniFi DNS,
+# so they arrive from a pod, node or LAN address. Private ranges only: LAN,
+# Tailscale (the subnet router SNATs into these; the 100.64.0.0/10 entry covers a
+# client that arrives un-SNATed) and pods. Internet visitors come through
+# cloudflared, whose X-Forwarded-For is trusted, so they keep their public address
+# and get a 403. Owner decision 2026-10-22.
+# yaml-language-server: $schema=https://kube-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: minio-api-allow-private
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: minio-api
+  authorization:
+    defaultAction: Deny
+    rules:
+      - action: Allow
+        principal:
+          clientCIDRs:
+            - 10.0.0.0/8
+            - 100.64.0.0/10
+            - 172.16.0.0/12
+            - 192.168.0.0/16

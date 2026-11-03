@@ -12,7 +12,6 @@
   "actual": {"dbs": ["server-files/account.sqlite"]},
   "overseerr": {"required": ["settings.json"], "dbs": ["db/db.sqlite3"]},
   "tautulli": {"dbs": ["tautulli.db"], "max_age_hours": 48},
-  "wizarr": {"dbs": ["database.db"]},
   "bazarr": {"dbs": ["db/bazarr.db"]},
   "kavita": {"dbs": ["kavita.db"]},
   "sabnzbd": {"required": ["sabnzbd.ini"], "dbs": ["admin/history1.db"]},

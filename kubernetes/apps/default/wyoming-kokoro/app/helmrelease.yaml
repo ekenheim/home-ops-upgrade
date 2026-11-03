@@ -54,7 +54,7 @@ spec:
           app:
             image:
               repository: ghcr.io/remsky/kokoro-fastapi-cpu
-              tag: v0.9.0@sha256:ee3111d6a2c903ed62f3b4fa19543c6901205ed39fce3c177e895b34a8386b9c
+              tag: v0.9.2@sha256:cbcc28802fb5d1eaaba8b91e38b0e872a669e85831c513cf6a29c709cbe25405
             env:
               TZ: ${TIMEZONE}
               USE_GPU: "false"

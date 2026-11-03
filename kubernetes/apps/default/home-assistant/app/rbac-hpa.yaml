@@ -1,0 +1,34 @@
+---
+# Kubernetes integration 1.14 detects HPA-managed workloads (scale guard, HPA
+# badge) and raises a "Missing permissions" repair issue without this. It is a
+# separate role because rbac.yaml holds the ServiceAccount token Secret, and
+# the SOPS guard rejects any changed file that contains a plain Secret.
+# Upstream's full mode (manifests/full/) also grants pods/log and patch on
+# nodes; both stay out: logs carry tokens, and HA shouldn't cordon nodes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: homeassistant-kubernetes-integration-hpa
+  labels:
+    app.kubernetes.io/name: homeassistant-kubernetes-integration
+    app.kubernetes.io/component: rbac
+rules:
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: homeassistant-kubernetes-integration-hpa
+  labels:
+    app.kubernetes.io/name: homeassistant-kubernetes-integration
+    app.kubernetes.io/component: rbac
+subjects:
+  - kind: ServiceAccount
+    name: homeassistant-kubernetes-integration
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: homeassistant-kubernetes-integration-hpa
+  apiGroup: rbac.authorization.k8s.io

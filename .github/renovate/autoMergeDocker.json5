@@ -11,8 +11,7 @@
       // This rule is first on purpose. The rules below repeat
       // `schedule: at any time` for images that must deploy immediately.
       // A PR, not branch automerge: main's required checks only run on PRs, so
-      // an automerge branch waits for them forever, and Release Soak needs a
-      // PR to hold.
+      // an automerge branch waits for them forever.
       "description": ["Auto-merge all container digest updates, weekly"],
       "matchDatasources": ["docker"],
       "matchUpdateTypes": ["digest", "pinDigest"],

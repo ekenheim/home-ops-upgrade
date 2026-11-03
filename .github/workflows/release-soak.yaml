@@ -9,13 +9,19 @@ on:
   pull_request_target:
     branches: ["main"]
     types: [opened, reopened, synchronize, labeled, unlabeled]
-  # A hold ends with no event to trigger on, so every open PR is checked hourly.
+  # Every run checks every open PR, because a hold ends with no event of its
+  # own. GitHub drops many scheduled runs (2 of about 19 ran after this
+  # workflow landed), so pushes to main and PR events also end holds.
+  push:
+    branches: ["main"]
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
 
+# One run at a time. A burst of events leaves one queued run, which starts
+# after the running one and still sees every PR.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.number || 'sweep' }}
+  group: ${{ github.workflow }}
   cancel-in-progress: false
 
 permissions:
@@ -25,8 +31,8 @@ permissions:
 
 jobs:
   soak:
-    # The required check is the commit status this job posts, not the job: the
-    # hourly run has to report on each PR's head commit, and it runs on main.
+    # The required check is the commit status this job posts, not the job:
+    # each run reports on every open PR's head commit.
     name: Evaluate hold
     runs-on: ubuntu-latest
     steps:
@@ -39,5 +45,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.number }}
         run: bash .github/scripts/release-soak.sh

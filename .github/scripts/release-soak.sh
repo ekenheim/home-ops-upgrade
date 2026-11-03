@@ -13,7 +13,12 @@
 # (keepUpdatedLabel) when one conflicts or its image is withdrawn. That restarts
 # the hold on the rebuilt commit.
 #
-# Env: REPO, PR_NUMBER (empty sweeps every open PR), DRY_RUN (prints only).
+# Every run checks every open PR, because a hold ends with no event of its own.
+# One GraphQL query fetches what each PR needs and unchanged statuses are not
+# posted again, so a run costs a few requests (GITHUB_TOKEN allows 1,000 an
+# hour) and any PR event or push to main can trigger one.
+#
+# Env: REPO, DRY_RUN (prints only).
 set -euo pipefail
 
 readonly HOLD_SECONDS=$((3 * 24 * 3600))
@@ -21,7 +26,8 @@ readonly CONTEXT="Release Soak"
 readonly RESCUE_LABEL="soak-rebase"
 now=$(date +%s)
 
-post() { # sha state description
+post() { # sha state description; reads evaluate's current_state/_description
+  [[ $2 == "$current_state" && $3 == "$current_description" ]] && return
   echo "  $2: $3"
   [[ -n ${DRY_RUN:-} ]] && return
   gh api --silent -X POST "repos/$REPO/statuses/$1" \
@@ -75,12 +81,41 @@ image_state() { # ref
   return 2
 }
 
-evaluate() { # number
-  local number=$1 author sha mergeable labels title
-  IFS=$'\t' read -r author sha mergeable labels title < <(
-    gh api "repos/$REPO/pulls/$number" --jq \
-      '[.user.login, .head.sha, (.mergeable | tostring), ("," + ([.labels[].name] | join(",")) + ","), .title] | @tsv'
-  )
+# Prints one tab-separated line per open PR, in the field order evaluate takes.
+# Authors and mergeable read as in the REST API: `name[bot]`, true/false/null.
+open_prs() {
+  gh api graphql --paginate -f owner="${REPO%/*}" -f name="${REPO#*/}" -f query='
+    query($owner: String!, $name: String!, $endCursor: String) {
+      repository(owner: $owner, name: $name) {
+        pullRequests(states: OPEN, first: 100, after: $endCursor) {
+          pageInfo { hasNextPage endCursor }
+          nodes {
+            number title mergeable
+            author { __typename login }
+            labels(first: 50) { nodes { name } }
+            commits(last: 1) { nodes { commit {
+              oid committedDate
+              status { context(name: "Release Soak") { state description } }
+            } } }
+          }
+        }
+      }
+    }' --jq '.data.repository.pullRequests.nodes[] | .commits.nodes[0].commit as $c | [
+      .number,
+      (if .author.__typename == "Bot" then .author.login + "[bot]" else .author.login // "ghost" end),
+      $c.oid,
+      $c.committedDate,
+      ({MERGEABLE: "true", CONFLICTING: "false"}[.mergeable] // "null"),
+      ("," + ([.labels.nodes[].name] | join(",")) + ","),
+      ($c.status.context.state // "-" | ascii_downcase),
+      ($c.status.context.description // "-"),
+      .title
+    ] | @tsv'
+}
+
+evaluate() { # number author sha committed mergeable labels state description title
+  local number=$1 author=$2 sha=$3 committed=$4 mergeable=$5 labels=$6
+  local current_state=$7 current_description=$8 title=$9
   echo "#$number $title"
 
   if [[ $author != "mini-smurf-cluster[bot]" && $author != "renovate[bot]" ]]; then
@@ -98,8 +133,7 @@ evaluate() { # number
     return
   fi
 
-  local committed ready
-  committed=$(gh api "repos/$REPO/commits/$sha" --jq .commit.committer.date)
+  local ready
   ready=$(($(date -d "$committed" +%s) + HOLD_SECONDS))
 
   if [[ $mergeable == false ]]; then
@@ -126,16 +160,16 @@ evaluate() { # number
     ((code == 0)) || unknown=$ref
   done
   if [[ -n $unknown ]]; then
-    post "$sha" pending "Registry gave no answer for ${unknown:0:90}, retrying hourly"
+    post "$sha" pending "Registry gave no answer for ${unknown:0:90}, retrying"
     return
   fi
   post "$sha" success "Held three days"
 }
 
-if [[ -n ${PR_NUMBER:-} ]]; then
-  evaluate "$PR_NUMBER"
-else
-  for number in $(gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" --jq '.[].number'); do
-    evaluate "$number" || echo "::warning::Release Soak could not evaluate #$number"
-  done
-fi
+# Read the list first: a failed query fails the run instead of sweeping nothing.
+prs=$(open_prs)
+while IFS=$'\t' read -r number author sha committed mergeable labels state description title; do
+  [[ -n $number ]] || continue
+  evaluate "$number" "$author" "$sha" "$committed" "$mergeable" "$labels" "$state" "$description" "$title" </dev/null ||
+    echo "::warning::Release Soak could not evaluate #$number"
+done <<<"$prs"

@@ -52,9 +52,3 @@
 # deletes labels not listed here.
 - name: ai-review
   color: "5319e7"
-# Passes Release Soak at once, for a CVE fix or a rollback that cannot wait.
-- name: soak-skip
-  color: "b60205"
-# Set and cleared by .github/scripts/release-soak.sh: rebuilds a frozen PR.
-- name: soak-rebase
-  color: "c5def5"

@@ -357,23 +357,6 @@
       "minimumReleaseAge": "3 days"
     },
     {
-      // Release Soak (.github/scripts/release-soak.sh) holds a PR for three
-      // days from its head commit, so the commit has to stay put. With any
-      // other rebaseWhen, a rebase or a newer release moves it: LiteLLM
-      // releases every one to three days and would never come out of the hold.
-      // The next release gets its own PR once this one merges. Majors keep
-      // rebasing on conflict (above): they wait for a person, not a clock.
-      "description": ["Freeze third-party updates on one release while Release Soak holds them"],
-      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest", "replacement", "rollback", "bump"],
-      "matchPackageNames": ["!/^ghcr\\.io\\/ekenheim\\//"],
-      "rebaseWhen": "never"
-    },
-    {
-      "description": ["GitHub Actions are not held by Release Soak, so they keep rebasing"],
-      "matchManagers": ["github-actions"],
-      "rebaseWhen": "behind-base-branch"
-    },
-    {
       // Renovate releases several times a day, and both Renovate instances
       // (the Mend app and renovate-operator) open a PR for each release: 19
       // of the 110 Renovate PRs from 2026-10-21 to 10-23 bumped this image.

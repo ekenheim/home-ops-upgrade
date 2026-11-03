@@ -68,6 +68,14 @@ image_refs() { # number
   ' | sed -E 's#:[^/@]+@sha256:#@sha256:#' | grep -E '^[^/]+\.[^/]+/' | grep -v '[$]' | sort -u || true
 }
 
+# Prints the AI reviewer's verdict on one commit, from the marker in its comment.
+review_result() { # number sha
+  gh api --paginate "repos/$REPO/issues/$1/comments" --jq '
+    .[] | select(.user.login == "github-actions[bot]") | .body
+    | capture("<!-- ai-pr-reviewer:(?<marker>\\{.*?\\}) -->")? | .marker' |
+    jq -r --arg sha "$2" 'select(.head_sha == $sha) | .review_result' | tail -1
+}
+
 # Returns 0 when published, 1 when withdrawn, 2 when the registry gave no answer.
 image_state() { # ref
   local output
@@ -91,6 +99,7 @@ open_prs() {
           pageInfo { hasNextPage endCursor }
           nodes {
             number title mergeable
+            autoMergeRequest { enabledAt }
             author { __typename login }
             labels(first: 50) { nodes { name } }
             commits(last: 1) { nodes { commit {
@@ -106,16 +115,17 @@ open_prs() {
       $c.oid,
       $c.committedDate,
       ({MERGEABLE: "true", CONFLICTING: "false"}[.mergeable] // "null"),
-      ("," + ([.labels.nodes[].name] | join(",")) + ","),
+      (.autoMergeRequest != null | tostring),
+      ("," +([.labels.nodes[].name] | join(",")) + ","),
       ($c.status.context.state // "-" | ascii_downcase),
       ($c.status.context.description // "-"),
       .title
     ] | @tsv'
 }
 
-evaluate() { # number author sha committed mergeable labels state description title
-  local number=$1 author=$2 sha=$3 committed=$4 mergeable=$5 labels=$6
-  local current_state=$7 current_description=$8 title=$9
+evaluate() { # number author sha committed mergeable auto_merge labels state description title
+  local number=$1 author=$2 sha=$3 committed=$4 mergeable=$5 auto_merge=$6 labels=$7
+  local current_state=$8 current_description=$9 title=${10}
   echo "#$number $title"
 
   if [[ $author != "mini-smurf-cluster[bot]" && $author != "renovate[bot]" ]]; then
@@ -163,13 +173,26 @@ evaluate() { # number author sha committed mergeable labels state description ti
     post "$sha" pending "Registry gave no answer for ${unknown:0:90}, retrying"
     return
   fi
+
+  # A major that merges unattended also needs a clean AI review of this commit.
+  # Only that verdict counts, so a model outage or an unfinished review leaves
+  # the PR waiting. The reviewer can extend the hold, never shorten it: release
+  # notes are written by whoever cut the release, hijacked or not.
+  local major='^[a-z]+(\([^)]*\))?!:' verdict
+  if [[ $title =~ $major && $auto_merge == true ]]; then
+    verdict=$(review_result "$number" "$sha")
+    if [[ $verdict != clean ]]; then
+      post "$sha" pending "AI review: ${verdict:-none yet}. Label soak-skip to merge anyway"
+      return
+    fi
+  fi
   post "$sha" success "Held three days"
 }
 
 # Read the list first: a failed query fails the run instead of sweeping nothing.
 prs=$(open_prs)
-while IFS=$'\t' read -r number author sha committed mergeable labels state description title; do
+while IFS=$'\t' read -r number author sha committed mergeable auto_merge labels state description title; do
   [[ -n $number ]] || continue
-  evaluate "$number" "$author" "$sha" "$committed" "$mergeable" "$labels" "$state" "$description" "$title" </dev/null ||
+  evaluate "$number" "$author" "$sha" "$committed" "$mergeable" "$auto_merge" "$labels" "$state" "$description" "$title" </dev/null ||
     echo "::warning::Release Soak could not evaluate #$number"
 done <<<"$prs"

@@ -25,6 +25,22 @@
       ignoreTests: false,
     },
     {
+      // Release Soak holds these for three days and needs a clean AI review of
+      // the commit before it passes, so a major with findings waits for a
+      // person. Stays above the list below, which keeps infrastructure manual.
+      description: 'Auto-merge majors that pass Release Soak',
+      matchDatasources: ['docker', 'helm', 'github-releases'],
+      matchUpdateTypes: ['major'],
+      matchFileNames: [
+        'kubernetes/apps/**',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+      automergeStrategy: 'squash',
+      platformAutomerge: true,
+      ignoreTests: false,
+    },
+    {
       description: 'Never auto-merge infrastructure, networking, storage, or hardware-sensitive components',
       matchPackageNames: [
         // CNI / networking / DNS
@@ -59,13 +75,7 @@
       automerge: false,
     },
     {
-      description: 'Never auto-merge major version bumps',
-      matchUpdateTypes: ['major'],
-      automerge: false,
-    },
-    {
-      // Our own image, released from ekenheim/marketing-agency. Must stay below
-      // the 'never major' rule above so that major releases merge unattended too.
+      // Our own image, released from ekenheim/marketing-agency.
       description: 'Auto-merge every marketing-agency website release after CI passes',
       matchDatasources: ['docker'],
       matchPackageNames: ['ghcr.io/ekenheim/marketing-agency-website'],

@@ -134,7 +134,7 @@ spec:
       worker:
         image:
           repository: ghcr.io/langfuse/langfuse-worker
-          tag: 4.74.0@sha256:d9cf97c0ae7da19f9c4c417d4740d8b3cefc5151722772638f4c17c4b5b67ead
+          tag: 4.75.0@sha256:5fd09700a8af5328f3ef004ca8ce5602f6e799aba13da5054d9b18ba1724533e
         resources:
           requests:
             cpu: 50m

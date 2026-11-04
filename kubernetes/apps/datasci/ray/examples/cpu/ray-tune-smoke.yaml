@@ -14,7 +14,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: ray-tune-smoke
-          image: rayproject/ray:2.59.0-py312-cpu@sha256:0ffca209fb4c984d648db550b8dbe7879bdba3bbb5d96ee5894843cf6ac12eb5
+          image: rayproject/ray:2.60.0-py312-cpu@sha256:307d271427cbca373affad1c1d406776acd5f5a5dd041523008c8d44a796e4fd
           imagePullPolicy: IfNotPresent
           command:
             - bash

@@ -206,7 +206,7 @@ automation:
   # Computer-room purifier control lives in computer_room_climate.yaml.
 
   # ------------------------------------------------------- Leaving home --
-  # The dog isn't here every day. If Frigate hasn't seen it for 15 h, turn
+  # The dog isn't here every day. If Frigate hasn't seen it for 24 h, turn
   # the lights off and say so; otherwise ask: lights off and/or start the
   # vacuum. It also asks until Frigate has seen the dog once, and while the
   # hallway camera is down, since "not seen" means nothing then. The dog
@@ -234,7 +234,7 @@ automation:
         {% set t = as_datetime(states('sensor.dog_last_seen'), none) %}
         {{ ((now() - t).total_seconds() / 3600) | round(1) if t is not none else -1 }}
       lights_auto_off: >-
-        {{ lights_on | int > 0 and dog_hours | float > 15
+        {{ lights_on | int > 0 and dog_hours | float > 24
            and states('sensor.frigate_hallway_camera_fps') | float(0) > 0 }}
     conditions:
       - condition: template
@@ -300,3 +300,56 @@ automation:
         then:
           - action: vacuum.start
             target: { entity_id: vacuum.dreamebot_l10s_ultra }
+
+  # ----------------------------------------------------- Arriving home --
+  # Lights on when Robin walks in. 06:00-18:00 that's every light in the
+  # house, otherwise only the hallway and bathroom.
+  #
+  # The phone reports "home" 1-3 min before the front door opens (every
+  # arrival 2026-10-30 to 11-07), so the door opening within 10 min of
+  # arriving is the walk-in. The person trigger covers a geofence that lags
+  # behind the door. last_triggered keeps a second trip through the door
+  # (back out to the car) from switching lights on again.
+  - id: arriving_home_lights
+    alias: "Presence: arriving home lights"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.door_open
+        from: "off"
+        to: "on"
+      - trigger: state
+        entity_id: person.robin
+        to: home
+    conditions:
+      - condition: state
+        entity_id: person.robin
+        state: home
+      - condition: template
+        value_template: >-
+          {% set arrived = states.person.robin.last_changed %}
+          {% set last = this.attributes.last_triggered %}
+          {{ now() - arrived < timedelta(minutes=10)
+             and now() - states.binary_sensor.door_open.last_changed < timedelta(minutes=3)
+             and (last is none or last < arrived) }}
+    actions:
+      - if:
+          - condition: time
+            after: "06:00:00"
+            before: "18:00:00"
+        then:
+          # Same rooms and exclusions as the leaving-home light list, minus
+          # the network gear's status LEDs.
+          - action: light.turn_on
+            target:
+              entity_id: >-
+                {{ ['living_room', 'kitchen', 'computer_room', 'bedroom', 'bathroom', 'hallway']
+                   | map('area_entities') | sum(start=[])
+                   | select('match', 'light\.')
+                   | reject('is_state_attr', 'is_hue_group', true)
+                   | reject('search', 'chamber_light|_led$')
+                   | list }}
+        else:
+          - action: light.turn_on
+            target:
+              area_id: [hallway, bathroom]

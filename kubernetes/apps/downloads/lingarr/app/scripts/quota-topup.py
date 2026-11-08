@@ -35,7 +35,12 @@ the lingarr key in 15 minutes: the queue drains instead of growing); and for
 the 50 minutes before each subtitle-dedupe run, so the queue drains and the
 dedupe (which refuses to touch files while Lingarr is busy) gets to run.
 
-Prints its decision on every run and exits 0 unless a call fails.
+An unreachable Prometheus is also a skip: the next tick, 5 minutes later, tries
+again. Retrying inside the Job only piled up failed pods: on 2026-11-06 one
+refused connection failed all 7 attempts, and the Job sat there as Failed for
+two days.
+
+Prints its decision on every run and exits 0 unless a Lingarr call fails.
 """
 import datetime
 import json
@@ -76,11 +81,15 @@ def prom(expr):
 def main():
     now = datetime.datetime.now(TZ)
     sel = '{model="general"}'
-    age = prom(f"time() - max(timestamp(minimax_token_plan_weekly_remaining_percent{sel}))")
-    status = prom("max(minimax_token_plan_api_status_code)")
-    weekly = prom(f"min(minimax_token_plan_weekly_remaining_percent{sel})")
-    window = prom(f"min(minimax_token_plan_interval_remaining_percent{sel})")
-    reset_ms = prom(f"min(minimax_token_plan_weekly_remains_ms{sel})")
+    try:
+        age = prom(f"time() - max(timestamp(minimax_token_plan_weekly_remaining_percent{sel}))")
+        status = prom("max(minimax_token_plan_api_status_code)")
+        weekly = prom(f"min(minimax_token_plan_weekly_remaining_percent{sel})")
+        window = prom(f"min(minimax_token_plan_interval_remaining_percent{sel})")
+        reset_ms = prom(f"min(minimax_token_plan_weekly_remains_ms{sel})")
+    except OSError as e:  # URLError, HTTPError and timeouts
+        print(f"skip: Prometheus unreachable ({e})", flush=True)
+        return 0
     if None in (age, status, weekly, window, reset_ms) or age > 900 or status != 0:
         print(f"skip: quota data unusable (age={age}s, status={status})", flush=True)
         return 0
@@ -90,7 +99,11 @@ def main():
     if hours_left > HORIZON_H:
         print(f"skip: outside the last {HORIZON_H:.0f} h ({state})", flush=True)
         return 0
-    throttled = prom('sum(increase(litellm_deployment_failure_responses_total{api_key_alias="lingarr", exception_status="429"}[15m]))') or 0
+    try:
+        throttled = prom('sum(increase(litellm_deployment_failure_responses_total{api_key_alias="lingarr", exception_status="429"}[15m]))') or 0
+    except OSError as e:
+        print(f"skip: Prometheus unreachable ({e}) ({state})", flush=True)
+        return 0
     if throttled >= THROTTLE_BRAKE:
         print(f"skip: {throttled:.0f} MiniMax 429s on lingarr in 15 min, letting the queue drain ({state})", flush=True)
         return 0

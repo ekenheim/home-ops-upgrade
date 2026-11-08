@@ -125,6 +125,9 @@ spec:
           schedule: "*/5 * * * *"
           timeZone: ${TIMEZONE}
           concurrencyPolicy: Forbid
+          # The next tick is the retry; in-Job retries only stacked up 7
+          # failed pods (2026-11-06).
+          backoffLimit: 0
           successfulJobsHistory: 1
           failedJobsHistory: 1
         containers:

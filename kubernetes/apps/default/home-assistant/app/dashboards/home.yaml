@@ -1239,7 +1239,7 @@ views:
                   - entity: switch.air_circulator_horizontally_oscillating
                     icon: mdi:arrow-left-right
                     tap_action: { action: toggle }
-                  - entity: sensor.air_circulator_temperature
+                  - entity: sensor.air_circulator_temperature_2
                     show_state: true
                     show_background: false
               - type: custom:bubble-card

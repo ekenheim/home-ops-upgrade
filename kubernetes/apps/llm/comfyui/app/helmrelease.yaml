@@ -81,7 +81,7 @@ spec:
           app:
             image:
               repository: docker.io/yanwk/comfyui-boot
-              tag: rocm7@sha256:2de46f62bacb75fb0b5faff9430b064e8fbb185aab7b2f8afc13e4fe7a50e8d7
+              tag: rocm7@sha256:e831d629759f68efc2b6e8649f917c317a7519e698deea346a183ea4cf827c5d
             securityContext:
               privileged: true
             env:

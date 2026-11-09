@@ -17,7 +17,7 @@ spec:
   chart:
     spec:
       chart: langfuse
-      version: 2.2.3
+      version: 2.2.4
       sourceRef:
         kind: HelmRepository
         name: langfuse
@@ -88,7 +88,7 @@ spec:
       web:
         image:
           repository: ghcr.io/langfuse/langfuse
-          tag: 4.76.0@sha256:59abb54faacf45b63d09f4076d45683dae26a6661974d497836543d350b16575
+          tag: 4.77.0@sha256:2b47d0ae63ae737996a58cc03536a73230c809a2371c230c9bea4b7653a0b6a0
         pod:
           additionalEnv:
             # First boot creates the org and the `litellm` project with a
@@ -134,7 +134,7 @@ spec:
       worker:
         image:
           repository: ghcr.io/langfuse/langfuse-worker
-          tag: 4.76.0@sha256:27e8b49d619a013bca38ed9b0853456e19f5667a23e8e26e3a10d4e28485f49c
+          tag: 4.77.0@sha256:1bc3597ff4c953e98ff9ee474a7d634e97664e4df298fdf20f13ecc834c89438
         resources:
           requests:
             cpu: 50m

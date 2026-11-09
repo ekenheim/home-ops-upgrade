@@ -2,8 +2,13 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: PR Title
 
+# Plain pull_request, not pull_request_target: GitHub blocks
+# pull_request_target in public repos by default from 2026-12-02 (brownouts
+# before that, e.g. 2026-11-09 17:00-18:00 UTC), and this is a required check,
+# so a blocked run holds every auto-merge. It only reads the PR title, which
+# the read-only token of a pull_request run can do, for forks too.
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, edited, synchronize, reopened]
     branches: ["main"]
 

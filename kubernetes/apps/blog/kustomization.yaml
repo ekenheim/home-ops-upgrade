@@ -6,5 +6,7 @@ resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
   # Flux-Kustomizations
-  - ./talos-and-tensors/ks.yaml
+  # Off since 2026-11-09 (owner, for now). blog.ekenhome.se goes away with it;
+  # preview/ keeps running.
+  #- ./talos-and-tensors/ks.yaml
   - ./preview/ks.yaml

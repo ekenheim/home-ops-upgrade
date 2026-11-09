@@ -169,15 +169,18 @@ spec:
             seed-config:
               - path: /seed
                 readOnly: true
+      # Frigate's own Unraid share on an SSD pool with no secondary storage,
+      # so the mover never touches it. As a subPath inside the Media share
+      # (Cache -> Array, mover 03:00) the mount went stale overnight
+      # (2026-11-06, -08, -09), and Frigate's detection thread died with it.
       media:
         type: nfs
         server: ${NAS_IP:=temp}
-        path: ${SECRET_NFS_DATA:=temp}
+        path: /mnt/user/frigate
         advancedMounts:
           frigate:
             app:
               - path: /media/frigate
-                subPath: Media/frigate
       # Decoded frames. One camera needs well under 128Mi; the rest is room
       # for logs, the nginx cache and a second camera.
       shm:

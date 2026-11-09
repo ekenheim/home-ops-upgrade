@@ -44,7 +44,7 @@ ffmpeg:
 
 # Events only (owner, 2026-10-22): no continuous footage, alert clips 30
 # days, detection clips 14 days. Everything under /media/frigate is on the NAS
-# (Media/frigate).
+# (its own `frigate` share).
 record:
   enabled: true
   continuous:

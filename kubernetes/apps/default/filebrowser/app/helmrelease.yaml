@@ -84,6 +84,34 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 80
+      # Public on purpose, share links only. FileBrowser's unauthenticated
+      # endpoints are GET /share/<hash> (the SPA page), /static/ (its assets)
+      # and /api/public/{share,dl}/ (http/http.go). Nothing else matches here,
+      # so the UI, login and every authenticated API stay on envoy-internal.
+      # Separate hostname so filebrowser.<domain> keeps no public record (the
+      # AAAA trap). Share links are built from the page's origin: create them
+      # on filebrowser.<domain>, then swap the host to share.<domain>.
+      # Upstream was archived 2026-09-01; its unpatched advisories need a
+      # signed-in user, but keep this route only while something is shared.
+      share:
+        hostnames: ["share.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - matches:
+              - path: {type: PathPrefix, value: /share/}
+                method: GET
+              - path: {type: PathPrefix, value: /static/}
+                method: GET
+              - path: {type: PathPrefix, value: /api/public/share/}
+                method: GET
+              - path: {type: PathPrefix, value: /api/public/dl/}
+                method: GET
+            backendRefs:
+              - identifier: app
+                port: 80
     persistence:
       data:
         existingClaim: filebrowser-data

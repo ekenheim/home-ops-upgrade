@@ -35,7 +35,7 @@ spec:
           app:
             image:
               repository: langflowai/langflow
-              tag: 1.13.1@sha256:9f5220634256d243756d9a59a7210f3e71010eb2dfb20841ccbaae56a22a4267
+              tag: 1.13.2@sha256:4cfba8c49c4dba081964f9096bc8b9169f99f7c720000a9563a2fd1296a35e9f
             envFrom:
               - secretRef:
                   name: langflow-db-secret

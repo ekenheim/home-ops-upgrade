@@ -1,10 +1,12 @@
 ---
-# Kubernetes integration 1.14 detects HPA-managed workloads (scale guard, HPA
-# badge) and raises a "Missing permissions" repair issue without this. It is a
-# separate role because rbac.yaml holds the ServiceAccount token Secret, and
-# the SOPS guard rejects any changed file that contains a plain Secret.
-# Upstream's full mode (manifests/full/) also grants pods/log and patch on
-# nodes; both stay out: logs carry tokens, and HA shouldn't cordon nodes.
+# Read grants newer Kubernetes integration releases need; without them HA
+# raises a "Missing permissions" repair issue. 1.14: HPAs (scale guard, HPA
+# badge). 1.17: Gateway API HTTPRoutes (Network tab). It is a separate role
+# because rbac.yaml holds the ServiceAccount token Secret, and the SOPS guard
+# rejects any changed file that contains a plain Secret.
+# Upstream's full mode (manifests/full/) also grants pods/log, pods/eviction
+# and patch on nodes; all stay out: logs carry tokens, and HA shouldn't cordon
+# or drain nodes.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -15,6 +17,9 @@ metadata:
 rules:
   - apiGroups: ["autoscaling"]
     resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["httproutes"]
     verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1

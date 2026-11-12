@@ -74,7 +74,7 @@ spec:
               # on a 17 data directory (#7713 did exactly that). Renovate no
               # longer offers majors here (.github/renovate/packageRules.json5).
               repository: docker.io/library/postgres
-              tag: 17.11-alpine@sha256:3540c0362c809df084ffac0ae69fe794515f9de92692f02178bcdce0ef0302ac
+              tag: 17.12-alpine@sha256:34261f594522cf41dfcb76aefd42b9d201098b0e6b23c9c68733f169e4218b6f
             restartPolicy: Always
             env:
               POSTGRES_USER: dispatcharr

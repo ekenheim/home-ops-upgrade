@@ -11,7 +11,7 @@ TALOS_VERSION="$(sed -nE 's/^\s*TALOS_VERSION:\s*(\S+).*/\1/p' "${ROOT_DIR}/.tas
 # renovate: datasource=github-releases depName=budimanjojo/talhelper
 TALHELPER_VERSION=v3.1.17
 # renovate: datasource=github-releases depName=helmfile/helmfile
-HELMFILE_VERSION=v1.8.3
+HELMFILE_VERSION=v1.8.4
 # renovate: datasource=github-releases depName=yannh/kubeconform
 KUBECONFORM_VERSION=v0.8.0
 # renovate: datasource=github-releases depName=databus23/helm-diff

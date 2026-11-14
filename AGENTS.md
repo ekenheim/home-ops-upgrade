@@ -87,6 +87,7 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - **`database`** — Crunchy Postgres, Dragonfly. MariaDB is disabled.
 - **`media`** — Plex, Overseerr, Tautulli, Kavita, Maintainerr, Dispatcharr (IPTV tuner for Plex; xTeve removed 2026-10-19). Wizarr is off since 2026-11-02.
 - **`downloads`** — Sonarr, Radarr (+ radarr4k), Prowlarr, Bazarr, Kapowarr, Lingarr, Recyclarr, SABnzbd, arr-mcp.
+- **`vpn`** — vpn-gateway (pod-gateway + gluetun, Mullvad WireGuard). Routes only pods labelled `setGateway: "true"` in `downloads` (SABnzbd, Prowlarr) through the tunnel, fail-closed, DNS via Mullvad. `downloads` enforces PSA `privileged` (warn/audit `baseline`) for the injected NET_ADMIN containers. See `vpn/vpn-gateway/README.md`.
 - **`default`** — Home Assistant, Z-Wave JS UI, Music Assistant, Mosquitto, Frigate (NVR, OpenVINO on a DeskMini iGPU), Wyoming (whisper / piper / kokoro), Immich, Paperless, Syncthing, Actual, Outline, FileBrowser, IT-Tools, Gatus endpoints.
 - **`network`** — Cloudflared, CrowdSec (detects on `envoy-external` and blocks via an ext_authz bouncer SecurityPolicy on that Gateway, failOpen; read-only Web UI at `crowdsec.<domain>`; see `network/crowdsec/README.md`), Envoy Gateway, external-dns, Tailscale, echo-server. Headscale is disabled.
 - **`security`** — Authentik. Since 2026-10-24, browsers on the LAN or node network are signed in as the limited `lan` user, without a prompt, for applications that bind `lan` (Grafana, CrowdSec, VictoriaLogs); everything else keeps the normal sign-in (`security/authentik/app/lan-autologin.yaml`). This depends on envoy-external rewriting X-Forwarded-For on the sso route, because Authentik trusts that header's first entry.
@@ -97,7 +98,7 @@ Apps are grouped by namespace under `kubernetes/apps/<namespace>/`:
 - **`development`** — Harbor, Strapi, Rybbit, side projects (alphaos: only its Dagster pipeline since 2026-10-25, the website is off; hempriser, marketing-agency). Metabase, Meilisearch, Airbyte, Umami, GrowthBook, Medusa (off since 2026-10-18), strapi-ecom and Redpanda (off since 2026-10-25) are disabled; Atlas was removed 2026-10-24 (project archived).
 - **`rook-ceph`** — distributed storage operator + cluster.
 - **`istio-system`** (Istio base / istiod / gateway, Gateway API CRDs; the Seldon Core v1 operator is disabled), **`cert-manager`**, **`external-secrets`**, **`flux-system`**, **`actions-runner-system`** (ARC controller + 2 scale sets: general, nordic-housing; atlas removed 2026-10-24; bandit, banditweb, ecom and grid-reliance off since 2026-10-18), **`blog`**.
-- Disabled namespaces still present in the tree: **`argocd`** (deployKF experiment, off), **`vpn`**.
+- Disabled namespaces still present in the tree: **`argocd`** (deployKF experiment, off).
 
 ## Conventions
 

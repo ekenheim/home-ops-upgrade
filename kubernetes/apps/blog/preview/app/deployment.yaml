@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: clone
-          image: alpine/git:v2.54.0
+          image: alpine/git:v2.54.1
           # The mounted key is group-readable (0440); ssh refuses anything but
           # 0600, so take a private copy before using it.
           command:
@@ -111,7 +111,7 @@ spec:
             - name: workspace
               mountPath: /workspace
         - name: pull
-          image: alpine/git:v2.54.0
+          image: alpine/git:v2.54.1
           workingDir: /workspace/repo
           # Vite watches the working tree, so a pull that changes a file is
           # picked up without restarting anything.

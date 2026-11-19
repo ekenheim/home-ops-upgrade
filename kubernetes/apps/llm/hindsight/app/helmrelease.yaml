@@ -246,7 +246,7 @@ spec:
       enabled: true
       image:
         repository: ghcr.io/vectorize-io/hindsight-control-plane
-        tag: 1.2.2@sha256:0211eb5f62c6ff1b200cf59c7c5fd5df330084106bac612d69ae25b4eb32531a
+        tag: 1.2.3@sha256:29c8fd38a6408b76f08219badc1e506b1b3bb77264d8e1cdfc327e4f955d99f8
       resources:
         requests:
           cpu: 50m

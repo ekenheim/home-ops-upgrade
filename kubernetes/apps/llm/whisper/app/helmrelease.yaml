@@ -66,7 +66,7 @@ spec:
           fetch:
             image: &image
               repository: docker.io/kyuz0/amd-strix-halo-toolboxes
-              tag: vulkan-radv@sha256:4eef1d8ea6629efea72d6eef8ed49095c8679549e4f36b01bcd3b2e36561cb20
+              tag: vulkan-radv@sha256:6ad395b672ecc9f4e951f9dee18739eb5ced2509d9d80cf6e08a0711ee816144
             command:
               - bash
               - -c

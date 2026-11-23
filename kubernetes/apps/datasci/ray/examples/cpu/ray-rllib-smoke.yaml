@@ -14,7 +14,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: ray-rllib-smoke
-          image: rayproject/ray:2.60.0-py312-cpu@sha256:307d271427cbca373affad1c1d406776acd5f5a5dd041523008c8d44a796e4fd
+          image: rayproject/ray:2.60.1-py312-cpu@sha256:ad900833ad9d38e6a89b68c8cbf671b4bde34135b6dc3c6822c0ab9db2865eef
           imagePullPolicy: IfNotPresent
           command:
             - bash

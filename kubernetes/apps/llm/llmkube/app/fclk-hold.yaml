@@ -23,7 +23,7 @@
 # through a couple of weeks of nightly repo-wiki runs without a reset. Deleting
 # the DaemonSet puts the clock back on `auto` (the TERM trap below).
 #
-# The `kmsg` container is the evidence side: it follows the kernel log and
+# The `kmsg` container is the evidence side: it reads the kernel log and
 # prints the lines that matter (the boot-time reset reason, machine checks,
 # amdgpu and SMU errors), so they reach VictoriaLogs. Nothing collected kernel
 # messages before, and the reset-reason line is the only record a reset leaves.
@@ -108,17 +108,32 @@ spec:
             readOnlyRootFilesystem: true
           command: ["/bin/sh", "-c"]
           args:
-            # /dev/kmsg replays the ring buffer from the start, so each pod
-            # start (one per boot) also logs that boot's reset-reason line.
+            # Polls dmesg instead of following /dev/kmsg: busybox grep cannot
+            # read that device (each read must take a whole record; it exited
+            # 2 at once), and busybox dmesg has no follow mode. A pod start
+            # (one per boot) prints everything still in the ring buffer.
+            #
+            # Talos's NodeApplyController line is skipped: on worker4 it fails
+            # every ~90 s ("not allowed to modify taints") and was 786 of the
+            # 790 lines in the buffer on 2026-11-23, which is also why the
+            # boot-time reset-reason line is gone within two days of a boot.
+            # It stops once the current machine config (registerWithTaints,
+            # not nodeTaints; see talconfig.yaml) is applied to worker4.
             - |
-              exec grep --line-buffered -iE 'reset reason|mce:|machine check|hardware error|amdgpu|\[drm|smu|fabric|watchdog|panic|oops|call trace|nvme.*(error|timeout)' /dev/kmsg
-          volumeMounts:
-            - {name: kmsg, mountPath: /dev/kmsg, readOnly: true}
+              PAT='reset reason|mce:|machine check|hardware error|amdgpu|\[drm|smu|fabric|watchdog|panic|oops|call trace|nvme.*(error|timeout)|r8169'
+              last=0
+              while true; do
+                out=$(dmesg | grep -v NodeApplyController | grep -iE "$PAT" \
+                  | awk -v last="$last" '{t=$0; sub(/^\[ */,"",t); sub(/\].*/,"",t); if (t+0 > last+0) print}')
+                if [ -n "$out" ]; then
+                  echo "$out"
+                  last=$(echo "$out" | tail -n 1 | sed 's/^\[ *//; s/\].*//')
+                fi
+                sleep 60
+              done
           resources:
             requests: {cpu: 5m, memory: 16Mi}
             limits: {memory: 32Mi}
       volumes:
         - name: sys
           hostPath: {path: /sys, type: Directory}
-        - name: kmsg
-          hostPath: {path: /dev/kmsg, type: CharDevice}

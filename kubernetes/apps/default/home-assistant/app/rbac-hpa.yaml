@@ -1,9 +1,11 @@
 ---
 # Read grants newer Kubernetes integration releases need; without them HA
 # raises a "Missing permissions" repair issue. 1.14: HPAs (scale guard, HPA
-# badge). 1.17: Gateway API HTTPRoutes (Network tab). It is a separate role
-# because rbac.yaml holds the ServiceAccount token Secret, and the SOPS guard
-# rejects any changed file that contains a plain Secret.
+# badge). 1.17: Gateway API HTTPRoutes (Network tab). 1.18: cert-manager
+# Certificates (Certificate Problems sensor; it never reads the TLS Secrets).
+# It is a separate role because rbac.yaml holds the ServiceAccount token
+# Secret, and the SOPS guard rejects any changed file that contains a plain
+# Secret.
 # Upstream's full mode (manifests/full/) also grants pods/log, pods/eviction
 # and patch on nodes; all stay out: logs carry tokens, and HA shouldn't cordon
 # or drain nodes.
@@ -20,6 +22,9 @@ rules:
     verbs: ["get", "list", "watch"]
   - apiGroups: ["gateway.networking.k8s.io"]
     resources: ["httproutes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificates"]
     verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1

@@ -1,0 +1,124 @@
+---
+# Interim workaround for worker4's hard resets under sustained GPU load
+# ("Previous system reset reason [0x08000800]: an uncorrected error caused a
+# data fabric sync flood event"): hold the iGPU's fabric clock (FCLK) instead
+# of letting the firmware scale it.
+#
+# Upstream: https://github.com/ROCm/TheRock/issues/8709. AMD reproduced the
+# Data Fabric errors on a Ryzen AI MAX+ 395 and says the fix is firmware
+# (AGESA StrixHaloPI-FP11 1.0.0.2b with PMFW >= 100.8.0, delivered by a vendor
+# BIOS). worker4 is on MS-S1 MAX BIOS 1.09 (2026-06-08), which predates it.
+# Reports in that issue: 63+ hours clean with FCLK held at 2000 MHz where the
+# same box hung without it; about -12% decode speed with the top-level hold.
+# One reporter still hung with the hold in place (GPU and NPU work at once,
+# which worker4 does not do). https://github.com/ROCm/TheRock/issues/9973
+# reports 30 clean hours on ROCm inference with only the 400 MHz level masked
+# out (FCLK_LEVELS "1 2 3 4 5 6 7"), on a different reset signature.
+#
+# History here: 39 resets 2026-09-24..10-11, then five more 2026-11-08..11-21,
+# every one of those five during the 03:00 repo-wiki job (10-40 minutes of
+# continuous generation on the local model).
+#
+# REMOVE THIS once worker4 runs a BIOS that carries the fix and has been
+# through a couple of weeks of nightly repo-wiki runs without a reset. Deleting
+# the DaemonSet puts the clock back on `auto` (the TERM trap below).
+#
+# The `kmsg` container is the evidence side: it follows the kernel log and
+# prints the lines that matter (the boot-time reset reason, machine checks,
+# amdgpu and SMU errors), so they reach VictoriaLogs. Nothing collected kernel
+# messages before, and the reset-reason line is the only record a reset leaves.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fclk-hold
+spec:
+  selector:
+    matchLabels: {app.kubernetes.io/name: fclk-hold}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: fclk-hold}
+    spec:
+      nodeSelector:
+        topology.kubernetes.io/gpus: amd
+      tolerations:
+        - {key: llm-workload, operator: Exists, effect: NoSchedule}
+        - {key: tuppr.home-operations.com/outdated, operator: Exists, effect: PreferNoSchedule}
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: hold
+          image: docker.io/library/busybox:1.38.0
+          # Writing the amdgpu power sysfs files needs a read-write /sys and
+          # root; nothing less than privileged gets a writable host sysfs.
+          securityContext:
+            privileged: true
+            runAsUser: 0
+            readOnlyRootFilesystem: true
+          env:
+            # Space-separated pp_dpm_fclk levels to allow. On this board:
+            # 0=400 1=1000 2=1200 3=1400 4=1600 5=1700 6=1850 7=2000 MHz.
+            # "7" holds the top level (the setting issue 8709 documents);
+            # "1 2 3 4 5 6 7" only removes the 400 MHz level.
+            - {name: FCLK_LEVELS, value: "7"}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              log() { echo "$(date -u +%FT%TZ) $*"; }
+              cards() {
+                for d in /host/sys/class/drm/card*/device; do
+                  [ "$(cat "$d/vendor" 2>/dev/null)" = "0x1002" ] && [ -f "$d/pp_dpm_fclk" ] && echo "$d"
+                done
+              }
+              release() {
+                for d in $(cards); do
+                  echo auto > "$d/power_dpm_force_performance_level" && log "released $d to auto"
+                done
+                exit 0
+              }
+              trap release TERM INT
+              # PMFW refuses the write for about 30 s after boot (issue 8709).
+              sleep 30 & wait $!
+              n=0
+              while true; do
+                for d in $(cards); do
+                  lvl=$(cat "$d/power_dpm_force_performance_level")
+                  if [ "$lvl" != "manual" ]; then
+                    log "$d performance level is '$lvl'; applying hold (levels: $FCLK_LEVELS)"
+                    echo manual > "$d/power_dpm_force_performance_level" || log "ERROR: could not set manual on $d"
+                  fi
+                  # Re-written every pass: the file does not always mark the
+                  # active level, so there is no cheap way to see a lost hold.
+                  echo "$FCLK_LEVELS" > "$d/pp_dpm_fclk" || log "ERROR: could not write pp_dpm_fclk on $d"
+                  if [ $((n % 60)) -eq 0 ]; then
+                    log "$d level=$(cat "$d/power_dpm_force_performance_level") fclk=[$(tr '\n' ' ' < "$d/pp_dpm_fclk")]"
+                  fi
+                done
+                n=$((n + 1))
+                sleep 60 & wait $!
+              done
+          volumeMounts:
+            - {name: sys, mountPath: /host/sys}
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 32Mi}
+        - name: kmsg
+          image: docker.io/library/busybox:1.38.0
+          securityContext:
+            privileged: true
+            runAsUser: 0
+            readOnlyRootFilesystem: true
+          command: ["/bin/sh", "-c"]
+          args:
+            # /dev/kmsg replays the ring buffer from the start, so each pod
+            # start (one per boot) also logs that boot's reset-reason line.
+            - |
+              exec grep --line-buffered -iE 'reset reason|mce:|machine check|hardware error|amdgpu|\[drm|smu|fabric|watchdog|panic|oops|call trace|nvme.*(error|timeout)' /dev/kmsg
+          volumeMounts:
+            - {name: kmsg, mountPath: /dev/kmsg, readOnly: true}
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 32Mi}
+      volumes:
+        - name: sys
+          hostPath: {path: /sys, type: Directory}
+        - name: kmsg
+          hostPath: {path: /dev/kmsg, type: CharDevice}

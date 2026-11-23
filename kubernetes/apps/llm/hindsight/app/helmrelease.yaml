@@ -262,6 +262,11 @@ spec:
         # it. ~85 MB model, pulled on first start. Set enabled: false to fall
         # back to plain reciprocal-rank fusion if this is ever in the way.
         enabled: true
+        # Pinned: chart 1.2.x changed its default to hindsight-ai/hs-rerank-1,
+        # which is OOM-killed while warming up at the 2Gi limit below (every
+        # upgrade from 1.1.0 rolled back, 2026-11-10 to 11-23). This is the
+        # model the chart used before and the one that has been running.
+        model: cross-encoder/ms-marco-MiniLM-L-6-v2
         # TEI 1.9 dropped the default --model-id and made --auto-truncate
         # default to true. The chart passes `--model-id
         # cross-encoder/ms-marco-MiniLM-L-6-v2 --auto-truncate` itself, and

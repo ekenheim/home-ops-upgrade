@@ -18,6 +18,10 @@ spec:
         kind: HelmRepository
         name: bjw-s
         namespace: flux-system
+  # Startup runs plugin updates and Doctor state migrations before the
+  # gateway binds (135 s on a copy of the volume for 2026.11.7, and the
+  # startup probe allows 10 minutes); the Helm default of 5m gave up first.
+  timeout: 15m
   install:
     remediation:
       retries: -1
@@ -40,6 +44,20 @@ spec:
         # RWO PVC: a surge pod would hang in ContainerCreating on another node.
         strategy: Recreate
         initContainers:
+          # OpenClaw 2026.11.4+ refuses to start ("No safe OpenClaw temp root
+          # is available") when any directory above its temp dirs is group- or
+          # world-writable without the sticky bit. fsGroup makes the volume
+          # root root:users 2775, and only root can change it. The sticky bit
+          # survives restarts: the kubelet OnRootMismatch check still matches.
+          perms:
+            image:
+              repository: docker.io/library/alpine
+              tag: 3.24@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+            command: ["chmod", "+t", "/home/node"]
+            securityContext:
+              runAsUser: 0
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
           config:
             image:
               repository: docker.io/library/alpine
@@ -52,6 +70,11 @@ spec:
               - |
                 set -eu
                 mkdir -p /home/node/.openclaw/workspace
+                # Same temp-root rule as `perms` above, for the directories
+                # this user owns (they were created group-writable).
+                for d in /home/node/.cache /home/node/.cache/openclaw-1000 /home/node/.openclaw/tmp; do
+                  if [ -d "$d" ]; then chmod go-w "$d"; fi
+                done
                 rm -f /home/node/.openclaw/openclaw.json
                 cp /tmp/openclaw.json /home/node/.openclaw/openclaw.json
                 chmod 400 /home/node/.openclaw/openclaw.json
@@ -68,6 +91,8 @@ spec:
               - /bin/sh
               - -c
               - |
+                # Keep new directories from being group-writable (see `perms`).
+                umask 022
                 FLAGS="--accept-capabilities --acknowledge-install-policy-warning"
                 # memini ships through ClawHub, not npm. Pinned; reinstalled only
                 # when this version changes (marker file on the PVC).

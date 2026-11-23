@@ -36,16 +36,12 @@ data:
           bootstrapTotalMaxChars: 49152,
           thinkingDefault: "medium",
           timeoutSeconds: 1800,
-          // Off (owner decision 2026-10-07: "stop pinging me"). Unset, the
-          // default polls every 30m INSIDE the main DM session and delivers to
-          // the owner DM: 48 extra turns a day in the conversation context
-          // (main session at 92k tokens, prompt cache 0%), "[model] NO_REPLY"
-          // posts whenever a fallback model missed the silent-ack protocol,
-          // and heartbeat chatter leaking into real replies. The bot's own
-          // `config set ...heartbeat.target none` on 2026-10-07 worked until
-          // the next pod start, when the init container restored this file.
-          // Scheduled work is in jobs.sh (cron), which does not need it.
-          heartbeat: { every: "0m", target: "none" },
+          // No heartbeat (owner decision 2026-10-07: "stop pinging me"; it
+          // polled every 30m inside the main DM session). OpenClaw 2026.11
+          // retired the `heartbeat` key and rejects a config that has it; its
+          // Doctor turned the old setting into an ordinary automation,
+          // `heartbeat-main`, which is DISABLED. Leave it disabled. Scheduled
+          // work is in jobs.sh (cron).
           model: {
             primary: "minimax/MiniMax-M3-messages",
             fallbacks: ["litellm/self-hosted", "litellm/chatgpt"],
@@ -62,6 +58,24 @@ data:
             "litellm/reasoning-pool": { alias: "reasoning" },
             "litellm/implementation-pool": { alias: "implementation" },
             "litellm/frontier-pool": { alias: "frontier" },
+          },
+          // 2026.11 split the allowlist out of `models` (which keeps the
+          // aliases and params). Same refs as the keys above; add a model in
+          // both places. Written by `doctor --fix` on 2026.11.7.
+          modelPolicy: {
+            allow: [
+              "litellm/self-hosted",
+              "litellm/fast",
+              "litellm/chatgpt",
+              "litellm/local-pool",
+              "litellm/local-pool-chat",
+              "minimax/MiniMax-M3-messages",
+              "litellm/MiniMax-M3-chat",
+              "litellm/MiniMax-M3.1-Flash-Preview",
+              "litellm/reasoning-pool",
+              "litellm/implementation-pool",
+              "litellm/frontier-pool",
+            ],
           },
           maxConcurrent: 2,
           subagents: {
@@ -177,9 +191,12 @@ data:
         },
       },
       plugins: {
-        allow: ["discord", "memini", "searxng", "litellm"],
+        allow: ["discord", "memini", "searxng", "litellm", "minimax"],
         entries: {
           discord: { enabled: true },
+          // The two model providers above are plugins since 2026.11.
+          litellm: { enabled: true },
+          minimax: { enabled: true },
           searxng: {
             enabled: true,
             config: { webSearch: { baseUrl: "http://searxng.llm.svc.cluster.local:8080", language: "en" } },

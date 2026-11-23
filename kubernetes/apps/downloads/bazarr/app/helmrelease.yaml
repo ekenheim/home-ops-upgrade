@@ -84,6 +84,10 @@ spec:
               GITSYNC_REF: master
               GITSYNC_PERIOD: 24h
               GITSYNC_ROOT: /add-ons
+              # /add-ons is an fsGroup-owned emptyDir (root:users), not owned by
+              # uid 1000, and git-sync 4.8 no longer starts there without this:
+              # "fatal: detected dubious ownership in repository at '/add-ons'".
+              GITSYNC_GIT_CONFIG: safe.directory:/add-ons
             resources:
               requests:
                 cpu: 10m

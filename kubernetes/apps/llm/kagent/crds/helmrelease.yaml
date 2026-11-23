@@ -18,7 +18,8 @@ spec:
   chart:
     spec:
       chart: kagent-crds
-      version: 1.0.1
+      # Held below 1.0 with ../app; see the note there.
+      version: 0.10.6
       interval: 30m
       sourceRef:
         kind: HelmRepository

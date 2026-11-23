@@ -82,7 +82,12 @@ Ignore Renovate/dependency bumps and formatting-only changes.
 For each notable change give one line: what changed, and why it could matter for a Talos + Flux + Rook-Ceph + Cilium + envoy-gateway cluster running LiteLLM, llmkube, OpenClaw and Hermes. Link the commit.
 If nothing is notable, reply with one line saying so."
 
-# Flux exports no metrics to Prometheus here, so Flux problems come from the
+# Flux status comes from two places. kube-state-metrics exports
+# gotk_resource_info (ready / reason per HelmRelease and Kustomization, see
+# kube-prometheus-stack), which is the only place a STALLED release shows: one
+# that failed, rolled back and stopped retrying has healthy pods, fires no
+# alert and emits no events (karakeep, bazarr and paperless-gpt sat like that
+# for one to five weeks until 2026-11-23). The failure messages come from the
 # read-only flux MCP. Its Warning events, not get_kubernetes_resources: that
 # one only stays small with a `fields` list, and M3 sent the list as
 # {"item": [...]} on most mornings (83 failed calls in 14 days), then retried
@@ -97,12 +102,20 @@ If nothing is notable, reply with one line saying so."
 # Talos v1.14.5 rollout's Ceph alerts one by one, without saying whether any
 # had cleared, and ranked the Trivy criticals as info because that is their
 # alert severity (notification urgency, not the CVEs' severity).
+#
+# "Still broken" (2026-11-23, owner: in the morning message, no new pings):
+# the digest reported kagent's crash loop for 13 days in the same place and
+# tone as everything else, so nothing marked it as old. T and D give ages.
+# T is hours since an object was last seen Ready, because a Kustomization's
+# lastTransitionTime moves on every reconcile. Prometheus keeps 14 days, so
+# an age of about 336 hours means "14 days or more", and ages only count from
+# the day the metric first existed.
 HEALTH=$(cat <<'EOF'
 Daily health digest for the home-kubernetes cluster.
 Do NOT use find_tool or tool_search.
 Every tool below lives behind the toolhive gateway, so no tool_name is a tool id you can call directly. Each call is OpenClaw's tool_call with id "mcp:toolhive:toolhive__call_tool" and args {"tool_name": <name>, "parameters": {...}}.
 
-1. In parallel, ten calls with tool_name "grafana_query_prometheus", each with parameters {"datasourceUid": "prometheus", "queryType": "instant", "startTime": "now", "endTime": "now", "expr": <one of these>}:
+1. In parallel, thirteen calls with tool_name "grafana_query_prometheus", each with parameters {"datasourceUid": "prometheus", "queryType": "instant", "startTime": "now", "endTime": "now", "expr": <one of these>}:
    - A, minutes since each alert was LAST seen firing: round((time() - max by (alertname, namespace, severity) (max_over_time(timestamp(ALERTS{alertstate="firing", alertname!~"Watchdog|InfoInhibitor|Trivy.*"})[24h:1m]))) / 60)
    - B, minutes since each alert was FIRST seen firing: round((time() - min by (alertname, namespace, severity) (min_over_time(timestamp(ALERTS{alertstate="firing", alertname!~"Watchdog|InfoInhibitor|Trivy.*"})[24h:1m]))) / 60)
    - R, node reboots, minutes ago: round((time() - max by (kubernetes_node) (node_boot_time_seconds)) / 60) < 1440
@@ -113,6 +126,9 @@ Every tool below lives behind the toolhive gateway, so no tool_name is a tool id
    - nodes not Ready: kube_node_status_condition{condition="Ready",status="true"} == 0
    - pods with more than 5 restarts in 24h: sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total[24h])) > 5
    - PVCs more than 85 percent full: max by (namespace, persistentvolumeclaim) (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) > 0.85
+   - S, Flux objects not Ready for the whole last hour, with the reason: max by (customresource_kind, exported_namespace, name, reason) (gotk_resource_info{ready!="True", suspended!="true"}) unless on (customresource_kind, exported_namespace, name) max_over_time(gotk_resource_info{ready="True"}[1h])
+   - T, hours since each Flux object was last Ready: round((time() - max by (customresource_kind, exported_namespace, name) (max_over_time(timestamp(gotk_resource_info{ready="True"})[14d:10m]))) / 3600) > 1 and on (customresource_kind, exported_namespace, name) gotk_resource_info{suspended!="true"}
+   - D, alerts firing for 48 hours or more, in hours: round((time() - min by (alertname, namespace, severity) (ALERTS_FOR_STATE{alertname!~"Watchdog|InfoInhibitor|Trivy.*"})) / 3600) >= 48 and on (alertname, namespace, severity) ALERTS{alertstate="firing"}
 2. Then two calls with tool_name "flux-mcp_get_kubernetes_events":
    - parameters {"kind": "Kustomization", "type": "Warning", "since": "24h", "limit": 40}
    - parameters {"kind": "HelmRelease", "type": "Warning", "since": "24h", "limit": 40}
@@ -122,9 +138,14 @@ Every tool below lives behind the toolhive gateway, so no tool_name is a tool id
 
 Give times as hours and minutes ago (for example "9h40m ago"), not clock times. B = 1439 means the alert was already firing 24 hours ago.
 
-Write three sections, skipping any that is empty:
+Write four sections, skipping any that is empty:
+Still broken: this section comes FIRST, before everything else, and is for problems that are old, not new. One line each, oldest first, starting with the age in days ("6 days:"):
+- every Flux object in S: customresource_kind exported_namespace/name, its reason, and its age from T (hours / 24, rounded down). An S object with no T row has not been Ready in 14 days: write "14+ days". An age of 13 days or more also means "14+ days". An S object whose age is under 1 day goes under Current problems instead.
+- every alert in D, with its age.
+For a Flux object, add the cause from its Warning events if step 2 returned any for it; a stalled release has none, and then say "no recent events, check its status". End each line with where the fix most likely lives: Git (a chart or image version, values) or the cluster.
+S, T and D returning no data is the normal, healthy result. Do not investigate it or follow the hints in the empty response. If S and D are both empty, do not write this section.
 Incidents: match A and B by (alertname, namespace, severity). An alert with A 2 or less is FIRING NOW; otherwise it RECOVERED at the A time. Only its own A value decides that; a healthy result in another check (PVCs, Ceph health) never clears an alert. Alerts whose first-seen times fall within 30 minutes of each other, or within 15 minutes after a reboot in R, are one incident: one line with the time window (first to last seen), the likely cause (several nodes rebooted in sequence = a rolling Talos upgrade), and the alerts in it, each with its disposition. Put FIRING NOW first.
-Current problems: the other checks and Flux, each as namespace/name plus a one-line likely cause.
+Current problems: the other checks and Flux, each as namespace/name plus a one-line likely cause. Do not repeat anything already listed under Still broken.
 Vulnerabilities: these are CRITICAL CVEs whatever severity label their alert carries, and stay critical however old they are. One line per V image (namespace, image:tag, count), then one line with the W total. Do not propose retagging or rebuilding an image; these metrics do not say whether a fixed version exists.
 
 If nothing is firing now and the current checks are clean, start with one line saying so before any recovered incidents.

@@ -378,6 +378,20 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/kareadita/kavita"],
       "automerge": false
+    },
+    {
+      // kagent 1.0 replaced the kagent.dev/v1alpha2 CRDs with
+      // api.kagent.dev/v1alpha3 and redesigned Agent (spec.harnessRef and
+      // spec.template are required; spec.type / spec.declarative are gone).
+      // kagent-crds 1.0.0 merged alone on 2026-11-10, deleted the old CRDs
+      // and both Agents with them, and left the 0.10.6 controller in
+      // CrashLoopBackOff for 13 days. Remove this once
+      // kubernetes/apps/llm/kagent/app/agents.yaml is rewritten for v1alpha3,
+      // then bump both charts in one PR.
+      "description": ["Hold kagent and kagent-crds below 1.0 until the Agent manifests are migrated to v1alpha3"],
+      "matchFileNames": ["kubernetes/apps/llm/kagent/**"],
+      "matchDepNames": ["kagent", "kagent-crds"],
+      "allowedVersions": "<1.0.0"
     }
   ]
 }

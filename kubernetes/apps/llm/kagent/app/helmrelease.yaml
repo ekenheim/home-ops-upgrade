@@ -48,7 +48,7 @@ spec:
       # Held below 1.0 (.github/renovate/packageRules.json5): 1.0 moves every
       # CRD to api.kagent.dev/v1alpha3 and redesigns Agent (harnessRef +
       # template), so ./agents.yaml needs a rewrite before the bump.
-      version: 0.10.6
+      version: 0.10.7
       interval: 30m
       sourceRef:
         kind: HelmRepository

@@ -91,6 +91,68 @@ spec:
         - pods=[*]
         - deployments=[*]
         - persistentvolumeclaims=[*]
+      # Flux status as a metric (gotk_resource_info), after
+      # fluxcd/flux2-monitoring-example. The Flux controllers export no
+      # per-object readiness, so a release that failed and rolled back was
+      # invisible to Prometheus: healthy pods, no error logs, no alert
+      # (karakeep, bazarr and paperless-gpt sat like that for one to five weeks
+      # until 2026-11-23). No alert rule reads this, on purpose (owner decision
+      # 2026-11-23: no extra pings); OpenClaw's 09:00 cluster-health digest
+      # does (llm/openclaw/jobs.sh).
+      # `reason` is the Ready condition's reason, the only hint at the cause
+      # once the events have expired. A wrong API version or missing RBAC here
+      # gives zero series and no error.
+      rbac:
+        extraRules:
+          - apiGroups: ["kustomize.toolkit.fluxcd.io", "helm.toolkit.fluxcd.io"]
+            resources: ["kustomizations", "helmreleases"]
+            verbs: ["list", "watch"]
+          # kube-state-metrics discovers the kinds above through their CRDs.
+          - apiGroups: ["apiextensions.k8s.io"]
+            resources: ["customresourcedefinitions"]
+            verbs: ["list", "watch"]
+      customResourceState:
+        enabled: true
+        config:
+          spec:
+            resources:
+              - groupVersionKind:
+                  group: kustomize.toolkit.fluxcd.io
+                  version: v1
+                  kind: Kustomization
+                metricNamePrefix: gotk
+                metrics:
+                  - name: resource_info
+                    help: The current state of a Flux Kustomization resource.
+                    each:
+                      type: Info
+                      info:
+                        labelsFromPath:
+                          name: [metadata, name]
+                    labelsFromPath:
+                      exported_namespace: [metadata, namespace]
+                      ready: [status, conditions, "[type=Ready]", status]
+                      reason: [status, conditions, "[type=Ready]", reason]
+                      suspended: [spec, suspend]
+              - groupVersionKind:
+                  group: helm.toolkit.fluxcd.io
+                  version: v2
+                  kind: HelmRelease
+                metricNamePrefix: gotk
+                metrics:
+                  - name: resource_info
+                    help: The current state of a Flux HelmRelease resource.
+                    each:
+                      type: Info
+                      info:
+                        labelsFromPath:
+                          name: [metadata, name]
+                    labelsFromPath:
+                      exported_namespace: [metadata, namespace]
+                      ready: [status, conditions, "[type=Ready]", status]
+                      reason: [status, conditions, "[type=Ready]", reason]
+                      suspended: [spec, suspend]
+                      chart_version: [status, history, "0", chartVersion]
       prometheus:
         monitor:
           enabled: true

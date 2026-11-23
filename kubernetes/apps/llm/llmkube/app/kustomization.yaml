@@ -9,6 +9,7 @@ resources:
   - ./resourceclaim.yaml
   - ./cdi-stale-watchdog.yaml
   - ./pcie-aer-logger.yaml
+  - ./fclk-hold.yaml
   - ./dashboard
   - ./qwen38-flash-next.yaml
   # Parked at replicas 0 as the rollback target; see its replicas comment.

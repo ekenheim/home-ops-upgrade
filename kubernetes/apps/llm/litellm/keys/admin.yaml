@@ -26,7 +26,7 @@ spec:
   # The CRD defaults to the floating main-stable tag, which the 2026-10-21
   # compromise repointed. replicas: 0 means nothing pulls this; the pin keeps a
   # scale-up from taking whatever the tag holds that day.
-  image: ghcr.io/berriai/litellm:1.110.2@sha256:ef798594ca3db8d81bad2e1439f536f49b71fe095ee9f20416f5e149b4e22035
+  image: ghcr.io/berriai/litellm:1.110.3@sha256:1050d2c9ca58399de9cd51df6eb503812af697717f54d2f08c1c30589c75e1f7
   replicas: 0
   applyMode: file
   modelSelector:

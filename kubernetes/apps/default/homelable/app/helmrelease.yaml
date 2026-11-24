@@ -61,7 +61,7 @@ spec:
           app:
             image:
               repository: ghcr.io/pouzor/homelable-backend
-              tag: 3.7.1@sha256:f0f5f26461991bb8c14bd835f06244755fed9e63f818fa184b237f2d55f7f188
+              tag: 3.8.0@sha256:f4f8b8061af27084c793803614e0009f3440fbbf7cc12033438868a86452d60a
             env:
               TZ: ${TIMEZONE}
               # Python and nmap look in $HOME; the root filesystem is read-only.
@@ -161,7 +161,7 @@ spec:
           frontend:
             image:
               repository: ghcr.io/pouzor/homelable-frontend
-              tag: 3.7.1@sha256:2e52e1ba1cd0142c03988b247ca38f1fcbcf668efe39fb5849d432298a56a518
+              tag: 3.8.0@sha256:629a18054f13b54e9c6dfbab059aca27bbf4bcc083a8366d43706d59aa5c6520
             # Bypass the image entrypoint and its templated config; the whole
             # nginx setup comes from config/nginx.conf (see the note there).
             command: ["nginx", "-g", "daemon off;"]

@@ -66,7 +66,7 @@ spec:
           app:
             image:
               repository: quay.io/sustainable_computing_io/kepler
-              tag: v0.13.0@sha256:5ce39120255883c31819442fb77e784d8edc06c2e0e4bca2daeb4f98cdb1b56a
+              tag: v0.14.0@sha256:7b452bbc446b08a4c0a3021dec6b9e9936c94270be17fd84524e3513edb0b756
             command: ["/usr/bin/kepler"]
             args:
               - --config.file=/etc/kepler/config.yaml
